@@ -446,7 +446,7 @@ El propósito del presente documento es especificar formal, exhaustiva y riguros
 
 ### 4.1.2 Ámbito del Sistema
 
-El sistema se denomina formalmente **«Ecosistema de Auditoría Biomecánica Asincrónica para Jiu-Jitsu Brasileño»**. Su alcance operativo comprende:
+El sistema de evaluación y retroalimentación biomecánica para la academia Corpo & Mente Bolivia comprende en su alcance operativo:
 
 1. La captura de video desde teléfonos móviles por parte de los practicantes en el tatami.
 2. La carga y persistencia en cubos elásticos de almacenamiento en la nube (*Huawei Cloud OBS*).
@@ -573,7 +573,7 @@ graph LR
         E(("Estudiante"))
     end
 
-    subgraph Sistema["Ecosistema de Auditoría Biomecánica"]
+    subgraph Sistema["Sistema de Análisis Biomecánico"]
         CU01["CU-01: Registrar Técnica Maestra"]
         CU02["CU-02: Cargar Video de Ejecución"]
         CU03["CU-03: Consultar Diagnóstico Visual"]
@@ -587,7 +587,7 @@ graph LR
 ```
 
 **Figura 4.1**
-*Diagrama de Casos de Uso del Ecosistema de Auditoría Biomecánica Asincrónica.*
+*Diagrama de Casos de Uso del Sistema de Análisis Biomecánico (Corpo & Mente Bolivia).*
 
 A continuación, se presenta la trazabilidad entre las historias de usuario, los requisitos funcionales y los casos de uso derivados:
 
@@ -679,7 +679,7 @@ classDiagram
 ```
 
 **Figura 4.2**
-*Modelo de Dominio Conceptual del Ecosistema de Auditoría Biomecánica Asincrónica.*
+*Modelo de Dominio Conceptual del Sistema de Análisis Biomecánico (Corpo & Mente Bolivia).*
 
 **Descripción de las Entidades:**
 

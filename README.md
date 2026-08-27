@@ -1,3 +1,80 @@
+<!-- ========================================== -->
+<!-- PÁGINA 1: PORTADA PRINCIPAL               -->
+<!-- ========================================== -->
+
+<div align="center">
+
+# UNIVERSIDAD PRIVADA DE SANTA CRUZ DE LA SIERRA
+### FACULTAD DE INGENIERÍA
+### CARRERA: INGENIERÍA DE SISTEMAS
+
+<br>
+
+### MODALIDAD DE GRADUACIÓN
+## PROYECTO DE GRADO
+
+<br>
+
+## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRINCIPIANTES DE CINTURÓN BLANCO
+
+<br><br>
+
+### **Santiago Borda Zambrana**
+
+<br>
+
+**Santa Cruz de la Sierra - Bolivia**  
+**2026**
+
+</div>
+
+<br>
+
+---
+
+<br>
+
+<!-- ========================================== -->
+<!-- PÁGINA 2: CARÁTULA INTERIOR / HOJA DE TÍTULO -->
+<!-- ========================================== -->
+
+<div align="center">
+
+# UNIVERSIDAD PRIVADA DE SANTA CRUZ DE LA SIERRA
+### FACULTAD DE INGENIERÍA
+### CARRERA: INGENIERÍA DE SISTEMAS
+
+<br>
+
+### MODALIDAD DE GRADUACIÓN
+## PROYECTO DE GRADO
+
+<br>
+
+## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRINCIPIANTES DE CINTURÓN BLANCO
+
+<br>
+
+**Proyecto de Grado para optar al título de Licenciado en Ingeniería de Sistemas**
+
+<br><br>
+
+### **Santiago Borda Zambrana**
+**Reg.: 2021210057**
+
+<br>
+
+**Santa Cruz de la Sierra - Bolivia**  
+**2026**
+
+</div>
+
+<br>
+
+---
+
+<br>
+
 ## Tabla de Contenido
 
 - [Capítulo I: Definición del Proyecto de Investigación](#capítulo-i-definición-del-proyecto-de-investigación)

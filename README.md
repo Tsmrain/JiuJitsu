@@ -4,7 +4,10 @@
 
 <div align="center">
 
-# UNIVERSIDAD PRIVADA DE SANTA CRUZ DE LA SIERRA
+<img src="./assets/upsa_logo.png" alt="Universidad Privada de Santa Cruz de la Sierra" width="280">
+
+<br>
+
 ### FACULTAD DE INGENIERÍA
 ### CARRERA: INGENIERÍA DE SISTEMAS
 
@@ -40,7 +43,10 @@
 
 <div align="center">
 
-# UNIVERSIDAD PRIVADA DE SANTA CRUZ DE LA SIERRA
+<img src="./assets/upsa_logo.png" alt="Universidad Privada de Santa Cruz de la Sierra" width="280">
+
+<br>
+
 ### FACULTAD DE INGENIERÍA
 ### CARRERA: INGENIERÍA DE SISTEMAS
 

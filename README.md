@@ -276,7 +276,13 @@ Es precisamente en la **Fase de Ejecución en Parejas** donde se suscita el cola
 * **Sesgo de Priorización Pedagógica:** Ante la escasez crítica de tiempo, el docente prioriza a los estudiantes novatos (*cinturones blancos*), ya que carecen de patrones motores consolidados, exhiben errores estructurales evidentes y presentan una vulnerabilidad sustancialmente mayor frente a lesiones musculoesqueléticas.
 * **Desatención Sistemática de Practicantes Avanzados:** La focalización en los principiantes conduce a que los alumnos graduados reciban lapsos de observación prácticamente nulos. En este segmento, las incorrecciones técnicas no son gruesas sino milimétricas (desviaciones angulares de cadera de pocos grados o deficiente orientación de los vectores de fuerza). Estos fallos sutiles terminan fijándose involuntariamente en la memoria neuromuscular del atleta, estancando su potencial competitivo y generando frustración técnica.
 
-El diagnóstico evidencia que el instructor presencial ha superado su límite fisiológico y cognitivo de supervisión simultánea. La solución informática planteada no pretende sustituir la instrucción del profesor, sino extender su capacidad evaluativa a través de un canal de **auditoría biomecánica asincrónica**. Al grabarse desde sus teléfonos móviles, los estudiantes podrán recibir retroalimentación visual objetiva y precisa, descongestionando el tatami y garantizando rigor técnico en todos los niveles.
+* **Resolución y Validación Matemática del Cuello de Botella Mediante Cómputo Concurrente:** Frente al límite físico estrictamente secuencial del docente ($T_{\text{secuencial}} = 30 \text{ minutos}$ distribuidos a razón de $\leq 90 \text{ segundos}$ por estudiante), la solución asincrónica en la nube introduce un modelo de procesamiento elástico masivamente paralelo. Considerando que las $P = 10$ parejas (20 alumnos) capturen y carguen sus videos al concluir simultáneamente la serie de mecanización técnica, el tiempo global de respuesta del sistema distribuido se formula como:
+
+  $$T_{\text{sistema}} = \max_{i=1}^{P} \left( t_{\text{red\_subida}, i} + t_{\text{serverless}, i} + t_{\text{red\_bajada}, i} \right)$$
+
+  Bajo las condiciones operativas especificadas ($t_{\text{subida}} \approx 2.5\text{ s}$ para videos de hasta 5 MB en redes 4G/LTE, $t_{\text{serverless}} \leq 4.0\text{ s}$ en *FunctionGraph* y $t_{\text{bajada}} \approx 0.2\text{ s}$ para el fotograma anotado de $\sim 80\text{ KB}$), el tiempo total de procesamiento concurrente no supera los **$6.7\text{ segundos}$**. Al ejecutarse cada análisis en instancias elásticas desacopladas e independientes de *FunctionGraph*, las 10 parejas reciben su retroalimentación visual anotada en menos de $7\text{ segundos}$ de forma simultánea, transformando un proceso secuencial saturado de $30\text{ minutos}$ en una respuesta analítica casi instantánea, descongestionando efectivamente el tatami.
+
+El diagnóstico confirma que el docente presencial ha superado su límite cognitivo de supervisión itinerante. El asistente tecnológico no reemplaza la pedagogía del profesor, sino que amplifica su capacidad de auditoría mediante un canal visual asincrónico y objetivo.
 
 ---
 
@@ -372,7 +378,7 @@ El algoritmo **DTW** se erige como la solución idónea con una calificación de
 
 * **Naturaleza Adaptativa sin Re-entrenamiento:** Al sustentarse en la optimización matemática clásica (programación dinámica para localizar el camino de mínimo costo en una matriz de distancias acumuladas), DTW no demanda conjuntos de entrenamiento masivos. Si el instructor de Corpo & Mente decide incorporar una técnica novedosa o variante no contemplada previamente, el software la asimila de forma inmediata requiriendo únicamente el video patrón como nuevo molde cinemático.
 * **Normalización Antropomórfica:** El enfoque solventa las diferencias de complexión física entre practicantes (niños, mujeres y adultos). Antes del análisis matricial, el algoritmo ejecuta una normalización geométrica vectorial tomando como longitud unitaria de referencia la distancia interclavicular o la altura del tronco. De este modo, la comparación no se basa en coordenadas pixelares absolutas, sino en relaciones angulares y proporciones relativas. Una extensión del codo a 45° representa el mismo valor métrico en un infante de 25 kg que en un adulto de 95 kg.
-* **Optimización Mediante Ventana de Sakoe-Chiba:** Para neutralizar la complejidad temporal cuadrática nativa del algoritmo ($O(N^2)$)—la cual elevaría el consumo de CPU en la función *Serverless*—se implementa la restricción geométrica de la **Ventana de Sakoe-Chiba**. Esta técnica acota la exploración de la trayectoria óptima a una banda diagonal estrecha alrededor del eje principal de la matriz de costo. Al restringir el espacio de búsqueda, se transforma el orden de complejidad computacional a un régimen cuasi-lineal $O(N)$, asegurando tiempos de ejecución en *FunctionGraph* de pocos cientos de milisegundos.
+* **Optimización Mediante Ventana de Sakoe-Chiba:** Para neutralizar la complejidad temporal cuadrática nativa del algoritmo ($O(N^2)$)—la cual elevaría el consumo de CPU en la función *Serverless*—se implementa la restricción geométrica de la **Ventana de Sakoe-Chiba**. Esta técnica acota la exploración de la trayectoria óptima a una banda diagonal de ancho $w$ alrededor del eje principal de la matriz de costo. En el presente diseño se define un parámetro de restricción formal equivalente al **15% de la longitud temporal de la secuencia ($w = 0.15 \cdot N$)**. Para una grabación estándar de hasta 6 segundos a 30 cuadros por segundo ($N \approx 180$ fotogramas), este valor fija una ventana de tolerancia de $w \approx \pm 27$ cuadros ($\pm 0.9\text{ segundos}$). Esta holgura es biomecánicamente óptima: absorbe con holgura las variaciones de cadencia motriz entre el profesor y el alumno sin desalinear fases técnicas críticas, al tiempo que reduce el espacio matricial de búsqueda a un régimen estrictamente cuasi-lineal $O(N)$ con tiempos de cómputo algorítmico de apenas $80 \text{ a } 150\text{ ms}$ en *FunctionGraph*.
 
 ---
 
@@ -402,7 +408,7 @@ Se evalúa la estrategia de **Renderizado de Video Completo Editado** (mediante 
 La selección del **Fotograma Clave Anotado con OpenCV** alcanza una ponderación perfecta de **5.00 / 5.00**, maximizando la viabilidad operativa y económica del proyecto.
 
 * **Arquitectura de Cómputo Eficiente:** Renderizar un video completo anotado obligaría a invocar procesos de codificación H.264 pesados, consumiendo valiosos segundos de cómputo en la nube y generando archivos de más de 15 MB. Con OpenCV, la función *Serverless* aísla en memoria el fotograma correspondiente al pico de desviación angular, extrae la tupla de coordenadas espaciales $(X, Y)$ de la articulación deficiente (por ejemplo, la rodilla) e inyecta directamente sobre la matriz de píxeles un círculo marcador de color rojo junto con una etiqueta textual.
-* **Control Estricto de Costos de Salida de Datos:** Un archivo de imagen JPG procesado y comprimido con OpenCV promedia escasos **~80 KB**. La transmisión de 80 KB hacia el dispositivo móvil del estudiante elimina cualquier riesgo de sobrecosto por volumen de salida (*Data Egress*). Para una proyección de 2,700 consultas mensuales en la academia, el tráfico mensual demandado es inferior a 250 MB, implicando un gasto inferior a $0.02 USD al mes y blindando el límite presupuestario trimestral establecido.
+* **Control Estricto de Costos de Salida de Datos:** Un archivo de imagen JPG procesado y comprimido con OpenCV promedia escasos **~80 KB**. La transmisión de 80 KB hacia el dispositivo móvil del estudiante elimina cualquier riesgo de sobrecosto por volumen de salida (*Data Egress*). Para el volumen operacional de la academia (aproximadamente 200 a 350 consultas mensuales derivadas de sus practicantes activos, e incluso ante un escenario de estrés extremo de hasta 2,700 consultas mensuales), el tráfico mensual acumulado oscila entre escasos $25\text{ MB}$ y $250\text{ MB}$, implicando un gasto por transferencia inferior a $0.02 USD al mes y blindando con solvencia el límite presupuestario trimestral establecido ($< \$30\text{ USD}$).
 * **Valor Pedagógico sin Fricción:** En las artes marciales de agarre como el BJJ, las posiciones de dominio (guardias, montadas, controles laterales) son esencialmente estructuras biomecánicas estáticas de presión. Un video en movimiento oculta la fracción de segundo donde falló el ángulo. El fotograma estático opera como una auditoría visual quirúrgica: el practicante consulta su teléfono en el tatami y reconoce inmediatamente el círculo sobre el miembro mal posicionado, facilitando la asimilación e intervención motriz instantánea.
 
 ---
@@ -454,7 +460,7 @@ El sistema de evaluación y retroalimentación biomecánica para la academia Cor
 4. El procesamiento digital de imágenes (*OpenCV*) para inyectar marcadores de color sobre la coordenada del error biomecánico detectado.
 5. El despliegue visual inmediato del fotograma clave anotado e indicadores estadísticos a través de un cliente web liviano (*Streamlit*).
 
-**Exclusiones explícitas:** Se excluye el procesamiento local de video en los dispositivos de los usuarios, el análisis multi-persona en tiempo real durante combates libres (*rolling/spárring*) y cualquier dictamen de orden médico, traumatológico o fisioterapéutico.
+**Exclusiones explícitas:** Se excluye el acceso público abierto o anónimo (el sistema restringe el procesamiento exclusivamente a practicantes autorizados mediante un token de acceso para salvaguardar el presupuesto de cómputo en la nube), el procesamiento local de video en los dispositivos de los usuarios, el análisis multi-persona en tiempo real durante combates libres (*rolling/spárring*) y cualquier dictamen de orden médico, traumatológico o fisioterapéutico.
 
 ### 4.1.3 Definiciones, Acrónimos y Abreviaturas
 
@@ -477,7 +483,7 @@ La estructura de este capítulo sigue el estándar internacional de especificaci
 
 El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que convive de manera asincrónica con la actual infraestructura administrativa local de Corpo & Mente Bolivia (base de datos en *Microsoft Access* y torniquete biométrico). El aplicativo no interfiere con la recaudación ni control de acceso, operando de manera independiente como una plataforma pedagógica accesible desde los teléfonos inteligentes de los practicantes.
 
-El sistema web propuesto manejará un esquema de persistencia independiente en la nube para el registro de usuarios (Estudiantes) orientados al análisis biomecánico, requiriendo un pre-registro digital inicial por parte del alumno desde la interfaz web, operando de forma paralela y aislada al sistema administrativo local de *Microsoft Access* de la recepción. La eventual integración bidireccional entre ambos repositorios de datos queda contemplada como una evolución arquitectónica futura (Sección 4.2.6).
+El sistema web propuesto manejará un esquema de persistencia independiente en la nube para el registro de usuarios (Estudiantes) orientados al análisis biomecánico, requiriendo un pre-registro digital inicial por parte del alumno desde la interfaz web, operando de forma paralela y aislada al sistema administrativo local de *Microsoft Access* de la recepción. Para vincular operativamente ambos entornos y salvaguardar el crédito de cómputo en la nube, el sistema condicionará la habilitación del servicio a un token de membresía activa. La eventual integración bidireccional automatizada entre ambos repositorios de datos queda contemplada como una evolución arquitectónica futura (Sección 4.2.6).
 
 ### 4.2.2 Funciones del Producto
 
@@ -502,6 +508,7 @@ El sistema web propuesto manejará un esquema de persistencia independiente en l
 
 * Se asume que el alumno registrará sus movimientos bajo el protocolo establecido de "laboratorio técnico" (encuadre lateral despejado y sin oclusiones externas por terceros en la escena).
 * El funcionamiento del sistema depende de la disponibilidad del servicio *FunctionGraph* y de los contenedores Linux de Huawei Cloud para la ejecución de la biblioteca *MediaPipe Pose*.
+* **Control de Acceso y Salvaguarda de Costos Cloud (Regla de Negocio RN-01):** Para impedir que usuarios externos o estudiantes inactivos consuman saldo de cómputo en *Huawei Cloud*, el sistema web exige que el practicante ingrese un **Código de Activación Mensual (Token de Acceso)** para habilitar el formulario de carga de video. Este token es emitido periódicamente por el Head Coach (a través de la comunidad oficial de WhatsApp) o entregado impreso en la recepción junto con el ticket físico diario a los alumnos con membresía vigente. La interfaz web en *Streamlit* valida la vigencia del token antes de autorizar cualquier transferencia de archivos hacia *Huawei Cloud OBS*, bloqueando peticiones no autorizadas y blindando el presupuesto operativo de la nube.
 
 ### 4.2.6 Requisitos Futuros
 
@@ -530,11 +537,13 @@ El sistema web propuesto manejará un esquema de persistencia independiente en l
 | :---: | :--- | :--- |
 | **RF-01** | Registro de Técnica Maestra | El sistema deberá permitir al instructor registrar una técnica deportiva asignándole un identificador único y cargando un video patrón ejecutor en formato MP4 o MOV. |
 | **RF-02** | Normalización Antropomórfica | El sistema deberá calcular la distancia interclavicular de los sujetos en el video para normalizar escalarmente la matriz de coordenadas, permitiendo la comparación directa entre adultos, niños y diversas contexturas. |
-| **RF-03** | Sincronización Temporal Dinámica | El backend deberá aplicar el algoritmo DTW optimizado con una Ventana de Sakoe-Chiba para alinear de forma no lineal las secuencias temporales del video del alumno con las del video maestro. |
+| **RF-03** | Sincronización Temporal Dinámica | El backend deberá aplicar el algoritmo DTW optimizado con una Ventana de Sakoe-Chiba ($w = 0.15 \cdot N$) para alinear de forma no lineal las secuencias temporales del video del alumno con las del video maestro. |
 | **RF-04** | Extracción de Fotograma Clave | El sistema deberá aislar el fotograma específico donde la distancia euclidiana o la diferencia angular de las articulaciones alcance el pico máximo de desviación respecto al umbral maestro. |
 | **RF-05** | Inyección Gráfica de Anotación (OpenCV) | El sistema deberá dibujar automáticamente un círculo de color rojo (radio de 15 píxeles) centrado en la coordenada espacial exacta $(X, Y)$ del nodo articular donde se validó el fallo técnico. |
 | **RF-06** | Despliegue de Diagnóstico Estático | La interfaz web en Streamlit deberá renderizar la imagen JPG procesada (cuyo peso máximo no superará los 80 KB) de manera inmediata tras la finalización del cómputo serverless. |
-| **RF-07** | Restricción de Ingestión en el Cliente | La interfaz web en Streamlit implementará un módulo de validación en el lado del cliente que restringirá la carga de archivos a una duración máxima de 10 segundos y aplicará un filtro de advertencia si el archivo supera los 5 MB, optimizando el canal de subida ante redes móviles locales. |
+| **RF-07** | Restricción de Ingestión en el Cliente | La interfaz web en Streamlit implementará un módulo de validación en el lado del cliente que restringirá la carga de archivos a una duración máxima de **6 segundos** y aplicará un filtro bloqueante si el archivo supera los **5 MB**, optimizando el canal de subida ante redes móviles locales. |
+| **RF-08** | Compensación Cinemática por Oclusión | El backend en FunctionGraph deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada sea $C < 0.5$, interpolando la trayectoria a partir de los cuadros adyacentes para garantizar la continuidad métrica previa al DTW. |
+| **RF-09** | Validación de Token de Membresía | La interfaz web deberá validar la vigencia del Código de Activación Mensual (Token de Acceso) del estudiante antes de autorizar la transferencia del archivo de video hacia el almacenamiento en la nube (Huawei Cloud OBS), impidiendo el consumo no autorizado de recursos serverless. |
 
 ---
 
@@ -542,7 +551,7 @@ El sistema web propuesto manejará un esquema de persistencia independiente en l
 
 | Código | Requisito de Rendimiento | Métrica y Criterio de Aceptación |
 | :---: | :--- | :--- |
-| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con MediaPipe, sincronización DTW y anotación con OpenCV) para una secuencia estándar de 10 segundos de video no deberá exceder de **4.0 segundos** en *FunctionGraph*. |
+| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con MediaPipe, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*, contemplando un margen seguro ante arranques en frío (*cold starts*) de la plataforma. |
 | **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta emitido desde la nube hacia el teléfono del practicante no deberá superar los **100 KB** por consulta, garantizando una carga rápida bajo enlaces móviles de baja velocidad. |
 
 ---
@@ -597,11 +606,11 @@ A continuación, se presenta la trazabilidad entre las historias de usuario, los
 | Nro | Historia de Usuario | Req | CU | Descripción Caso de Uso |
 | :---: | :--- | :---: | :---: | :--- |
 | 1 | Como instructor, quiero registrar una técnica maestra subiendo un video de referencia para que el sistema extraiga el esqueleto biomecánico patrón. | RF-01 | CU-01 | Registrar Técnica Maestra |
-| 2 | Como estudiante, quiero subir un video de mi ejecución desde mi celular para que el sistema analice mis errores técnicos y me devuelva un diagnóstico visual. | RF-02, RF-03, RF-04, RF-05, RF-07 | CU-02 | Cargar Video de Ejecución |
+| 2 | Como estudiante, quiero subir un video de mi ejecución desde mi celular para que el sistema analice mis errores técnicos y me devuelva un diagnóstico visual. | RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-09 | CU-02 | Cargar Video de Ejecución |
 | 3 | Como estudiante, quiero ver inmediatamente el fotograma anotado con mi error técnico después de que el sistema procese mi video. | RF-06 | CU-03 | Consultar Diagnóstico Visual |
 | 4 | Como estudiante, quiero consultar mi historial de análisis para visualizar cómo evoluciona mi técnica a lo largo del tiempo. | — | CU-04 | Consultar Historial de Progresión |
 
-*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: normalización antropomórfica del esqueleto (RF-02), sincronización temporal mediante DTW (RF-03), detección del fotograma de error máximo (RF-04) y generación de la anotación gráfica de fallo (RF-05). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 se deriva de la funcionalidad de historial descrita en la Sección 4.2.2.
+*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: validación del token de membresía en el cliente (RF-09), restricción de formato y duración de hasta 6 segundos (RF-07), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman (RF-08), sincronización temporal mediante DTW con ventana Sakoe-Chiba (RF-03), detección del fotograma de error máximo (RF-04) y generación de la anotación gráfica de fallo con OpenCV (RF-05). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 se deriva de la funcionalidad de historial descrita en la Sección 4.2.2.
 
 ---
 
@@ -675,7 +684,8 @@ classDiagram
     TecnicaMaestra "1" -- "0..*" VideoEjecucion : referencia
     VideoEjecucion "1" -- "1" AnalisisBiomecanico : genera
     AnalisisBiomecanico "1" -- "1" FotogramaAnotado : produce
-    Estudiante "1" -- "0..*" HistorialProgresion : acumula
+    AnalisisBiomecanico "0..*" -- "1" HistorialProgresion : alimenta
+    Estudiante "1" -- "1" HistorialProgresion : posee
 ```
 
 **Figura 4.2**
@@ -690,7 +700,7 @@ classDiagram
 * **VideoEjecucion:** Grabación capturada por el estudiante desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
 * **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
 * **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico.
-* **HistorialProgresion:** Registro acumulativo que permite al estudiante visualizar la evolución de su desempeño técnico a lo largo del tiempo.
+* **HistorialProgresion:** Registro acumulativo que consolida los sucesivos análisis biomecánicos de un estudiante, permitiendo visualizar la evolución de su desempeño técnico y la reducción de fallos a lo largo del tiempo.
 
 **Relaciones y Cardinalidad:**
 
@@ -703,4 +713,5 @@ classDiagram
 | TecnicaMaestra → VideoEjecucion | 1 : 0..* | Una técnica maestra sirve de referencia para cero o más videos de ejecución. |
 | VideoEjecucion → AnalisisBiomecanico | 1 : 1 | Cada video de ejecución genera exactamente un análisis biomecánico. |
 | AnalisisBiomecanico → FotogramaAnotado | 1 : 1 | Cada análisis produce exactamente un fotograma anotado con el error. |
-| Estudiante → HistorialProgresion | 1 : 0..* | Un estudiante acumula cero o más registros de progresión técnica. |
+| AnalisisBiomecanico → HistorialProgresion | 0..* : 1 | Cero o más análisis biomecánicos alimentan y consolidan el historial de progresión del atleta. |
+| Estudiante → HistorialProgresion | 1 : 1 | Cada estudiante posee exactamente un registro histórico acumulativo de progresión técnica. |

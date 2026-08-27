@@ -560,7 +560,34 @@ El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que 
 
 ## 4.4 Identificación de los Casos de Uso
 
-A partir de los requisitos funcionales especificados en la sección 4.3.2, se derivan las siguientes historias de usuario y sus correspondientes casos de uso, los cuales definen las interacciones concretas entre los actores (Instructor y Estudiante) y el sistema.
+Siguiendo los lineamientos del Proceso Unificado (Larman, 2004), los casos de uso se delimitan exclusivamente a las interacciones entre actores humanos y el sistema. Los procesos internos automatizados del backend (normalización, alineación temporal, detección de error y anotación gráfica) se documentan como parte del flujo de eventos interno del caso de uso que los desencadena (CU-02), y no como casos de uso independientes.
+
+El siguiente diagrama presenta la vista arquitectónica de los casos de uso identificados:
+
+```mermaid
+graph LR
+    subgraph Actores
+        I(("Instructor"))
+        E(("Estudiante"))
+    end
+
+    subgraph Sistema["Ecosistema de Auditoría Biomecánica"]
+        CU01["CU-01: Registrar Técnica Maestra"]
+        CU02["CU-02: Cargar Video de Ejecución"]
+        CU03["CU-03: Consultar Diagnóstico Visual"]
+        CU04["CU-04: Consultar Historial de Progresión"]
+    end
+
+    I --> CU01
+    E --> CU02
+    E --> CU03
+    E --> CU04
+```
+
+**Figura 4.1**
+*Diagrama de Casos de Uso del Ecosistema de Auditoría Biomecánica Asincrónica.*
+
+A continuación, se presenta la trazabilidad entre las historias de usuario, los requisitos funcionales y los casos de uso derivados:
 
 **Tabla 4.1**
 *Matriz de Identificación de Historias de Usuario y Casos de Uso*
@@ -568,24 +595,27 @@ A partir de los requisitos funcionales especificados en la sección 4.3.2, se de
 | Nro | Historia de Usuario | Req | CU | Descripción Caso de Uso |
 | :---: | :--- | :---: | :---: | :--- |
 | 1 | Como instructor, quiero registrar una técnica maestra subiendo un video de referencia para que el sistema extraiga el esqueleto biomecánico patrón. | RF-01 | CU-01 | Registrar Técnica Maestra |
-| 2 | Como estudiante, quiero subir un video de mi ejecución desde mi celular para que el sistema analice mis errores técnicos. | RF-07 | CU-02 | Cargar Video de Ejecución |
-| 3 | Como sistema, debo normalizar los esqueletos corporales extraídos para poder comparar practicantes de diferentes contexturas físicas y edades. | RF-02 | CU-03 | Normalizar Esqueleto Corporal |
-| 4 | Como sistema, debo alinear temporalmente las secuencias del alumno y del maestro para lograr una comparación precisa frame a frame. | RF-03 | CU-04 | Sincronizar Series Temporales (DTW) |
-| 5 | Como sistema, debo identificar el fotograma exacto con la mayor desviación angular respecto al patrón del maestro. | RF-04 | CU-05 | Detectar Fotograma de Error Máximo |
-| 6 | Como sistema, debo anotar gráficamente la articulación defectuosa con un círculo rojo sobre la imagen extraída del video. | RF-05 | CU-06 | Generar Anotación Gráfica de Fallo |
-| 7 | Como estudiante, quiero ver inmediatamente el fotograma anotado con mi error técnico después de que el sistema procese mi video. | RF-06 | CU-07 | Consultar Diagnóstico Visual |
-| 8 | Como estudiante, quiero consultar mi historial de análisis para visualizar cómo evoluciona mi técnica a lo largo del tiempo. | — | CU-08 | Consultar Historial de Progresión |
+| 2 | Como estudiante, quiero subir un video de mi ejecución desde mi celular para que el sistema analice mis errores técnicos y me devuelva un diagnóstico visual. | RF-02, RF-03, RF-04, RF-05, RF-07 | CU-02 | Cargar Video de Ejecución |
+| 3 | Como estudiante, quiero ver inmediatamente el fotograma anotado con mi error técnico después de que el sistema procese mi video. | RF-06 | CU-03 | Consultar Diagnóstico Visual |
+| 4 | Como estudiante, quiero consultar mi historial de análisis para visualizar cómo evoluciona mi técnica a lo largo del tiempo. | — | CU-04 | Consultar Historial de Progresión |
 
-*Nota*. Los casos de uso CU-03 a CU-06 corresponden a procesos internos del sistema (actores secundarios automatizados). El CU-08 se deriva de la funcionalidad de historial descrita en la Sección 4.2.2 y no posee un requisito funcional formal asignado en la iteración actual.
+*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: normalización antropomórfica del esqueleto (RF-02), sincronización temporal mediante DTW (RF-03), detección del fotograma de error máximo (RF-04) y generación de la anotación gráfica de fallo (RF-05). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 se deriva de la funcionalidad de historial descrita en la Sección 4.2.2.
 
 ---
 
 ## 4.5 Diagrama de Dominio
 
-El Modelo de Dominio conceptual identifica las entidades principales del ecosistema, sus atributos descriptivos y las relaciones estructurales con su cardinalidad correspondiente.
+El Modelo de Dominio conceptual identifica las entidades principales del ecosistema, sus atributos descriptivos y las relaciones estructurales con su cardinalidad correspondiente. Conforme al análisis organizacional presentado en el Capítulo II, la entidad raíz del modelo corresponde a la academia (EscuelaBJJ), la cual contextualiza la totalidad de los actores y recursos del sistema.
 
 ```mermaid
 classDiagram
+    class EscuelaBJJ {
+        id
+        nombre
+        sede
+        ciudad
+        comunidadWhatsApp
+    }
     class Instructor {
         id
         nombre
@@ -636,6 +666,8 @@ classDiagram
         cantidadErrores
     }
 
+    EscuelaBJJ "1" -- "1..*" Instructor : emplea
+    EscuelaBJJ "1" -- "0..*" Estudiante : inscribe
     Instructor "1" -- "0..*" TecnicaMaestra : registra
     Estudiante "1" -- "0..*" VideoEjecucion : carga
     TecnicaMaestra "1" -- "0..*" VideoEjecucion : referencia
@@ -644,13 +676,14 @@ classDiagram
     Estudiante "1" -- "0..*" HistorialProgresion : acumula
 ```
 
-**Figura 4.1**
+**Figura 4.2**
 *Modelo de Dominio Conceptual del Ecosistema de Auditoría Biomecánica Asincrónica.*
 
 **Descripción de las Entidades:**
 
-* **Instructor:** Representa al Head Coach o profesional encargado de registrar las técnicas de referencia en el sistema.
-* **Estudiante:** Practicante de BJJ que carga videos de sus ejecuciones y consulta los diagnósticos visuales generados.
+* **EscuelaBJJ:** Entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema.
+* **Instructor:** Representa al Head Coach o profesional encargado de registrar las técnicas de referencia en el sistema. Pertenece a una escuela.
+* **Estudiante:** Practicante de BJJ inscrito en la academia que carga videos de sus ejecuciones y consulta los diagnósticos visuales generados.
 * **TecnicaMaestra:** Video patrón cargado por el instructor con la ejecución canónica de una técnica específica del plan de estudios.
 * **VideoEjecucion:** Grabación capturada por el estudiante desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
 * **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
@@ -661,6 +694,8 @@ classDiagram
 
 | Relación | Cardinalidad | Interpretación |
 | :--- | :---: | :--- |
+| EscuelaBJJ → Instructor | 1 : 1..* | Una escuela emplea al menos un instructor (Head Coach). |
+| EscuelaBJJ → Estudiante | 1 : 0..* | Una escuela inscribe cero o más estudiantes. |
 | Instructor → TecnicaMaestra | 1 : 0..* | Un instructor registra cero o más técnicas maestras. |
 | Estudiante → VideoEjecucion | 1 : 0..* | Un estudiante carga cero o más videos de ejecución. |
 | TecnicaMaestra → VideoEjecucion | 1 : 0..* | Una técnica maestra sirve de referencia para cero o más videos de ejecución. |

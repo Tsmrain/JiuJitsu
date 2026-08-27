@@ -1,11 +1,3 @@
-# Ecosistema de Software Adaptativo en la Nube para la Evaluación Biomecánica y Análisis de Errores en Jiu-Jitsu Brasileño
-
-> **Proyecto de Investigación y Desarrollo Tecnológico**  
-> **Entidad de Aplicación:** Academia de Artes Marciales *Corpo & Mente Bolivia* (Santa Cruz de la Sierra, Bolivia)  
-> **Norma de Estilo:** Adaptación a Normas APA (7.ª edición) para documentación técnica y científica en Markdown  
-
----
-
 ## Tabla de Contenido
 
 - [Capítulo I: Definición del Proyecto de Investigación](#capítulo-i-definición-del-proyecto-de-investigación)

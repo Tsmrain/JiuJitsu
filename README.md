@@ -18,7 +18,7 @@
 
 <br>
 
-## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRINCIPIANTES DE CINTURÓN BLANCO
+## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRACTICANTES DE LA ACADEMIA CORPO & MENTE BOLIVIA
 
 <br><br>
 
@@ -57,7 +57,7 @@
 
 <br>
 
-## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRINCIPIANTES DE CINTURÓN BLANCO
+## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRACTICANTES DE LA ACADEMIA CORPO & MENTE BOLIVIA
 
 <br>
 
@@ -477,6 +477,8 @@ La estructura de este capítulo sigue el estándar internacional de especificaci
 
 El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que convive de manera asincrónica con la actual infraestructura administrativa local de Corpo & Mente Bolivia (base de datos en *Microsoft Access* y torniquete biométrico). El aplicativo no interfiere con la recaudación ni control de acceso, operando de manera independiente como una plataforma pedagógica accesible desde los teléfonos inteligentes de los practicantes.
 
+El sistema web propuesto manejará un esquema de persistencia independiente en la nube para el registro de usuarios (Estudiantes) orientados al análisis biomecánico, requiriendo un pre-registro digital inicial por parte del alumno desde la interfaz web, operando de forma paralela y aislada al sistema administrativo local de *Microsoft Access* de la recepción. La eventual integración bidireccional entre ambos repositorios de datos queda contemplada como una evolución arquitectónica futura (Sección 4.2.6).
+
 ### 4.2.2 Funciones del Producto
 
 * **Gestión de Técnicas Maestras:** Permite a la Dirección Técnica subir los videos patrón que conforman el currículo oficial y derivar sus moldes biomecánicos.
@@ -683,7 +685,7 @@ classDiagram
 
 * **EscuelaBJJ:** Entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema.
 * **Instructor:** Representa al Head Coach o profesional encargado de registrar las técnicas de referencia en el sistema. Pertenece a una escuela.
-* **Estudiante:** Practicante de BJJ inscrito en la academia que carga videos de sus ejecuciones y consulta los diagnósticos visuales generados.
+* **Estudiante:** Practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en la nube) que carga videos de sus ejecuciones y consulta los diagnósticos visuales generados.
 * **TecnicaMaestra:** Video patrón cargado por el instructor con la ejecución canónica de una técnica específica del plan de estudios.
 * **VideoEjecucion:** Grabación capturada por el estudiante desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
 * **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.

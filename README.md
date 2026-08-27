@@ -100,7 +100,7 @@
   - [2.3 Mapeo de la Infraestructura Tecnológica Actual](#23-mapeo-de-la-infraestructura-tecnológica-actual)
   - [2.4 Flujo del Proceso de Enseñanza (El Core del Negocio)](#24-flujo-del-proceso-de-enseñanza-el-core-del-negocio)
     - [2.4.1 Identificación y Justificación Matemática del Cuello de Botella](#241-identificación-y-justificación-matemática-del-cuello-de-botella)
-- [Capítulo III: Marco Tecnológico y Selección de Componentes](#capítulo-iii-marco-tecnológico-y-selección-de-componentes)
+- [Capítulo III: Marco Teórico y Selección de Componentes Tecnológicos](#capítulo-iii-marco-teórico-y-selección-de-componentes-tecnológicos)
   - [3.1 Estimación de Poses Corporales (Pose Estimation)](#31-estimación-de-poses-corporales-pose-estimation)
     - [3.1.1 Análisis Comparativo de Extractores de Poses](#311-análisis-comparativo-de-extractores-de-poses)
     - [3.1.2 Justificación Técnica de la Elección: MediaPipe Pose](#312-justificación-técnica-de-la-elección-mediapipe-pose)
@@ -135,6 +135,8 @@
     - [4.3.3 Requisitos de Rendimiento](#433-requisitos-de-rendimiento)
     - [4.3.4 Restricciones de Diseño](#434-restricciones-de-diseño)
     - [4.3.5 Atributos del Sistema](#435-atributos-del-sistema)
+  - [4.4 Identificación de los Casos de Uso](#44-identificación-de-los-casos-de-uso)
+  - [4.5 Diagrama de Dominio](#45-diagrama-de-dominio)
 
 ---
 
@@ -210,9 +212,11 @@ Con base en las directrices metodológicas de Craig Larman (2004), la investigac
 
 ## 2.1 Descripción de la Organización
 
-**Corpo & Mente Bolivia** es un centro de entrenamiento especializado en la instrucción de artes marciales y acondicionamiento físico, situado en la ciudad de Santa Cruz de la Sierra, Bolivia. Creado con el propósito de fomentar el desarrollo biopsicosocial y atlético de sus miembros, se ha posicionado como una institución referente en la enseñanza del Jiu-Jitsu Brasileño (BJJ) a nivel regional. 
+**Corpo & Mente Bolivia** es una escuela independiente de Jiu-Jitsu Brasileño (BJJ), fundada y dirigida por su Head Coach en la ciudad de Santa Cruz de la Sierra, Bolivia. Si bien su sede principal opera dentro de las instalaciones de la academia de artes marciales **Knock Out**, Corpo & Mente constituye una entidad jurídica y operativamente autónoma que mantiene sucursales activas en diversos centros deportivos de la ciudad, tales como el gimnasio **UFC**, la academia **3 Pasos al Frente** y otros establecimientos asociados.
 
-La entidad sustenta su propuesta de valor sobre dos pilares complementarios: la excelencia en la técnica deportiva y la preservación de la salud del practicante. El centro alberga una población heterogénea de usuarios que comprende divisiones infantiles, practicantes adultos recreativos y atletas de alto rendimiento con participación en certámenes competitivos departamentales, nacionales e internacionales.
+La organización cuenta con un padrón histórico acumulado de **72 miembros inscritos** a lo largo de su trayectoria. No obstante, la asistencia efectiva presenta una naturaleza irregular y fluctuante, propia de las dinámicas de las academias de artes marciales: un núcleo de alumnos entrena de forma constante, mientras que otros asisten de manera intermitente o retoman las clases tras periodos de inactividad prolongados que pueden extenderse hasta tres meses. La comunicación institucional entre el Head Coach y los practicantes se canaliza principalmente a través de una **comunidad oficial de WhatsApp**, la cual funciona como medio primario de coordinación de horarios, avisos operativos y convocatorias.
+
+La entidad sustenta su propuesta de valor sobre dos pilares complementarios: la excelencia en la técnica deportiva y la preservación de la salud integral del practicante. Su población activa comprende divisiones infantiles, practicantes adultos recreativos y atletas de alto rendimiento con participación en certámenes competitivos departamentales, nacionales e internacionales.
 
 ## 2.2 Estructura Organizacional
 
@@ -232,7 +236,8 @@ El análisis de viabilidad técnica requiere examinar el estado de madurez de lo
 * **Gestión de Datos y Membresías (Backend Local):** El control administrativo de legajos de estudiantes, datos de contacto, planes suscritos y cobranzas se gestiona de manera aislada mediante una base de datos relacional de escritorio implementada en *Microsoft Access*. La herramienta carece de mecanismos de sincronización en la nube, respaldo automatizado o interfaces de consulta remota para el cuerpo de instructores.
 * **Control de Acceso Biométrico (Hardware de Entrada):** En el punto de transición hacia el área de entrenamiento (tatami), la academia cuenta con un sensor periférico de lectura de huellas dactilares. El dispositivo valida el estado administrativo del usuario consultando la base de datos local de recepción.
 * **Mecanismo de Validación Física (Sistema de Tickets):** Al validarse la identidad biométrica y confirmarse la vigencia de la cuota, el terminal emite un ticket físico impreso en papel térmico. Este comprobante opera como credencial física de acceso diario; el alumno debe portarlo al tatami y entregarlo personalmente al instructor a cargo como evidencia de habilitación formal y mecanismo de control de aforo antes del inicio de la sesión.
-* **Diagnóstico de Madurez Tecnológica:** Si bien la gestión de procesos es eminentemente local y analógica, la presencia de un circuito que combina software (*Microsoft Access*) con hardware periférico (*sensores biométricos* e impresoras térmicas) constata que tanto el personal como los usuarios poseen familiaridad con flujos asistidos por computadora. Esta circunstancia mitiga sustancialmente la resistencia al cambio y confirma la factibilidad de incorporar una interfaz web para la recepción de diagnósticos biomecánicos.
+* **Canal de Comunicación Digital (WhatsApp):** El Head Coach administra una comunidad oficial de WhatsApp que agrupa a los 72 miembros registrados de la academia. Este canal digital funciona como el medio primario de coordinación de horarios, avisos operativos, difusión de contenido técnico complementario y convocatorias a entrenamientos o competiciones. La existencia de este canal confirma que la totalidad de la base de usuarios dispone de dispositivos inteligentes con conectividad a internet.
+* **Diagnóstico de Madurez Tecnológica:** Si bien la gestión administrativa es eminentemente local y analógica, la presencia de un circuito que combina software (*Microsoft Access*) con hardware periférico (*sensores biométricos* e impresoras térmicas), complementado por el uso cotidiano de una comunidad de WhatsApp como canal institucional, constata que tanto el personal como los usuarios poseen familiaridad con flujos asistidos por computadora y se encuentran habituados a la interacción digital desde dispositivos móviles. Estas circunstancias mitigan sustancialmente la resistencia al cambio y validan la factibilidad de introducir una interfaz web para la recepción de diagnósticos biomecánicos.
 
 ---
 
@@ -275,7 +280,7 @@ El diagnóstico evidencia que el instructor presencial ha superado su límite fi
 
 ---
 
-# Capítulo III: Marco Tecnológico y Selección de Componentes
+# Capítulo III: Marco Teórico y Selección de Componentes Tecnológicos
 
 Este capítulo establece los fundamentos tecnológicos y algoritmos base que sustentan el ecosistema de software propuesto. Se aplica un enfoque analítico comparativo mediante matrices de decisión ponderadas para justificar formalmente la selección de cada componente tecnológico frente a las alternativas disponibles en el mercado científico y comercial.
 
@@ -507,11 +512,11 @@ El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que 
 
 ### 4.3.1 Interfaces Externas
 
-#### 4.3.1.1 Interfaces de Software
+#### 4.3.1.1 Software
 * **Capa de Presentación Web:** Interfaz gráfica desarrollada en *Streamlit*, alojada elásticamente en la nube. Esta interfaz actúa como un cliente liviano desacoplado que consume, mediante peticiones HTTP asincrónicas, los microservicios lógicos de visión por computadora alojados de forma nativa en el entorno de ejecución (*Runtime Python 3.9+*) de Huawei Cloud *FunctionGraph*.
 * **Motor Serverless:** Huawei Cloud *FunctionGraph*, responsable de procesar la lógica matemática cinemática y la inyección gráfica sobre las imágenes.
 
-#### 4.3.1.2 Interfaces de Hardware
+#### 4.3.1.2 Hardware
 * **Dispositivo de Captura:** Sensor óptico integrado en teléfonos inteligentes comerciales (resolución mínima recomendada: 720p a 30 cuadros por segundo).
 * **Terminal de Consulta:** Teléfonos celulares inteligentes de gama de entrada o computadoras portátiles de la academia sin tarjetas gráficas dedicadas.
 
@@ -550,3 +555,115 @@ El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que 
 
 * **Disponibilidad:** La arquitectura *Serverless* garantizará una disponibilidad del servicio del **99.9%**, aprovechando la infraestructura elástica y redundante provista por la plataforma Huawei Cloud.
 * **Usabilidad y Ergonomía Térmica:** La interfaz web de consulta operará de manera pasiva mediante el despliegue de hipertexto e imágenes estáticas pre-procesadas. Queda prohibida la ejecución de hilos de cómputo en segundo plano (*Web Workers / Background JavaScript*) en el terminal del usuario, minimizando la demanda sobre la batería y previniendo el estrés térmico en teléfonos inteligentes de gama baja durante los entrenamientos en el tatami.
+
+---
+
+## 4.4 Identificación de los Casos de Uso
+
+A partir de los requisitos funcionales especificados en la sección 4.3.2, se derivan las siguientes historias de usuario y sus correspondientes casos de uso, los cuales definen las interacciones concretas entre los actores (Instructor y Estudiante) y el sistema.
+
+**Tabla 4.1**
+*Matriz de Identificación de Historias de Usuario y Casos de Uso*
+
+| Nro | Historia de Usuario | Req | CU | Descripción Caso de Uso |
+| :---: | :--- | :---: | :---: | :--- |
+| 1 | Como instructor, quiero registrar una técnica maestra subiendo un video de referencia para que el sistema extraiga el esqueleto biomecánico patrón. | RF-01 | CU-01 | Registrar Técnica Maestra |
+| 2 | Como estudiante, quiero subir un video de mi ejecución desde mi celular para que el sistema analice mis errores técnicos. | RF-07 | CU-02 | Cargar Video de Ejecución |
+| 3 | Como sistema, debo normalizar los esqueletos corporales extraídos para poder comparar practicantes de diferentes contexturas físicas y edades. | RF-02 | CU-03 | Normalizar Esqueleto Corporal |
+| 4 | Como sistema, debo alinear temporalmente las secuencias del alumno y del maestro para lograr una comparación precisa frame a frame. | RF-03 | CU-04 | Sincronizar Series Temporales (DTW) |
+| 5 | Como sistema, debo identificar el fotograma exacto con la mayor desviación angular respecto al patrón del maestro. | RF-04 | CU-05 | Detectar Fotograma de Error Máximo |
+| 6 | Como sistema, debo anotar gráficamente la articulación defectuosa con un círculo rojo sobre la imagen extraída del video. | RF-05 | CU-06 | Generar Anotación Gráfica de Fallo |
+| 7 | Como estudiante, quiero ver inmediatamente el fotograma anotado con mi error técnico después de que el sistema procese mi video. | RF-06 | CU-07 | Consultar Diagnóstico Visual |
+| 8 | Como estudiante, quiero consultar mi historial de análisis para visualizar cómo evoluciona mi técnica a lo largo del tiempo. | — | CU-08 | Consultar Historial de Progresión |
+
+*Nota*. Los casos de uso CU-03 a CU-06 corresponden a procesos internos del sistema (actores secundarios automatizados). El CU-08 se deriva de la funcionalidad de historial descrita en la Sección 4.2.2 y no posee un requisito funcional formal asignado en la iteración actual.
+
+---
+
+## 4.5 Diagrama de Dominio
+
+El Modelo de Dominio conceptual identifica las entidades principales del ecosistema, sus atributos descriptivos y las relaciones estructurales con su cardinalidad correspondiente.
+
+```mermaid
+classDiagram
+    class Instructor {
+        id
+        nombre
+        cinturon
+        email
+    }
+    class Estudiante {
+        id
+        nombre
+        cinturon
+        fechaRegistro
+        email
+    }
+    class TecnicaMaestra {
+        id
+        nombre
+        descripcion
+        videoURL
+        fechaCarga
+    }
+    class VideoEjecucion {
+        id
+        fechaCaptura
+        duracion
+        formato
+        tamano
+        videoURL
+    }
+    class AnalisisBiomecanico {
+        id
+        fechaProcesamiento
+        desviacionMaxima
+        articulacionFallo
+        estado
+    }
+    class FotogramaAnotado {
+        id
+        imagenURL
+        coordenadaX
+        coordenadaY
+        anguloDesviacion
+        descripcionError
+    }
+    class HistorialProgresion {
+        id
+        fecha
+        puntuacionGlobal
+        cantidadErrores
+    }
+
+    Instructor "1" -- "0..*" TecnicaMaestra : registra
+    Estudiante "1" -- "0..*" VideoEjecucion : carga
+    TecnicaMaestra "1" -- "0..*" VideoEjecucion : referencia
+    VideoEjecucion "1" -- "1" AnalisisBiomecanico : genera
+    AnalisisBiomecanico "1" -- "1" FotogramaAnotado : produce
+    Estudiante "1" -- "0..*" HistorialProgresion : acumula
+```
+
+**Figura 4.1**
+*Modelo de Dominio Conceptual del Ecosistema de Auditoría Biomecánica Asincrónica.*
+
+**Descripción de las Entidades:**
+
+* **Instructor:** Representa al Head Coach o profesional encargado de registrar las técnicas de referencia en el sistema.
+* **Estudiante:** Practicante de BJJ que carga videos de sus ejecuciones y consulta los diagnósticos visuales generados.
+* **TecnicaMaestra:** Video patrón cargado por el instructor con la ejecución canónica de una técnica específica del plan de estudios.
+* **VideoEjecucion:** Grabación capturada por el estudiante desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
+* **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
+* **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico.
+* **HistorialProgresion:** Registro acumulativo que permite al estudiante visualizar la evolución de su desempeño técnico a lo largo del tiempo.
+
+**Relaciones y Cardinalidad:**
+
+| Relación | Cardinalidad | Interpretación |
+| :--- | :---: | :--- |
+| Instructor → TecnicaMaestra | 1 : 0..* | Un instructor registra cero o más técnicas maestras. |
+| Estudiante → VideoEjecucion | 1 : 0..* | Un estudiante carga cero o más videos de ejecución. |
+| TecnicaMaestra → VideoEjecucion | 1 : 0..* | Una técnica maestra sirve de referencia para cero o más videos de ejecución. |
+| VideoEjecucion → AnalisisBiomecanico | 1 : 1 | Cada video de ejecución genera exactamente un análisis biomecánico. |
+| AnalisisBiomecanico → FotogramaAnotado | 1 : 1 | Cada análisis produce exactamente un fotograma anotado con el error. |
+| Estudiante → HistorialProgresion | 1 : 0..* | Un estudiante acumula cero o más registros de progresión técnica. |

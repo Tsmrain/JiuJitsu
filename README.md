@@ -483,7 +483,7 @@ La estructura de este capítulo sigue el estándar internacional de especificaci
 
 El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que convive de manera asincrónica con la actual infraestructura administrativa local de Corpo & Mente Bolivia (base de datos en *Microsoft Access* y torniquete biométrico). El aplicativo no interfiere con la recaudación ni control de acceso, operando de manera independiente como una plataforma pedagógica accesible desde los teléfonos inteligentes de los practicantes.
 
-El sistema web propuesto manejará un esquema de persistencia independiente en la nube para el registro de usuarios (Estudiantes) orientados al análisis biomecánico, requiriendo un pre-registro digital inicial por parte del alumno desde la interfaz web, operando de forma paralela y aislada al sistema administrativo local de *Microsoft Access* de la recepción. Para vincular operativamente ambos entornos y salvaguardar el crédito de cómputo en la nube, el sistema condicionará la habilitación del servicio a un token de membresía activa. La eventual integración bidireccional automatizada entre ambos repositorios de datos queda contemplada como una evolución arquitectónica futura (Sección 4.2.6).
+El sistema web propuesto implementa su propia **base de datos relacional en la nube (PostgreSQL gestionado en Cloud)** para la persistencia independiente de perfiles de usuario (Estudiantes), credenciales de autenticación y el historial de progresión técnica. Los practicantes crean una cuenta web dedicada para la plataforma pedagógica de forma 100% aislada al sistema administrativo local de *Microsoft Access* de la recepción. Para vincular operativamente ambos entornos y salvaguardar el crédito de cómputo en la nube, el sistema condiciona la habilitación de las cargas a un token de membresía activa (Regla de Negocio RN-01 / RF-09). La eventual integración bidireccional automatizada mediante API REST entre ambos repositorios de datos queda contemplada como una evolución arquitectónica futura (Sección 4.2.6).
 
 ### 4.2.2 Funciones del Producto
 
@@ -571,7 +571,7 @@ El sistema web propuesto manejará un esquema de persistencia independiente en l
 
 ## 4.4 Identificación de los Casos de Uso
 
-Siguiendo los lineamientos del Proceso Unificado (Larman, 2004), los casos de uso se delimitan exclusivamente a las interacciones entre actores humanos y el sistema. Los procesos internos automatizados del backend (normalización, alineación temporal, detección de error y anotación gráfica) se documentan como parte del flujo de eventos interno del caso de uso que los desencadena (CU-02), y no como casos de uso independientes.
+De acuerdo con las directrices metodológicas del Proceso Unificado (Craig Larman, 2004), los casos de uso representan exclusivamente interacciones directas entre los actores humanos y el sistema. En este sentido, los procesos puramente algorítmicos e inferencias ejecutadas en el backend (normalización de escala, compensación cinemática de oclusiones mediante Filtro de Kalman, alineación no lineal mediante DTW e inyección gráfica de anotaciones con OpenCV) no constituyen casos de uso aislados, sino que son subtareas y flujos de eventos internos gatillados por el **CU-02: Cargar Video de Ejecución**.
 
 El siguiente diagrama presenta la vista arquitectónica de los casos de uso identificados:
 

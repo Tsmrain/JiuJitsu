@@ -138,6 +138,23 @@
     - [4.3.5 Atributos del Sistema](#435-atributos-del-sistema)
   - [4.4 Identificación de los Casos de Uso](#44-identificación-de-los-casos-de-uso)
   - [4.5 Diagrama de Dominio](#45-diagrama-de-dominio)
+- [Capítulo V: Análisis y Diseño del Sistema](#capítulo-v-análisis-y-diseño-del-sistema)
+  - [5.1 Arquitectura del Software y Entorno de Despliegue Cloud](#51-arquitectura-del-software-y-entorno-de-despliegue-cloud)
+    - [5.1.1 Vista Lógica y Arquitectura en Capas](#511-vista-lógica-y-arquitectura-en-capas)
+    - [5.1.2 Vista de Despliegue Físico en Huawei Cloud](#512-vista-de-despliegue-físico-en-huawei-cloud)
+    - [5.1.3 Análisis de Factores Arquitectónicos y Restricciones](#513-análisis-de-factores-arquitectónicos-y-restricciones)
+  - [5.2 Diseño del Comportamiento Dinámico (Realización de Casos de Uso)](#52-diseño-del-comportamiento-dinámico-realización-de-casos-de-uso)
+    - [5.2.1 Diagramas de Secuencia del Sistema (SSD) y Contratos de Operación](#521-diagramas-de-secuencia-del-sistema-ssd-y-contratos-de-operación)
+    - [5.2.2 Aplicación de Patrones GRASP y GoF](#522-aplicación-de-patrones-grasp-y-gof)
+  - [5.3 Diagrama de Clases de Diseño (DCD)](#53-diagrama-de-clases-de-diseño-dcd)
+    - [5.3.1 Especificación Formal de Clases de Software](#531-especificación-formal-de-clases-de-software)
+  - [5.4 Diseño Lógico y Físico de la Base de Datos (PostgreSQL en Huawei Cloud RDS)](#54-diseño-lógico-y-físico-de-la-base-de-datos-postgresql-en-huawei-cloud-rds)
+    - [5.4.1 Mapeo Objeto-Relacional y Normalización](#541-mapeo-objeto-relacional-y-normalización)
+    - [5.4.2 Diccionario de Datos Formal](#542-diccionario-de-datos-formal)
+    - [5.4.3 Scripts DDL de Creación e Índices B-Tree](#543-scripts-ddl-de-creación-e-índices-b-tree)
+  - [5.5 Diseño de Interfaces de Usuario (UI/UX en Streamlit)](#55-diseño-de-interfaces-de-usuario-uiux-en-streamlit)
+    - [5.5.1 Diagrama de Navegación y Flujo de Estados](#551-diagrama-de-navegación-y-flujo-de-estados)
+    - [5.5.2 Especificación de Layouts y Visualización del Diagnóstico](#552-especificación-de-layouts-y-visualización-del-diagnóstico)
 
 ---
 
@@ -783,3 +800,966 @@ classDiagram
 | AnalisisBiomecanico → FotogramaAnotado | 1 : 0..1 | **Cardinalidad corregida:** Un análisis produce cero o un fotograma. Es 0 si el sistema aborta por oclusión prolongada (RF-11), evitando registros huérfanos o nulos. |
 | AnalisisBiomecanico → HistorialProgresion | 0..* : 1 | Cero o más análisis alimentan el historial. |
 | Estudiante → HistorialProgresion | 1 : 1 | Cada estudiante posee exactamente un registro histórico acumulativo. |
+
+---
+
+# Capítulo V: Análisis y Diseño del Sistema
+
+El presente capítulo formaliza la etapa de ingeniería y diseño del sistema propuesto, estructurando la transición rigurosa desde los requerimientos funcionales y no funcionales del Capítulo IV hacia una arquitectura técnica ejecutable. La metodología adoptada integra los principios de **Análisis y Diseño Orientado a Objetos (OOAD)** según las directrices disciplinadas del **Proceso Unificado** de **Craig Larman** (*Applying UML and Patterns*), combinados con los estándares formales de diseño lógico y físico de bases de datos relacionales propuestos por **Michael V. Mannino** (*Database Design, Application Development, and Administration*). 
+
+Se especifican de manera exhaustiva la arquitectura lógica desacoplada en cuatro capas, la topología física de despliegue sobre la nube elástica de **Huawei Cloud**, la realización dinámica de los casos de uso fundamentales mediante diagramas de secuencia del sistema (SSD) y contratos de operación formales, la asignación de responsabilidades mediante patrones GRASP y GoF, el Diagrama de Clases de Diseño (DCD) consolidado, la normalización matemática de datos relacionales en Tercera Forma Normal (3NF) y Forma Normal de Boyce-Codd (BCNF), el diccionario de datos formal, los scripts DDL de producción en PostgreSQL v14+, y el diseño de experiencia e interacción de usuario en el entorno web liviano de Streamlit.
+
+---
+
+## 5.1 Arquitectura del Software y Entorno de Despliegue Cloud
+
+La arquitectura general del sistema responde al paradigma híbrido *Edge-Cloud* asincrónico y reactivo a eventos. A fin de respetar rigurosamente la cota presupuestaria de operación trimestral ($< \$30\text{ USD}$) y mitigar el estrés térmico en los dispositivos móviles de los practicantes en el tatami, la solución delega la totalidad de la carga computacional pesada (visión artificial y sincronización no lineal) hacia la infraestructura elástica *Serverless* de **Huawei Cloud**, conservando en el cliente una capa de presentación liviana y ergonómica.
+
+### 5.1.1 Vista Lógica y Arquitectura en Capas
+
+Conforme a los lineamientos de Craig Larman (2004), la descomposición modular del sistema se estructura en una **Arquitectura en Cuatro Capas Lógicas**, asegurando un régimen estricto de **Bajo Acoplamiento (*Low Coupling*)** y **Alta Cohesión (*High Cohesion*)**:
+
+1. **Capa de Presentación (UI Layer - Streamlit):** Aloja los componentes de interfaz gráfica web ejecutados en el navegador del usuario. Actúa como cliente desacoplado responsable de capturar la interacción humana, validar las restricciones de formato local ($\le 5\text{ MB}$ y $\le 6\text{ segundos}$, RF-07), verificar la tenencia del token de membresía en cliente (RF-09) y renderizar de forma pasiva los fotogramas anotados y las tarjetas de retroalimentación pedagógica.
+2. **Capa de Aplicación y Controlador (Application / Controller Layer):** Encapsulada en el punto de entrada de la función en la nube (*FunctionGraph Dispatcher*) y coordinada por el controlador de caso de uso `AnalisisBiomecanicoController`. No contiene lógica matemática ni reglas de negocio intrínsecas; su función exclusiva es orquestar el flujo de ejecución, invocar la validación de tokens contra la base de datos, despachar las tareas hacia el motor biomecánico y coordinar la persistencia transaccional.
+3. **Capa de Dominio del Negocio e Inteligencia Artificial (Domain & AI Layer):** Constituye el núcleo algorítmico independiente de la plataforma. Encapsula las entidades conceptuales del modelo (`TecnicaMaestra`, `ReglaBiomecanica`, `AnalisisBiomecanico`), el extractor cinemático basado en *MediaPipe Pose* (33 *landmarks*), el módulo de seguimiento y compensación de oclusiones (`KalmanFilterTracker`), el motor determinista de alineación temporal no lineal (`DTWComparator` con restricción de Sakoe-Chiba al 15%), y el componente de inyección gráfica de errores (`OpenCVAnnotator`). Esta capa carece de dependencias respecto al framework web o los drivers de bases de datos.
+4. **Capa de Infraestructura y Persistencia (Infrastructure & Persistence Layer):** Provee las implementaciones técnicas concretas para interactuar con servicios externos mediante adaptadores especializados: `HuaweiOBSStorageAdapter` para la transferencia de objetos audiovisuales en *Huawei Cloud OBS*, y `PostgreSQLRepository` (gestionado mediante SQLAlchemy / psycopg2) para la persistencia ACID en la base de datos relacional *Huawei Cloud RDS*.
+
+A continuación, la **Figura 5.1** modela la organización de paquetes y dependencias unidireccionales entre capas:
+
+```mermaid
+graph TD
+    subgraph CapaPresentacion["Capa de Presentación (Streamlit UI)"]
+        UI_Login["TokenGateView"]
+        UI_Upload["VideoUploadView"]
+        UI_Result["FeedbackReportView"]
+        UI_History["ProgressionHistoryView"]
+    end
+
+    subgraph CapaAplicacion["Capa de Aplicación (Controller / Dispatcher)"]
+        Ctrl_Analisis["AnalisisBiomecanicoController"]
+        Ctrl_Auth["MembresiaTokenController"]
+        Ctrl_Catalogo["CatalogoTecnicasController"]
+    end
+
+    subgraph CapaDominio["Capa de Dominio del Negocio e IA (Pipeline Biomecánico)"]
+        Dom_Entities["Entidades de Negocio<br/>(TecnicaMaestra, ReglaBiomecanica,<br/>AnalisisBiomecanico, Historial)"]
+        Dom_Pose["MediaPipePoseExtractor"]
+        Dom_Kalman["KalmanFilterTracker"]
+        Dom_DTW["DTWComparator (Sakoe-Chiba 15%)"]
+        Dom_Rules["CatalogoReglasEngine"]
+        Dom_OpenCV["OpenCVAnnotator"]
+    end
+
+    subgraph CapaInfraestructura["Capa de Infraestructura y Persistencia"]
+        Infra_OBS["HuaweiOBSStorageAdapter<br/>(OBS SDK S3-Compatible)"]
+        Infra_DB["PostgreSQLRepository<br/>(SQLAlchemy / psycopg2)"]
+    end
+
+    CapaPresentacion -->|HTTPS / Eventos UI| CapaAplicacion
+    CapaAplicacion -->|Orquesta entidades y servicios| CapaDominio
+    CapaAplicacion -->|Persiste y recupera datos| CapaInfraestructura
+    CapaDominio -.->|Independiente de infraestructura| CapaDominio
+    CapaInfraestructura -->|Implementa interfaces de persistencia| CapaDominio
+```
+
+**Figura 5.1**  
+*Diagrama de Paquetes y Arquitectura Lógica en Capas (UML).*
+
+---
+
+### 5.1.2 Vista de Despliegue Físico en Huawei Cloud
+
+La topología de despliegue físico materializa el aislamiento estricto de recursos, garantizando que el entorno local de la academia Corpo & Mente no sufra alteraciones en su hardware y que la aplicación web no dependa de servidores dedicados permanentemente encendidos (*IaaS*).
+
+La **Figura 5.2** presenta el Diagrama de Despliegue físico en sintaxis UML:
+
+```mermaid
+flowchart TD
+    subgraph ClientDevice["Dispositivo Cliente (Smartphone / PC)"]
+        subgraph BrowserEnv["Navegador Web Móvil / Desktop"]
+            WebApp["Streamlit Client App<br/>(HTML5 / CSS / WSS)"]
+        end
+    end
+
+    subgraph HuaweiCloud["Huawei Cloud Region (SA-Brazil-1 / LA-Santiago)"]
+        subgraph WebServerNode["Servidor de Aplicación Web"]
+            subgraph LinuxEnv["Linux Container (Ubuntu 22.04 LTS)"]
+                StreamlitServer["Streamlit Core Engine<br/>(Python 3.10)"]
+            end
+        end
+
+        subgraph ServerlessNode["Huawei Cloud FunctionGraph Cluster"]
+            subgraph FGEnv["Serverless Custom Runtime<br/>(Linux x86_64, 2048 MB RAM, 1 vCPU)"]
+                FG_Service["Biomechanics Engine Microservice<br/>(MediaPipe + DTW + OpenCV)"]
+            end
+        end
+
+        subgraph OBSNode["Huawei Cloud OBS Cluster (Almacenamiento)"]
+            OBS_In[("Bucket Privado: bjj-videos-input<br/>(Videos MP4 de Ejecución y Patrones)")]
+            OBS_Out[("Bucket Privado: bjj-reports-output<br/>(Fotogramas Anotados JPG ~80 KB)")]
+        end
+
+        subgraph RDSNode["Huawei Cloud RDS (Base de Datos)"]
+            RDS_DB[("PostgreSQL v14+ Instance<br/>(1 vCPU, 2 GB RAM, 40 GB SSD)")]
+        end
+    end
+
+    WebApp -- "HTTPS / WSS (Puerto 443 / TLS 1.3)" --> StreamlitServer
+    StreamlitServer -- "IAM Auth Token / HTTPS REST (API Gateway)" --> FG_Service
+    StreamlitServer -- "TCP 5432 (SSL Encryption)" --> RDS_DB
+    FG_Service -- "S3 API HTTPS (VPC Endpoint Privado)" --> OBS_In
+    FG_Service -- "S3 API HTTPS (VPC Endpoint Privado)" --> OBS_Out
+    FG_Service -- "TCP 5432 (SSL Encryption / Subred Privada)" --> RDS_DB
+```
+
+**Figura 5.2**  
+*Diagrama de Despliegue Físico en Huawei Cloud (UML).*
+
+**Tabla 5.1**  
+*Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad*
+
+| Segmento de Enlace | Protocolo / Puerto | Mecanismo de Seguridad | Justificación Técnica |
+| :--- | :---: | :--- | :--- |
+| **Cliente Móvil → Servidor Streamlit** | HTTPS / WSS<br/>(TCP 443) | Cifrado TLS 1.3 con certificados X.509 firmados. | Comunicación web reactiva y segura sobre redes celulares públicas (4G/LTE/5G) de Santa Cruz de la Sierra. |
+| **Servidor Streamlit → FunctionGraph** | HTTPS REST<br/>(TCP 443) | Autenticación basada en IAM AK/SK y tokens de corta duración (*Scoped Tokens*). | Invocación serverless desacoplada con autorización estricta a nivel de infraestructura Huawei Cloud. |
+| **FunctionGraph → Huawei Cloud OBS** | HTTPS S3 API<br/>(TCP 443) | VPC Endpoint privado interno con firma HMAC-SHA256. | Tráfico audiovisual encapsulado en la red troncal interna de Huawei Cloud, con latencia submilisegundo y coste cero de transferencia interna. |
+| **FunctionGraph / Streamlit → RDS PostgreSQL** | TCP 5432 | Conexión relacional con forzado SSL/TLS (`sslmode=require`) y *Security Groups* restrictivos. | Base de datos blindada en subred privada (*Private Subnet*), sin IP pública expuesta, accesible exclusivamente desde los contenedores del clúster. |
+
+---
+
+### 5.1.3 Análisis de Factores Arquitectónicos y Restricciones
+
+#### A. Desglose y Formalización del SLA de Latencia ($\le 4.0\text{ s}$, RP-01)
+El requisito de rendimiento **RP-01** estipula que el tiempo total de procesamiento en la nube no debe exceder de **4.0 segundos** para una secuencia estandarizada de video en pareja de hasta 6 segundos ($\approx 180$ fotogramas a 30 fps). Matemáticamente, la latencia total del microservicio serverless se descompone como:
+
+$$t_{\text{serverless}} = t_{\text{cold-start}} + t_{\text{mediapipe}} + t_{\text{kalman-dtw}} + t_{\text{opencv}}$$
+
+El dimensionamiento analítico de cada componente confirma la viabilidad técnica del umbral contractual:
+
+1. **Arranque en Frío (*Cold Start*) del Contenedor Linux ($t_{\text{cold-start}} \le 1.2\text{ s}$):** Ocurre únicamente en la primera invocación tras un periodo de inactividad de la función en *FunctionGraph*. Dado que la práctica en el tatami ocurre por tandas colectivas donde 10 parejas concluyen simultáneamente la serie mecanizada (Sección 2.4.1), sólo la primera petición absorbe este retardo de inicialización de runtime ($\sim 0.8\text{ a } 1.2\text{ s}$); las 9 peticiones concurrentes restantes se despachan sobre instancias previamente instanciadas (*warm containers*), reduciendo este valor a $t_{\text{warm}} \le 0.05\text{ s}$.
+2. **Extracción Cinemática con MediaPipe Pose ($t_{\text{mediapipe}} \approx 1.8\text{--}2.2\text{ s}$):** Procesamiento cuadro a cuadro sobre CPU virtual de 1 vCPU con optimizaciones vectoriales AVX2. Con un rendimiento medio de $80\text{ a } 100\text{ fotogramas/segundo}$ en resoluciones de 720p redimensionadas internamente a $256 \times 256$ píxeles para inferencia, los 180 fotogramas demandan $\sim 1.9\text{ segundos}$ netos de cómputo.
+3. **Compensación de Kalman y Sincronización Temporal DTW ($t_{\text{kalman-dtw}} \approx 0.08\text{--}0.15\text{ s}$):** Al parametrizar la **Ventana de Sakoe-Chiba** con una cota del 15% de la longitud temporal ($w = 0.15 \cdot 180 \approx 27$ cuadros de tolerancia), la matriz de búsqueda de costo acumulado se restringe a una banda diagonal de ancho $2w + 1 = 55$ celdas por fotograma. Esto transmuta la complejidad temporal cuadrática $O(N^2) \approx 32,400\text{ operaciones}$ a un régimen estrictamente cuasi-lineal $O(w \cdot N) \approx 4,860\text{ operaciones}$, completándose la alineación temporal en escasos $80\text{ a } 150\text{ milisegundos}$.
+4. **Extracción y Anotación Gráfica con OpenCV ($t_{\text{opencv}} \approx 0.03\text{--}0.05\text{ s}$):** El trazado del círculo rojo ($\text{radio} = 15\text{ px}$) sobre el fotograma clave de máxima desviación y su posterior codificación a formato JPG con factor de compresión 80 insume $\le 50\text{ ms}$.
+
+Sumando los valores en el escenario de arranque en frío más desfavorable:
+
+$$t_{\text{serverless}}^{\text{peor}} = 1.2\text{ s} + 2.2\text{ s} + 0.15\text{ s} + 0.05\text{ s} = 3.60\text{ segundos} \le 4.0\text{ segundos}$$
+
+En régimen operativo habitual (*warm instances*):
+
+$$t_{\text{serverless}}^{\text{nominal}} = 0.05\text{ s} + 1.90\text{ s} + 0.10\text{ s} + 0.04\text{ s} = 2.09\text{ segundos}$$
+
+Queda formalmente demostrado que el límite contractual de 4.0 segundos es un SLA realista que absorbe holgadamente la variabilidad de la infraestructura en la nube.
+
+#### B. Justificación Matemática del Techo Financiero ($< \$30\text{ USD}$ Trimestrales, RP-02)
+El control del volumen de salida de datos (*Data Egress*) constituye la salvaguarda económica crítica del proyecto. La imagen JPG anotada por OpenCV promedia un tamaño nominal de **$\sim 80\text{ KB}$**, con un techo máximo contractual estricto fijado en **$100\text{ KB}$** (RP-02).
+
+Considerando la tarifa regional de transferencia saliente en Huawei Cloud ($\approx \$0.08\text{ USD por Gigabyte}$ transferido hacia internet):
+
+* **Escenario Operativo Regular (350 consultas mensuales / 1,050 trimestrales):**
+  $$\text{Volumen Trimestral} = 1,050 \times 80\text{ KB} = 84,000\text{ KB} \approx 0.0801\text{ GB}$$
+  $$\text{Costo Egress Trimestral} = 0.0801\text{ GB} \times \$0.08\text{ USD/GB} \approx \$0.0064\text{ USD}$$
+* **Escenario de Estrés Máximo (2,700 consultas mensuales / 8,100 trimestrales bajo el techo de 100 KB):**
+  $$\text{Volumen Trimestral} = 8,100 \times 100\text{ KB} = 810,000\text{ KB} \approx 0.7724\text{ GB}$$
+  $$\text{Costo Egress Trimestral} = 0.7724\text{ GB} \times \$0.08\text{ USD/GB} \approx \$0.0618\text{ USD}$$
+
+Aun bajo un tráfico extraordinario de estrés, el consumo por salida de datos se mantiene por debajo de los **\$0.07 USD trimestrales**. Sumado a la capa gratuita permanente de *FunctionGraph* (que exonera los primeros 1,000,000 de llamadas mensuales y 400,000 GB-segundos de cómputo) y al almacenamiento transitorio en OBS (cuyos videos crudos se purgan automáticamente tras 48 horas mediante reglas de ciclo de vida o *Lifecycle Policies*), el presupuesto operativo de la academia se mantiene inquebrantablemente dentro del límite financiero trimestral ($< \$30\text{ USD}$).
+
+---
+
+## 5.2 Diseño del Comportamiento Dinámico (Realización de Casos de Uso)
+
+### 5.2.1 Diagramas de Secuencia del Sistema (SSD) y Contratos de Operación
+
+Conforme al Proceso Unificado (Larman, 2004), los Diagramas de Secuencia del Sistema (SSD) modelan los eventos de entrada y salida generados por los actores externos contra la caja negra del sistema, los cuales son formalizados posteriormente mediante contratos de operación.
+
+#### A. SSD del CU-01: Registrar Técnica Maestra y Reglas Biomecánicas
+El Head Coach autenticado interactúa con el sistema para registrar un nuevo patrón curricular oficial y parametrizar sus tolerancias angulares.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor HC as Head Coach
+    participant Sis as Sistema (Streamlit UI + FunctionGraph + RDS)
+
+    HC->>Sis: solicitarFormularioRegistro()
+    Sis-->>HC: desplegarFormularioRegistro(categorias, posiciones)
+    
+    HC->>Sis: ingresarDatosTecnica(nombre, categoria, posicionOrigen, ventanaSakoeChiba, videoPatron, reglas[])
+    activate Sis
+    Sis->>Sis: verificarUnicidad(categoria, posicionOrigen)
+    alt Combinación ya existe en catálogo
+        Sis-->>HC: mostrarError("La técnica ya existe para dicha posición de origen")
+    else Combinación única válida
+        Sis->>Sis: transferirVideoPatronOBS(videoPatron)
+        Sis->>Sis: extraerCinematicaMaestraMediaPipe()
+        Sis->>Sis: registrarTecnicaYReglasTransaccional(PostgreSQL)
+        Sis-->>HC: confirmarRegistroExitoso(idTecnicaMaestra)
+    end
+    deactivate Sis
+```
+
+**Figura 5.3**  
+*Diagrama de Secuencia del Sistema (SSD) — CU-01: Registrar Técnica Maestra.*
+
+#### B. SSD del CU-02: Cargar Video de Ejecución y Procesar Diagnóstico
+Este caso de uso encapsula el flujo central de auditoría asincrónica en el tatami, modelando explícitamente el **flujo alterno de oclusión prolongada (RF-11)** sin persistencia en base de datos.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor E as Estudiante / Practicante
+    participant Sis as Sistema (Streamlit + FunctionGraph + OBS + RDS)
+
+    E->>Sis: ingresarTokenMembresia(token)
+    activate Sis
+    Sis->>Sis: validarVigenciaToken(token)
+    alt Token Inválido o Expirado
+        Sis-->>E: denegarAcceso("Token inválido o membresía expirada. Contacta al Head Coach.")
+    else Token Vigente (Autorizado)
+        Sis-->>E: habilitarFormularioCarga(catalogoJerarquicoTecnicas)
+        
+        E->>Sis: cargarVideoEjecucion(categoria, posicionOrigen, archivoVideo)
+        Sis->>Sis: validarRestriccionesCliente(tamano <= 5MB, duracion <= 6s)
+        
+        Sis->>Sis: transferirVideoOBS(archivoVideo)
+        Sis->>Sis: dispararProcesamientoServerless(FunctionGraph)
+        Sis->>Sis: extraerLandmarksMediaPipe(180_frames)
+        Sis->>Sis: aplicarFiltroKalman(C < 0.5)
+
+        alt Oclusión Continua Prolongada > 1.5 segundos (RF-11)
+            Sis->>Sis: abortarTransaccionBD() (Zero-Persistence en PostgreSQL)
+            Sis-->>E: notificarRechazoPedagogico("No fue posible calcular el diagnóstico: oclusión prolongada (>1.5s). Repite la grabación con mejor ángulo.")
+        else Cinemática Válida (Tolerancia de Oclusión Respetada)
+            Sis->>Sis: alinearDTWConSakoeChiba(ventana=15%, seriesAngulosRelativos)
+            Sis->>Sis: localizarPicoMaximoDesviacion()
+            Sis->>Sis: inyectarMarcadorOpenCV(circuloRojo_15px)
+            Sis->>Sis: seleccionarMensajePedagogicoDeterminista(CatalogoReglas)
+            Sis->>Sis: persistirAnalisisYFotograma(PostgreSQL RDS)
+            Sis->>Sis: actualizarHistorialProgresion(PostgreSQL RDS)
+            Sis-->>E: desplegarDiagnosticoVisual(fotogramaAnotadoJPG_80KB, mensajeError, progreso)
+        end
+    end
+    deactivate Sis
+```
+
+**Figura 5.4**  
+*Diagrama de Secuencia del Sistema (SSD) — CU-02: Cargar Video y Procesar Diagnóstico.*
+
+#### C. SSD del CU-04: Consultar Historial de Progresión Técnica
+Permite al atleta autenticado consultar su evolución longitudinal y verificar la reducción acumulada de discrepancias biomecánicas (RF-12).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor E as Estudiante / Practicante
+    participant Sis as Sistema (Streamlit UI + PostgreSQL RDS)
+
+    E->>Sis: solicitarHistorialProgresion(idUsuario)
+    activate Sis
+    Sis->>Sis: recuperarEvaluacionesLongitudinales(PostgreSQL RDS)
+    Sis->>Sis: consolidarTendenciasTemporales(puntuacionGlobal, tasaReduccionErrores)
+    Sis-->>E: desplegarDashboardHistorial(graficasTendencia, listadoAnalisisPrevios)
+    deactivate Sis
+```
+
+**Figura 5.5**  
+*Diagrama de Secuencia del Sistema (SSD) — CU-04: Consultar Historial de Progresión.*
+
+---
+
+#### D. Contratos de Operación Formas (Craig Larman)
+
+##### Contrato de Operación: `validarTokenMembresia`
+* **Operación:** `validarTokenMembresia(token: String): Boolean`
+* **Referencias Cruzadas:** Requisitos Funcionales RF-09; Casos de Uso CU-02.
+* **Precondiciones:** El estudiante ha ingresado una cadena alfanumérica en el campo de autenticación web de Streamlit.
+* **Poscondiciones:**
+  * Se consultó la tabla `codigo_activacion` buscando coincidencia exacta con `token`.
+  * Se verificó que `codigo_activacion.estado == 'vigente'` y `codigo_activacion.fecha_expiracion >= CURRENT_DATE`.
+  * Se retornó `True` si ambas condiciones se satisfacen; en caso contrario, se retornó `False` y se impidió la inicialización de la carga audiovisual hacia el almacenamiento en la nube.
+
+##### Contrato de Operación: `procesarVideoBiomecanico`
+* **Operación:** `procesarVideoBiomecanico(idVideo: UUID, idTecnicaMaestra: UUID): DiagnosticoDTO`
+* **Referencias Cruzadas:** Requisitos Funcionales RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-10, RF-11; Requisitos de Rendimiento RP-01, RP-02; Casos de Uso CU-02.
+* **Precondiciones:**
+  * El video de ejecución en pareja reside en el bucket privado de OBS con un tamaño $\le 5\text{ MB}$ y duración $\le 6\text{ segundos}$.
+  * La técnica maestra correspondiente a `idTecnicaMaestra` existe previamente en el catálogo junto con sus reglas biomecánicas asociadas.
+  * El token de activación mensual del alumno fue validado exitosamente (`estado = 'vigente'`).
+* **Poscondiciones (Escenario Exitoso — Oclusión Acotada $\le 1.5\text{ s}$):**
+  * Se extrajeron los 33 puntos clave con MediaPipe y se interpolaron los tramos breves con el Filtro de Kalman cinemático.
+  * Se transformaron las coordenadas $(X,Y,Z)$ en series temporales de ángulos articulares relativos.
+  * Se ejecutó el DTW con restricción de Sakoe-Chiba ($w = 0.15 \cdot N$) calculando el camino de deformación mínima.
+  * Se identificó el fotograma de máxima discrepancia angular y se generó una imagen JPG de $\sim 80\text{ KB}$ anotada con OpenCV.
+  * Se creó una instancia $a$ de `AnalisisBiomecanico` en la base de datos PostgreSQL, vinculada al video procesado.
+  * Se creó una instancia $f$ de `FotogramaAnotado` con clave foránea única hacia $a$.
+  * Se actualizó la entidad `HistorialProgresion` del estudiante, recalculando su puntuación global y su total de fallos.
+  * Se retornó un objeto `DiagnosticoDTO` con la URL del fotograma anotado y la causa técnica del error.
+* **Poscondiciones (Escenario de Excepción — Oclusión Prolongada $> 1.5\text{ s}$, RF-11):**
+  * El Filtro de Kalman detectó una pérdida continua de visibilidad articular ($C < 0.5$) superior a 45 fotogramas (1.5 segundos a 30 fps).
+  * El cómputo algorítmico se interrumpió de inmediato.
+  * **No se creó ninguna instancia de `AnalisisBiomecanico` ni de `FotogramaAnotado` en la base de datos PostgreSQL.**
+  * **La entidad `HistorialProgresion` del estudiante no fue alterada**, garantizando que el historial del atleta permanezca exento de datos espurios.
+  * Se retornó una excepción controlada de negocio notificando la causa motriz de la interrupción hacia la interfaz de Streamlit.
+
+##### Contrato de Operación: `obtenerHistorialAtleta`
+* **Operación:** `obtenerHistorialAtleta(idEstudiante: UUID): HistorialDTO`
+* **Referencias Cruzadas:** Requisitos Funcionales RF-12; Casos de Uso CU-04.
+* **Precondiciones:** El estudiante con identificador `idEstudiante` se encuentra registrado en el sistema y posee una sesión activa.
+* **Poscondiciones:**
+  * Se recuperaron la totalidad de los registros de `AnalisisBiomecanico` asociados a los videos cargados por el alumno, ordenados cronológicamente por `fecha_procesamiento`.
+  * Se leyeron los valores consolidados de `puntuacionGlobal` y `cantidadErrores` desde la entidad `HistorialProgresion`.
+  * Se retornó una estructura `HistorialDTO` conteniendo las series históricas necesarias para la graficación de tendencias en Streamlit.
+
+---
+
+### 5.2.2 Aplicación de Patrones GRASP y GoF
+
+Conforme al marco conceptual de Craig Larman (Capítulos 16 y 17), la distribución de responsabilidades sobre las clases de software se rige por los principios fundamentales de diseño orientado a objetos:
+
+1. **Controlador (*Controller - GRASP*):** La clase `AnalisisBiomecanicoController` opera como controlador de caso de uso (fachada de aplicación). Desacopla la interfaz de usuario Streamlit del motor de visión por computadora, canalizando las peticiones de análisis, coordinando el consumo de microservicios serverless y abstrayendo la lógica transaccional.
+2. **Experto en Información (*Information Expert - GRASP*):** La clase `TecnicaMaestra` posee la información geométrica canónica y su ancho de banda temporal recomendado (`ventanaSakoeChiba`); por tanto, es la experta designada para calibrar el algoritmo DTW. A su vez, `ReglaBiomecanica` es la experta encargada de evaluar si una discrepancia angular en grados excede el umbral tolerado y suministrar el mensaje pedagógico determinista correspondiente.
+3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Adaptador (*Adapter - GoF*):** Las clases `HuaweiOBSStorageAdapter` y `PostgreSQLRepository` son construcciones artificiales de software creadas para aislar los detalles de bajo nivel de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático, preservando la portabilidad del sistema.
+4. **Bajo Acoplamiento y Alta Cohesión (*Low Coupling & High Cohesion - GRASP*):** Las clases computacionales `KalmanFilterTracker` y `DTWComparator` operan exclusivamente con estructuras matriciales abstractas (`NumPy arrays`), permaneciendo completamente ignorantes de protocolos HTTP, bases de datos o frameworks gráficos.
+5. **Variaciones Protegidas (*Protected Variations - GRASP*):** Se implementa la interfaz `IFiltroCinematico`, la cual permite acoplar o intercambiar implementaciones de interpolación (ej. filtro de media móvil o modelos biomecánicos avanzados) sin forzar modificaciones sobre el pipeline de DTW ni sobre el controlador.
+
+---
+
+## 5.3 Diagrama de Clases de Diseño (DCD)
+
+### 5.3.1 Especificación Formal de Clases de Software
+
+El **Diagrama de Clases de Diseño (DCD)** traduce el Modelo de Dominio conceptual (Sección 4.5) hacia una arquitectura orientada a objetos de software concreta, detallando tipos de datos nativos, visibilidad de atributos (`-` privado, `+` público, `#` protegido), signaturas completas de métodos, navegabilidad y relaciones estructurales.
+
+La **Figura 5.6** presenta el DCD consolidado del sistema:
+
+```mermaid
+classDiagram
+    class UsuarioAcademia {
+        <<abstract>>
+        #idUsuario: UUID
+        #nombreCompleto: String
+        #telefonoWhatsApp: String
+        #correoElectronico: String
+        #fechaRegistro: Date
+        +getId(): UUID
+        +getNombre(): String
+        +getTelefono(): String
+    }
+
+    class HeadCoach {
+        -gradoCinturon: String
+        -licenciaFederativa: String
+        +homologarTecnica(tecnica: TecnicaMaestra): Boolean
+        +emitirCodigoActivacion(diasVigencia: Integer): CodigoActivacion
+    }
+
+    class Estudiante {
+        -gradoCinturon: String
+        -pesoKg: Float
+        -estadoMembresia: String
+        +cargarVideo(archivo: bytes, tecnicaId: UUID): VideoEjecucion
+        +consultarProgreso(): HistorialProgresion
+    }
+
+    class EscuelaBJJ {
+        -idEscuela: UUID
+        -nombre: String
+        -sede: String
+        -ciudad: String
+        -comunidadWhatsApp: String
+        +registrarUsuario(usuario: UsuarioAcademia): Void
+    }
+
+    class CodigoActivacion {
+        -idCodigoActivacion: UUID
+        -token: String
+        -fechaEmision: Date
+        -fechaExpiracion: Date
+        -estado: String
+        +esVigente(): Boolean
+        +revocar(): Void
+    }
+
+    class TecnicaMaestra {
+        -idTecnicaMaestra: UUID
+        -nombre: String
+        -categoriaTecnica: String
+        -posicionOrigen: String
+        -ventanaSakoeChiba: Float
+        -videoURL: String
+        -fechaCarga: Date
+        +getVentanaSakoeChiba(): Float
+        +obtenerReglas(): List~ReglaBiomecanica~
+    }
+
+    class ReglaBiomecanica {
+        -idReglaBiomecanica: UUID
+        -articulacionClave: String
+        -umbralAngularTolerado: Float
+        -descripcionError: String
+        +evaluarDiscrepancia(angulo: Float): Boolean
+        +getMensajeError(): String
+    }
+
+    class VideoEjecucion {
+        -idVideoEjecucion: UUID
+        -fechaCaptura: DateTime
+        -duracionSegundos: Float
+        -pesoMB: Float
+        -videoURL: String
+        +validarLimites(): Boolean
+        +getVideoBytes(): bytes
+    }
+
+    class AnalisisBiomecanico {
+        -idAnalisisBiomecanico: UUID
+        -fechaProcesamiento: DateTime
+        -desviacionAngularMaxima: Float
+        -articulacionAfectada: String
+        -estadoComputo: String
+        +generarDiagnostico(): DiagnosticoDTO
+    }
+
+    class FotogramaAnotado {
+        -idFotogramaAnotado: UUID
+        -imagenURL: String
+        -coordenadaErrorX: Integer
+        -coordenadaErrorY: Integer
+        -explicacionCausa: String
+        +getImagenBytes(): bytes
+    }
+
+    class HistorialProgresion {
+        -idHistorialProgresion: UUID
+        -puntuacionGlobal: Float
+        -cantidadErrores: Integer
+        -fechaUltimaEvaluacion: Date
+        +actualizarMetricas(analisis: AnalisisBiomecanico): Void
+        +getTendencia(): List~Float~
+    }
+
+    class AnalisisBiomecanicoController {
+        -storageAdapter: HuaweiOBSStorageAdapter
+        -repository: PostgreSQLRepository
+        -tracker: KalmanFilterTracker
+        -dtw: DTWComparator
+        -annotator: OpenCVAnnotator
+        +validarToken(token: String): Boolean
+        +ejecutarAnalisis(videoId: UUID, tecnicaId: UUID): DiagnosticoDTO
+        +consultarHistorial(estudianteId: UUID): HistorialDTO
+    }
+
+    class KalmanFilterTracker {
+        -umbralConfiabilidad: Float
+        -maxCuadrosOclusion: Integer
+        +filtrarLandmarks(matrizLandmarks: List): MatrizFiltrada
+        +verificarOclusionProlongada(): Boolean
+    }
+
+    class DTWComparator {
+        -ventanaSakoeChiba: Float
+        +calcularDistancia(serieA: List, serieB: List): MatrizAlineacion
+        +extraerPicoDesviacion(): Tuple~Integer, Float~
+    }
+
+    class OpenCVAnnotator {
+        -radioCirculo: Integer
+        -colorMarcador: Tuple
+        +marcarFalla(frame: bytes, coordX: Integer, coordY: Integer): bytes
+    }
+
+    class HuaweiOBSStorageAdapter {
+        -bucketInput: String
+        -bucketOutput: String
+        +subirVideo(datos: bytes, nombre: String): String
+        +subirFotogramaAnotado(imagen: bytes, nombre: String): String
+        +descargarObjeto(url: String): bytes
+    }
+
+    class PostgreSQLRepository {
+        -connectionPool: Any
+        +guardarAnalisis(analisis: AnalisisBiomecanico): Void
+        +guardarFotograma(fotograma: FotogramaAnotado): Void
+        +actualizarHistorial(historial: HistorialProgresion): Void
+        +buscarTecnicaPorId(id: UUID): TecnicaMaestra
+        +validarTokenAcceso(token: String): Boolean
+    }
+
+    UsuarioAcademia <|-- HeadCoach
+    UsuarioAcademia <|-- Estudiante
+    EscuelaBJJ "1" *-- "1..*" UsuarioAcademia
+
+    HeadCoach "1" --> "0..*" CodigoActivacion : emite
+    CodigoActivacion "0..*" --> "0..1" Estudiante : asignado-a
+
+    HeadCoach "1" --> "1..*" TecnicaMaestra : homologa
+    TecnicaMaestra "1" *-- "1..*" ReglaBiomecanica : compuesta-por
+
+    Estudiante "1" --> "0..*" VideoEjecucion : graba
+    TecnicaMaestra "1" --> "0..*" VideoEjecucion : referencia
+    VideoEjecucion "1" --> "1" AnalisisBiomecanico : analizado-en
+
+    AnalisisBiomecanico "1" --> "0..1" FotogramaAnotado : genera
+    AnalisisBiomecanico "0..*" --> "1" HistorialProgresion : alimenta
+    Estudiante "1" *-- "1" HistorialProgresion : posee
+
+    AnalisisBiomecanicoController ..> VideoEjecucion : orquesta
+    AnalisisBiomecanicoController ..> AnalisisBiomecanico : crea
+    AnalisisBiomecanicoController --> KalmanFilterTracker : usa
+    AnalisisBiomecanicoController --> DTWComparator : usa
+    AnalisisBiomecanicoController --> OpenCVAnnotator : usa
+    AnalisisBiomecanicoController --> HuaweiOBSStorageAdapter : persiste-objetos
+    AnalisisBiomecanicoController --> PostgreSQLRepository : persiste-entidades
+```
+
+**Figura 5.6**  
+*Diagrama de Clases de Diseño (DCD) Consolidado (UML).*
+
+---
+
+## 5.4 Diseño Lógico y Físico de la Base de Datos (PostgreSQL en Huawei Cloud RDS)
+
+El diseño de la base de datos relacional se rige por la metodología formal de modelado de bases de datos de **Michael V. Mannino** (Capítulos 5 y 6), asegurando la integridad referencial, la ausencia de redundancias anómalas y el óptimo rendimiento de consulta bajo un clúster *Huawei Cloud RDS for PostgreSQL*.
+
+### 5.4.1 Mapeo Objeto-Relacional y Normalización
+
+#### A. Estrategia de Mapeo Relacional de la Herencia
+Para el modelado de la jerarquía de generalización disjunta `UsuarioAcademia <|-- HeadCoach, Estudiante`, se adopta formalmente el patrón **Tabla por Subclase (*Table-per-Subclass* con Clave Primaria Compartida)** recomendado por Mannino:
+* La tabla base `usuario_academia` almacena la clave primaria artificial `id_usuario` (`UUID`) y los atributos comunes (`nombre_completo`, `telefono_whatsapp`, `correo_electronico`, `fecha_registro`).
+* Las tablas hijas `head_coach` y `estudiante` utilizan `id_usuario` como **Clave Primaria (PK) y Clave Foránea (FK) simultánea**, vinculadas mediante `REFERENCES usuario_academia(id_usuario) ON DELETE CASCADE`.
+* Esta estrategia garantiza la eliminación de columnas nulas (*NULLs* dispersos), respeta la integridad referencial declarativa y permite extender nuevos perfiles (ej. *Juez Federativo*) sin alterar la estructura existente.
+
+#### B. Demostración Formal de Formas Normales (3NF y BCNF)
+Se demuestra que el esquema relacional resultante satisface con rigor matemático las condiciones de **Tercera Forma Normal (3NF)** y **Forma Normal de Boyce-Codd (BCNF)**:
+
+1. **Primera Forma Normal (1NF):** Cada celda de cada tabla contiene exclusivamente valores atómicos e indivisibles (ej. escalares `UUID`, `VARCHAR`, `NUMERIC`, `TIMESTAMP`). No existen atributos multivalorados ni grupos repetitivos.
+2. **Segunda Forma Normal (2NF):** Estando en 1NF, la totalidad de los atributos no pertenecientes a claves candidatas dependen de forma funcional completa de la clave primaria. En aquellas tablas donde existen claves alternas compuestas, como `tecnica_maestra` con `UNIQUE(categoria_tecnica, posicion_origen)`, los atributos no clave (`nombre`, `ventana_sakoe_chiba`, `video_url`, `fecha_carga`) dependen de la clave candidata en su totalidad y no de un subconjunto de ella.
+3. **Tercera Forma Normal (3NF):** Estando en 2NF, no existe ninguna dependencia funcional transitiva entre atributos no clave ($X \rightarrow Y$ donde $Y$ depende de $X$ y $X$ no es superclave). Por ejemplo, en la tabla `analisis_biomecanico`, la descripción pedagógica del error no se almacena redundantemente, sino que se referencia mediante la clave foránea `regla_id REFERENCES regla_biomecanica(id_regla)`. Toda descripción depende únicamente de la clave primaria de su propia entidad catálogo.
+4. **Forma Normal de Boyce-Codd (BCNF):** Para cada dependencia funcional no trivial $X \rightarrow Y$ existente en el esquema, $X$ es una superclave o clave candidata. Por ende, el esquema se encuentra libre de anomalías de inserción, actualización o borrado (*update/delete anomalies*).
+
+---
+
+### 5.4.2 Diccionario de Datos Formal
+
+A continuación, se definen exhaustivamente las especificaciones físicas de las **11 tablas relacionales** que componen el repositorio de datos de la plataforma:
+
+#### 1. Tabla: `escuela_bjj`
+*Descripción:* Almacena la información institucional de la academia Corpo & Mente Bolivia y sus sucursales activas en Santa Cruz de la Sierra.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_escuela` | UUID | NOT NULL | PK | Identificador unívoco generado mediante `gen_random_uuid()`. |
+| `nombre` | VARCHAR(100) | NOT NULL | - | Nombre de la escuela (ej. "Corpo & Mente Bolivia"). |
+| `sede` | VARCHAR(100) | NOT NULL | - | Nombre de la sede física (ej. "Knock Out - Mia Plaza"). |
+| `ciudad` | VARCHAR(50) | NOT NULL | - | Ciudad de radicatoria (ej. "Santa Cruz de la Sierra"). |
+| `comunidad_whatsapp` | VARCHAR(150) | NULL | - | Enlace o identificador del grupo oficial institucional. |
+
+#### 2. Tabla: `usuario_academia`
+*Descripción:* Supertabla que centraliza la identidad y credenciales de contacto de todo usuario registrado.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_usuario` | UUID | NOT NULL | PK | Identificador unívoco del usuario en la plataforma. |
+| `escuela_id` | UUID | NOT NULL | FK | `REFERENCES escuela_bjj(id_escuela) ON DELETE RESTRICT`. |
+| `nombre_completo` | VARCHAR(150) | NOT NULL | - | Nombres y apellidos oficiales del usuario. |
+| `telefono_whatsapp` | VARCHAR(25) | NOT NULL | - | Teléfono móvil con código de país para coordinación. |
+| `correo_electronico`| VARCHAR(120) | NOT NULL | UQ | Correo electrónico personal. `CONSTRAINT uq_usuario_email UNIQUE`. |
+| `fecha_registro` | DATE | NOT NULL | - | Fecha de alta en la plataforma (`DEFAULT CURRENT_DATE`). |
+
+#### 3. Tabla: `head_coach`
+*Descripción:* Subtabla especializada que tipifica al Director Técnico con facultades administrativas y de homologación técnica.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_usuario` | UUID | NOT NULL | PK, FK | `REFERENCES usuario_academia(id_usuario) ON DELETE CASCADE`. |
+| `grado_cinturon` | VARCHAR(30) | NOT NULL | - | Graduación marcial oficial (ej. "Cinturón Negro 2do Grado"). |
+| `licencia_federativa`| VARCHAR(50) | NULL | - | Registro ante la Federación Boliviana o Internacional (IBJJF). |
+
+#### 4. Tabla: `estudiante`
+*Descripción:* Subtabla especializada que registra a los atletas y alumnos que cargan videos de ejecución técnica en pareja.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_usuario` | UUID | NOT NULL | PK, FK | `REFERENCES usuario_academia(id_usuario) ON DELETE CASCADE`. |
+| `grado_cinturon` | VARCHAR(30) | NOT NULL | - | Graduación actual (ej. "Blanco", "Azul", "Morado", "Marrón"). |
+| `peso_kg` | NUMERIC(5,2) | NOT NULL | - | Masa corporal del practicante (`CHECK (peso_kg > 20.0 AND peso_kg < 250.0)`). |
+| `estado_membresia` | VARCHAR(20) | NOT NULL | - | `CHECK (estado_membresia IN ('activa', 'inactiva', 'suspendida'))`. |
+
+#### 5. Tabla: `codigo_activacion`
+*Descripción:* Registra los tokens de acceso mensual emitidos por el Head Coach para autorizar cargas de video y proteger el presupuesto en la nube (RF-09).
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_codigo` | UUID | NOT NULL | PK | Identificador unívoco del token. |
+| `coach_emisor_id` | UUID | NOT NULL | FK | `REFERENCES head_coach(id_usuario) ON DELETE RESTRICT`. |
+| `estudiante_id` | UUID | NULL | FK | `REFERENCES estudiante(id_usuario) ON DELETE SET NULL`. |
+| `token` | VARCHAR(64) | NOT NULL | UQ | Clave criptográfica o alfanumérica única (`UNIQUE`). |
+| `fecha_emision` | DATE | NOT NULL | - | Fecha de generación del código (`DEFAULT CURRENT_DATE`). |
+| `fecha_expiracion`| DATE | NOT NULL | - | Fecha límite de validez (`CHECK (fecha_expiracion >= fecha_emision)`). |
+| `estado` | VARCHAR(15) | NOT NULL | - | `CHECK (estado IN ('vigente', 'expirado', 'revocado'))`. |
+
+#### 6. Tabla: `tecnica_maestra`
+*Descripción:* Almacena el catálogo curricular oficial de técnicas y videos patrón homologados por el Head Coach.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_tecnica` | UUID | NOT NULL | PK | Identificador unívoco de la técnica patrón. |
+| `coach_id` | UUID | NOT NULL | FK | `REFERENCES head_coach(id_usuario) ON DELETE RESTRICT`. |
+| `nombre` | VARCHAR(100) | NOT NULL | - | Denominación completa descriptiva de la técnica. |
+| `categoria_tecnica`| VARCHAR(60) | NOT NULL | UQ_1 | Categoría curricular (ej. "Llave de Brazo", "Estrangulación"). |
+| `posicion_origen` | VARCHAR(60) | NOT NULL | UQ_2 | Posición biomecánica inicial (ej. "Montada", "Guardia Cerrada"). |
+| `ventana_sakoe_chiba`| NUMERIC(3,2) | NOT NULL | - | Fracción de ancho de banda DTW (`DEFAULT 0.15 CHECK (ventana_sakoe_chiba BETWEEN 0.05 AND 0.30)`). |
+| `video_url` | VARCHAR(255) | NOT NULL | - | URI de acceso al video maestro patrón en *Huawei Cloud OBS*. |
+| `fecha_carga` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Fecha y hora de ingestión curricular en el repositorio. |
+
+*Restricción de Unicidad Compuesta Contractual:*  
+`CONSTRAINT uq_tecnica_origen UNIQUE (categoria_tecnica, posicion_origen)` (Garantiza matemáticamente en PostgreSQL la ausencia de variantes duplicadas en el catálogo curricular).
+
+#### 7. Tabla: `regla_biomecanica`
+*Descripción:* Modela el catálogo determinista de errores angulares tolerados y explicaciones pedagógicas asociadas a una técnica maestra.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_regla` | UUID | NOT NULL | PK | Identificador unívoco de la regla de auditoría. |
+| `tecnica_id` | UUID | NOT NULL | FK | `REFERENCES tecnica_maestra(id_tecnica) ON DELETE CASCADE`. |
+| `articulacion_clave`| VARCHAR(50) | NOT NULL | - | Nodo anatómico evaluado (ej. "CODO_DERECHO", "CADERA_IZQ"). |
+| `umbral_angular_tolerado` | NUMERIC(5,2) | NOT NULL | - | Discrepancia máxima tolerada en grados sexagesimales ($\text{grados} \ge 0$). |
+| `descripcion_error`| TEXT | NOT NULL | - | Explicación pedagógica determinista del fallo técnico (RF-10). |
+
+#### 8. Tabla: `video_ejecucion`
+*Descripción:* Registra la metadata de las grabaciones de práctica en pareja cargadas por los estudiantes.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_video` | UUID | NOT NULL | PK | Identificador unívoco del video de entrenamiento. |
+| `estudiante_id` | UUID | NOT NULL | FK | `REFERENCES estudiante(id_usuario) ON DELETE CASCADE`. |
+| `tecnica_id` | UUID | NOT NULL | FK | `REFERENCES tecnica_maestra(id_tecnica) ON DELETE RESTRICT`. |
+| `fecha_captura` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Momento exacto de registro en tatami (`DEFAULT NOW()`). |
+| `duracion_segundos`| NUMERIC(4,2) | NOT NULL | - | Duración del clip (`CHECK (duracion_segundos <= 6.0)`). |
+| `peso_mb` | NUMERIC(4,2) | NOT NULL | - | Tamaño del archivo (`CHECK (peso_mb <= 5.0)`). |
+| `video_url` | VARCHAR(255) | NOT NULL | - | Enlace autenticado de lectura al bucket privado de OBS. |
+
+#### 9. Tabla: `analisis_biomecanico`
+*Descripción:* Registra los resultados del procesamiento matemático serverless. Si el análisis fue interrumpido por oclusión continua prolongada (RF-11), **no se crea ninguna fila en esta tabla**.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_analisis` | UUID | NOT NULL | PK | Identificador unívoco del análisis cinemático completado. |
+| `video_id` | UUID | NOT NULL | FK | `REFERENCES video_ejecucion(id_video) ON DELETE CASCADE`. |
+| `fecha_procesamiento` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Marca de tiempo de ejecución en *FunctionGraph*. |
+| `desviacion_angular_maxima` | NUMERIC(5,2) | NOT NULL | - | Pico máximo de discrepancia articular cuantificado ($^\circ$). |
+| `articulacion_afectada` | VARCHAR(50) | NOT NULL | - | Articulación específica donde ocurrió el fallo motriz. |
+| `estado_computo` | VARCHAR(20) | NOT NULL | - | `CHECK (estado_computo IN ('completado', 'fallo_tecnico'))`. |
+
+#### 10. Tabla: `fotograma_anotado`
+*Descripción:* Almacena el entregable visual JPG procesado con OpenCV. Su cardinalidad respecto al análisis es $1 : 0..1$, garantizada mediante una clave foránea única sobre `analisis_id`.
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_fotograma` | UUID | NOT NULL | PK | Identificador unívoco del fotograma estático clave. |
+| `analisis_id` | UUID | NOT NULL | FK, UQ | `REFERENCES analisis_biomecanico(id_analisis) ON DELETE CASCADE UNIQUE`. |
+| `imagen_url` | VARCHAR(255) | NOT NULL | - | URL autenticada de la imagen JPG en *Huawei Cloud OBS*. |
+| `coordenada_error_x` | INTEGER | NOT NULL | - | Coordenada pixelar horizontal del centro del círculo ($X$). |
+| `coordenada_error_y` | INTEGER | NOT NULL | - | Coordenada pixelar vertical del centro del círculo ($Y$). |
+| `explicacion_causa` | TEXT | NOT NULL | - | Copia fiel del mensaje pedagógico de la regla aplicada. |
+
+#### 11. Tabla: `historial_progresion`
+*Descripción:* Mantiene el registro longitudinal consolidado de desempeño y reducción de errores para cada practicante (RF-12).
+
+| Campo | Tipo de Dato | Nulidad | Clave | Descripción / Restricción |
+| :--- | :---: | :---: | :---: | :--- |
+| `id_historial` | UUID | NOT NULL | PK | Identificador unívoco del registro acumulativo. |
+| `estudiante_id` | UUID | NOT NULL | FK, UQ | `REFERENCES estudiante(id_usuario) ON DELETE CASCADE UNIQUE`. |
+| `puntuacion_global`| NUMERIC(5,2) | NOT NULL | - | Calificación técnica normalizada ($[0.0, 100.0]$). |
+| `cantidad_errores` | INTEGER | NOT NULL | - | Número total acumulado de fallos articulares detectados. |
+| `fecha_ultima_evaluacion` | DATE | NOT NULL | - | Fecha de la última sesión analizada válidamente en tatami. |
+
+---
+
+### 5.4.3 Scripts DDL de Creación e Índices B-Tree
+
+El siguiente script en lenguaje SQL ANSI compatible con **PostgreSQL v14+** materializa la totalidad de la estructura de tablas, restricciones de integridad referencial, checks y los índices B-Tree de alta velocidad para la base de datos en Huawei Cloud RDS:
+
+```sql
+-- =============================================================================
+-- ESQUEMA DDL DE BASE DE DATOS - SISTEMA DE AUDITORÍA BIOMECÁNICA (BJJ)
+-- DBMS: PostgreSQL 14+ (Huawei Cloud RDS)
+-- =============================================================================
+
+-- Habilitación de extensión para generación de identificadores universales (UUID v4)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- -----------------------------------------------------------------------------
+-- 1. Entidad: escuela_bjj
+-- -----------------------------------------------------------------------------
+CREATE TABLE escuela_bjj (
+    id_escuela UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(100) NOT NULL,
+    sede VARCHAR(100) NOT NULL,
+    ciudad VARCHAR(50) NOT NULL,
+    comunidad_whatsapp VARCHAR(150)
+);
+
+-- -----------------------------------------------------------------------------
+-- 2. Entidad: usuario_academia (Superclase de Herencia)
+-- -----------------------------------------------------------------------------
+CREATE TABLE usuario_academia (
+    id_usuario UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    escuela_id UUID NOT NULL,
+    nombre_completo VARCHAR(150) NOT NULL,
+    telefono_whatsapp VARCHAR(25) NOT NULL,
+    correo_electronico VARCHAR(120) NOT NULL,
+    fecha_registro DATE NOT NULL DEFAULT CURRENT_DATE,
+    CONSTRAINT fk_usuario_escuela FOREIGN KEY (escuela_id)
+        REFERENCES escuela_bjj(id_escuela) ON DELETE RESTRICT,
+    CONSTRAINT uq_usuario_email UNIQUE (correo_electronico)
+);
+
+-- -----------------------------------------------------------------------------
+-- 3. Entidad: head_coach (Subclase de usuario_academia)
+-- -----------------------------------------------------------------------------
+CREATE TABLE head_coach (
+    id_usuario UUID PRIMARY KEY,
+    grado_cinturon VARCHAR(30) NOT NULL,
+    licencia_federativa VARCHAR(50),
+    CONSTRAINT fk_headcoach_usuario FOREIGN KEY (id_usuario)
+        REFERENCES usuario_academia(id_usuario) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------------------------------
+-- 4. Entidad: estudiante (Subclase de usuario_academia)
+-- -----------------------------------------------------------------------------
+CREATE TABLE estudiante (
+    id_usuario UUID PRIMARY KEY,
+    grado_cinturon VARCHAR(30) NOT NULL,
+    peso_kg NUMERIC(5,2) NOT NULL,
+    estado_membresia VARCHAR(20) NOT NULL DEFAULT 'activa',
+    CONSTRAINT fk_estudiante_usuario FOREIGN KEY (id_usuario)
+        REFERENCES usuario_academia(id_usuario) ON DELETE CASCADE,
+    CONSTRAINT chk_estudiante_peso CHECK (peso_kg > 20.0 AND peso_kg < 250.0),
+    CONSTRAINT chk_estudiante_membresia CHECK (estado_membresia IN ('activa', 'inactiva', 'suspendida'))
+);
+
+-- -----------------------------------------------------------------------------
+-- 5. Entidad: codigo_activacion (Token de Membresía Mensual)
+-- -----------------------------------------------------------------------------
+CREATE TABLE codigo_activacion (
+    id_codigo UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coach_emisor_id UUID NOT NULL,
+    estudiante_id UUID,
+    token VARCHAR(64) NOT NULL,
+    fecha_emision DATE NOT NULL DEFAULT CURRENT_DATE,
+    fecha_expiracion DATE NOT NULL,
+    estado VARCHAR(15) NOT NULL DEFAULT 'vigente',
+    CONSTRAINT fk_codigo_coach FOREIGN KEY (coach_emisor_id)
+        REFERENCES head_coach(id_usuario) ON DELETE RESTRICT,
+    CONSTRAINT fk_codigo_estudiante FOREIGN KEY (estudiante_id)
+        REFERENCES estudiante(id_usuario) ON DELETE SET NULL,
+    CONSTRAINT uq_codigo_token UNIQUE (token),
+    CONSTRAINT chk_codigo_fechas CHECK (fecha_expiracion >= fecha_emision),
+    CONSTRAINT chk_codigo_estado CHECK (estado IN ('vigente', 'expirado', 'revocado'))
+);
+
+-- -----------------------------------------------------------------------------
+-- 6. Entidad: tecnica_maestra (Patrón Curricular Homologado)
+-- -----------------------------------------------------------------------------
+CREATE TABLE tecnica_maestra (
+    id_tecnica UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coach_id UUID NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    categoria_tecnica VARCHAR(60) NOT NULL,
+    posicion_origen VARCHAR(60) NOT NULL,
+    ventana_sakoe_chiba NUMERIC(3,2) NOT NULL DEFAULT 0.15,
+    video_url VARCHAR(255) NOT NULL,
+    fecha_carga TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_tecnica_coach FOREIGN KEY (coach_id)
+        REFERENCES head_coach(id_usuario) ON DELETE RESTRICT,
+    CONSTRAINT uq_tecnica_origen UNIQUE (categoria_tecnica, posicion_origen),
+    CONSTRAINT chk_tecnica_ventana CHECK (ventana_sakoe_chiba >= 0.05 AND ventana_sakoe_chiba <= 0.30)
+);
+
+-- -----------------------------------------------------------------------------
+-- 7. Entidad: regla_biomecanica (Catálogo Determinista de Errores)
+-- -----------------------------------------------------------------------------
+CREATE TABLE regla_biomecanica (
+    id_regla UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tecnica_id UUID NOT NULL,
+    articulacion_clave VARCHAR(50) NOT NULL,
+    umbral_angular_tolerado NUMERIC(5,2) NOT NULL,
+    descripcion_error TEXT NOT NULL,
+    CONSTRAINT fk_regla_tecnica FOREIGN KEY (tecnica_id)
+        REFERENCES tecnica_maestra(id_tecnica) ON DELETE CASCADE,
+    CONSTRAINT chk_regla_umbral CHECK (umbral_angular_tolerado >= 0.0)
+);
+
+-- -----------------------------------------------------------------------------
+-- 8. Entidad: video_ejecucion (Grabación de Estudiante en Tatami)
+-- -----------------------------------------------------------------------------
+CREATE TABLE video_ejecucion (
+    id_video UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    estudiante_id UUID NOT NULL,
+    tecnica_id UUID NOT NULL,
+    fecha_captura TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    duracion_segundos NUMERIC(4,2) NOT NULL,
+    peso_mb NUMERIC(4,2) NOT NULL,
+    video_url VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_video_estudiante FOREIGN KEY (estudiante_id)
+        REFERENCES estudiante(id_usuario) ON DELETE CASCADE,
+    CONSTRAINT fk_video_tecnica FOREIGN KEY (tecnica_id)
+        REFERENCES tecnica_maestra(id_tecnica) ON DELETE RESTRICT,
+    CONSTRAINT chk_video_duracion CHECK (duracion_segundos <= 6.0),
+    CONSTRAINT chk_video_peso CHECK (peso_mb <= 5.0)
+);
+
+-- -----------------------------------------------------------------------------
+-- 9. Entidad: analisis_biomecanico (Resultado Serverless Válido)
+-- -----------------------------------------------------------------------------
+CREATE TABLE analisis_biomecanico (
+    id_analisis UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    video_id UUID NOT NULL,
+    fecha_procesamiento TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    desviacion_angular_maxima NUMERIC(5,2) NOT NULL,
+    articulacion_afectada VARCHAR(50) NOT NULL,
+    estado_computo VARCHAR(20) NOT NULL DEFAULT 'completado',
+    CONSTRAINT fk_analisis_video FOREIGN KEY (video_id)
+        REFERENCES video_ejecucion(id_video) ON DELETE CASCADE,
+    CONSTRAINT chk_analisis_estado CHECK (estado_computo IN ('completado', 'fallo_tecnico'))
+);
+
+-- -----------------------------------------------------------------------------
+-- 10. Entidad: fotograma_anotado (Entregable Visual Clave con OpenCV)
+-- -----------------------------------------------------------------------------
+CREATE TABLE fotograma_anotado (
+    id_fotograma UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    analisis_id UUID NOT NULL,
+    imagen_url VARCHAR(255) NOT NULL,
+    coordenada_error_x INTEGER NOT NULL,
+    coordenada_error_y INTEGER NOT NULL,
+    explicacion_causa TEXT NOT NULL,
+    CONSTRAINT fk_fotograma_analisis FOREIGN KEY (analisis_id)
+        REFERENCES analisis_biomecanico(id_analisis) ON DELETE CASCADE,
+    CONSTRAINT uq_fotograma_analisis UNIQUE (analisis_id)
+);
+
+-- -----------------------------------------------------------------------------
+-- 11. Entidad: historial_progresion (Consolidado Longitudinal)
+-- -----------------------------------------------------------------------------
+CREATE TABLE historial_progresion (
+    id_historial UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    estudiante_id UUID NOT NULL,
+    puntuacion_global NUMERIC(5,2) NOT NULL DEFAULT 100.0,
+    cantidad_errores INTEGER NOT NULL DEFAULT 0,
+    fecha_ultima_evaluacion DATE NOT NULL DEFAULT CURRENT_DATE,
+    CONSTRAINT fk_historial_estudiante FOREIGN KEY (estudiante_id)
+        REFERENCES estudiante(id_usuario) ON DELETE CASCADE,
+    CONSTRAINT uq_historial_estudiante UNIQUE (estudiante_id),
+    CONSTRAINT chk_historial_puntuacion CHECK (puntuacion_global >= 0.0 AND puntuacion_global <= 100.0),
+    CONSTRAINT chk_historial_errores CHECK (cantidad_errores >= 0)
+);
+
+-- =============================================================================
+-- ÍNDICES B-TREE PARA OPTIMIZACIÓN DE CONSULTAS Y JOINS
+-- =============================================================================
+
+-- Optimización de búsqueda de membresía en el Token Gate (RF-09)
+CREATE INDEX idx_codigo_token ON codigo_activacion USING btree (token);
+CREATE INDEX idx_codigo_estado ON codigo_activacion USING btree (estado);
+CREATE INDEX idx_codigo_estudiante ON codigo_activacion USING btree (estudiante_id);
+
+-- Optimización de listado jerárquico de técnicas (RF-01, RF-07)
+CREATE INDEX idx_tecnica_categoria_posicion ON tecnica_maestra USING btree (categoria_tecnica, posicion_origen);
+CREATE INDEX idx_regla_tecnica ON regla_biomecanica USING btree (tecnica_id);
+
+-- Optimización de consulta de videos e historiales (RF-12, CU-04)
+CREATE INDEX idx_video_estudiante ON video_ejecucion USING btree (estudiante_id);
+CREATE INDEX idx_analisis_video ON analisis_biomecanico USING btree (video_id);
+CREATE INDEX idx_analisis_fecha ON analisis_biomecanico USING btree (fecha_procesamiento);
+CREATE INDEX idx_historial_estudiante ON historial_progresion USING btree (estudiante_id);
+```
+
+---
+
+## 5.5 Diseño de Interfaces de Usuario (UI/UX en Streamlit)
+
+La interfaz gráfica de usuario está implementada mediante el framework web de código abierto **Streamlit**. Este componente actúa como un cliente liviano desacoplado que opera en modo pasivo en el navegador móvil del atleta, garantizando una interacción reactiva, minimalista y exenta de sobrecargas de procesamiento en el tatami.
+
+### 5.5.1 Diagrama de Navegación y Flujo de Estados
+
+El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a la cámara y al formulario de subida mientras el practicante no acredite un token de membresía válido emitido por el Head Coach.
+
+La **Figura 5.7** detalla el diagrama de estados de navegación en la plataforma:
+
+```mermaid
+stateDiagram-v2
+    [*] --> PantallaAutenticacionToken: Acceso a URL Web
+
+    state PantallaAutenticacionToken {
+        [*] --> EsperandoToken
+        EsperandoToken --> VerificandoEnRDS: Ingreso de Token Alfanumérico
+        VerificandoEnRDS --> TokenRechazado: Token inválido / expirado
+        TokenRechazado --> EsperandoToken: Reintentar
+    }
+
+    PantallaAutenticacionToken --> PanelPrincipalEstudiante: Token Válido (estado == 'vigente')
+
+    state PanelPrincipalEstudiante {
+        [*] --> SeleccionJerarquicaTecnica
+        SeleccionJerarquicaTecnica --> SubiendoVideo: Seleccionar Categoría y Posición
+        
+        state SubiendoVideo {
+            [*] --> ValidandoEnCliente: Archivo Seleccionado
+            ValidandoEnCliente --> ErrorTamanoDuracion: Tamaño > 5MB o Duración > 6s
+            ErrorTamanoDuracion --> [*]: Notificación Local en Navegador
+            ValidandoEnCliente --> TransfiriendoOBS: Parámetros válidos
+        }
+
+        SubiendoVideo --> ProcesandoCómputoCloud: Disparo Serverless FunctionGraph
+
+        state ProcesandoCómputoCloud {
+            [*] --> InferenciaMediaPipe
+            InferenciaMediaPipe --> FiltroKalmanOclusion
+            
+            state DecisionOclusion <<choice>>
+            FiltroKalmanOclusion --> DecisionOclusion
+            
+            DecisionOclusion --> AlertaOclusionProlongada: Oclusión continua > 1.5s (RF-11)
+            DecisionOclusion --> AlineacionDTWYMarcado: Tolerancia respetada (<= 1.5s)
+            
+            AlineacionDTWYMarcado --> PersistiendoAnalisisRDS: Generación JPG OpenCV
+        }
+
+        ProcesandoCómputoCloud --> DespliegueDiagnosticoAnotado: Cómputo exitoso
+        ProcesandoCómputoCloud --> NotificacionRechazoPedagogico: Aborto sin persistencia (RF-11)
+        
+        DespliegueDiagnosticoAnotado --> ConsultaHistorialLongitudinal: Clic en 'Ver Mi Progreso'
+        NotificacionRechazoPedagogico --> SeleccionJerarquicaTecnica: Grabar de nuevo
+        ConsultaHistorialLongitudinal --> SeleccionJerarquicaTecnica: Nueva evaluación
+    }
+
+    PanelPrincipalEstudiante --> [*]: Cierre de Sesión
+```
+
+**Figura 5.7**  
+*Diagrama de Navegación y Flujo de Estados de la Interfaz Web (State Machine).*
+
+---
+
+### 5.5.2 Especificación de Layouts y Visualización del Diagnóstico
+
+La experiencia de usuario (UX) se organiza en cuatro paneles modulares de alta ergonomía visual:
+
+1. **Panel 1: Puerta de Entrada y Validación de Token (*Token Gate View*):**
+   * *Componentes:* Entrada de texto protegida (`st.text_input("Código de Activación Mensual", type="password")`), botón de confirmación (`st.button("Habilitar Tatami Digital")`) y mensaje de ayuda contextual (`st.caption`).
+   * *Comportamiento:* Valida de forma asincrónica contra la base de datos PostgreSQL. Si el token es inválido o se encuentra expirado, despliega un contenedor de alerta roja (`st.error`) indicando al alumno que debe renovar su credencial física o solicitar un nuevo token a través de la comunidad oficial de WhatsApp de Corpo & Mente.
+2. **Panel 2: Selección Curricular Jerárquica y Carga de Video (*Upload View*):**
+   * *Componentes:* Dos selectores en cascada (`st.selectbox("1. Categoría Técnica")` y `st.selectbox("2. Posición de Origen")`), vinculados a la base de datos para impedir ambigüedades. El cargador de archivos (`st.file_uploader`) aplica la restricción de servidor `maxUploadSize = 5` en `.streamlit/config.toml` y ejecuta una validación en código Python para garantizar que la grabación en pareja no supere los 6 segundos de duración (RF-07).
+3. **Panel 3: Despliegue de Diagnóstico Biomecánico Anotado (*Feedback Report View*):**
+   * *Componentes:* Estructura de dos columnas paralelas (`st.columns([1, 1])`):
+     * *Columna Izquierda:* Reproductor de video HTML5 (`st.video`) con la ejecución original del estudiante en bucle (*loop*).
+     * *Columna Derecha:* Visor del fotograma anotado (`st.image`) en formato JPG de $\sim 80\text{ KB}$, conteniendo el marcador circular rojo de 15 píxeles generado con OpenCV directamente sobre la articulación donde se cuantificó el error.
+   * *Tarjeta Pedagógica de Causa Motriz:* Contenedor destacado (`st.warning`) que despliega textualmente la causa técnica objetiva extraída de la tabla `regla_biomecanica` (ej. *"Discrepancia angular de 28.4° en codo derecho: la articulación se encuentra demasiado extendida antes del quiebre de cadera, permitiendo el escape del adversario"*), respondiendo de forma determinista al "por qué" del error sin emitir juicios cualitativos ambiguos (RF-10).
+4. **Panel 4: Dashboard de Progresión Técnica Longitudinal (*Progression History View*):**
+   * *Componentes:* Panel analítico interactivo que consulta la entidad `historial_progresion` (RF-12). Despliega métricas de resumen (`st.metric("Puntuación Técnica Global", "84.5 / 100", "+3.2%")`, `st.metric("Total Evaluaciones", "14")`) y un gráfico cronológico de líneas interactivo (`st.line_chart`) que traza la reducción sostenida de grados de error y la tasa de acierto a lo largo de las semanas de práctica en la academia Corpo & Mente Bolivia.
+
+Con esta especificación, el Capítulo V culmina el diseño de ingeniería del software, enlazando armoniosamente los requisitos del sistema con su implementación tecnológica en la nube.

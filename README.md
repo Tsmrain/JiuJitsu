@@ -210,7 +210,7 @@ Con base en las directrices metodológicas de Craig Larman (2004), la investigac
 
 ### 1.3.1 Criterios de Aceptación de la Fase de Transición
 
-Con el objetivo de dotar a la fase experimental de rigor metodológico y proveer un marco objetivo de contrastación científica durante la defensa del proyecto, se establecen los siguientes criterios cuantitativos de aceptación. Se deja explícitamente establecido que estos valores constituyen las **metas de validación propuestas** para la evaluación del sistema y no resultados preexistentes consolidados, dado que el aplicativo se encuentra en fase previa a su despliegue operativo en el tatami:
+Con el objetivo de dotar a la fase experimental de rigor metodológico y proveer un marco objetivo de contrastación científica durante la defensa del proyecto, se establecen los siguientes criterios cuantitativos de aceptación. Se deja explícitamente establecido que estos valores constituyen las **metas de validación propuestas** para la evaluación del sistema y no resultados preexistentes consolidados, dado que el aplicativo se encuentra en fase previa a su despliegue operativo en el tatami: en rigor metodológico (Larman, Gestión de Fases UP), estos parámetros operan como **hipótesis nulas de validación operativa y criterios formales de aceptación** que serán contrastados empíricamente mediante inferencia estadística exclusivamente durante la ejecución de la Fase de Transición, una vez que el aplicativo se encuentre desplegado en el tatami.
 
 1. **Protocolo de Inferencia Estadística y Rigor Biomecánico:**
    * *Verificación de Supuestos:* Dado que la muestra esperada de atletas participantes de una sola academia real será acotada ($N < 30$ sujetos esperados durante la prueba piloto) y no resulta metodológicamente admisible asumir normalidad en la distribución de las discrepancias angulares motrices, se aplicará en primera instancia la **prueba de Shapiro-Wilk** con un nivel de significancia $\alpha = 0.05$ sobre las diferencias pareadas.
@@ -568,7 +568,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | **RF-08** | Compensación Cinemática por Oclusión y Límite de Validez | El backend en FunctionGraph deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada sea $C < 0.5$, interpolando la trayectoria a partir de cuadros adyacentes; no obstante, si una articulación permanece ocluida ($C < 0.5$) de forma continua por más de un umbral máximo configurable (establecido con un valor de referencia inicial de 1.5 segundos o 45 fotogramas a 30 fps), el filtro cesará la interpolación inercial y marcará dicho tramo como 'no computable' para evitar la generación de cinemáticas ficticias, derivando el procesamiento al requisito RF-11. |
 | **RF-09** | Validación de Token de Membresía | La interfaz web deberá validar la vigencia del Código de Activación Mensual (Token de Acceso) del estudiante antes de autorizar la transferencia del archivo de video hacia el almacenamiento en la nube (Huawei Cloud OBS), impidiendo el consumo no autorizado de recursos serverless. |
 | **RF-10** | Generación de Explicación Textual Determinista | El backend en FunctionGraph deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
-| **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, registrando el intento como fallido y abortando la ejecución para evitar contaminar el historial de progresión del atleta con cinemáticas ficticias. (Nota técnica: Aunque el cómputo serverless ejecutado hasta el punto de detección de oclusión ya fue facturado por milisegundos de CPU, esta lógica de rechazo prioriza la validez pedagógica y estadística de los datos longitudinales del estudiante sobre el ahorro marginal de cómputo). |
+| **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, abortando la ejecución a nivel de base de datos (sin persistir registros en las tablas `AnalisisBiomecanico` ni `HistorialProgresion`) para evitar contaminar el historial de progresión del atleta con cinemáticas ficticias. (Nota técnica: Aunque el cómputo serverless ejecutado hasta el punto de detección de oclusión ya fue facturado por milisegundos de CPU, esta lógica de rechazo prioriza la validez pedagógica y estadística de los datos longitudinales del estudiante sobre el ahorro marginal de cómputo). |
 | **RF-12** | Consulta de Historial de Progresión Técnica | La interfaz web en Streamlit deberá permitir al estudiante autenticado consultar de forma interactiva su historial acumulativo de evaluaciones biomecánicas (`HistorialProgresion`), visualizando la evolución cronológica de su puntuación técnica global (`puntuacionGlobal`) y la tasa de reducción de errores (`cantidadErrores`) a lo largo de sus sucesivas sesiones de entrenamiento en el tatami. |
 
 ---
@@ -577,8 +577,8 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 | Código | Requisito de Rendimiento | Métrica y Criterio de Aceptación |
 | :---: | :--- | :--- |
-| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con MediaPipe, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*, contemplando un margen seguro ante arranques en frío (*cold starts*) de la plataforma. |
-| **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta emitido desde la nube hacia el teléfono del practicante no deberá superar los **100 KB** por consulta, garantizando una carga rápida bajo enlaces móviles de baja velocidad. |
+| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con MediaPipe, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la extracción de 33 landmarks con MediaPipe, el arranque en frío (*cold start*) del contenedor Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
+| **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta transferido hacia el cliente móvil no deberá superar los **100 KB** por consulta. (Nota de Arquitectura: Los 100 KB constituyen la cota superior contractual admisible o *worst-case threshold*, mientras que el promedio nominal comprimido por OpenCV es de ~80 KB. Ambos escenarios garantizan matemáticamente el cumplimiento del límite presupuestario trimestral). |
 
 ---
 
@@ -636,7 +636,7 @@ A continuación, se presenta la trazabilidad entre las historias de usuario, los
 | 3 | Como estudiante, quiero ver el fotograma anotado junto a la explicación textual de la causa de mi fallo técnico para comprender por qué me equivoqué y saber cómo corregirlo. | RF-06, RF-10 | CU-03 | Consultar Diagnóstico Visual y Causa |
 | 4 | Como estudiante, quiero consultar mi historial de análisis para visualizar mi progreso y la reducción de errores biomecánicos a lo largo del tiempo. | RF-12 | CU-04 | Consultar Historial de Progresión |
 
-*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: selección jerárquica de la técnica y doble capa de restricción de video de hasta 6 segundos y 5 MB (RF-07), validación de vigencia del token de membresía en cliente (RF-09), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman con límite de validez (RF-08), flujo de interrupción y rechazo pedagógico ante oclusión continua prolongada (RF-11), sincronización temporal mediante DTW con ventana configurable (RF-03), detección del fotograma de error máximo (RF-04), inyección gráfica de la anotación de fallo con OpenCV (RF-05) y selección determinista del mensaje pedagógico explicativo a partir del catálogo de reglas (RF-10). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 implementa directamente la consulta del historial de progresión técnica (RF-12), permitiendo la evaluación longitudinal del atleta.
+*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: selección jerárquica de la técnica y doble capa de restricción de video de hasta 6 segundos y 5 MB (RF-07), validación de vigencia del token de membresía en cliente (RF-09), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman con límite de validez (RF-08), flujo de interrupción y rechazo pedagógico ante oclusión continua prolongada (RF-11), el cual aborta la transacción en la nube sin persistir datos en la base de datos, sincronización temporal mediante DTW con ventana configurable (RF-03), detección del fotograma de error máximo (RF-04), inyección gráfica de la anotación de fallo con OpenCV (RF-05) y selección determinista del mensaje pedagógico explicativo a partir del catálogo de reglas (RF-10). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 implementa directamente la consulta del historial de progresión técnica (RF-12), permitiendo la evaluación longitudinal del atleta.
 
 ---
 
@@ -647,6 +647,7 @@ El Modelo de Dominio conceptual identifica las entidades principales del ecosist
 ```mermaid
 classDiagram
     class EscuelaBJJ {
+        idEscuela
         nombre
         sede
         ciudad
@@ -655,6 +656,7 @@ classDiagram
 
     class UsuarioAcademia {
         <<abstract>>
+        idUsuario
         nombreCompleto
         telefonoWhatsApp
         correoElectronico
@@ -673,6 +675,7 @@ classDiagram
     }
 
     class CodigoActivacion {
+        idCodigoActivacion
         token
         fechaEmision
         fechaExpiracion
@@ -680,6 +683,7 @@ classDiagram
     }
 
     class TecnicaMaestra {
+        idTecnicaMaestra
         nombre
         categoriaTecnica
         posicionOrigen
@@ -689,12 +693,14 @@ classDiagram
     }
 
     class ReglaBiomecanica {
+        idReglaBiomecanica
         articulacionClave
         umbralAngularTolerado
         descripcionError
     }
 
     class VideoEjecucion {
+        idVideoEjecucion
         fechaCaptura
         duracionSegundos
         pesoMB
@@ -702,6 +708,7 @@ classDiagram
     }
 
     class AnalisisBiomecanico {
+        idAnalisisBiomecanico
         fechaProcesamiento
         desviacionAngularMaxima
         articulacionAfectada
@@ -709,6 +716,7 @@ classDiagram
     }
 
     class FotogramaAnotado {
+        idFotogramaAnotado
         imagenURL
         coordenadaErrorX
         coordenadaErrorY
@@ -716,6 +724,7 @@ classDiagram
     }
 
     class HistorialProgresion {
+        idHistorialProgresion
         puntuacionGlobal
         cantidadErrores
         fechaUltimaEvaluacion
@@ -746,17 +755,17 @@ classDiagram
 
 **Descripción de las Entidades:**
 
-* **EscuelaBJJ:** Entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema, nucleando mediante composición a los usuarios de la institución.
-* **UsuarioAcademia:** Superclase abstracta que encapsula los atributos comunes de identidad y contacto (nombre, WhatsApp, email) compartidos por HeadCoach y Estudiante, aplicando la regla de generalización "Es-Un" (Is-A) y disyunción completa.
-* **HeadCoach:** Especialización de UsuarioAcademia que representa al Head Coach / Director Técnico, profesional con potestad exclusiva para registrar y homologar las técnicas de referencia curriculares, emitir códigos de activación mensual y calibrar el catálogo de reglas biomecánicas de error en el sistema.
-* **Estudiante:** Especialización de UsuarioAcademia que representa al practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en PostgreSQL en la nube) que graba y carga videos de sus ejecuciones en pareja y consulta los diagnósticos visuales generados.
-* **CodigoActivacion:** Credencial temporal de acceso (Token de Activación Mensual) emitida periódicamente por el Head Coach a favor de un estudiante con membresía vigente. Sus atributos registran identificador, código alfanumérico, fecha de emisión, fecha de expiración y su `estado` operativo (`vigente`, `expirado` o `revocado`). Es este atributo de estado el que evalúa formalmente el requisito RF-09 antes de autorizar cualquier transferencia de video hacia la nube.
-* **TecnicaMaestra:** Video patrón homologado por el Head Coach con la ejecución canónica de una técnica específica del currículo oficial, asociado a un catálogo de reglas de error deterministas. Incorpora los atributos estructurados `categoriaTecnica` (ej. "Llave de Brazo", "Pasaje de Guardia", "Estrangulación") y `posicionOrigen` (ej. "Montada", "Guardia Cerrada", "Side Control", "De Pie"), conformándose su `nombre` como la combinación única de ambos para catalogar con precisión variantes legítimas sin ambigüedad. Admite opcionalmente el parámetro `ventanaSakoeChiba` para calibrar el ancho de banda del algoritmo DTW según la dinámica de la técnica. A nivel de persistencia en PostgreSQL, esta entidad posee un índice de unicidad compuesto (Unique Constraint) sobre los atributos `(categoriaTecnica, posicionOrigen)`, garantizando contractualmente que no existan duplicados en el catálogo curricular.
-* **ReglaBiomecanica:** Entidad conceptual que modela el catálogo de errores deterministas. Posee una relación de composición fuerte con TecnicaMaestra; si la técnica se elimina del catálogo, sus reglas biomecánicas asociadas se destruyen en cascada.
-* **VideoEjecucion:** Grabación capturada por el estudiante junto a su compañero desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico evaluándose contra la técnica maestra de referencia.
-* **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
-* **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico y la explicación pedagógica textual (`explicacionCausa`) sobre la causa motriz del fallo generada de manera determinista por el motor de reglas (RF-10).
-* **HistorialProgresion:** Registro acumulativo que consolida los sucesivos análisis biomecánicos de un estudiante, permitiendo registrar la evolución cronológica de su desempeño técnico y la reducción de fallos a lo largo del tiempo.
+* **EscuelaBJJ:** Identificada unívocamente por su clave conceptual `idEscuela`, es la entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema, nucleando mediante composición a los usuarios de la institución.
+* **UsuarioAcademia:** Identificada unívocamente por su clave conceptual `idUsuario`, es la superclase abstracta que encapsula los atributos comunes de identidad y contacto (nombre, WhatsApp, email) compartidos por HeadCoach y Estudiante, aplicando la regla de generalización "Es-Un" (Is-A) y disyunción completa.
+* **HeadCoach:** Especialización de UsuarioAcademia (heredando su clave identificadora `idUsuario`) que representa al Head Coach / Director Técnico, profesional con potestad exclusiva para registrar y homologar las técnicas de referencia curriculares, emitir códigos de activación mensual y calibrar el catálogo de reglas biomecánicas de error en el sistema.
+* **Estudiante:** Especialización de UsuarioAcademia (heredando su clave identificadora `idUsuario`) que representa al practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en PostgreSQL en la nube) que graba y carga videos de sus ejecuciones en pareja y consulta los diagnósticos visuales generados.
+* **CodigoActivacion:** Identificada unívocamente por su clave conceptual `idCodigoActivacion`, es la credencial temporal de acceso (Token de Activación Mensual) emitida periódicamente por el Head Coach a favor de un estudiante con membresía vigente. Sus atributos registran identificador, código alfanumérico (`token`), fecha de emisión, fecha de expiración y su `estado` operativo (`vigente`, `expirado` o `revocado`). Es este atributo de estado el que evalúa formalmente el requisito RF-09 antes de autorizar cualquier transferencia de video hacia la nube.
+* **TecnicaMaestra:** Identificada unívocamente por su clave conceptual `idTecnicaMaestra`, representa el video patrón homologado por el Head Coach con la ejecución canónica de una técnica específica del currículo oficial, asociado a un catálogo de reglas de error deterministas. Incorpora los atributos estructurados `categoriaTecnica` (ej. "Llave de Brazo", "Pasaje de Guardia", "Estrangulación") y `posicionOrigen` (ej. "Montada", "Guardia Cerrada", "Side Control", "De Pie"), conformándose su `nombre` como la combinación única de ambos para catalogar con precisión variantes legítimas sin ambigüedad. Admite opcionalmente el parámetro `ventanaSakoeChiba` para calibrar el ancho de banda del algoritmo DTW según la dinámica de la técnica. A nivel de persistencia en PostgreSQL, esta entidad posee un índice de unicidad compuesto (Unique Constraint) sobre los atributos `(categoriaTecnica, posicionOrigen)`, garantizando contractualmente que no existan duplicados en el catálogo curricular.
+* **ReglaBiomecanica:** Identificada unívocamente por su clave conceptual `idReglaBiomecanica`, es la entidad conceptual que modela el catálogo de errores deterministas. Posee una relación de composición fuerte con TecnicaMaestra; si la técnica se elimina del catálogo, sus reglas biomecánicas asociadas se destruyen en cascada.
+* **VideoEjecucion:** Identificada unívocamente por su clave conceptual `idVideoEjecucion`, representa la grabación capturada por el estudiante junto a su compañero desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico evaluándose contra la técnica maestra de referencia.
+* **AnalisisBiomecanico:** Identificada unívocamente por su clave conceptual `idAnalisisBiomecanico`, es el resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
+* **FotogramaAnotado:** Identificada unívocamente por su clave conceptual `idFotogramaAnotado`, corresponde a la imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico y la explicación pedagógica textual (`explicacionCausa`) sobre la causa motriz del fallo generada de manera determinista por el motor de reglas (RF-10).
+* **HistorialProgresion:** Identificada unívocamente por su clave conceptual `idHistorialProgresion`, es el registro acumulativo que consolida los sucesivos análisis biomecánicos de un estudiante, permitiendo registrar la evolución cronológica de su desempeño técnico y la reducción de fallos a lo largo del tiempo.
 
 **Relaciones y Cardinalidad:**
 

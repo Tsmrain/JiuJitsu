@@ -1838,63 +1838,85 @@ Para responder a las exigencias de la modalidad de graduación y el entorno de u
 
 ## 5.6 Estado de Implementación del Software, Cobertura TDD y Manual de Ejecución Local
 
-Con la culminación de las fases de desarrollo backend, infraestructura cloud y capa de presentación, el proyecto cuenta con un **Producto Mínimo Viable (MVP) 100% operativo y verificado**, estructurado conforme a las buenas prácticas de ingeniería de software.
+Con la culminación de las fases de desarrollo backend, infraestructura cloud y capa de presentación, el proyecto cuenta con un **Producto Mínimo Viable (MVP) 100% operativo y verificado**, estructurado conforme a las directrices de diseño guiado por el dominio (DDD), separación en capas (Craig Larman) y desarrollo guiado por pruebas (TDD).
 
 ### 5.6.1 Arquitectura Implementada y Estructura de Paquetes
 
-El código fuente se encuentra organizado en el directorio `src/` bajo una arquitectura limpia y orientada a objetos (POO / Craig Larman):
+La implementación del sistema se organiza de forma desacoplada y modular bajo los directorios `src/` (lógica productiva) y `tests/` (suite de pruebas automatizadas), manteniendo una correspondencia estricta entre especificación y código:
 
 ```text
-src/
-├── domain/                                 <-- [Entidades de Negocio Puras]
-│   └── models.py                           # TecnicaMaestra, ReglaBiomecanica
+├── src/
+│   ├── domain/                                 <-- [Entidades de Negocio Puras]
+│   │   ├── __init__.py
+│   │   └── models.py                           # TecnicaMaestra, ReglaBiomecanica
+│   │
+│   ├── infrastructure/                         <-- [Infraestructura y Persistencia]
+│   │   ├── __init__.py
+│   │   ├── database/                           # [Persistencia Relacional - Mannino]
+│   │   │   ├── __init__.py
+│   │   │   └── models.py                       # Modelos ORM SQLAlchemy 2.0 (Table-per-Subclass)
+│   │   ├── repositories/                       # [Patrón Repositorio]
+│   │   │   ├── __init__.py
+│   │   │   ├── analisis_repository.py          # AnalisisBiomecanicoRepository
+│   │   │   ├── tecnica_repository.py           # TecnicaMaestraRepository (CRUD Técnicas)
+│   │   │   └── token_repository.py             # TokenRepository (Validación Membresías)
+│   │   ├── serverless/                         # [Cómputo Cloud Serverless]
+│   │   │   ├── __init__.py
+│   │   │   └── functiongraph_handler.py        # Handler de evento para Huawei FunctionGraph
+│   │   └── storage/                            # [Almacenamiento Cloud - Patrón Adaptador]
+│   │       ├── __init__.py
+│   │       └── obs_adapter.py                  # HuaweiOBSStorageAdapter (Cliente OBS)
+│   │
+│   ├── services/                               <-- [Servicios de Dominio y Algoritmos]
+│   │   ├── __init__.py
+│   │   ├── controllers/                        # [Controladores GRASP]
+│   │   │   ├── __init__.py
+│   │   │   └── analisis_controller.py          # AnalisisBiomecanicoController
+│   │   ├── dtw_comparator.py                   # DTWComparator (Alineación Sakoe-Chiba)
+│   │   ├── kalman_filter.py                    # KalmanTracker / KalmanFilterTracker (3D y RF-11)
+│   │   ├── opencv_annotator.py                 # OpenCVAnnotator (Marcador Rojo 15px)
+│   │   └── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF)
+│   │
+│   └── ui/                                     <-- [Capa de Presentación Web en Streamlit]
+│       ├── __init__.py
+│       ├── app.py                              # Enrutador principal y configuración visual
+│       ├── coach_view.py                       # Panel del profesor (CRUD y videos de clase)
+│       ├── feedback_view.py                    # Reporte de diagnóstico con fotograma anotado
+│       ├── progression_view.py                 # Dashboard de progresión longitudinal
+│       ├── token_view.py                       # Vista de acceso por token de membresía
+│       └── upload_view.py                      # Sala de práctica y auditoría del alumno
 │
-├── services/                               <-- [Servicios de Dominio y Algoritmos]
-│   ├── kalman_filter.py                    # KalmanTracker (Filtro cinemático 3D y RF-11)
-│   ├── dtw_comparator.py                   # DTWComparator (Alineación temporal Sakoe-Chiba)
-│   ├── opencv_annotator.py                 # OpenCVAnnotator (Inyección gráfica de marcador rojo)
-│   ├── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF de procesamiento)
-│   └── controllers/                        # [Controladores GRASP]
-│       └── analisis_controller.py          # AnalisisBiomecanicoController (Orquestador de Casos de Uso)
-│
-├── infrastructure/                         <-- [Infraestructura y Persistencia]
-│   ├── database/                           # [Persistencia Relacional - Mannino]
-│   │   └── models.py                       # Modelos ORM SQLAlchemy 2.0 (Table-per-Subclass)
-│   ├── repositories/                       # [Patrón Repositorio]
-│   │   ├── token_repository.py             # TokenRepository (Validación de membresías)
-│   │   ├── tecnica_repository.py           # TecnicaMaestraRepository (CRUD de técnicas del profesor)
-│   │   └── analisis_repository.py          # AnalisisBiomecanicoRepository (Persistencia de evaluaciones)
-│   ├── storage/                            # [Almacenamiento Cloud - Patrón Adaptador]
-│   │   └── obs_adapter.py                  # HuaweiOBSStorageAdapter (Cliente oficial OBS)
-│   └── serverless/                         # [Cómputo Cloud Serverless]
-│       └── functiongraph_handler.py        # Handler de evento para Huawei FunctionGraph
-│
-└── ui/                                     <-- [Capa de Presentación Web]
-    ├── token_view.py                       # Vista de acceso por token
-    ├── coach_view.py                       # Panel del profesor (CRUD y videos de clase)
-    ├── upload_view.py                      # Sala de práctica y auditoría del alumno
-    ├── feedback_view.py                    # Reporte de diagnóstico con fotograma anotado
-    ├── progression_view.py                 # Dashboard de progresión longitudinal
-    └── app.py                              # Enrutador principal de Streamlit
+└── tests/                                      <-- [Batería de Pruebas Unitarias Automatizadas]
+    ├── __init__.py
+    ├── test_annotator.py                       # Pruebas del anotador gráfico OpenCV (RF-05, RP-02)
+    ├── test_controller.py                      # Pruebas del controlador GRASP y orquestación
+    ├── test_database_models.py                 # Pruebas de modelos ORM relacionales (Mannino)
+    ├── test_dtw.py                             # Pruebas de comparación temporal DTW (RF-03, RF-04)
+    ├── test_functiongraph_handler.py           # Pruebas de integración serverless FunctionGraph
+    ├── test_kalman.py                          # Pruebas de filtrado cinemático 3D y RF-11
+    ├── test_obs_adapter.py                     # Pruebas del adaptador Huawei Cloud OBS
+    ├── test_pipeline.py                        # Pruebas del motor de pipeline biomecánico
+    ├── test_repositories.py                    # Pruebas de repositorios y persistencia CRUD
+    └── test_ui.py                              # Pruebas de estado de interfaz Streamlit
 ```
 
 ### 5.6.2 Matriz de Trazabilidad y Validación Automatizada (41 Pruebas TDD)
 
-La totalidad de los requisitos funcionales y restricciones del sistema fueron implementados siguiendo la metodología **Test-Driven Development (TDD)**. La suite de pruebas unitarias automatizadas garantiza la robustez matemática y lógica del sistema:
+La totalidad de los requisitos funcionales, requisitos de rendimiento y restricciones del sistema fueron implementados y verificados siguiendo la metodología **Test-Driven Development (TDD)**. Los 10 módulos de prueba en `tests/` totalizan **41 pruebas unitarias independientes**, ejecutadas en menos de 0.08 segundos con un 100% de éxito:
 
-| Componente Evaluado | Archivo de Prueba | Nro. Tests | Requisitos Validados |
+| Módulo de Prueba | Archivo de Prueba | Tests | Requisitos Validados y Alcance de Verificación |
 | :--- | :--- | :---: | :--- |
-| **Filtro de Kalman Cinemático** | `tests/test_kalman_filter.py` | 5 | RF-02, RF-08, RF-11 (Invarianza 3D, Zero-Persistence) |
-| **Alineador Temporal DTW** | `tests/test_dtw_comparator.py` | 4 | RF-03, RF-04 (Banda Sakoe-Chiba, Detección de Pico) |
-| **Anotador Digital OpenCV** | `tests/test_opencv_annotator.py` | 4 | RF-05, RP-02 (Marcador rojo 15px, Compresión < 100 KB) |
-| **Motor de Pipeline Biomecánico**| `tests/test_pipeline_engine.py`| 3 | RF-07, RF-10, RF-11 (Orquestación integral de visión) |
-| **Modelos de Base de Datos** | `tests/test_database_models.py` | 8 | Mannino Table-per-Subclass, Integridad referencial |
-| **Adaptador Huawei Cloud OBS** | `tests/test_obs_adapter.py` | 4 | Subida de video, fotogramas y descarga con Mocks |
-| **Capa de Repositorios** | `tests/test_repositories.py` | 6 | CU-01, CU-02, CRUD de técnicas y persistencia atómica |
-| **Controlador GRASP** | `tests/test_controller.py` | 5 | Orquestación CU-01/CU-02, Zero-Persistence y CRUD |
-| **Handler Huawei FunctionGraph**| `tests/test_functiongraph_handler.py` | 4 | Ejecución serverless remota y adaptación JSON/APIG |
-| **Interfaz de Usuario Web** | `tests/test_ui.py` | 2 | Flujo de estados en Streamlit y autenticación |
-| **TOTAL GENERAL** | `unittest discover tests` | **41** | **100% de Pruebas Unitarias Aprobadas (0.08 s)** |
+| **Anotador Gráfico** | `tests/test_annotator.py` | **4** | **RF-05, RP-02:** Inyección de círculo rojo de 15 px en punto de falla máxima, verificación de salida en JPEG de alta compresión ($\le 100\text{ KB}$) y retorno de bytes binarios válidos. |
+| **Controlador GRASP** | `tests/test_controller.py` | **5** | **CU-01, CU-02, RF-09, RF-11:** Orquestación end-to-end de análisis biomecánico, rechazo por token inválido, aborto Zero-Persistence ante oclusión prolongada, y operaciones CRUD completas de técnicas maestras. |
+| **Modelos de Base de Datos** | `tests/test_database_models.py` | **5** | **Persistencia:** Mapeo objeto-relacional SQLAlchemy 2.0 bajo el estándar Mannino (Table-per-Subclass), integridad referencial y cascadas de eliminación en entidades de usuario y análisis. |
+| **Comparador DTW** | `tests/test_dtw.py` | **4** | **RF-03, RF-04:** Distancia euclidiana elástica entre series angulares 3D, restricción con ventana de Sakoe-Chiba (15% por defecto) y extracción matemática del pico de error cinemático. |
+| **Handler Serverless** | `tests/test_functiongraph_handler.py` | **4** | **Cloud FunctionGraph:** Despacho de eventos serverless en formato JSON directo y base64 APIG, gestión de almacenamiento efímero `/tmp` y códigos de respuesta HTTP 200/400/500. |
+| **Filtro de Kalman 3D** | `tests/test_kalman.py` | **3** | **RF-02, RF-08, RF-11:** Invarianza y reducción de ruido en trayectorias espaciales $(X, Y, Z)$, interpolación cinemática en oclusiones breves y disparo de oclusión continua prolongada ($> 1.5\text{ s}$). |
+| **Adaptador Cloud OBS** | `tests/test_obs_adapter.py` | **4** | **Almacenamiento OBS:** Implementación del patrón GoF Adapter para Huawei Cloud OBS, verificación de `subir_video`, `subir_fotograma` y `descargar_objeto` mediante aislamiento con Mocks. |
+| **Motor de Pipeline** | `tests/test_pipeline.py` | **4** | **RF-07, RF-10, RF-11:** Fachada GoF del pipeline biomecánico, integración cinemática integral, validación de corte por oclusión crítica y método `procesar_video`. |
+| **Capa de Repositorios** | `tests/test_repositories.py` | **6** | **CU-01, RF-09:** `TokenRepository` (validación de membresías vigentes y token sintético de prueba), `TecnicaMaestraRepository` (mapeo de reglas, publicación, listado, actualización y eliminación CRUD) y `AnalisisBiomecanicoRepository`. |
+| **Interfaz de Usuario** | `tests/test_ui.py` | **2** | **Capa UI:** Inicialización determinista del estado reactivo de sesión en Streamlit (`st.session_state`) e inyección de dependencias en la factoría `obtener_controlador()`. |
+| **TOTAL CONSOLIDADO** | `unittest discover tests` | **41** | **41 de 41 Pruebas Unitarias Aprobadas (100% de Éxito, $\sim 0.08\text{ s}$)** |
 
 ### 5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador
 
@@ -1928,7 +1950,7 @@ Para ejecutar y validar localmente la plataforma en cualquier computador con sis
 5. **Acceso y Evaluación Interactiva:**
    * Abrir el navegador en `http://localhost:8501`.
    * **Autenticación:** Ingresar el token de membresía de prueba: `TOKEN_VALIDO_TEST`.
-   * **Modo Profesor (CU-01):** Pulsar el botón *"Panel Profesor"*, escribir un tema de lección (ej. *"Cómo finalizar desde la montada y hacer una americana"*), subir un video demostrativo y hacer clic en *"Publicar Técnica para la Clase"*. Explorar las opciones de reproducción, edición y eliminación (CRUD).
+   * **Modo Profesor (CU-01):** Pulsar el botón *"Panel Profesor"*, escribir un tema de lección (ej. *"Cómo finalizar desde la montada y hacer una americana"*), subir un video demostrativo y hacer clic en *"Publicar Técnica para la Clase"*. Explorar las opciones de reproducción embebida, edición de nombre y eliminación (CRUD).
    * **Modo Estudiante (CU-02, CU-03, CU-04):** Pulsar *"Volver a la Sala"*, seleccionar la técnica que enseñó el profesor, estudiar el video demostrativo y cargar el video de práctica con el compañero para auditar la técnica biomecánica y visualizar el fotograma clave anotado con OpenCV.
 
 Con estas especificaciones e implementaciones, el documento de grado y el código fuente alcanzan una correlación y coherencia científica y tecnológica del 100%.

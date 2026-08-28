@@ -4,7 +4,7 @@ Coordina la extracción de landmarks, filtrado Kalman, alineación DTW, evaluaci
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from src.domain.models import ReglaBiomecanica, TecnicaMaestra
@@ -191,3 +191,26 @@ class PipelineBiomecanicoEngine:
             fotograma_falla_idx=frame_e,
             imagen_jpg_bytes=None,
         )
+
+    def procesar_video(
+        self,
+        video_origen: Any,
+        tecnica_maestra: TecnicaMaestra,
+        **kwargs,
+    ) -> ResultadoPipelineDTO:
+        """
+        Punto de entrada compatible que acepta tanto rutas de archivos de video (str / Path)
+        como flujos binarios directos (bytes).
+        """
+        if isinstance(video_origen, str):
+            with open(video_origen, "rb") as f:
+                video_bytes = f.read()
+        else:
+            video_bytes = video_origen
+
+        return self.ejecutar_pipeline_completo(
+            video_bytes=video_bytes,
+            tecnica_maestra=tecnica_maestra,
+            **kwargs,
+        )
+

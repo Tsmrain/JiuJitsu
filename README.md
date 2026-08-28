@@ -1107,6 +1107,8 @@ sequenceDiagram
   * Se leyeron los valores consolidados de `puntuacionGlobal` y `cantidadErrores` desde la entidad `HistorialProgresion`.
   * Se retornó una estructura `HistorialDTO` conteniendo las series históricas necesarias para la graficación de tendencias en Streamlit.
 
+**Nota metodológica sobre los Diagramas de Secuencia del Sistema (SSD):** Conforme a las directrices estrictas de Craig Larman (2004), los SSD modelan exclusivamente interacciones de caja negra entre actores externos y el sistema mediante eventos de sistema. En el presente documento, los SSD de los Casos de Uso CU-01 y CU-02 han sido enriquecidos didácticamente para exponer el flujo interno del pipeline de procesamiento (extracción de landmarks, filtrado cinemático, alineación DTW, anotación OpenCV). Esta decisión de modelado se adoptó con fines pedagógicos para demostrar la trazabilidad explícita de los requisitos funcionales RF-07, RF-08 y RF-11 dentro del flujo de eventos. No obstante, desde una perspectiva metodológica estricta, el único evento de sistema real gatillado por el actor externo es `cargarVideoEjecucion()`; las operaciones subsecuentes representan la ejecución interna del motor de procesamiento serverless (`PipelineBiomecanicoEngine`) y no constituyen eventos de sistema independientes.
+
 ---
 
 ### 5.2.2 Aplicación de Patrones GRASP y GoF
@@ -1115,7 +1117,7 @@ Conforme al marco conceptual de Craig Larman (Capítulos 16 y 17), la distribuci
 
 1. **Controlador (*Controller - GRASP*):** La clase `AnalisisBiomecanicoController` opera como controlador de caso de uso (fachada de aplicación). Desacopla la interfaz de usuario Streamlit del motor de visión por computadora, canalizando las peticiones de análisis, coordinando el consumo de microservicios serverless y abstrayendo la lógica transaccional.
 2. **Experto en Información (*Information Expert - GRASP*):** La clase `TecnicaMaestra` posee la información geométrica canónica y su ancho de banda temporal recomendado (`ventanaSakoeChiba`); por tanto, es la experta designada para calibrar el algoritmo DTW. A su vez, `ReglaBiomecanica` es la experta encargada de evaluar si una discrepancia angular en grados excede el umbral tolerado y suministrar el mensaje pedagógico determinista correspondiente.
-3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Adaptador (*Adapter - GoF*):** Las clases `HuaweiOBSStorageAdapter` y `PostgreSQLRepository` son construcciones artificiales de software creadas para aislar los detalles de bajo nivel de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático, preservando la portabilidad del sistema.
+3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (MediaPipe → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `HuaweiOBSStorageAdapter` y `PostgreSQLRepository` operan como adaptadores (*Adapter - GoF*) que aíslan los detalles de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático.
 4. **Bajo Acoplamiento y Alta Cohesión (*Low Coupling & High Cohesion - GRASP*):** Las clases computacionales `KalmanFilterTracker` y `DTWComparator` operan exclusivamente con estructuras matriciales abstractas (`NumPy arrays`), permaneciendo completamente ignorantes de protocolos HTTP, bases de datos o frameworks gráficos.
 5. **Variaciones Protegidas (*Protected Variations - GRASP*):** Se implementa la interfaz `IFiltroCinematico`, la cual permite acoplar o intercambiar implementaciones de interpolación (ej. filtro de media móvil o modelos biomecánicos avanzados) sin forzar modificaciones sobre el pipeline de DTW ni sobre el controlador.
 
@@ -1131,182 +1133,175 @@ La **Figura 5.6** presenta el DCD consolidado del sistema:
 
 ```mermaid
 classDiagram
-    class UsuarioAcademia {
-        <<abstract>>
-        #idUsuario: UUID
-        #nombreCompleto: String
-        #telefonoWhatsApp: String
-        #correoElectronico: String
-        #fechaRegistro: Date
-        +getId(): UUID
-        +getNombre(): String
-        +getTelefono(): String
-    }
-
-    class HeadCoach {
-        -gradoCinturon: String
-        -licenciaFederativa: String
-        +homologarTecnica(tecnica: TecnicaMaestra): Boolean
-        +emitirCodigoActivacion(diasVigencia: Integer): CodigoActivacion
-    }
-
-    class Estudiante {
-        -gradoCinturon: String
-        -pesoKg: Float
-        -estadoMembresia: String
-        +cargarVideo(archivo: bytes, tecnicaId: UUID): VideoEjecucion
-        +consultarProgreso(): HistorialProgresion
-    }
-
-    class EscuelaBJJ {
-        -idEscuela: UUID
-        -nombre: String
-        -sede: String
-        -ciudad: String
-        -comunidadWhatsApp: String
-        +registrarUsuario(usuario: UsuarioAcademia): Void
-    }
-
-    class CodigoActivacion {
-        -idCodigoActivacion: UUID
-        -token: String
-        -fechaEmision: Date
-        -fechaExpiracion: Date
-        -estado: String
-        +esVigente(): Boolean
-        +revocar(): Void
-    }
-
-    class TecnicaMaestra {
-        -idTecnicaMaestra: UUID
-        -nombre: String
-        -categoriaTecnica: String
-        -posicionOrigen: String
-        -ventanaSakoeChiba: Float
-        -videoURL: String
-        -fechaCarga: Date
-        +getVentanaSakoeChiba(): Float
-        +obtenerReglas(): List~ReglaBiomecanica~
-    }
-
-    class ReglaBiomecanica {
-        -idReglaBiomecanica: UUID
-        -articulacionClave: String
-        -umbralAngularTolerado: Float
-        -descripcionError: String
-        +evaluarDiscrepancia(angulo: Float): Boolean
-        +getMensajeError(): String
-    }
-
-    class VideoEjecucion {
-        -idVideoEjecucion: UUID
-        -fechaCaptura: DateTime
-        -duracionSegundos: Float
-        -pesoMB: Float
-        -videoURL: String
-        +validarLimites(): Boolean
-        +getVideoBytes(): bytes
-    }
-
-    class AnalisisBiomecanico {
-        -idAnalisisBiomecanico: UUID
-        -fechaProcesamiento: DateTime
-        -desviacionAngularMaxima: Float
-        -articulacionAfectada: String
-        -estadoComputo: String
-        +generarDiagnostico(): DiagnosticoDTO
-    }
-
-    class FotogramaAnotado {
-        -idFotogramaAnotado: UUID
-        -imagenURL: String
-        -coordenadaErrorX: Integer
-        -coordenadaErrorY: Integer
-        -explicacionCausa: String
-        +getImagenBytes(): bytes
-    }
-
-    class HistorialProgresion {
-        -idHistorialProgresion: UUID
-        -puntuacionGlobal: Float
-        -cantidadErrores: Integer
-        -fechaUltimaEvaluacion: Date
-        +actualizarMetricas(analisis: AnalisisBiomecanico): Void
-        +getTendencia(): List~Float~
-    }
-
-    class AnalisisBiomecanicoController {
-        -storageAdapter: HuaweiOBSStorageAdapter
-        -repository: PostgreSQLRepository
-        -tracker: KalmanFilterTracker
-        -dtw: DTWComparator
-        -annotator: OpenCVAnnotator
-        +validarToken(token: String): Boolean
-        +ejecutarAnalisis(videoId: UUID, tecnicaId: UUID): DiagnosticoDTO
-        +consultarHistorial(estudianteId: UUID): HistorialDTO
-    }
-
-    class KalmanFilterTracker {
-        -umbralConfiabilidad: Float
-        -maxCuadrosOclusion: Integer
-        +filtrarLandmarks(matrizLandmarks: List): MatrizFiltrada
-        +verificarOclusionProlongada(): Boolean
-    }
-
-    class DTWComparator {
-        -ventanaSakoeChiba: Float
-        +calcularDistancia(serieA: List, serieB: List): MatrizAlineacion
-        +extraerPicoDesviacion(): Tuple~Integer, Float~
-    }
-
-    class OpenCVAnnotator {
-        -radioCirculo: Integer
-        -colorMarcador: Tuple
-        +marcarFalla(frame: bytes, coordX: Integer, coordY: Integer): bytes
-    }
-
-    class HuaweiOBSStorageAdapter {
-        -bucketInput: String
-        -bucketOutput: String
-        +subirVideo(datos: bytes, nombre: String): String
-        +subirFotogramaAnotado(imagen: bytes, nombre: String): String
-        +descargarObjeto(url: String): bytes
-    }
-
-    class PostgreSQLRepository {
-        -connectionPool: Any
-        +guardarAnalisis(analisis: AnalisisBiomecanico): Void
-        +guardarFotograma(fotograma: FotogramaAnotado): Void
-        +actualizarHistorial(historial: HistorialProgresion): Void
-        +buscarTecnicaPorId(id: UUID): TecnicaMaestra
-        +validarTokenAcceso(token: String): Boolean
-    }
-
-    UsuarioAcademia <|-- HeadCoach
-    UsuarioAcademia <|-- Estudiante
-    EscuelaBJJ "1" *-- "1..*" UsuarioAcademia
-
-    HeadCoach "1" --> "0..*" CodigoActivacion : emite
-    CodigoActivacion "0..*" --> "0..1" Estudiante : asignado-a
-
-    HeadCoach "1" --> "1..*" TecnicaMaestra : homologa
-    TecnicaMaestra "1" *-- "1..*" ReglaBiomecanica : compuesta-por
-
-    Estudiante "1" --> "0..*" VideoEjecucion : graba
-    TecnicaMaestra "1" --> "0..*" VideoEjecucion : referencia
-    VideoEjecucion "1" --> "1" AnalisisBiomecanico : analizado-en
-
-    AnalisisBiomecanico "1" --> "0..1" FotogramaAnotado : genera
-    AnalisisBiomecanico "0..*" --> "1" HistorialProgresion : alimenta
-    Estudiante "1" *-- "1" HistorialProgresion : posee
-
-    AnalisisBiomecanicoController ..> VideoEjecucion : orquesta
-    AnalisisBiomecanicoController ..> AnalisisBiomecanico : crea
-    AnalisisBiomecanicoController --> KalmanFilterTracker : usa
-    AnalisisBiomecanicoController --> DTWComparator : usa
-    AnalisisBiomecanicoController --> OpenCVAnnotator : usa
-    AnalisisBiomecanicoController --> HuaweiOBSStorageAdapter : persiste-objetos
-    AnalisisBiomecanicoController --> PostgreSQLRepository : persiste-entidades
+class UsuarioAcademia {
+<<abstract>>
+#idUsuario: UUID
+#nombreCompleto: String
+#telefonoWhatsApp: String
+#correoElectronico: String
+#fechaRegistro: Date
++getId(): UUID
++getNombre(): String
++getTelefono(): String
+}
+class HeadCoach {
+-gradoCinturon: String
+-licenciaFederativa: String
++homologarTecnica(tecnica: TecnicaMaestra): Boolean
++emitirCodigoActivacion(diasVigencia: Integer): CodigoActivacion
+}
+class Estudiante {
+-gradoCinturon: String
+-pesoKg: Float
+-estadoMembresia: String
++cargarVideo(archivo: bytes, tecnicaId: UUID): VideoEjecucion
++consultarProgreso(): HistorialProgresion
+}
+class EscuelaBJJ {
+-idEscuela: UUID
+-nombre: String
+-sede: String
+-ciudad: String
+-comunidadWhatsApp: String
++registrarUsuario(usuario: UsuarioAcademia): Void
+}
+class CodigoActivacion {
+-idCodigoActivacion: UUID
+-token: String
+-fechaEmision: Date
+-fechaExpiracion: Date
+-estado: String
++esVigente(): Boolean
++revocar(): Void
+}
+class TecnicaMaestra {
+-idTecnicaMaestra: UUID
+-nombre: String
+-categoriaTecnica: String
+-posicionOrigen: String
+-ventanaSakoeChiba: Float
+-videoURL: String
+-fechaCarga: Date
++getVentanaSakoeChiba(): Float
++obtenerReglas(): List~ReglaBiomecanica~
+}
+class ReglaBiomecanica {
+-idReglaBiomecanica: UUID
+-articulacionClave: String
+-umbralAngularTolerado: Float
+-descripcionError: String
++evaluarDiscrepancia(angulo: Float): Boolean
++getMensajeError(): String
+}
+class VideoEjecucion {
+-idVideoEjecucion: UUID
+-fechaCaptura: DateTime
+-duracionSegundos: Float
+-pesoMB: Float
+-videoURL: String
++validarLimites(): Boolean
++getVideoBytes(): bytes
+}
+class AnalisisBiomecanico {
+-idAnalisisBiomecanico: UUID
+-fechaProcesamiento: DateTime
+-desviacionAngularMaxima: Float
+-articulacionAfectada: String
+-estadoComputo: String
++generarDiagnostico(): DiagnosticoDTO
+}
+class FotogramaAnotado {
+-idFotogramaAnotado: UUID
+-imagenURL: String
+-coordenadaErrorX: Integer
+-coordenadaErrorY: Integer
+-explicacionCausa: String
++getImagenBytes(): bytes
+}
+class HistorialProgresion {
+-idHistorialProgresion: UUID
+-puntuacionGlobal: Float
+-cantidadErrores: Integer
+-fechaUltimaEvaluacion: Date
++actualizarMetricas(analisis: AnalisisBiomecanico): Void
++getTendencia(): List~Float~
+}
+class AnalisisBiomecanicoController {
+-engine: PipelineBiomecanicoEngine
+-storageAdapter: HuaweiOBSStorageAdapter
+-repository: PostgreSQLRepository
++validarToken(token: String): Boolean
++ejecutarAnalisis(videoId: UUID, tecnicaId: UUID): DiagnosticoDTO
++consultarHistorial(estudianteId: UUID): HistorialDTO
+}
+class PipelineBiomecanicoEngine {
+-poseExtractor: MediaPipePoseExtractor
+-kinematicTracker: KalmanFilterTracker
+-temporalAligner: DTWComparator
+-visualAnnotator: OpenCVAnnotator
+-rulesEngine: CatalogoReglasEngine
++ejecutarPipelineCompleto(videoBytes: bytes, tecnica: TecnicaMaestra): ResultadoPipelineDTO
+}
+class MediaPipePoseExtractor {
++extraerLandmarks(videoBytes: bytes): MatrizLandmarks
+}
+class KalmanFilterTracker {
+-umbralConfiabilidad: Float
+-maxCuadrosOclusion: Integer
++filtrarLandmarks(matrizLandmarks: List): MatrizFiltrada
++verificarOclusionProlongada(): Boolean
+}
+class DTWComparator {
+-ventanaSakoeChiba: Float
++calcularDistancia(serieA: List, serieB: List): MatrizAlineacion
++extraerPicoDesviacion(): Tuple~Integer, Float~
+}
+class OpenCVAnnotator {
+-radioCirculo: Integer
+-colorMarcador: Tuple
++marcarFalla(frame: bytes, coordX: Integer, coordY: Integer): bytes
+}
+class CatalogoReglasEngine {
++evaluarDiscrepancias(serieAngulos: List, tecnica: TecnicaMaestra): Tuple~Float, String, ReglaBiomecanica~
+}
+class HuaweiOBSStorageAdapter {
+-bucketInput: String
+-bucketOutput: String
++subirVideo(datos: bytes, nombre: String): String
++subirFotogramaAnotado(imagen: bytes, nombre: String): String
++descargarObjeto(url: String): bytes
+}
+class PostgreSQLRepository {
+-connectionPool: Any
++guardarAnalisis(analisis: AnalisisBiomecanico): Void
++guardarFotograma(fotograma: FotogramaAnotado): Void
++actualizarHistorial(historial: HistorialProgresion): Void
++buscarTecnicaPorId(id: UUID): TecnicaMaestra
++validarTokenAcceso(token: String): Boolean
+}
+UsuarioAcademia <|-- HeadCoach
+UsuarioAcademia <|-- Estudiante
+EscuelaBJJ "1" *-- "1..*" UsuarioAcademia
+HeadCoach "1" --> "0..*" CodigoActivacion : emite
+CodigoActivacion "0..*" --> "0..1" Estudiante : asignado-a
+HeadCoach "1" --> "1..*" TecnicaMaestra : homologa
+TecnicaMaestra "1" *-- "1..*" ReglaBiomecanica : compuesta-por
+Estudiante "1" --> "0..*" VideoEjecucion : graba
+TecnicaMaestra "1" --> "0..*" VideoEjecucion : referencia
+VideoEjecucion "1" --> "1" AnalisisBiomecanico : analizado-en
+AnalisisBiomecanico "1" --> "0..1" FotogramaAnotado : genera
+AnalisisBiomecanico "0..*" --> "1" HistorialProgresion : alimenta
+Estudiante "1" *-- "1" HistorialProgresion : posee
+AnalisisBiomecanicoController ..> VideoEjecucion : orquesta
+AnalisisBiomecanicoController ..> AnalisisBiomecanico : crea
+AnalisisBiomecanicoController --> PipelineBiomecanicoEngine : delega-pipeline
+AnalisisBiomecanicoController --> HuaweiOBSStorageAdapter : persiste-objetos
+AnalisisBiomecanicoController --> PostgreSQLRepository : persiste-entidades
+PipelineBiomecanicoEngine --> MediaPipePoseExtractor : usa
+PipelineBiomecanicoEngine --> KalmanFilterTracker : usa
+PipelineBiomecanicoEngine --> DTWComparator : usa
+PipelineBiomecanicoEngine --> OpenCVAnnotator : usa
+PipelineBiomecanicoEngine --> CatalogoReglasEngine : usa
 ```
 
 **Figura 5.6**  

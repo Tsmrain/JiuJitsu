@@ -64,7 +64,7 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
     st.divider()
 
     # Contenedor principal en dos paneles anchos
-    col_config, col_upload = st.columns([1.1, 1.4], gap="large")
+    col_config, col_upload = st.columns(2, gap="large")
 
     tecnicas_disponibles = controller.listar_tecnicas()
 

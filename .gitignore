@@ -24,3 +24,8 @@ env/
 # OS Generated Files
 .DS_Store
 Thumbs.db
+
+# Videos binarios de desarrollo local
+assets/videos_patron/*.mp4
+assets/videos_patron/*.mov
+!assets/videos_patron/.gitkeep

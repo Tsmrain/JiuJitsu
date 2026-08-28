@@ -25,7 +25,7 @@ def render_token_gate(controller: AnalisisBiomecanicoController) -> None:
         if os.path.exists(RUTA_LOGO):
             col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
             with col_l2:
-                st.image(RUTA_LOGO, use_container_width=True)
+                st.image(RUTA_LOGO, width="stretch")
 
         st.markdown(
             """
@@ -68,7 +68,7 @@ def render_token_gate(controller: AnalisisBiomecanicoController) -> None:
                 )
                 submit_token = st.form_submit_button(
                     "Validar Membresía",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             st.caption("Entorno de desarrollo local: Código de verificación disponible: `TOKEN_VALIDO_TEST`")

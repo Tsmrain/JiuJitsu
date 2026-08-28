@@ -95,7 +95,7 @@ def render_feedback_view() -> None:
                     st.image(
                         diagnostico.imagen_url,
                         caption="Segmento articular en falla resaltado en rojo (Compresión JPEG < 100 KB / RP-02)",
-                        use_container_width=True,
+                        width="stretch",
                     )
                 else:
                     st.info("Fotograma clave generado y registrado.")
@@ -120,12 +120,12 @@ def render_feedback_view() -> None:
     # Barra inferior de acciones
     col_btn1, col_btn2, _ = st.columns([1, 1.2, 2.5])
     with col_btn1:
-        if st.button("Nueva Evaluación", use_container_width=True):
+        if st.button("Nueva Evaluación", width="stretch"):
             st.session_state["diagnostico"] = None
             st.session_state["current_view"] = "upload"
             st.rerun()
 
     with col_btn2:
-        if st.button("Historial de Progresión", use_container_width=True):
+        if st.button("Historial de Progresión", width="stretch"):
             st.session_state["current_view"] = "progression"
             st.rerun()

@@ -32,7 +32,7 @@ def render_progression_view(controller: AnalisisBiomecanicoController) -> None:
             unsafe_allow_html=True,
         )
     with col_b:
-        if st.button("Volver al Analizador", use_container_width=True):
+        if st.button("Volver al Analizador", width="stretch"):
             st.session_state["current_view"] = "upload"
             st.rerun()
 
@@ -114,4 +114,4 @@ def render_progression_view(controller: AnalisisBiomecanicoController) -> None:
             "Desviación Registrada": ["12.8°", "16.2°", "19.4°", "22.8°"],
             "Veredicto Oficial": ["CUMPLE NORMA", "FALLA LEVE", "FALLA MODERADA", "FALLA SEVERA"],
         })
-        st.dataframe(tabla_sesiones, use_container_width=True, hide_index=True)
+        st.dataframe(tabla_sesiones, width="stretch", hide_index=True)

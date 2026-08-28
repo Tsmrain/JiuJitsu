@@ -46,15 +46,15 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
     with col_acciones:
         col_a1, col_a2, col_a3 = st.columns([1, 1.3, 1])
         with col_a1:
-            if st.button("Mi Progreso", use_container_width=True):
+            if st.button("Mi Progreso", width="stretch"):
                 st.session_state["current_view"] = "progression"
                 st.rerun()
         with col_a2:
-            if st.button("Panel Profesor", use_container_width=True):
+            if st.button("Panel Profesor", width="stretch"):
                 st.session_state["current_view"] = "coach"
                 st.rerun()
         with col_a3:
-            if st.button("Cerrar Sesión", use_container_width=True):
+            if st.button("Cerrar Sesión", width="stretch"):
                 st.session_state["authenticated"] = False
                 st.session_state["token"] = None
                 st.session_state["diagnostico"] = None
@@ -149,7 +149,7 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
             boton_analizar = st.button(
                 "Ejecutar Análisis Biomecánico",
                 disabled=not archivo_valido,
-                use_container_width=True,
+                width="stretch",
             )
 
     if boton_analizar and archivo_subido is not None:

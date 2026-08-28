@@ -852,7 +852,7 @@ graph TD
     end
 
     subgraph CapaInfraestructura["Capa de Infraestructura y Persistencia"]
-        Infra_OBS["HuaweiOBSStorageAdapter<br/>(OBS SDK S3-Compatible)"]
+        Infra_OBS["HuaweiOBSStorageAdapter<br/>(OBS SDK esdk-obs-python)"]
         Infra_DB["PostgreSQLRepository<br/>(SQLAlchemy / psycopg2)"]
     end
 
@@ -897,8 +897,8 @@ flowchart TD
 
     StreamlitLocal -- "HTTPS REST (SDK Huawei)" --> FG_Service
     StreamlitLocal -- "TCP 5432 (Localhost)" --> PostgresLocal
-    FG_Service -- "S3 API HTTPS (Agency IAM)" --> OBS_In
-    FG_Service -- "S3 API HTTPS (Agency IAM)" --> OBS_Out
+    FG_Service -- "HTTPS OBS REST API (Agency IAM)" --> OBS_In
+    FG_Service -- "HTTPS OBS REST API (Agency IAM)" --> OBS_Out
 ```
 
 **Figura 5.2**  
@@ -908,10 +908,10 @@ flowchart TD
 *Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad*
 
 | Segmento de Enlace | Protocolo / Puerto | Mecanismo de Seguridad | Justificación Técnica |
-| :--- | :---: | :--- | :--- |
+| :--- | :--- | :--- | :--- |
 | **Laptop → FunctionGraph** | HTTPS REST (TCP 443) | Autenticación IAM AK/SK | Invocación serverless desde entorno local de desarrollo. |
 | **Laptop → PostgreSQL Local** | TCP 5432 (Localhost) | Conexión local sin red externa | Base de datos relacional ejecutándose nativamente en la laptop del desarrollador. |
-| **FunctionGraph → OBS** | HTTPS S3 API (TCP 443) | Agency IAM con firma HMAC-SHA256 | FunctionGraph lee videos de entrada y escribe fotogramas anotados usando permisos delegados. |
+| **FunctionGraph → OBS** | HTTPS OBS REST API / SDK (TCP 443) | IAM Agency con firma HMAC-SHA256 | FunctionGraph lee videos de entrada y escribe fotogramas anotados usando permisos delegados de servicio mediante Agencia IAM. |
 
 ---
 
@@ -1680,7 +1680,7 @@ La interfaz gráfica de usuario está implementada mediante el framework web de 
 
 ### 5.5.1 Diagrama de Navegación y Flujo de Estados
 
-El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a la cámara y al formulario de subida mientras el practicante no acredite un token de membresía válido emitido por el Head Coach. Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (localhost:8501), conectándose mediante HTTPS a los servicios de Huawei Cloud (FunctionGraph vía SDK, OBS vía API S3) y a la base de datos PostgreSQL local vía conexión TCP estándar.
+El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a la cámara y al formulario de subida mientras el practicante no acredite un token de membresía válido emitido por el Head Coach. Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (localhost:8501), conectándose mediante HTTPS a los servicios de Huawei Cloud (FunctionGraph vía SDK oficial, OBS vía OBS REST API / SDK `esdk-obs-python`) y a la base de datos PostgreSQL local vía conexión TCP estándar.
 
 La **Figura 5.7** detalla el diagrama de estados de navegación en la plataforma:
 
@@ -1690,8 +1690,8 @@ stateDiagram-v2
 
     state PantallaAutenticacionToken {
         [*] --> EsperandoToken
-        EsperandoToken --> VerificandoEnRDS: Ingreso de Token Alfanumérico
-        VerificandoEnRDS --> TokenRechazado: Token inválido / expirado
+        EsperandoToken --> VerificandoEnBDLocal: Ingreso de Token Alfanumérico
+        VerificandoEnBDLocal --> TokenRechazado: Token inválido / expirado
         TokenRechazado --> EsperandoToken: Reintentar
     }
 
@@ -1720,7 +1720,7 @@ stateDiagram-v2
             DecisionOclusion --> AlertaOclusionProlongada: Oclusión continua > 1.5s (RF-11)
             DecisionOclusion --> AlineacionDTWYMarcado: Tolerancia respetada (<= 1.5s)
             
-            AlineacionDTWYMarcado --> PersistiendoAnalisisRDS: Generación JPG OpenCV
+            AlineacionDTWYMarcado --> PersistiendoAnalisisBDLocal: Generación JPG OpenCV
         }
 
         ProcesandoCómputoCloud --> DespliegueDiagnosticoAnotado: Cómputo exitoso

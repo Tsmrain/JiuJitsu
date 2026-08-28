@@ -190,10 +190,11 @@ Desarrollar un sistema de software adaptativo en la nube para la evaluación bio
 ### 1.2.2 Objetivos Específicos
 
 1. **Analizar** los requerimientos de interacción biomecánica y el flujo operativo técnico dentro de la academia Corpo & Mente Bolivia.
-2. **Diseñar** una arquitectura híbrida de cómputo que integre cubos de almacenamiento (*Huawei Cloud Object Storage Service - OBS*) con servicios de cómputo ligero bajo demanda (*FunctionGraph* o *Cloud Container Instance*) para aislar el hardware local de cargas computacionales pesadas de forma económicamente sostenible.
-3. **Implementar** algoritmos de alineación temporal (*Dynamic Time Warping*) y formulaciones geométricas vectoriales para calcular la desviación matemática entre el esqueleto de referencia del profesor y el del estudiante.
-4. **Construir** una interfaz de usuario interactiva y liviana que presente la imagen estática anotada mediante OpenCV con la señalización precisa del error biomecánico y la descripción textual del fallo técnico.
-5. **Validar** el impacto del sistema mediante un diseño experimental de pre-test y post-test con atletas de la academia, cuantificando la reducción en la tasa de errores técnicos cometidos.
+2. **Diseñar** una arquitectura híbrida de cómputo que integre cubos de almacenamiento (*Huawei Cloud Object Storage Service - OBS*) con servicios de cómputo ligero bajo demanda (*FunctionGraph*) para aislar el hardware local de cargas computacionales pesadas de forma económicamente sostenible.
+3. **Implementar** el pipeline matemático biomecánico integrando la normalización antropomórfica de coordenadas articulares, la compensación cinemática de oclusiones mediante Filtro de Kalman y la sincronización temporal no lineal mediante *Dynamic Time Warping* (DTW) con restricción de ventana de Sakoe-Chiba para cuantificar las desviaciones frente al patrón de referencia.
+4. **Construir** una interfaz de usuario interactiva y liviana que presente la imagen estática anotada mediante OpenCV con la señalización precisa del error biomecánico y la descripción textual del fallo técnico basada en reglas deterministas.
+5. **Evaluar** longitudinalmente el impacto del sistema en la progresión técnica de los practicantes a partir de los registros históricos acumulados en la plataforma, contrastando estadísticamente las primeras evaluaciones de cada atleta contra sus registros más recientes para determinar si existe una reducción significativa en la tasa de errores biomecánicos con el tiempo.
+6. **Medir** la tasa de adopción y uso continuado del sistema entre los practicantes de la academia durante el periodo de validación (porcentaje de alumnos con token activo que completan cargas de video, frecuencia de uso semanal y tasa de retención tras el primer uso), como indicador complementario de viabilidad operativa y aceptación práctica en el tatami.
 
 ---
 
@@ -204,7 +205,7 @@ Con base en las directrices metodológicas de Craig Larman (2004), la investigac
 * **Fase de Inicio (*Inception*):** Delimitación rigurosa del alcance del proyecto, identificación y priorización de riesgos tecnológicos críticos (tales como la latencia de red en la carga móvil y las fluctuaciones tarifarias en la nube) y consolidación de los requerimientos de negocio de la academia.
 * **Fase de Elaboración (*Elaboration*):** Mitigación de los riesgos arquitectónicos de mayor impacto. Se formaliza la arquitectura base y el Modelo de Dominio. Se valida la factibilidad técnica construyendo un prototipo funcional que conecte la captura móvil con el almacenamiento en la nube (*OBS*) sin provocar estrés térmico en el cliente.
 * **Fase de Construcción (*Construction*):** Desarrollo modular y desacoplado de los componentes de cómputo. Implementación de los microservicios sin servidor (*Serverless* con *FunctionGraph*), codificación del motor matemático de detección de errores (DTW con restricciones de banda), integración de los algoritmos de anotación digital sobre imágenes con OpenCV y desarrollo del frontend web reactivo en *Streamlit*.
-* **Fase de Transición (*Transition*):** Despliegue del aplicativo en el entorno operativo real de Corpo & Mente Bolivia. Ejecución de los ensayos experimentales con los alumnos de la academia, recolección de las matrices numéricas de error pre-test y post-test para su posterior contrastación estadística, y redacción de las conclusiones formales del estudio.
+* **Fase de Transición (*Transition*):** Despliegue del aplicativo en el entorno operativo real de Corpo & Mente Bolivia. Recolección continua de los resultados analíticos en el historial de progresión técnica de los practicantes a lo largo del periodo de prueba, contrastación estadística longitudinal entre las evaluaciones iniciales y finales de cada atleta, y medición empírica de las métricas de adopción real y retención de uso en el tatami para la redacción de las conclusiones formales del estudio.
 
 ---
 
@@ -222,8 +223,8 @@ La entidad sustenta su propuesta de valor sobre dos pilares complementarios: la 
 
 La estructura operativa de la institución se ajusta a un modelo lineal-funcional, diseñado para garantizar la adecuada prestación de servicios deportivos y la supervisión técnica constante. Los niveles jerárquicos se distribuyen de la siguiente forma:
 
-* **Dirección General / Head Coach:** Máxima autoridad técnica y administrativa. Responsable de la visión estratégica institucional, la capacitación continua del cuerpo docente y la homologación curricular del plan de enseñanza del BJJ.
-* **Cuerpo de Instructores:** Profesionales del área deportiva encargados de conducir las clases, fiscalizar la ejecución biomecánica directa de los estudiantes en el tatami y registrar la evolución técnica de los mismos.
+* **Dirección General / Head Coach:** Máxima autoridad técnica y pedagógica. Responsable de la visión estratégica institucional, la capacitación continua del cuerpo docente, la homologación curricular del plan de enseñanza del BJJ y la definición exclusiva de las técnicas maestras de referencia y el catálogo de reglas biomecánicas de error en el sistema de software.
+* **Cuerpo de Instructores:** Profesionales del área deportiva encargados de conducir las sesiones prácticas, supervisar la ejecución biomecánica directa de los estudiantes en el tatami y orientar a los alumnos en el uso de la herramienta de auditoría asincrónica.
 * **Área de Recepción y Atención al Cliente:** Unidad administrativa encargada del control de contratos, cobro de membresías, registro de asistencias y soporte operativo.
 * **Estudiantes y Practicantes:** Usuarios receptores del servicio, constituyendo el núcleo del proceso pedagógico y los destinatarios directos de la solución tecnológica proyectada.
 
@@ -317,7 +318,7 @@ El análisis multicriterio posiciona a **MediaPipe Pose** como la alternativa su
 
 * **Ventaja Anatómica:** MediaPipe extrae 33 puntos clave frente a los 17 detectados por YOLOv8. Estos nodos adicionales incorporan la topología completa de tobillos y pies, áreas anatómicas indispensables dentro del Jiu-Jitsu para evaluar ganchos de control, pasos de guardia y distribución del equilibrio.
 * **Justificación del Descarte de Alternativas:** OpenPose se descarta debido a su arquitectura convolucional pesada de tipo *Bottom-Up*, la cual demanda aceleración por hardware (Nvidia CUDA) para alcanzar rendimientos aceptables, lo que elevaría la infraestructura cloud a costos prohibitivos. A su vez, YOLOv8-Pose se desestima por su licencia restrictiva AGPL-3.0 y su baja resolución articular (17 nodos), insuficiente para el seguimiento biomecánico fino.
-* **Estrategia de Mitigación de Oclusiones:** Si bien MediaPipe presenta desafíos ante el contacto corporal estrecho característico de las luchas en el suelo, el sistema mitiga esta limitación implementando un protocolo de captura en condiciones de "laboratorio técnico": el alumno se graba de forma individual y asincrónica desde un ángulo predefinido. Asimismo, el algoritmo evalúa el vector de confiabilidad ($C \in [0.0, 1.0]$) reportado por el modelo. Cuando el factor de confianza desciende de $C < 0.5$ producto de una oclusión momentánea, el backend activa un **Filtro de Kalman** cinemático que interpola la posición anatómica a partir de los cuadros adyacentes, preservando la continuidad métrica.
+* **Estrategia de Mitigación de Oclusiones:** En el Jiu-Jitsu Brasileño, la práctica técnica se desarrolla inherentemente en parejas (replicando fielmente la Fase 4 de mecanización en tatami descrita en la Sección 2.4), lo que genera contacto físico estrecho y oclusiones parciales inevitables debidas a los agarres y la superposición de extremidades. El sistema asume esta realidad operativa mediante un protocolo de captura en "laboratorio técnico" que estandariza el encuadre (toma lateral fija, iluminación homogénea y ambos practicantes dentro de cuadro), sin desnaturalizar el entrenamiento con compañero ni exigir condiciones irreales de ejecución en solitario. Para resolver las oclusiones anatómicas en video real de entrenamiento, el algoritmo monitorea el vector de confiabilidad articular ($C \in [0.0, 1.0]$) reportado por MediaPipe. Cuando la visibilidad de una articulación desciende de $C < 0.5$ producto de un agarre o cruce corporal, el backend activa un **Filtro de Kalman cinemático** (formalizado en el RF-08) que modela la inercia y los vectores de velocidad para interpolar con rigor matemático la trayectoria espacial a partir de los cuadros adyacentes, preservando la continuidad métrica indispensable para la posterior alineación con DTW.
 
 ---
 
@@ -408,7 +409,7 @@ Se evalúa la estrategia de **Renderizado de Video Completo Editado** (mediante 
 La selección del **Fotograma Clave Anotado con OpenCV** alcanza una ponderación perfecta de **5.00 / 5.00**, maximizando la viabilidad operativa y económica del proyecto.
 
 * **Arquitectura de Cómputo Eficiente:** Renderizar un video completo anotado obligaría a invocar procesos de codificación H.264 pesados, consumiendo valiosos segundos de cómputo en la nube y generando archivos de más de 15 MB. Con OpenCV, la función *Serverless* aísla en memoria el fotograma correspondiente al pico de desviación angular, extrae la tupla de coordenadas espaciales $(X, Y)$ de la articulación deficiente (por ejemplo, la rodilla) e inyecta directamente sobre la matriz de píxeles un círculo marcador de color rojo junto con una etiqueta textual.
-* **Control Estricto de Costos de Salida de Datos:** Un archivo de imagen JPG procesado y comprimido con OpenCV promedia escasos **~80 KB**. La transmisión de 80 KB hacia el dispositivo móvil del estudiante elimina cualquier riesgo de sobrecosto por volumen de salida (*Data Egress*). Para el volumen operacional de la academia (aproximadamente 200 a 350 consultas mensuales derivadas de sus practicantes activos, e incluso ante un escenario de estrés extremo de hasta 2,700 consultas mensuales), el tráfico mensual acumulado oscila entre escasos $25\text{ MB}$ y $250\text{ MB}$, implicando un gasto por transferencia inferior a $0.02 USD al mes y blindando con solvencia el límite presupuestario trimestral establecido ($< \$30\text{ USD}$).
+* **Control Estricto de Costos de Salida de Datos:** Un archivo de imagen JPG procesado y comprimido con OpenCV promedia escasos **~80 KB** (con un techo máximo garantizado de **100 KB** según el requisito RP-02). La transmisión de esta carga hacia el dispositivo móvil del estudiante elimina cualquier riesgo de sobrecosto por volumen de salida (*Data Egress*). Para el volumen operacional regular de la academia (entre 200 y 350 consultas mensuales), el consumo mensual demandado oscila con exactitud entre **16.0 MB** ($200 \times 80\text{ KB}$) y **28.0 MB** ($350 \times 80\text{ KB}$), alcanzando a lo sumo 35.0 MB bajo el tamaño límite de 100 KB. Incluso bajo un escenario de estrés extremo con 2,700 consultas mensuales proyectadas, el tráfico transferido se sitúa entre **216 MB** ($2,700 \times 80\text{ KB}$) y **270 MB** ($2,700 \times 100\text{ KB}$). En todos los escenarios evaluados, el gasto por transferencia de salida es inferior a los $0.03 USD mensuales (considerando la tarifa regional de Huawei Cloud de ~$0.08 USD/GB), blindando con exactitud matemática el presupuesto operativo trimestral establecido (< $30 USD).
 * **Valor Pedagógico sin Fricción:** En las artes marciales de agarre como el BJJ, las posiciones de dominio (guardias, montadas, controles laterales) son esencialmente estructuras biomecánicas estáticas de presión. Un video en movimiento oculta la fracción de segundo donde falló el ángulo. El fotograma estático opera como una auditoría visual quirúrgica: el practicante consulta su teléfono en el tatami y reconoce inmediatamente el círculo sobre el miembro mal posicionado, facilitando la asimilación e intervención motriz instantánea.
 
 ---
@@ -483,20 +484,23 @@ La estructura de este capítulo sigue el estándar internacional de especificaci
 
 El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que convive de manera asincrónica con la actual infraestructura administrativa local de Corpo & Mente Bolivia (base de datos en *Microsoft Access* y torniquete biométrico). El aplicativo no interfiere con la recaudación ni control de acceso, operando de manera independiente como una plataforma pedagógica accesible desde los teléfonos inteligentes de los practicantes.
 
-El sistema web propuesto implementa su propia **base de datos relacional en la nube (PostgreSQL gestionado en Cloud)** para la persistencia independiente de perfiles de usuario (Estudiantes), credenciales de autenticación y el historial de progresión técnica. Los practicantes crean una cuenta web dedicada para la plataforma pedagógica de forma 100% aislada al sistema administrativo local de *Microsoft Access* de la recepción. Para vincular operativamente ambos entornos y salvaguardar el crédito de cómputo en la nube, el sistema condiciona la habilitación de las cargas a un token de membresía activa (Regla de Negocio RN-01 / RF-09). La eventual integración bidireccional automatizada mediante API REST entre ambos repositorios de datos queda contemplada como una evolución arquitectónica futura (Sección 4.2.6).
+El sistema web propuesto implementa su propia **base de datos relacional en la nube (PostgreSQL gestionado en Cloud)** para la persistencia independiente de perfiles de usuario (Estudiantes), credenciales de autenticación y el historial de progresión técnica. Los practicantes crean una cuenta web dedicada para la plataforma pedagógica de forma 100% aislada al sistema administrativo local de *Microsoft Access* de la recepción. 
+
+La coexistencia de una cuenta de usuario web junto con un token de activación mensual responde a una clara separación arquitectónica de responsabilidades: la **cuenta web** resuelve la **identidad digital persistente y el historial técnico del estudiante** (permitiendo que el atleta conserve sus evaluaciones acumuladas a lo largo del tiempo, incluso si suspende temporalmente sus entrenamientos), mientras que el **token de activación mensual** resuelve de forma exclusiva la **protección del presupuesto operativo en la nube**, impidiendo que usuarios inactivos, externos o con cuotas impagas ejecuten cómputo serverless costoso. Este desacoplamiento salvaguarda el crédito financiero de Huawei Cloud sin exigir una sincronización en tiempo real con la base de datos local de *Microsoft Access* de la recepción, cuya integración queda como trabajo futuro (Secciones 2.3 y 4.2.6).
 
 ### 4.2.2 Funciones del Producto
 
-* **Gestión de Técnicas Maestras:** Permite a la Dirección Técnica subir los videos patrón que conforman el currículo oficial y derivar sus moldes biomecánicos.
-* **Ingestión Móvil de Entrenamientos:** Facilita la carga rápida de grabaciones de video realizadas por los alumnos durante sus sesiones en el tatami.
-* **Auditoría Biomecánica en la Nube:** Ejecuta de forma elástica la detección de puntos clave, la normalización de dimensiones corporales y la alineación matemática temporal.
-* **Anotación Automatizada de Fallas:** Localiza el fotograma de máxima discrepancia e inyecta la señalética gráfica sobre la articulación defectuosa.
-* **Visualización de Reportes Técnicos:** Entrega al estudiante el fotograma estático de falla y su evolución técnica histórica de forma inmediata y con mínimo consumo de datos.
+* **Gestión de Técnicas Maestras:** Permite exclusivamente al Head Coach registrar los videos patrón que conforman el currículo oficial, definir el catálogo de reglas biomecánicas de error y derivar los moldes cinemáticos de referencia.
+* **Ingestión Móvil de Entrenamientos:** Facilita al estudiante seleccionar la técnica maestra a evaluar del catálogo y cargar de forma rápida la grabación de su ejecución en pareja desde el tatami.
+* **Auditoría Biomecánica en la Nube:** Ejecuta de forma elástica la detección de puntos clave corporales con MediaPipe, la compensación cinemática de oclusiones con Filtro de Kalman, la normalización antropomórfica y la sincronización temporal con DTW.
+* **Anotación Automatizada de Fallas:** Localiza el fotograma de máxima discrepancia e inyecta la señalética gráfica sobre la articulación defectuosa mediante OpenCV.
+* **Generación de Explicación Pedagógica:** Formula una explicación textual comprensible sobre la causa motriz del error (el "por qué"), generada de forma determinista mediante reglas predefinidas para cada técnica sin recurrir a IA generativa.
+* **Visualización de Reportes Técnicos:** Entrega al estudiante el fotograma estático de falla, la explicación textual del error y su evolución técnica histórica acumulada de forma inmediata y con mínimo consumo de datos.
 
 ### 4.2.3 Características de los Usuarios
 
-* **Instructor / Head Coach:** Profesional con dominio experto en biomecánica de combate y competencias informáticas de usuario final. Precisa de una interfaz ágil para la administración de las técnicas maestras de referencia.
-* **Estudiante / Practicante:** Grupo diverso en edades y contexturas físicas (infantiles, adultos aficionados y competidores avanzados). Acceden a la plataforma desde sus propios teléfonos celulares empleando redes móviles comerciales (4G/LTE/5G) dentro de las instalaciones del centro.
+* **Head Coach / Director Técnico:** Máxima autoridad pedagógica con dominio experto en biomecánica de combate y competencias informáticas de usuario final. Posee la facultad exclusiva de registrar y calibrar las técnicas maestras curriculares y su catálogo asociado de reglas de error.
+* **Estudiante / Practicante:** Alumnos de diversos niveles y contexturas físicas con membresía activa en la academia. Acceden a la plataforma desde sus propios teléfonos inteligentes empleando redes móviles comerciales (4G/LTE/5G) para seleccionar técnicas, cargar videos de práctica en pareja y consultar sus diagnósticos biomecánicos.
 
 ### 4.2.4 Restricciones
 
@@ -506,7 +510,7 @@ El sistema web propuesto implementa su propia **base de datos relacional en la n
 
 ### 4.2.5 Suposiciones y Dependencias
 
-* Se asume que el alumno registrará sus movimientos bajo el protocolo establecido de "laboratorio técnico" (encuadre lateral despejado y sin oclusiones externas por terceros en la escena).
+* Se asume que el alumno registrará la ejecución técnica junto a su compañero de entrenamiento bajo el protocolo de "laboratorio técnico" (encuadre lateral fijo donde ambos practicantes permanecen dentro de cuadro y sin interferencia de terceros en la escena). Se asume la presencia de oclusiones anatómicas parciales normales derivadas del agarre y contacto físico entre ambos practicantes, las cuales son compensadas algorítmicamente en el backend mediante el Filtro de Kalman cinemático (RF-08).
 * El funcionamiento del sistema depende de la disponibilidad del servicio *FunctionGraph* y de los contenedores Linux de Huawei Cloud para la ejecución de la biblioteca *MediaPipe Pose*.
 * **Control de Acceso y Salvaguarda de Costos Cloud (Regla de Negocio RN-01):** Para impedir que usuarios externos o estudiantes inactivos consuman saldo de cómputo en *Huawei Cloud*, el sistema web exige que el practicante ingrese un **Código de Activación Mensual (Token de Acceso)** para habilitar el formulario de carga de video. Este token es emitido periódicamente por el Head Coach (a través de la comunidad oficial de WhatsApp) o entregado impreso en la recepción junto con el ticket físico diario a los alumnos con membresía vigente. La interfaz web en *Streamlit* valida la vigencia del token antes de autorizar cualquier transferencia de archivos hacia *Huawei Cloud OBS*, bloqueando peticiones no autorizadas y blindando el presupuesto operativo de la nube.
 
@@ -535,15 +539,16 @@ El sistema web propuesto implementa su propia **base de datos relacional en la n
 
 | Código | Requisito Funcional | Descripción Detallada |
 | :---: | :--- | :--- |
-| **RF-01** | Registro de Técnica Maestra | El sistema deberá permitir al instructor registrar una técnica deportiva asignándole un identificador único y cargando un video patrón ejecutor en formato MP4 o MOV. |
+| **RF-01** | Registro de Técnica Maestra y Reglas Biomecánicas | El sistema deberá permitir exclusivamente al Head Coach registrar una técnica deportiva asignándole un identificador único, cargando su video patrón ejecutor en formato MP4 o MOV y asociando un catálogo de reglas biomecánicas deterministas que vinculan cada articulación y umbral angular con su correspondiente explicación pedagógica en lenguaje claro. |
 | **RF-02** | Normalización Antropomórfica | El sistema deberá calcular la distancia interclavicular de los sujetos en el video para normalizar escalarmente la matriz de coordenadas, permitiendo la comparación directa entre adultos, niños y diversas contexturas. |
 | **RF-03** | Sincronización Temporal Dinámica | El backend deberá aplicar el algoritmo DTW optimizado con una Ventana de Sakoe-Chiba ($w = 0.15 \cdot N$) para alinear de forma no lineal las secuencias temporales del video del alumno con las del video maestro. |
 | **RF-04** | Extracción de Fotograma Clave | El sistema deberá aislar el fotograma específico donde la distancia euclidiana o la diferencia angular de las articulaciones alcance el pico máximo de desviación respecto al umbral maestro. |
 | **RF-05** | Inyección Gráfica de Anotación (OpenCV) | El sistema deberá dibujar automáticamente un círculo de color rojo (radio de 15 píxeles) centrado en la coordenada espacial exacta $(X, Y)$ del nodo articular donde se validó el fallo técnico. |
-| **RF-06** | Despliegue de Diagnóstico Estático | La interfaz web en Streamlit deberá renderizar la imagen JPG procesada (cuyo peso máximo no superará los 80 KB) de manera inmediata tras la finalización del cómputo serverless. |
-| **RF-07** | Restricción de Ingestión en el Cliente | La interfaz web en Streamlit implementará un módulo de validación en el lado del cliente que restringirá la carga de archivos a una duración máxima de **6 segundos** y aplicará un filtro bloqueante si el archivo supera los **5 MB**, optimizando el canal de subida ante redes móviles locales. |
-| **RF-08** | Compensación Cinemática por Oclusión | El backend en FunctionGraph deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada sea $C < 0.5$, interpolando la trayectoria a partir de los cuadros adyacentes para garantizar la continuidad métrica previa al DTW. |
+| **RF-06** | Despliegue de Diagnóstico Estático y Causa Técnica | La interfaz web en Streamlit deberá renderizar la imagen JPG procesada (cuyo peso no superará los 80 KB) junto con la explicación textual del error generada por el motor de reglas de manera inmediata tras la finalización del cómputo serverless. |
+| **RF-07** | Selección de Técnica y Restricción de Ingestión en Cliente | La interfaz web en Streamlit deberá permitir al estudiante seleccionar del catálogo la técnica maestra a evaluar previo a la carga, y restringirá el archivo de video (grabado en pareja bajo protocolo técnico) a una duración máxima de **6 segundos** con un filtro bloqueante si el archivo supera los **5 MB**, optimizando el canal de subida ante redes móviles locales. |
+| **RF-08** | Compensación Cinemática por Oclusión | El backend en FunctionGraph deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada sea $C < 0.5$, interpolando la trayectoria a partir de los cuadros adyacentes para garantizar la continuidad métrica previa al DTW ante oclusiones por agarres o contacto corporal. |
 | **RF-09** | Validación de Token de Membresía | La interfaz web deberá validar la vigencia del Código de Activación Mensual (Token de Acceso) del estudiante antes de autorizar la transferencia del archivo de video hacia el almacenamiento en la nube (Huawei Cloud OBS), impidiendo el consumo no autorizado de recursos serverless. |
+| **RF-10** | Generación de Explicación Textual Determinista | El backend en FunctionGraph deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
 
 ---
 
@@ -578,18 +583,18 @@ El siguiente diagrama presenta la vista arquitectónica de los casos de uso iden
 ```mermaid
 graph LR
     subgraph Actores
-        I(("Instructor"))
+        HC(("Head Coach"))
         E(("Estudiante"))
     end
 
     subgraph Sistema["Sistema de Análisis Biomecánico"]
-        CU01["CU-01: Registrar Técnica Maestra"]
+        CU01["CU-01: Registrar Técnica Maestra y Reglas"]
         CU02["CU-02: Cargar Video de Ejecución"]
-        CU03["CU-03: Consultar Diagnóstico Visual"]
+        CU03["CU-03: Consultar Diagnóstico Visual y Causa"]
         CU04["CU-04: Consultar Historial de Progresión"]
     end
 
-    I --> CU01
+    HC --> CU01
     E --> CU02
     E --> CU03
     E --> CU04
@@ -605,12 +610,12 @@ A continuación, se presenta la trazabilidad entre las historias de usuario, los
 
 | Nro | Historia de Usuario | Req | CU | Descripción Caso de Uso |
 | :---: | :--- | :---: | :---: | :--- |
-| 1 | Como instructor, quiero registrar una técnica maestra subiendo un video de referencia para que el sistema extraiga el esqueleto biomecánico patrón. | RF-01 | CU-01 | Registrar Técnica Maestra |
-| 2 | Como estudiante, quiero subir un video de mi ejecución desde mi celular para que el sistema analice mis errores técnicos y me devuelva un diagnóstico visual. | RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-09 | CU-02 | Cargar Video de Ejecución |
-| 3 | Como estudiante, quiero ver inmediatamente el fotograma anotado con mi error técnico después de que el sistema procese mi video. | RF-06 | CU-03 | Consultar Diagnóstico Visual |
-| 4 | Como estudiante, quiero consultar mi historial de análisis para visualizar cómo evoluciona mi técnica a lo largo del tiempo. | — | CU-04 | Consultar Historial de Progresión |
+| 1 | Como Head Coach, quiero registrar una técnica maestra y su catálogo de reglas de error subiendo un video patrón para que el sistema extraiga el molde cinemático y configure las explicaciones pedagógicas. | RF-01 | CU-01 | Registrar Técnica Maestra y Reglas |
+| 2 | Como estudiante, quiero seleccionar una técnica del catálogo curricular y subir el video de mi ejecución en pareja con mi compañero desde mi celular para que el sistema audite mi técnica. | RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-09, RF-10 | CU-02 | Cargar Video de Ejecución |
+| 3 | Como estudiante, quiero ver el fotograma anotado junto a la explicación textual de la causa de mi fallo técnico para comprender por qué me equivoqué y saber cómo corregirlo. | RF-06, RF-10 | CU-03 | Consultar Diagnóstico Visual y Causa |
+| 4 | Como estudiante, quiero consultar mi historial de análisis para visualizar mi progreso y la reducción de errores biomecánicos a lo largo del tiempo. | RF-06, RF-10 | CU-04 | Consultar Historial de Progresión |
 
-*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: validación del token de membresía en el cliente (RF-09), restricción de formato y duración de hasta 6 segundos (RF-07), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman (RF-08), sincronización temporal mediante DTW con ventana Sakoe-Chiba (RF-03), detección del fotograma de error máximo (RF-04) y generación de la anotación gráfica de fallo con OpenCV (RF-05). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 se deriva de la funcionalidad de historial descrita en la Sección 4.2.2.
+*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: selección de la técnica y restricción de video de hasta 6 segundos grabado en pareja (RF-07), validación de vigencia del token de membresía en cliente (RF-09), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman (RF-08), sincronización temporal mediante DTW con ventana Sakoe-Chiba (RF-03), detección del fotograma de error máximo (RF-04), inyección gráfica de la anotación de fallo con OpenCV (RF-05) y selección determinista del mensaje pedagógico explicativo a partir del catálogo de reglas (RF-10). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 consolida acumulativamente los diagnósticos generados para permitir la evaluación longitudinal del practicante.
 
 ---
 
@@ -627,7 +632,7 @@ classDiagram
         ciudad
         comunidadWhatsApp
     }
-    class Instructor {
+    class HeadCoach {
         id
         nombre
         cinturon
@@ -677,9 +682,9 @@ classDiagram
         cantidadErrores
     }
 
-    EscuelaBJJ "1" -- "1..*" Instructor : emplea
+    EscuelaBJJ "1" -- "1..*" HeadCoach : emplea
     EscuelaBJJ "1" -- "0..*" Estudiante : inscribe
-    Instructor "1" -- "0..*" TecnicaMaestra : registra
+    HeadCoach "1" -- "0..*" TecnicaMaestra : registra
     Estudiante "1" -- "0..*" VideoEjecucion : carga
     TecnicaMaestra "1" -- "0..*" VideoEjecucion : referencia
     VideoEjecucion "1" -- "1" AnalisisBiomecanico : genera
@@ -694,21 +699,21 @@ classDiagram
 **Descripción de las Entidades:**
 
 * **EscuelaBJJ:** Entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema.
-* **Instructor:** Representa al Head Coach o profesional encargado de registrar las técnicas de referencia en el sistema. Pertenece a una escuela.
-* **Estudiante:** Practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en la nube) que carga videos de sus ejecuciones y consulta los diagnósticos visuales generados.
-* **TecnicaMaestra:** Video patrón cargado por el instructor con la ejecución canónica de una técnica específica del plan de estudios.
-* **VideoEjecucion:** Grabación capturada por el estudiante desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
+* **HeadCoach:** Representa al Head Coach / Director Técnico, profesional con potestad exclusiva para registrar las técnicas de referencia curriculares y calibrar el catálogo de reglas biomecánicas de error en el sistema. Pertenece a una escuela.
+* **Estudiante:** Practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en la nube) que carga videos de sus ejecuciones en pareja y consulta los diagnósticos visuales generados.
+* **TecnicaMaestra:** Video patrón cargado por el Head Coach con la ejecución canónica de una técnica específica del plan de estudios, asociado a un catálogo de reglas de error deterministas.
+* **VideoEjecucion:** Grabación capturada por el estudiante junto a su compañero desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
 * **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
-* **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico.
+* **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico. Su atributo `descripcionError` almacena formalmente la explicación pedagógica textual sobre la causa motriz del fallo generada de manera determinista por el motor de reglas (RF-10).
 * **HistorialProgresion:** Registro acumulativo que consolida los sucesivos análisis biomecánicos de un estudiante, permitiendo visualizar la evolución de su desempeño técnico y la reducción de fallos a lo largo del tiempo.
 
 **Relaciones y Cardinalidad:**
 
 | Relación | Cardinalidad | Interpretación |
 | :--- | :---: | :--- |
-| EscuelaBJJ → Instructor | 1 : 1..* | Una escuela emplea al menos un instructor (Head Coach). |
+| EscuelaBJJ → HeadCoach | 1 : 1..* | Una escuela emplea al menos un Head Coach / Director Técnico. |
 | EscuelaBJJ → Estudiante | 1 : 0..* | Una escuela inscribe cero o más estudiantes. |
-| Instructor → TecnicaMaestra | 1 : 0..* | Un instructor registra cero o más técnicas maestras. |
+| HeadCoach → TecnicaMaestra | 1 : 0..* | El Head Coach registra cero o más técnicas maestras curriculares. |
 | Estudiante → VideoEjecucion | 1 : 0..* | Un estudiante carga cero o más videos de ejecución. |
 | TecnicaMaestra → VideoEjecucion | 1 : 0..* | Una técnica maestra sirve de referencia para cero o más videos de ejecución. |
 | VideoEjecucion → AnalisisBiomecanico | 1 : 1 | Cada video de ejecución genera exactamente un análisis biomecánico. |

@@ -134,25 +134,6 @@ def aplicar_estilos_oficiales() -> None:
                 border-left-width: 6px !important;
             }
 
-            /* Estandarización y simetría estricta de reproductores de video e imágenes */
-            div[data-testid="stVideo"] video, .stVideo video, div[data-testid="stImage"] img {
-                width: 100% !important;
-                height: 380px !important;
-                max-height: 380px !important;
-                object-fit: contain !important;
-                background-color: #0B0C10 !important;
-                border-radius: 6px !important;
-                border: 1px solid #282C34 !important;
-            }
-
-            div[data-testid="stVideo"], .stVideo {
-                display: flex !important;
-                justify-content: center !important;
-                align-items: center !important;
-                background-color: #0B0C10 !important;
-                border-radius: 6px !important;
-            }
-
             /* Adaptabilidad para dispositivos móviles y tabletas */
             @media (max-width: 900px) {
                 .main .block-container {

@@ -25,7 +25,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# Videos binarios de desarrollo local
+# Local User Uploads (Videos de prueba)
 assets/videos_patron/*.mp4
 assets/videos_patron/*.mov
 !assets/videos_patron/.gitkeep

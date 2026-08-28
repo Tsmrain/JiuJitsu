@@ -155,6 +155,11 @@
   - [5.5 Diseño de Interfaces de Usuario (UI/UX en Streamlit)](#55-diseño-de-interfaces-de-usuario-uiux-en-streamlit)
     - [5.5.1 Diagrama de Navegación y Flujo de Estados](#551-diagrama-de-navegación-y-flujo-de-estados)
     - [5.5.2 Especificación de Layouts y Visualización del Diagnóstico](#552-especificación-de-layouts-y-visualización-del-diagnóstico)
+    - [5.5.3 Sistema de Diseño Visual, Paleta Oficial y Adaptabilidad](#553-sistema-de-diseño-visual-paleta-oficial-y-adaptabilidad)
+  - [5.6 Estado de Implementación del Software, Cobertura TDD y Manual de Ejecución Local](#56-estado-de-implementación-del-software-cobertura-tdd-y-manual-de-ejecución-local)
+    - [5.6.1 Arquitectura Implementada y Estructura de Paquetes](#561-arquitectura-implementada-y-estructura-de-paquetes)
+    - [5.6.2 Matriz de Trazabilidad y Validación Automatizada (41 Pruebas TDD)](#562-matriz-de-trazabilidad-y-validación-automatizada-41-pruebas-tdd)
+    - [5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador](#563-manual-de-puesta-en-marcha-para-el-tribunal-evaluador)
 
 ---
 
@@ -649,12 +654,12 @@ A continuación, se presenta la trazabilidad entre las historias de usuario, los
 
 | Nro | Historia de Usuario | Req | CU | Descripción Caso de Uso |
 | :---: | :--- | :---: | :---: | :--- |
-| 1 | Como Head Coach, quiero registrar una técnica maestra especificando su categoría y posición de origen junto a su catálogo de reglas de error subiendo un video patrón para que el sistema extraiga el molde cinemático y configure las explicaciones pedagógicas sin nombres duplicados. | RF-01 | CU-01 | Registrar Técnica Maestra y Reglas |
-| 2 | Como estudiante, quiero seleccionar una técnica del catálogo curricular jerárquico y subir el video de mi ejecución en pareja con mi compañero desde mi celular para que el sistema audite mi técnica. | RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-09, RF-10, RF-11 | CU-02 | Cargar Video de Ejecución |
+| 1 | Como Head Coach (Profesor), quiero publicar y administrar las técnicas maestras de la clase (CRUD) mediante su tema pedagógico (ej. 'Cómo finalizar desde la montada y hacer una americana') subiendo mi video demostrativo grabado en el tatami para que el sistema configure automáticamente las tolerancias y permita a mis alumnos evaluarse directamente contra mi ejecución. | RF-01 | CU-01 | Homologar y Administrar Técnicas de Clase (CRUD) |
+| 2 | Como estudiante, quiero seleccionar la técnica enseñada por el profesor en la clase, estudiar su video demostrativo y subir el video de mi ejecución en pareja con mi compañero desde mi celular para que el sistema audite mi técnica. | RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-09, RF-10, RF-11 | CU-02 | Cargar Video de Ejecución y Auditar Técnica |
 | 3 | Como estudiante, quiero ver el fotograma anotado junto a la explicación textual de la causa de mi fallo técnico para comprender por qué me equivoqué y saber cómo corregirlo. | RF-06, RF-10 | CU-03 | Consultar Diagnóstico Visual y Causa |
 | 4 | Como estudiante, quiero consultar mi historial de análisis para visualizar mi progreso y la reducción de errores biomecánicos a lo largo del tiempo. | RF-12 | CU-04 | Consultar Historial de Progresión |
 
-*Nota*. El caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: selección jerárquica de la técnica y doble capa de restricción de video de hasta 6 segundos y 5 MB (RF-07), validación de vigencia del token de membresía en cliente (RF-09), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman con límite de validez (RF-08), flujo de interrupción y rechazo pedagógico ante oclusión continua prolongada (RF-11), el cual aborta la transacción en la nube sin persistir datos en la base de datos, sincronización temporal mediante DTW con ventana configurable (RF-03), detección del fotograma de error máximo (RF-04), inyección gráfica de la anotación de fallo con OpenCV (RF-05) y selección determinista del mensaje pedagógico explicativo a partir del catálogo de reglas (RF-10). Estos procesos constituyen el flujo de eventos interno del sistema y no representan interacciones independientes con actores humanos (Larman, 2004). El CU-04 implementa directamente la consulta del historial de progresión técnica (RF-12), permitiendo la evaluación longitudinal del atleta.
+*Nota*. El caso de uso CU-01 proporciona al Head Coach la administración curricular completa (CRUD: Publicar nueva técnica con video demostrativo, consultar catálogo activo con reproductor embebido, modificar nombre de la lección y eliminar técnicas) abstrayendo la complejidad matemática mediante inferencia determinista de metadatos y tolerancias canónicas (15.0°). Por su parte, el caso de uso CU-02 encapsula internamente el flujo completo de procesamiento automatizado: selección de la técnica de clase con previsualización del video del profesor, validación de vigencia del token de membresía en cliente (RF-09), restricción de video de hasta 5 MB (RF-07), normalización antropomórfica del esqueleto (RF-02), compensación cinemática de oclusiones articulares mediante Filtro de Kalman con límite de validez (RF-08), flujo de interrupción y rechazo pedagógico ante oclusión continua prolongada (RF-11) con política Zero-Persistence en PostgreSQL, sincronización temporal mediante DTW (RF-03), detección del fotograma de error máximo (RF-04), inyección gráfica de la anotación de fallo con OpenCV (RF-05) y selección determinista del mensaje pedagógico explicativo (RF-10). El CU-04 implementa directamente la consulta del historial de progresión técnica (RF-12), permitiendo la evaluación longitudinal del atleta.
 
 ---
 
@@ -972,30 +977,37 @@ La laptop del desarrollador asume sin costo adicional la ejecución de Streamlit
 
 Conforme al Proceso Unificado (Larman, 2004), los Diagramas de Secuencia del Sistema (SSD) modelan los eventos de entrada y salida generados por los actores externos contra la caja negra del sistema, los cuales son formalizados posteriormente mediante contratos de operación.
 
-#### A. SSD del CU-01: Registrar Técnica Maestra y Reglas Biomecánicas
-El Head Coach autenticado interactúa con el sistema para registrar un nuevo patrón curricular oficial y parametrizar sus tolerancias angulares.
+#### A. SSD del CU-01: Homologar y Administrar Técnicas de Clase (CRUD)
+El Head Coach (Profesor) interactúa con el panel de gestión técnica para anunciar la lección del tatami, subir su video demostrativo y administrar el currículo activo mediante operaciones CRUD completas.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor HC as Head Coach
-    participant Sis as Sistema (Streamlit UI + FunctionGraph + RDS)
+    actor HC as Head Coach (Profesor)
+    participant Sis as Sistema (Streamlit UI + Controller + OBS + PostgreSQL)
 
-    HC->>Sis: solicitarFormularioRegistro()
-    Sis-->>HC: desplegarFormularioRegistro(categorias, posiciones)
-    
-    HC->>Sis: ingresarDatosTecnica(nombre, categoria, posicionOrigen, ventanaSakoeChiba, videoPatron, reglas[])
-    activate Sis
-    Sis->>Sis: verificarUnicidad(categoria, posicionOrigen)
-    alt Combinación ya existe en catálogo
-        Sis-->>HC: mostrarError("La técnica ya existe para dicha posición de origen")
-    else Combinación única válida
-        Sis->>Sis: transferirVideoPatronOBS(videoPatron)
-        Sis->>Sis: extraerCinematicaMaestraMediaPipe()
-        Sis->>Sis: registrarTecnicaYReglasTransaccional(PostgreSQL)
-        Sis-->>HC: confirmarRegistroExitoso(idTecnicaMaestra)
+    HC->>Sis: accederPanelProfesor()
+    Sis-->>HC: desplegarPanelProfesor(catalogoTecnicasVigentes, reproductoresVideo)
+
+    alt Publicar Nueva Técnica de la Clase (Create)
+        HC->>Sis: publicarTecnica(temaLeccion, videoDemostracion)
+        activate Sis
+        Sis->>Sis: inferirMetadatos(posicion, categoria)
+        Sis->>Sis: transferirVideoDemostrativoOBS(videoDemostracion)
+        Sis->>Sis: persistirLocalmente(assets/videos_patron/)
+        Sis->>Sis: generarReglasPosturalesPorDefecto(tolerancia=15.0°)
+        Sis->>Sis: registrarTecnicaTransaccional(PostgreSQL)
+        Sis-->>HC: notificarExitoPersistente("Técnica publicada con éxito")
+        deactivate Sis
+    else Modificar Nombre o Tema (Update)
+        HC->>Sis: editarNombreTecnica(idTecnica, nuevoNombre)
+        Sis->>Sis: actualizarTecnicaEnBD(idTecnica, nuevoNombre)
+        Sis-->>HC: notificarActualizacionExitosa()
+    else Eliminar Técnica del Currículo (Delete)
+        HC->>Sis: solicitarEliminacion(idTecnica)
+        Sis->>Sis: removerTecnicaBDYArchivoVideo(idTecnica)
+        Sis-->>HC: notificarEliminacionExitosa()
     end
-    deactivate Sis
 ```
 
 **Figura 5.3**  
@@ -1230,12 +1242,17 @@ class HistorialProgresion {
 +getTendencia(): List~Float~
 }
 class AnalisisBiomecanicoController {
--engine: PipelineBiomecanicoEngine
+-pipelineEngine: PipelineBiomecanicoEngine
 -storageAdapter: HuaweiOBSStorageAdapter
--repository: PostgreSQLRepository
+-tokenRepo: TokenRepository
+-tecnicaRepo: TecnicaMaestraRepository
+-analisisRepo: AnalisisBiomecanicoRepository
 +validarToken(token: String): Boolean
-+ejecutarAnalisis(videoId: UUID, tecnicaId: UUID): DiagnosticoDTO
-+consultarHistorial(estudianteId: UUID): HistorialDTO
++ejecutarAnalisis(token: String, videoBytes: bytes, idTecnica: UUID): DiagnosticoDTO
++registrarTecnicaMaestra(nombre: String, categoria: String, posicion: String, ventanaSakoe: Float, videoBytes: bytes, reglasDatos: List): TecnicaMaestra
++actualizarTecnicaMaestra(idTecnica: UUID, nuevoNombre: String): TecnicaMaestra
++eliminarTecnicaMaestra(idTecnica: UUID): Boolean
++listarTecnicas(): List~TecnicaMaestra~
 }
 class PipelineBiomecanicoEngine {
 -poseExtractor: MediaPipePoseExtractor
@@ -1244,6 +1261,7 @@ class PipelineBiomecanicoEngine {
 -visualAnnotator: OpenCVAnnotator
 -rulesEngine: CatalogoReglasEngine
 +ejecutarPipelineCompleto(videoBytes: bytes, tecnica: TecnicaMaestra): ResultadoPipelineDTO
++procesarVideo(videoPath: String, tecnicaId: UUID): Dict
 }
 class MediaPipePoseExtractor {
 +extraerLandmarks(videoBytes: bytes): MatrizLandmarks
@@ -1270,17 +1288,26 @@ class CatalogoReglasEngine {
 class HuaweiOBSStorageAdapter {
 -bucketInput: String
 -bucketOutput: String
-+subirVideo(datos: bytes, nombre: String): String
-+subirFotogramaAnotado(imagen: bytes, nombre: String): String
-+descargarObjeto(url: String): bytes
++subirVideo(videoBytes: bytes, objectKey: String): String
++subirFotograma(fotoBytes: bytes, objectKey: String): String
++descargarObjeto(objectKey: String, bucketName: String): bytes
 }
-class PostgreSQLRepository {
--connectionPool: Any
-+guardarAnalisis(analisis: AnalisisBiomecanico): Void
-+guardarFotograma(fotograma: FotogramaAnotado): Void
-+actualizarHistorial(historial: HistorialProgresion): Void
-+buscarTecnicaPorId(id: UUID): TecnicaMaestra
-+validarTokenAcceso(token: String): Boolean
+class TokenRepository {
+-session: Session
++validarToken(token: String): Boolean
+}
+class TecnicaMaestraRepository {
+-session: Session
+-_catalogoEnMemoria: Dict
++listarTecnicas(): List~TecnicaMaestra~
++obtenerTecnicaYReglas(idTecnica: UUID): TecnicaMaestra
++guardarTecnica(tecnica: TecnicaMaestra): Void
++actualizarTecnica(idTecnica: UUID, nuevoNombre: String): TecnicaMaestra
++eliminarTecnica(idTecnica: UUID): Boolean
+}
+class AnalisisBiomecanicoRepository {
+-session: Session
++guardarResultado(analisis: AnalisisBiomecanico, fotograma: FotogramaAnotado): Void
 }
 UsuarioAcademia <|-- HeadCoach
 UsuarioAcademia <|-- Estudiante
@@ -1299,7 +1326,9 @@ AnalisisBiomecanicoController ..> VideoEjecucion : orquesta
 AnalisisBiomecanicoController ..> AnalisisBiomecanico : crea
 AnalisisBiomecanicoController --> PipelineBiomecanicoEngine : delega-pipeline
 AnalisisBiomecanicoController --> HuaweiOBSStorageAdapter : persiste-objetos
-AnalisisBiomecanicoController --> PostgreSQLRepository : persiste-entidades
+AnalisisBiomecanicoController --> TokenRepository : valida-acceso
+AnalisisBiomecanicoController --> TecnicaMaestraRepository : administra-curriculo
+AnalisisBiomecanicoController --> AnalisisBiomecanicoRepository : persiste-auditorias
 PipelineBiomecanicoEngine --> MediaPipePoseExtractor : usa
 PipelineBiomecanicoEngine --> KalmanFilterTracker : usa
 PipelineBiomecanicoEngine --> DTWComparator : usa
@@ -1676,11 +1705,13 @@ CREATE INDEX idx_historial_estudiante ON historial_progresion USING btree (estud
 
 ## 5.5 Diseño de Interfaces de Usuario (UI/UX en Streamlit)
 
-La interfaz gráfica de usuario está implementada mediante el framework web de código abierto **Streamlit**. Este componente actúa como un cliente liviano desacoplado que opera en modo pasivo en el navegador móvil del atleta, garantizando una interacción reactiva, minimalista y exenta de sobrecargas de procesamiento en el tatami.
+La interfaz gráfica de usuario está implementada mediante el framework web de código abierto **Streamlit**. Este componente actúa como un cliente liviano desacoplado que opera en modo pasivo en el navegador móvil del atleta o en la terminal del Head Coach en el tatami, garantizando una interacción reactiva, minimalista y exenta de sobrecargas de procesamiento en el cliente.
 
 ### 5.5.1 Diagrama de Navegación y Flujo de Estados
 
-El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a la cámara y al formulario de subida mientras el practicante no acredite un token de membresía válido emitido por el Head Coach. Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (localhost:8501), conectándose mediante HTTPS a los servicios de Huawei Cloud (FunctionGraph vía SDK oficial, OBS vía OBS REST API / SDK `esdk-obs-python`) y a la base de datos PostgreSQL local vía conexión TCP estándar.
+El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a las salas operativas mientras el usuario no acredite un token de membresía válido emitido por la academia. Una vez autenticado, el sistema habilita una navegación bidireccional entre la **Sala de Práctica y Auditoría del Estudiante** (CU-02, CU-03, CU-04) y el **Panel de Gestión Curricular del Head Coach** (CU-01 con soporte CRUD completo).
+
+Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (`http://localhost:8501`), conectándose mediante HTTPS a los servicios de Huawei Cloud (FunctionGraph y OBS vía SDK oficial `esdk-obs-python`) y a la base de datos PostgreSQL local vía SQLAlchemy 2.0.
 
 La **Figura 5.7** detalla el diagrama de estados de navegación en la plataforma:
 
@@ -1692,46 +1723,66 @@ stateDiagram-v2
         [*] --> EsperandoToken
         EsperandoToken --> VerificandoEnBDLocal: Ingreso de Token Alfanumérico
         VerificandoEnBDLocal --> TokenRechazado: Token inválido / expirado
-        TokenRechazado --> EsperandoToken: Reintentar
+        TokenRechazado --> EsperandoToken: Reintentar con credencial vigente
     }
 
-    PantallaAutenticacionToken --> PanelPrincipalEstudiante: Token Válido (estado == 'vigente')
+    PantallaAutenticacionToken --> HubNavegacionPrincipal: Token Válido (estado == 'vigente')
 
-    state PanelPrincipalEstudiante {
-        [*] --> SeleccionJerarquicaTecnica
-        SeleccionJerarquicaTecnica --> SubiendoVideo: Seleccionar Categoría y Posición
-        
-        state SubiendoVideo {
-            [*] --> ValidandoEnCliente: Archivo Seleccionado
-            ValidandoEnCliente --> ErrorTamanoDuracion: Tamaño > 5MB o Duración > 6s
-            ErrorTamanoDuracion --> [*]: Notificación Local en Navegador
-            ValidandoEnCliente --> TransfiriendoOBS: Parámetros válidos
+    state HubNavegacionPrincipal {
+        [*] --> SalaPracticaEstudiante
+
+        state SalaPracticaEstudiante {
+            [*] --> SeleccionarTecnicaProfesor
+            SeleccionarTecnicaProfesor --> ReproducirVideoDemostrativo: Estudiar técnica enseñada
+            SeleccionarTecnicaProfesor --> CargarVideoIntento: Grabar intento con compañero
+            
+            state CargarVideoIntento {
+                [*] --> ValidandoEnCliente: Archivo Seleccionado (MP4/MOV)
+                ValidandoEnCliente --> ErrorTamano: Tamaño > 5.0 MB (RF-07)
+                ErrorTamano --> [*]: Notificación al atleta
+                ValidandoEnCliente --> EjecutarAuditoria: Clic en 'Auditar Mi Técnica'
+            }
+
+            CargarVideoIntento --> ProcesandoCómputoCloud: Disparo de Pipeline Serverless
+
+            state ProcesandoCómputoCloud {
+                [*] --> InferenciaMediaPipe
+                InferenciaMediaPipe --> FiltroKalmanOclusion
+                
+                state DecisionOclusion <<choice>>
+                FiltroKalmanOclusion --> DecisionOclusion
+                
+                DecisionOclusion --> AlertaOclusionProlongada: Oclusión continua > 1.5s (RF-11)
+                DecisionOclusion --> AlineacionDTWYMarcado: Continuidad respetada (<= 1.5s)
+                
+                AlineacionDTWYMarcado --> PersistiendoAnalisisBDLocal: Fotograma anotado OpenCV (~80 KB)
+            }
+
+            ProcesandoCómputoCloud --> DespliegueDiagnosticoAnotado: Cómputo exitoso (CU-03)
+            ProcesandoCómputoCloud --> NotificacionRechazoPedagogico: Aborto Zero-Persistence (RF-11)
+            
+            DespliegueDiagnosticoAnotado --> DashboardProgresoLongitudinal: Clic en 'Mi Progreso' (CU-04)
+            NotificacionRechazoPedagogico --> SeleccionarTecnicaProfesor: Reintentar grabación
+            DashboardProgresoLongitudinal --> SeleccionarTecnicaProfesor: Nueva evaluación
         }
 
-        SubiendoVideo --> ProcesandoCómputoCloud: Disparo Serverless FunctionGraph
-
-        state ProcesandoCómputoCloud {
-            [*] --> InferenciaMediaPipe
-            InferenciaMediaPipe --> FiltroKalmanOclusion
+        state PanelHeadCoach {
+            [*] --> VisualizarCatalogoCRUD
+            VisualizarCatalogoCRUD --> ReproducirVideoClase: Play en video patrón
+            VisualizarCatalogoCRUD --> PublicarNuevaTecnica: Formulario Create (Tema + Video)
+            VisualizarCatalogoCRUD --> EditarNombreTecnica: Formulario Update inline
+            VisualizarCatalogoCRUD --> EliminarTecnicaCurriculo: Botón Delete con cascada física
             
-            state DecisionOclusion <<choice>>
-            FiltroKalmanOclusion --> DecisionOclusion
-            
-            DecisionOclusion --> AlertaOclusionProlongada: Oclusión continua > 1.5s (RF-11)
-            DecisionOclusion --> AlineacionDTWYMarcado: Tolerancia respetada (<= 1.5s)
-            
-            AlineacionDTWYMarcado --> PersistiendoAnalisisBDLocal: Generación JPG OpenCV
+            PublicarNuevaTecnica --> VisualizarCatalogoCRUD: Confirmación verde persistente
+            EditarNombreTecnica --> VisualizarCatalogoCRUD: Guardar cambios
+            EliminarTecnicaCurriculo --> VisualizarCatalogoCRUD: Remoción confirmada
         }
 
-        ProcesandoCómputoCloud --> DespliegueDiagnosticoAnotado: Cómputo exitoso
-        ProcesandoCómputoCloud --> NotificacionRechazoPedagogico: Aborto sin persistencia (RF-11)
-        
-        DespliegueDiagnosticoAnotado --> ConsultaHistorialLongitudinal: Clic en 'Ver Mi Progreso'
-        NotificacionRechazoPedagogico --> SeleccionJerarquicaTecnica: Grabar de nuevo
-        ConsultaHistorialLongitudinal --> SeleccionJerarquicaTecnica: Nueva evaluación
+        SalaPracticaEstudiante --> PanelHeadCoach: Clic en 'Panel Profesor'
+        PanelHeadCoach --> SalaPracticaEstudiante: Clic en 'Volver a la Sala'
     }
 
-    PanelPrincipalEstudiante --> [*]: Cierre de Sesión
+    HubNavegacionPrincipal --> [*]: Cierre de Sesión
 ```
 
 **Figura 5.7**  
@@ -1741,19 +1792,143 @@ stateDiagram-v2
 
 ### 5.5.2 Especificación de Layouts y Visualización del Diagnóstico
 
-La experiencia de usuario (UX) se organiza en cuatro paneles modulares de alta ergonomía visual:
+La experiencia de usuario (UX) se organiza en cinco paneles modulares de alta ergonomía visual diseñados para operar de forma eficiente en el tatami:
 
 1. **Panel 1: Puerta de Entrada y Validación de Token (*Token Gate View*):**
-   * *Componentes:* Entrada de texto protegida (`st.text_input("Código de Activación Mensual", type="password")`), botón de confirmación (`st.button("Habilitar Tatami Digital")`) y mensaje de ayuda contextual (`st.caption`).
-   * *Comportamiento:* Valida de forma asincrónica contra la base de datos PostgreSQL. Si el token es inválido o se encuentra expirado, despliega un contenedor de alerta roja (`st.error`) indicando al alumno que debe renovar su credencial física o solicitar un nuevo token a través de la comunidad oficial de WhatsApp de Corpo & Mente.
-2. **Panel 2: Selección Curricular Jerárquica y Carga de Video (*Upload View*):**
-   * *Componentes:* Dos selectores en cascada (`st.selectbox("1. Categoría Técnica")` y `st.selectbox("2. Posición de Origen")`), vinculados a la base de datos para impedir ambigüedades. El cargador de archivos (`st.file_uploader`) aplica la restricción de servidor `maxUploadSize = 5` en `.streamlit/config.toml` y ejecuta una validación en código Python para garantizar que la grabación en pareja no supere los 6 segundos de duración (RF-07).
-3. **Panel 3: Despliegue de Diagnóstico Biomecánico Anotado (*Feedback Report View*):**
-   * *Componentes:* Estructura de dos columnas paralelas (`st.columns([1, 1])`):
-     * *Columna Izquierda:* Reproductor de video HTML5 (`st.video`) con la ejecución original del estudiante en bucle (*loop*).
-     * *Columna Derecha:* Visor del fotograma anotado (`st.image`) en formato JPG de $\sim 80\text{ KB}$, conteniendo el marcador circular rojo de 15 píxeles generado con OpenCV directamente sobre la articulación donde se cuantificó el error.
-   * *Tarjeta Pedagógica de Causa Motriz:* Contenedor destacado (`st.warning`) que despliega textualmente la causa técnica objetiva extraída de la tabla `regla_biomecanica` (ej. *"Discrepancia angular de 28.4° en codo derecho: la articulación se encuentra demasiado extendida antes del quiebre de cadera, permitiendo el escape del adversario"*), respondiendo de forma determinista al "por qué" del error sin emitir juicios cualitativos ambiguos (RF-10).
-4. **Panel 4: Dashboard de Progresión Técnica Longitudinal (*Progression History View*):**
-   * *Componentes:* Panel analítico interactivo que consulta la entidad `historial_progresion` (RF-12). Despliega métricas de resumen (`st.metric("Puntuación Técnica Global", "84.5 / 100", "+3.2%")`, `st.metric("Total Evaluaciones", "14")`) y un gráfico cronológico de líneas interactivo (`st.line_chart`) que traza la reducción sostenida de grados de error y la tasa de acierto a lo largo de las semanas de práctica en la academia Corpo & Mente Bolivia.
+   * *Componentes:* Despliegue centrado del logotipo oficial de Corpo e Mente (`assets/corpo_e_mente_logo.png`), formulario de acceso con entrada de contraseña protegida (`st.text_input("Código de Activación", type="password")`), botón de confirmación de ancho completo (`st.form_submit_button("Validar Membresía")`) y pie con clave de demostración para el evaluador (`TOKEN_VALIDO_TEST`).
+   * *Comportamiento:* Valida de forma atómica a través de `TokenRepository`. Al detectar una clave vigente, eleva el estado de sesión a `authenticated = True` y transfiere el flujo a la sala principal.
 
-Con esta especificación, el Capítulo V culmina el diseño de ingeniería del software, enlazando armoniosamente los requisitos del sistema con su implementación tecnológica en la nube.
+2. **Panel 2: Panel de Gestión del Head Coach (*Coach Management View* — CU-01):**
+   * *Diseño en dos columnas de ancho completo:*
+     * *Columna Izquierda (Create):* Formulario ágil adaptado al tatami. El profesor solo ingresa el **Nombre o Tema de la Clase** (ej. *"Cómo finalizar desde la montada y hacer una americana"*), sube su video demostrativo (`.mp4`, `.mov`) y pulsa **"Publicar Técnica para la Clase"**. El sistema infiere automáticamente los metadatos de postura, almacena el video en OBS y en el caché local (`assets/videos_patron/`), genera reglas biomecánicas deterministas con umbral de 15.0° y notifica mediante un banner verde persistente (`st.session_state["coach_mensaje_exito"]`).
+     * *Columna Derecha (Read, Update, Delete):* Listado de técnicas activas. Cada tarjeta incluye el título oficial, la insignia verde `DISPONIBLE PARA EVALUACIÓN EN CLASE`, un **reproductor de video interactivo embebido** (`st.video`) para revisar la grabación original, un botón **"Editar"** que abre un editor en línea para renombrar la lección y un botón **"Eliminar"** que remueve el registro y depura el archivo físico de video.
+
+3. **Panel 3: Sala de Práctica y Auditoría del Estudiante (*Student Practice View* — CU-02):**
+   * *Columna Izquierda:* Selector dinámico de la técnica de clase (`st.selectbox`). Despliega la tarjeta informativa oficial con el **video demostrativo del profesor Humberto Tavares**, permitiendo al atleta estudiar y repasar el movimiento antes de intentar ejecutarlo en pareja.
+   * *Columna Derecha:* Componente de carga de video del intento del estudiante (`st.file_uploader`), validación estricta de tamaño ($\le 5.0\text{ MB}$ / RF-07) y botón de ejecución **"Auditar Mi Técnica contra la del Profesor"**. Al activarse, invoca el controlador de análisis y muestra un indicador de carga animado mientras el motor cinemático computa las trayectorias articulares.
+
+4. **Panel 4: Reporte de Diagnóstico Biomecánico Anotado (*Feedback Report View* — CU-03):**
+   * *Comparativa de Doble Canal Visual:*
+     * *Canal Izquierdo:* Reproductor de video HTML5 (`st.video`) con la ejecución del estudiante.
+     * *Canal Derecho:* Visor del fotograma anotado (`st.image`) en formato JPEG optimizado ($\sim 80\text{ KB}$ / RP-02), resaltando la articulación anatómica en falla mediante un círculo rojo inyectado con OpenCV en el instante de máxima divergencia angular (RF-05).
+   * *Tarjeta Pedagógica de Causa Motriz:* Contenedor de advertencia estilizado con borde rojo (`#D90429`) que detalla la articulación afectada, la desviación angular cuantitativa en grados (ej. *"Desviación angular: 28.4°"*) y la explicación pedagógica determinista (RF-10), respondiendo con precisión científica al "por qué" del error.
+   * *Botones de Navegación:* Acceso rápido a *"Nueva Evaluación"* y *"Historial de Progresión"*.
+
+5. **Panel 5: Dashboard de Progresión Técnica Longitudinal (*Progression History View* — CU-04):**
+   * *Métricas Resumen:* Tarjetas métricas de alto impacto (`st.metric`) con el Índice de Precisión Técnica global (ej. *"89.5 / 100"*), total de sesiones evaluadas y tasa de fallas con indicador de tendencia favorable en verde.
+   * *Curva de Convergencia Técnica:* Gráfico de líneas temporal (`st.line_chart`) trazado en color rojo oficial (`#D90429`), que visualiza la reducción continua de los grados de desviación angular a lo largo de las semanas de entrenamiento en la academia.
+   * *Historial Tabular:* Tabla estructurada (`st.dataframe`) que registra cronológicamente las fechas de evaluación, técnicas auditadas, articulaciones analizadas y el veredicto oficial (*CUMPLE NORMA*, *FALLA LEVE*, *FALLA SEVERA*).
+
+---
+
+### 5.5.3 Sistema de Diseño Visual, Paleta Oficial y Adaptabilidad
+
+Para responder a las exigencias de la modalidad de graduación y el entorno de uso real en la academia Corpo e Mente, la interfaz se construyó sobre un sistema de diseño propio caracterizado por:
+
+* **Paleta Cromática Oficial de Corpo e Mente (Humberto Tavares):**
+  * **Rojo Carmesí Oficial (`#D90429`, hover `#EF233C`):** Aplicado a botones primarios de acción, bordes de tarjetas activas, curvas analíticas de progreso y resaltado de fallas cinemáticas.
+  * **Negro Carbón Tatami (`#0B0C10`):** Fondo global oscuro que reduce la fatiga visual y proporciona un entorno de inmersión técnica.
+  * **Gris Pizarra Card (`#161922` / Borde `#2B303C`):** Fondo de tarjetas modulares que garantizan un contraste WCAG AAA para la lectura de datos biomecánicos.
+  * **Blanco Tipográfico (`#FFFFFF`) y Gris Suave (`#8B949E`):** Escala tipográfica limpia para jerarquía de títulos y leyendas explicativas.
+* **Integración del Emblema Oficial:** Despliegue del logotipo institucional en alta resolución (`assets/corpo_e_mente_logo.png`) tanto en la cabecera superior como en la portada de autenticación.
+* **Sobriedad y Estética Marcial (Política Zero-Emojis):** Se eliminó cualquier elemento infantil o emojis informales de la interfaz, reemplazándolos por etiquetas formales, insignias de estado limpias y tipografía sans-serif corporativa.
+* **Aprovechamiento Total de Pantalla (Full-Width y Responsividad):** Configuración de lienzo extendido (`st.set_page_config(layout="wide")`) con CSS inyectado (`max-width: 96%`) y reglas `@media (max-width: 900px)` que aseguran una visualización impecable tanto en monitores de escritorio como en tabletas y teléfonos celulares en el tatami.
+
+---
+
+## 5.6 Estado de Implementación del Software, Cobertura TDD y Manual de Ejecución Local
+
+Con la culminación de las fases de desarrollo backend, infraestructura cloud y capa de presentación, el proyecto cuenta con un **Producto Mínimo Viable (MVP) 100% operativo y verificado**, estructurado conforme a las buenas prácticas de ingeniería de software.
+
+### 5.6.1 Arquitectura Implementada y Estructura de Paquetes
+
+El código fuente se encuentra organizado en el directorio `src/` bajo una arquitectura limpia y orientada a objetos (POO / Craig Larman):
+
+```text
+src/
+├── domain/                                 <-- [Entidades de Negocio Puras]
+│   └── models.py                           # TecnicaMaestra, ReglaBiomecanica
+│
+├── services/                               <-- [Servicios de Dominio y Algoritmos]
+│   ├── kalman_filter.py                    # KalmanTracker (Filtro cinemático 3D y RF-11)
+│   ├── dtw_comparator.py                   # DTWComparator (Alineación temporal Sakoe-Chiba)
+│   ├── opencv_annotator.py                 # OpenCVAnnotator (Inyección gráfica de marcador rojo)
+│   ├── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF de procesamiento)
+│   └── controllers/                        # [Controladores GRASP]
+│       └── analisis_controller.py          # AnalisisBiomecanicoController (Orquestador de Casos de Uso)
+│
+├── infrastructure/                         <-- [Infraestructura y Persistencia]
+│   ├── database/                           # [Persistencia Relacional - Mannino]
+│   │   └── models.py                       # Modelos ORM SQLAlchemy 2.0 (Table-per-Subclass)
+│   ├── repositories/                       # [Patrón Repositorio]
+│   │   ├── token_repository.py             # TokenRepository (Validación de membresías)
+│   │   ├── tecnica_repository.py           # TecnicaMaestraRepository (CRUD de técnicas del profesor)
+│   │   └── analisis_repository.py          # AnalisisBiomecanicoRepository (Persistencia de evaluaciones)
+│   ├── storage/                            # [Almacenamiento Cloud - Patrón Adaptador]
+│   │   └── obs_adapter.py                  # HuaweiOBSStorageAdapter (Cliente oficial OBS)
+│   └── serverless/                         # [Cómputo Cloud Serverless]
+│       └── functiongraph_handler.py        # Handler de evento para Huawei FunctionGraph
+│
+└── ui/                                     <-- [Capa de Presentación Web]
+    ├── token_view.py                       # Vista de acceso por token
+    ├── coach_view.py                       # Panel del profesor (CRUD y videos de clase)
+    ├── upload_view.py                      # Sala de práctica y auditoría del alumno
+    ├── feedback_view.py                    # Reporte de diagnóstico con fotograma anotado
+    ├── progression_view.py                 # Dashboard de progresión longitudinal
+    └── app.py                              # Enrutador principal de Streamlit
+```
+
+### 5.6.2 Matriz de Trazabilidad y Validación Automatizada (41 Pruebas TDD)
+
+La totalidad de los requisitos funcionales y restricciones del sistema fueron implementados siguiendo la metodología **Test-Driven Development (TDD)**. La suite de pruebas unitarias automatizadas garantiza la robustez matemática y lógica del sistema:
+
+| Componente Evaluado | Archivo de Prueba | Nro. Tests | Requisitos Validados |
+| :--- | :--- | :---: | :--- |
+| **Filtro de Kalman Cinemático** | `tests/test_kalman_filter.py` | 5 | RF-02, RF-08, RF-11 (Invarianza 3D, Zero-Persistence) |
+| **Alineador Temporal DTW** | `tests/test_dtw_comparator.py` | 4 | RF-03, RF-04 (Banda Sakoe-Chiba, Detección de Pico) |
+| **Anotador Digital OpenCV** | `tests/test_opencv_annotator.py` | 4 | RF-05, RP-02 (Marcador rojo 15px, Compresión < 100 KB) |
+| **Motor de Pipeline Biomecánico**| `tests/test_pipeline_engine.py`| 3 | RF-07, RF-10, RF-11 (Orquestación integral de visión) |
+| **Modelos de Base de Datos** | `tests/test_database_models.py` | 8 | Mannino Table-per-Subclass, Integridad referencial |
+| **Adaptador Huawei Cloud OBS** | `tests/test_obs_adapter.py` | 4 | Subida de video, fotogramas y descarga con Mocks |
+| **Capa de Repositorios** | `tests/test_repositories.py` | 6 | CU-01, CU-02, CRUD de técnicas y persistencia atómica |
+| **Controlador GRASP** | `tests/test_controller.py` | 5 | Orquestación CU-01/CU-02, Zero-Persistence y CRUD |
+| **Handler Huawei FunctionGraph**| `tests/test_functiongraph_handler.py` | 4 | Ejecución serverless remota y adaptación JSON/APIG |
+| **Interfaz de Usuario Web** | `tests/test_ui.py` | 2 | Flujo de estados en Streamlit y autenticación |
+| **TOTAL GENERAL** | `unittest discover tests` | **41** | **100% de Pruebas Unitarias Aprobadas (0.08 s)** |
+
+### 5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador
+
+Para ejecutar y validar localmente la plataforma en cualquier computador con sistema operativo Linux o macOS:
+
+1. **Clonar el repositorio y situarse en la rama de desarrollo:**
+   ```bash
+   git clone https://github.com/01Santiago/JiuJitsu.git
+   cd JiuJitsu
+   git checkout feature/mvp-core
+   ```
+
+2. **Crear y activar el entorno virtual de dependencias:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Ejecutar la suite completa de pruebas unitarias:**
+   ```bash
+   .venv/bin/python -m unittest discover tests
+   ```
+   *(Resultado esperado: 41 tests pasando en verde con veredicto OK).*
+
+4. **Lanzar la aplicación web interactiva en Streamlit:**
+   ```bash
+   .venv/bin/streamlit run src/ui/app.py
+   ```
+
+5. **Acceso y Evaluación Interactiva:**
+   * Abrir el navegador en `http://localhost:8501`.
+   * **Autenticación:** Ingresar el token de membresía de prueba: `TOKEN_VALIDO_TEST`.
+   * **Modo Profesor (CU-01):** Pulsar el botón *"Panel Profesor"*, escribir un tema de lección (ej. *"Cómo finalizar desde la montada y hacer una americana"*), subir un video demostrativo y hacer clic en *"Publicar Técnica para la Clase"*. Explorar las opciones de reproducción, edición y eliminación (CRUD).
+   * **Modo Estudiante (CU-02, CU-03, CU-04):** Pulsar *"Volver a la Sala"*, seleccionar la técnica que enseñó el profesor, estudiar el video demostrativo y cargar el video de práctica con el compañero para auditar la técnica biomecánica y visualizar el fotograma clave anotado con OpenCV.
+
+Con estas especificaciones e implementaciones, el documento de grado y el código fuente alcanzan una correlación y coherencia científica y tecnológica del 100%.

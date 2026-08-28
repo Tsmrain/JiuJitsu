@@ -50,7 +50,7 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
 
     st.divider()
 
-    col_izq, col_der = st.columns(2, gap="large")
+    col_izq, col_der = st.columns([1.2, 1.4], gap="large")
 
     # ==========================================
     # 1. CREATE: Publicar Nueva Técnica

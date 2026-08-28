@@ -1,5 +1,6 @@
 """
 Vista de Historial Longitudinal y Métricas de Progresión (Craig Larman / RF-12, CU-04).
+Diseño Full-Width, responsivo, sobrio y sin emojis.
 """
 
 import pandas as pd
@@ -9,63 +10,98 @@ from src.services.controllers.analisis_controller import AnalisisBiomecanicoCont
 
 def render_progression_view(controller: AnalisisBiomecanicoController) -> None:
     """
-    Renderiza el panel de progresión técnica del atleta con visualización de series temporales (RF-12).
+    Renderiza el panel de seguimiento de progresión técnica del atleta a través de series temporales.
     """
-    st.markdown(
-        """
-        <div style="margin-bottom: 20px;">
-            <h2 style="color: #1D3557; margin-bottom: 0;">📈 Historial Longitudinal de Progresión Técnica</h2>
-            <p style="color: #666; font-size: 0.95rem;">
-                Trazabilidad cinemática continua del practicante en el currículo oficial de Corpo & Mente (RF-12).
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Encabezado del módulo
+    col_t, col_b = st.columns([3, 1])
+    with col_t:
+        st.markdown(
+            """
+            <div>
+                <div style="color: #D90429; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                    Módulo de Trazabilidad Curricular (RF-12)
+                </div>
+                <div style="color: #FFFFFF; font-size: 1.4rem; font-weight: 800; text-transform: uppercase;">
+                    Historial Longitudinal de Progresión Técnica
+                </div>
+                <div style="color: #8B949E; font-size: 0.85rem; margin-top: 2px;">
+                    Evolución del desempeño motriz y reducción de discrepancia angular en el tiempo.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_b:
+        if st.button("Volver al Analizador", use_container_width=True):
+            st.session_state["current_view"] = "upload"
+            st.rerun()
 
-    # Métricas clave en tarjetas ejecutivas
+    st.divider()
+
+    # Métricas consolidadas en tarjetas de ancho completo
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
         st.metric(
-            label="Puntuación Global Canónica",
+            label="Índice de Precisión Técnica",
             value="89.5 / 100",
-            delta="+6.5 pts vs mes anterior",
+            delta="+6.5 puntos vs mes anterior",
             delta_color="normal",
         )
     with col_m2:
         st.metric(
-            label="Evaluaciones Completadas",
+            label="Sesiones de Evaluación Registradas",
             value="14 sesiones",
-            delta="+3 esta semana",
+            delta="+3 en el ciclo actual",
+            delta_color="normal",
         )
     with col_m3:
         st.metric(
-            label="Frecuencia de Errores",
+            label="Tasa Promedio de Fallas",
             value="1.2 por técnica",
-            delta="-0.8 (Mejora motriz)",
+            delta="-0.8 (Tendencia favorable)",
             delta_color="normal",
         )
 
-    st.divider()
+    st.write("")
 
-    st.markdown("### 📉 Curva de Desviación Angular Promedio (°)")
-    st.caption("Evolución de la discrepancia angular respecto a las técnicas maestras (a menor desviación, mayor precisión canónica).")
+    # Visualización gráfica temporal
+    with st.container(border=True):
+        st.markdown(
+            """
+            <div style="color: #FFFFFF; font-weight: 700; font-size: 1rem; margin-bottom: 4px;">
+                Curva de Desviación Angular Promedio (Grados &deg;)
+            </div>
+            <div style="color: #8B949E; font-size: 0.85rem; margin-bottom: 12px;">
+                Trayectoria de convergencia respecto al patrón maestro oficial (a menor desviación, mayor precisión técnica).
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # Datos temporales de progresión técnica
-    datos_historicos = {
-        "Fecha": [
-            "2026-07-05", "2026-07-12", "2026-07-19", "2026-07-26",
-            "2026-08-02", "2026-08-09", "2026-08-16", "2026-08-23"
-        ],
-        "Desviación Angular Promedio (°)": [38.2, 34.0, 29.5, 27.1, 22.8, 19.4, 16.2, 12.8],
-        "Puntuación Técnica (%)": [62.0, 66.5, 71.0, 74.0, 78.5, 82.0, 85.5, 89.5],
-    }
-    df_progreso = pd.DataFrame(datos_historicos).set_index("Fecha")
+        datos_historicos = {
+            "Fecha": [
+                "2026-07-05", "2026-07-12", "2026-07-19", "2026-07-26",
+                "2026-08-02", "2026-08-09", "2026-08-16", "2026-08-23"
+            ],
+            "Desviación Angular Promedio (°)": [38.2, 34.0, 29.5, 27.1, 22.8, 19.4, 16.2, 12.8],
+        }
+        df_progreso = pd.DataFrame(datos_historicos).set_index("Fecha")
 
-    st.line_chart(df_progreso["Desviación Angular Promedio (°)"], color="#E63946")
+        st.line_chart(df_progreso["Desviación Angular Promedio (°)"], color="#D90429")
 
-    # Tabla de últimas evaluaciones registradas
-    with st.expander("📋 Desglose de Evaluaciones Recientes", expanded=True):
+    st.write("")
+
+    # Tabla detallada de auditorías recientes
+    with st.container(border=True):
+        st.markdown(
+            """
+            <div style="color: #FFFFFF; font-weight: 700; font-size: 1rem; margin-bottom: 12px;">
+                Registro de Evaluaciones Recientes
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         tabla_sesiones = pd.DataFrame({
             "Fecha": ["2026-08-23", "2026-08-16", "2026-08-09", "2026-08-02"],
             "Técnica Evaluada": [
@@ -74,13 +110,8 @@ def render_progression_view(controller: AnalisisBiomecanicoController) -> None:
                 "Triángulo desde Guardia",
                 "Armbar desde Guardia Cerrada",
             ],
-            "Articulación Evaluada": ["Codo Derecho", "Rodilla Izquierda", "Cuello / Hombro", "Codo Derecho"],
-            "Desviación": ["12.8°", "16.2°", "19.4°", "22.8°"],
-            "Veredicto": ["✅ Cumple Norma", "⚠️ Falla Leve", "⚠️ Falla Moderada", "⚠️ Falla"],
+            "Articulación Evaluada": ["Codo Derecho", "Rodilla Izquierda", "Hombro / Cuello", "Codo Derecho"],
+            "Desviación Registrada": ["12.8°", "16.2°", "19.4°", "22.8°"],
+            "Veredicto Oficial": ["CUMPLE NORMA", "FALLA LEVE", "FALLA MODERADA", "FALLA SEVERA"],
         })
         st.dataframe(tabla_sesiones, use_container_width=True, hide_index=True)
-
-    st.write("")
-    if st.button("⬅️ Volver al Módulo de Carga", type="primary"):
-        st.session_state["current_view"] = "upload"
-        st.rerun()

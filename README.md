@@ -333,7 +333,7 @@ El análisis multicriterio posiciona a **MediaPipe Pose** como la alternativa su
 
 * **Ventaja Anatómica:** MediaPipe extrae 33 puntos clave frente a los 17 detectados por YOLOv8. Estos nodos adicionales incorporan la topología completa de tobillos y pies, áreas anatómicas indispensables dentro del Jiu-Jitsu para evaluar ganchos de control, pasos de guardia y distribución del equilibrio.
 * **Justificación del Descarte de Alternativas:** OpenPose se descarta debido a su arquitectura convolucional pesada de tipo *Bottom-Up*, la cual demanda aceleración por hardware (Nvidia CUDA) para alcanzar rendimientos aceptables, lo que elevaría la infraestructura cloud a costos prohibitivos. A su vez, YOLOv8-Pose se desestima por su licencia restrictiva AGPL-3.0 y su baja resolución articular (17 nodos), insuficiente para el seguimiento biomecánico fino.
-* **Estrategia de Mitigación de Oclusiones:** En el Jiu-Jitsu Brasileño, la práctica técnica se desarrolla inherentemente en parejas (replicando fielmente la Fase 4 de mecanización en tatami descrita en la Sección 2.4), lo que genera contacto físico estrecho y oclusiones parciales inevitables debidas a los agarres y la superposición de extremidades. El sistema asume esta realidad operativa mediante un protocolo de captura en "laboratorio técnico" que estandariza el encuadre (toma lateral fija, iluminación homogénea y ambos practicantes dentro de cuadro), sin desnaturalizar el entrenamiento con compañero ni exigir condiciones irreales de ejecución en solitario. Para resolver las oclusiones anatómicas en video real de entrenamiento, el algoritmo monitorea el vector de confiabilidad articular ($C \in [0.0, 1.0]$) reportado por MediaPipe. Cuando la visibilidad de una articulación desciende de $C < 0.5$ producto de un agarre o cruce corporal, el backend activa un **Filtro de Kalman cinemático** (formalizado en el RF-08) que modela la inercia y los vectores de velocidad para interpolar con rigor matemático la trayectoria espacial a partir de los cuadros adyacentes, preservando la continuidad métrica indispensable para la posterior alineación con DTW. Sin embargo, para salvaguardar la validez física del modelo frente a oclusiones completas y prolongadas (propias de inmovilizaciones o controles laterales estáticos), se define un límite máximo continuo de interpolación (1.5 segundos o 45 fotogramas a 30 fps como parámetro configurable); superado este umbral, el filtro cesa la predicción inercial y activa el flujo de rechazo formalizado en los requisitos RF-08 y RF-11.
+* **Estrategia de Mitigación de Oclusiones:** En el Jiu-Jitsu Brasileño, la práctica técnica se desarrolla inherentemente en parejas (replicando fielmente la Fase 4 de mecanización en tatami descrita en la Sección 2.4), lo que genera contacto físico estrecho y oclusiones parciales inevitables debidas a los agarres y la superposición de extremidades. El sistema asume esta realidad operativa mediante un protocolo de captura en "laboratorio técnico" que estandariza el encuadre (toma lateral fija, iluminación homogénea y ambos practicantes dentro de cuadro), sin desnaturalizar el entrenamiento con compañero ni exigir condiciones irreales de ejecución en solitario. Para resolver las oclusiones anatómicas en video real de entrenamiento, el algoritmo monitorea el vector de confiabilidad articular ($C \in [0.0, 1.0]$) reportado por MediaPipe. Cuando la visibilidad de una articulación desciende de $C < 0.5$ producto de un agarre o cruce corporal, el backend activa un **Filtro de Kalman cinemático** (formalizado en el RF-08) que modela la inercia y los vectores de velocidad para interpolar con rigor matemático la trayectoria espacial a partir de los cuadros adyacentes, preservando la continuidad métrica indispensable para la posterior alineación con DTW. Sin embargo, para salvaguardar la validez física del modelo frente a oclusiones completas y prolongadas (propias de inmovilizaciones o controles laterales estáticos), se define un límite máximo continuo de interpolación (1.5 segundos o 45 fotogramas a 30 fps como parámetro configurable); superado este umbral, el filtro cesa la predicción inercial y activa el flujo de rechazo formalizado en los requisitos RF-08 y RF-11 para salvaguardar la integridad pedagógica y estadística de los datos del practicante evitando contaminar su historial longitudinal con cinemáticas ficticias, asumiendo técnicamente que el cómputo serverless ejecutado hasta el punto de interrupción ya ha sido facturado por milisegundos de CPU.
 
 ---
 
@@ -394,6 +394,7 @@ El algoritmo **DTW** se erige como la solución idónea con una calificación de
 
 * **Naturaleza Adaptativa sin Re-entrenamiento:** Al sustentarse en la optimización matemática clásica (programación dinámica para localizar el camino de mínimo costo en una matriz de distancias acumuladas), DTW no demanda conjuntos de entrenamiento masivos. Si el instructor de Corpo & Mente decide incorporar una técnica novedosa o variante no contemplada previamente, el software la asimila de forma inmediata requiriendo únicamente el video patrón como nuevo molde cinemático.
 * **Normalización Antropomórfica:** El enfoque solventa las diferencias de complexión física entre practicantes (niños, mujeres y adultos). Antes del análisis matricial, el algoritmo ejecuta una normalización geométrica vectorial tomando como longitud unitaria de referencia la distancia interclavicular o la altura del tronco. De este modo, la comparación no se basa en coordenadas pixelares absolutas, sino en relaciones angulares y proporciones relativas. Una extensión del codo a 45° representa el mismo valor métrico en un infante de 25 kg que en un adulto de 95 kg.
+* **Invariancia Traslacional y Métrica de Entrada:** Para garantizar que la comparación no se vea afectada por la posición espacial de los practicantes en el tatami (traslación en X, Y), el motor matemático no alimenta al DTW con las coordenadas absolutas de MediaPipe. Previa a la ejecución del DTW, el sistema transforma las coordenadas (X,Y,Z) en una **serie temporal de ángulos articulares relativos** (ej. ángulo entre hombro-codo-muñeca) y vectores de huesos normalizados. El DTW se ejecuta exclusivamente sobre estas series de ángulos, garantizando que la métrica de error biomecánico sea invariante a la ubicación espacial del practicante.
 * **Optimización Mediante Ventana de Sakoe-Chiba Configurable:** Para neutralizar la complejidad temporal cuadrática nativa del algoritmo ($O(N^2)$)—la cual elevaría el consumo de CPU en la función *Serverless*—se implementa la restricción geométrica de la **Ventana de Sakoe-Chiba**. Esta técnica acota la exploración de la trayectoria óptima a una banda diagonal de ancho $w$ alrededor del eje principal de la matriz de costo. En el presente diseño se define como **valor por defecto recomendado** una restricción formal equivalente al **15% de la longitud temporal de la secuencia ($w = 0.15 \cdot N$)**. Para una grabación estándar de hasta 6 segundos a 30 cuadros por segundo ($N \approx 180$ fotogramas), este valor fija una ventana de tolerancia de $w \approx \pm 27$ cuadros ($\pm 0.9\text{ segundos}$). No obstante, este valor no opera como una constante rígida en código, sino como un **parámetro configurable del backend** (adaptable por técnica o por rango de duración del video patrón y almacenable como atributo `ventanaSakoeChiba` en la entidad `TecnicaMaestra` del modelo de dominio, sección 4.5), lo que otorga la flexibilidad de calibrar ventanas más estrechas para transiciones explosivas o más holgadas para ejecuciones lentas sin modificar el código fuente. Esta parametrización absorbe con rigor las variaciones de cadencia motriz entre el profesor y el alumno, reduciendo el espacio de búsqueda a un régimen estrictamente cuasi-lineal $O(N)$ con tiempos de cómputo algorítmico de apenas $80 \text{ a } 150\text{ ms}$ en *FunctionGraph*.
 
 ---
@@ -559,7 +560,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | :---: | :--- | :--- |
 | **RF-01** | Registro de Técnica Maestra y Reglas Biomecánicas | El sistema deberá permitir exclusivamente al Head Coach registrar una técnica deportiva especificando obligatoriamente su categoría técnica (ej. "Llave de Brazo", "Estrangulación", "Pasaje de Guardia") y su posición de origen (ej. "Montada", "Guardia Cerrada", "Side Control"), validando que no exista previamente en el catálogo otra técnica con dicha combinación exacta para evitar nombres duplicados y catalogar variantes legítimas; asimismo, permitirá cargar su video patrón ejecutor en formato MP4 o MOV y asociar un catálogo de reglas biomecánicas deterministas que vinculan cada articulación y umbral angular con su correspondiente explicación pedagógica en lenguaje claro. |
 | **RF-02** | Normalización Antropomórfica | El sistema deberá calcular la distancia interclavicular de los sujetos en el video para normalizar escalarmente la matriz de coordenadas, permitiendo la comparación directa entre adultos, niños y diversas contexturas. |
-| **RF-03** | Sincronización Temporal Dinámica | El backend deberá aplicar el algoritmo DTW optimizado con una Ventana de Sakoe-Chiba parametrizada con un valor por defecto recomendado del 15% de la longitud temporal ($w = 0.15 \cdot N$), permitiendo su configuración flexible en el backend como parámetro adaptable por técnica o por duración del video patrón para alinear de forma no lineal las secuencias temporales del alumno y del maestro. |
+| **RF-03** | Sincronización Temporal Dinámica | El backend deberá aplicar el algoritmo DTW optimizado con una Ventana de Sakoe-Chiba parametrizada con un valor por defecto recomendado del 15% de la longitud temporal ($w = 0.15 \cdot N$), permitiendo su configuración flexible en el backend como parámetro adaptable por técnica o por duración del video patrón para alinear de forma no lineal las secuencias temporales del alumno y del maestro. El cálculo de la matriz de distancia del DTW se realizará exclusivamente sobre las series temporales de ángulos articulares relativos y no sobre las coordenadas espaciales absolutas, garantizando invariancia traslacional. |
 | **RF-04** | Extracción de Fotograma Clave | El sistema deberá aislar el fotograma específico donde la distancia euclidiana o la diferencia angular de las articulaciones alcance el pico máximo de desviación respecto al umbral maestro. |
 | **RF-05** | Inyección Gráfica de Anotación (OpenCV) | El sistema deberá dibujar automáticamente un círculo de color rojo (radio de 15 píxeles) centrado en la coordenada espacial exacta $(X, Y)$ del nodo articular donde se validó el fallo técnico. |
 | **RF-06** | Despliegue de Diagnóstico Estático y Causa Técnica | La interfaz web en Streamlit deberá renderizar la imagen JPG procesada (cuyo peso no superará los 80 KB) junto con la explicación textual del error generada por el motor de reglas de manera inmediata tras la finalización del cómputo serverless. |
@@ -567,7 +568,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | **RF-08** | Compensación Cinemática por Oclusión y Límite de Validez | El backend en FunctionGraph deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada sea $C < 0.5$, interpolando la trayectoria a partir de cuadros adyacentes; no obstante, si una articulación permanece ocluida ($C < 0.5$) de forma continua por más de un umbral máximo configurable (establecido con un valor de referencia inicial de 1.5 segundos o 45 fotogramas a 30 fps), el filtro cesará la interpolación inercial y marcará dicho tramo como 'no computable' para evitar la generación de cinemáticas ficticias, derivando el procesamiento al requisito RF-11. |
 | **RF-09** | Validación de Token de Membresía | La interfaz web deberá validar la vigencia del Código de Activación Mensual (Token de Acceso) del estudiante antes de autorizar la transferencia del archivo de video hacia el almacenamiento en la nube (Huawei Cloud OBS), impidiendo el consumo no autorizado de recursos serverless. |
 | **RF-10** | Generación de Explicación Textual Determinista | El backend en FunctionGraph deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
-| **RF-11** | Rechazo por Oclusión Prolongada y Protección Presupuestaria | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, registrando el intento como fallido y abortando la ejecución para no computar una consulta válida contra el presupuesto de la infraestructura en la nube. |
+| **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, registrando el intento como fallido y abortando la ejecución para evitar contaminar el historial de progresión del atleta con cinemáticas ficticias. (Nota técnica: Aunque el cómputo serverless ejecutado hasta el punto de detección de oclusión ya fue facturado por milisegundos de CPU, esta lógica de rechazo prioriza la validez pedagógica y estadística de los datos longitudinales del estudiante sobre el ahorro marginal de cómputo). |
 | **RF-12** | Consulta de Historial de Progresión Técnica | La interfaz web en Streamlit deberá permitir al estudiante autenticado consultar de forma interactiva su historial acumulativo de evaluaciones biomecánicas (`HistorialProgresion`), visualizando la evolución cronológica de su puntuación técnica global (`puntuacionGlobal`) y la tasa de reducción de errores (`cantidadErrores`) a lo largo de sus sucesivas sesiones de entrenamiento en el tatami. |
 
 ---
@@ -646,83 +647,107 @@ El Modelo de Dominio conceptual identifica las entidades principales del ecosist
 ```mermaid
 classDiagram
     class EscuelaBJJ {
-        id
-        nombre
-        sede
-        ciudad
-        comunidadWhatsApp
-    }
-    class HeadCoach {
-        id
-        nombre
-        cinturon
-        email
-    }
-    class Estudiante {
-        id
-        nombre
-        cinturon
-        fechaRegistro
-        email
-    }
-    class CodigoActivacion {
-        id
-        codigo
-        fechaEmision
-        fechaExpiracion
-        estado
-    }
-    class TecnicaMaestra {
-        id
-        nombre
-        categoriaTecnica
-        posicionOrigen
-        ventanaSakoeChiba
-        descripcion
-        videoURL
-        fechaCarga
-    }
-    class VideoEjecucion {
-        id
-        fechaCaptura
-        duracion
-        formato
-        tamano
-        videoURL
-    }
-    class AnalisisBiomecanico {
-        id
-        fechaProcesamiento
-        desviacionMaxima
-        articulacionFallo
-        estado
-    }
-    class FotogramaAnotado {
-        id
-        imagenURL
-        coordenadaX
-        coordenadaY
-        anguloDesviacion
-        descripcionError
-    }
-    class HistorialProgresion {
-        id
-        fecha
-        puntuacionGlobal
-        cantidadErrores
+        +id: UUID
+        +nombre: String
+        +sede: String
+        +ciudad: String
+        +comunidadWhatsApp: String
     }
 
-    EscuelaBJJ "1" -- "1..*" HeadCoach : emplea
-    EscuelaBJJ "1" -- "0..*" Estudiante : inscribe
+    class UsuarioAcademia {
+        <<abstract>>
+        +id: UUID
+        +nombreCompleto: String
+        +telefonoWhatsApp: String
+        +correoElectronico: String
+        +fechaRegistro: Date
+    }
+
+    class HeadCoach {
+        +gradoCinturon: String
+        +licenciaFederativa: String
+    }
+
+    class Estudiante {
+        +gradoCinturon: String
+        +pesoKg: Float
+        +estadoMembresia: String
+    }
+
+    class CodigoActivacion {
+        +id: UUID
+        +token: String
+        +fechaEmision: Date
+        +fechaExpiracion: Date
+        +estado: String
+    }
+
+    class TecnicaMaestra {
+        +id: UUID
+        +nombre: String
+        +categoriaTecnica: String
+        +posicionOrigen: String
+        +ventanaSakoeChiba: Float
+        +videoURL: String
+        +fechaCarga: Date
+    }
+
+    class ReglaBiomecanica {
+        +id: UUID
+        +articulacionClave: String
+        +umbralAngularTolerado: Float
+        +descripcionError: String
+    }
+
+    class VideoEjecucion {
+        +id: UUID
+        +fechaCaptura: DateTime
+        +duracionSegundos: Float
+        +pesoMB: Float
+        +videoURL: String
+    }
+
+    class AnalisisBiomecanico {
+        +id: UUID
+        +fechaProcesamiento: DateTime
+        +desviacionAngularMaxima: Float
+        +articulacionAfectada: String
+        +estadoComputo: String
+    }
+
+    class FotogramaAnotado {
+        +id: UUID
+        +imagenURL: String
+        +coordenadaErrorX: Integer
+        +coordenadaErrorY: Integer
+        +explicacionCausa: String
+    }
+
+    class HistorialProgresion {
+        +id: UUID
+        +puntuacionGlobal: Float
+        +cantidadErrores: Integer
+        +fechaUltimaEvaluacion: Date
+    }
+
+    EscuelaBJJ "1" *-- "1..*" UsuarioAcademia : nuclea
+    UsuarioAcademia <|-- HeadCoach : es-un
+    UsuarioAcademia <|-- Estudiante : es-un
+
     HeadCoach "1" -- "0..*" CodigoActivacion : emite
-    HeadCoach "1" -- "0..*" TecnicaMaestra : registra
-    Estudiante "1" -- "0..*" CodigoActivacion : posee
-    Estudiante "1" -- "0..*" VideoEjecucion : carga
-    TecnicaMaestra "1" -- "0..*" VideoEjecucion : referencia
-    VideoEjecucion "1" -- "1" AnalisisBiomecanico : genera
-    AnalisisBiomecanico "1" -- "1" FotogramaAnotado : produce
-    AnalisisBiomecanico "0..*" -- "1" HistorialProgresion : alimenta
-    Estudiante "1" -- "1" HistorialProgresion : posee
+    CodigoActivacion "0..*" -- "0..1" Estudiante : es-asignado-a
+    
+    HeadCoach "1" -- "1..*" TecnicaMaestra : homologa
+    TecnicaMaestra "1" *-- "1..*" ReglaBiomecanica : define-criterio
+
+    Estudiante "1" -- "0..*" VideoEjecucion : graba-y-carga
+    TecnicaMaestra "1" -- "0..*" VideoEjecucion : evalua-contra
+
+    VideoEjecucion "1" -- "1" AnalisisBiomecanico : procesa-en-nube
+    AnalisisBiomecanico "1" -- "0..1" FotogramaAnotado : genera-anotacion
+    
+    AnalisisBiomecanico "0..*" --o "1" HistorialProgresion : consolida
+    Estudiante "1" *-- "1" HistorialProgresion : registra-evolucion
 ```
 
 **Figura 4.2**
@@ -730,28 +755,31 @@ classDiagram
 
 **Descripción de las Entidades:**
 
-* **EscuelaBJJ:** Entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema.
-* **HeadCoach:** Representa al Head Coach / Director Técnico, profesional con potestad exclusiva para registrar las técnicas de referencia curriculares, emitir códigos de activación mensual y calibrar el catálogo de reglas biomecánicas de error en el sistema. Pertenece a una escuela.
-* **Estudiante:** Practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en la nube) que carga videos de sus ejecuciones en pareja y consulta los diagnósticos visuales generados.
+* **EscuelaBJJ:** Entidad organizativa raíz que representa a la academia Corpo & Mente Bolivia y sus sucursales (Knock Out, UFC, 3 Pasos al Frente, entre otras). Contextualiza la totalidad de los actores humanos y los recursos pedagógicos del sistema, nucleando mediante composición a los usuarios de la institución.
+* **UsuarioAcademia:** Superclase abstracta que encapsula los atributos comunes de identidad y contacto (nombre, WhatsApp, email) compartidos por HeadCoach y Estudiante, aplicando la regla de generalización "Es-Un" (Is-A) y disyunción completa.
+* **HeadCoach:** Especialización de UsuarioAcademia que representa al Head Coach / Director Técnico, profesional con potestad exclusiva para registrar y homologar las técnicas de referencia curriculares, emitir códigos de activación mensual y calibrar el catálogo de reglas biomecánicas de error en el sistema.
+* **Estudiante:** Especialización de UsuarioAcademia que representa al practicante de BJJ registrado en la plataforma web (mediante un esquema de persistencia independiente en PostgreSQL en la nube) que graba y carga videos de sus ejecuciones en pareja y consulta los diagnósticos visuales generados.
 * **CodigoActivacion:** Credencial temporal de acceso (Token de Activación Mensual) emitida periódicamente por el Head Coach a favor de un estudiante con membresía vigente. Sus atributos registran identificador, código alfanumérico, fecha de emisión, fecha de expiración y su `estado` operativo (`vigente`, `expirado` o `revocado`). Es este atributo de estado el que evalúa formalmente el requisito RF-09 antes de autorizar cualquier transferencia de video hacia la nube.
-* **TecnicaMaestra:** Video patrón cargado por el Head Coach con la ejecución canónica de una técnica específica del currículo oficial, asociado a un catálogo de reglas de error deterministas. Incorpora los atributos estructurados `categoriaTecnica` (ej. "Llave de Brazo", "Pasaje de Guardia", "Estrangulación") y `posicionOrigen` (ej. "Montada", "Guardia Cerrada", "Side Control", "De Pie"), conformándose su `nombre` como la combinación única de ambos para catalogar con precisión variantes legítimas sin ambigüedad. Admite opcionalmente el parámetro `ventanaSakoeChiba` para calibrar el ancho de banda del algoritmo DTW según la dinámica de la técnica.
-* **VideoEjecucion:** Grabación capturada por el estudiante junto a su compañero desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico.
+* **TecnicaMaestra:** Video patrón homologado por el Head Coach con la ejecución canónica de una técnica específica del currículo oficial, asociado a un catálogo de reglas de error deterministas. Incorpora los atributos estructurados `categoriaTecnica` (ej. "Llave de Brazo", "Pasaje de Guardia", "Estrangulación") y `posicionOrigen` (ej. "Montada", "Guardia Cerrada", "Side Control", "De Pie"), conformándose su `nombre` como la combinación única de ambos para catalogar con precisión variantes legítimas sin ambigüedad. Admite opcionalmente el parámetro `ventanaSakoeChiba` para calibrar el ancho de banda del algoritmo DTW según la dinámica de la técnica. A nivel de persistencia en PostgreSQL, esta entidad posee un índice de unicidad compuesto (Unique Constraint) sobre los atributos `(categoriaTecnica, posicionOrigen)`, garantizando contractualmente que no existan duplicados en el catálogo curricular.
+* **ReglaBiomecanica:** Entidad conceptual que modela el catálogo de errores deterministas. Posee una relación de composición fuerte con TecnicaMaestra; si la técnica se elimina del catálogo, sus reglas biomecánicas asociadas se destruyen en cascada.
+* **VideoEjecucion:** Grabación capturada por el estudiante junto a su compañero desde su dispositivo móvil en el tatami, la cual se somete al análisis biomecánico evaluándose contra la técnica maestra de referencia.
 * **AnalisisBiomecanico:** Resultado del procesamiento en la nube que contiene la desviación angular máxima detectada, la articulación involucrada y el estado del cómputo.
-* **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico. Su atributo `descripcionError` almacena formalmente la explicación pedagógica textual sobre la causa motriz del fallo generada de manera determinista por el motor de reglas (RF-10).
-* **HistorialProgresion:** Registro acumulativo que consolida los sucesivos análisis biomecánicos de un estudiante, permitiendo visualizar la evolución de su desempeño técnico y la reducción de fallos a lo largo del tiempo.
+* **FotogramaAnotado:** Imagen JPG estática resultante del procesamiento con OpenCV, conteniendo el círculo marcador sobre la coordenada exacta del error técnico y la explicación pedagógica textual (`explicacionCausa`) sobre la causa motriz del fallo generada de manera determinista por el motor de reglas (RF-10).
+* **HistorialProgresion:** Registro acumulativo que consolida los sucesivos análisis biomecánicos de un estudiante, permitiendo registrar la evolución cronológica de su desempeño técnico y la reducción de fallos a lo largo del tiempo.
 
 **Relaciones y Cardinalidad:**
 
 | Relación | Cardinalidad | Interpretación |
 | :--- | :---: | :--- |
-| EscuelaBJJ → HeadCoach | 1 : 1..* | Una escuela emplea al menos un Head Coach / Director Técnico. |
-| EscuelaBJJ → Estudiante | 1 : 0..* | Una escuela inscribe cero o más estudiantes. |
-| HeadCoach → CodigoActivacion | 1 : 0..* | El Head Coach emite cero o más códigos de activación a lo largo del tiempo. |
-| HeadCoach → TecnicaMaestra | 1 : 0..* | El Head Coach registra cero o más técnicas maestras curriculares. |
-| Estudiante → CodigoActivacion | 1 : 0..* | Un estudiante posee cero o más códigos de activación a lo largo del tiempo (uno por cada periodo mensual). |
-| Estudiante → VideoEjecucion | 1 : 0..* | Un estudiante carga cero o más videos de ejecución. |
-| TecnicaMaestra → VideoEjecucion | 1 : 0..* | Una técnica maestra sirve de referencia para cero o más videos de ejecución. |
-| VideoEjecucion → AnalisisBiomecanico | 1 : 1 | Cada video de ejecución genera exactamente un análisis biomecánico. |
-| AnalisisBiomecanico → FotogramaAnotado | 1 : 1 | Cada análisis produce exactamente un fotograma anotado con el error. |
-| AnalisisBiomecanico → HistorialProgresion | 0..* : 1 | Cero o más análisis biomecánicos alimentan y consolidan el historial de progresión del atleta. |
-| Estudiante → HistorialProgresion | 1 : 1 | Cada estudiante posee exactamente un registro histórico acumulativo de progresión técnica. |
+| EscuelaBJJ → UsuarioAcademia | 1 : 1..* | Una escuela nuclea al menos un usuario (Head Coach o Estudiante). |
+| UsuarioAcademia → HeadCoach / Estudiante | 1 : 1 (subclases) | Generalización disjunta y completa. Todo usuario es un Head Coach o un Estudiante. |
+| HeadCoach → CodigoActivacion | 1 : 0..* | El Head Coach emite cero o más códigos de activación. |
+| CodigoActivacion → Estudiante | 0..* : 0..1 | Un código específico es asignado a exactamente un estudiante (o a ninguno si está en el pool de tokens sin reclamar), resolviendo la trazabilidad de la membresía. |
+| HeadCoach → TecnicaMaestra | 1 : 1..* | El Head Coach registra una o más técnicas maestras. |
+| TecnicaMaestra → ReglaBiomecanica | 1 : 1..* | Composición fuerte. Cada técnica define obligatoriamente uno o más umbrales angulares y mensajes pedagógicos. |
+| Estudiante → VideoEjecucion | 1 : 0..* | Un estudiante carga cero o más videos. |
+| TecnicaMaestra → VideoEjecucion | 1 : 0..* | Una técnica maestra sirve de referencia para cero o más videos. |
+| VideoEjecucion → AnalisisBiomecanico | 1 : 1 | Cada video genera exactamente un análisis. |
+| AnalisisBiomecanico → FotogramaAnotado | 1 : 0..1 | **Cardinalidad corregida:** Un análisis produce cero o un fotograma. Es 0 si el sistema aborta por oclusión prolongada (RF-11), evitando registros huérfanos o nulos. |
+| AnalisisBiomecanico → HistorialProgresion | 0..* : 1 | Cero o más análisis alimentan el historial. |
+| Estudiante → HistorialProgresion | 1 : 1 | Cada estudiante posee exactamente un registro histórico acumulativo. |

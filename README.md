@@ -148,7 +148,7 @@
     - [5.2.2 Aplicación de Patrones GRASP y GoF](#522-aplicación-de-patrones-grasp-y-gof)
   - [5.3 Diagrama de Clases de Diseño (DCD)](#53-diagrama-de-clases-de-diseño-dcd)
     - [5.3.1 Especificación Formal de Clases de Software](#531-especificación-formal-de-clases-de-software)
-  - [5.4 Diseño Lógico y Físico de la Base de Datos (PostgreSQL en Huawei Cloud RDS)](#54-diseño-lógico-y-físico-de-la-base-de-datos-postgresql-en-huawei-cloud-rds)
+  - [5.4 Diseño Lógico de la Base de Datos (PostgreSQL Local en Entorno de Desarrollo)](#54-diseño-lógico-de-la-base-de-datos-postgresql-local-en-entorno-de-desarrollo)
     - [5.4.1 Mapeo Objeto-Relacional y Normalización](#541-mapeo-objeto-relacional-y-normalización)
     - [5.4.2 Diccionario de Datos Formal](#542-diccionario-de-datos-formal)
     - [5.4.3 Scripts DDL de Creación e Índices B-Tree](#543-scripts-ddl-de-creación-e-índices-b-tree)
@@ -875,55 +875,42 @@ La **Figura 5.2** presenta el Diagrama de Despliegue físico en sintaxis UML:
 
 ```mermaid
 flowchart TD
-    subgraph ClientDevice["Dispositivo Cliente (Smartphone / PC)"]
-        subgraph BrowserEnv["Navegador Web Móvil / Desktop"]
-            WebApp["Streamlit Client App<br/>(HTML5 / CSS / WSS)"]
+    subgraph Laptop["Laptop del Desarrollador (Dell Inspiron 3501)"]
+        subgraph LocalEnv["Entorno Local de Desarrollo"]
+            StreamlitLocal["Streamlit Server<br/>(localhost:8501)"]
+            PostgresLocal[("PostgreSQL 14<br/>(Base de Datos Local)")]
         end
     end
 
-    subgraph HuaweiCloud["Huawei Cloud Region (SA-Brazil-1 / LA-Santiago)"]
-        subgraph WebServerNode["Servidor de Aplicación Web"]
-            subgraph LinuxEnv["Linux Container (Ubuntu 22.04 LTS)"]
-                StreamlitServer["Streamlit Core Engine<br/>(Python 3.10)"]
+    subgraph HuaweiCloud["Huawei Cloud Region (LA-Santiago)"]
+        subgraph ServerlessNode["FunctionGraph Cluster"]
+            subgraph FGEnv["Serverless Custom Runtime<br/>(Linux x86_64, 512 MB RAM)"]
+                FG_Service["Biomechanics Engine<br/>(MediaPipe + DTW + OpenCV)"]
             end
         end
-
-        subgraph ServerlessNode["Huawei Cloud FunctionGraph Cluster"]
-            subgraph FGEnv["Serverless Custom Runtime<br/>(Linux x86_64, 2048 MB RAM, 1 vCPU)"]
-                FG_Service["Biomechanics Engine Microservice<br/>(MediaPipe + DTW + OpenCV)"]
-            end
-        end
-
-        subgraph OBSNode["Huawei Cloud OBS Cluster (Almacenamiento)"]
-            OBS_In[("Bucket Privado: bjj-videos-input<br/>(Videos MP4 de Ejecución y Patrones)")]
-            OBS_Out[("Bucket Privado: bjj-reports-output<br/>(Fotogramas Anotados JPG ~80 KB)")]
-        end
-
-        subgraph RDSNode["Huawei Cloud RDS (Base de Datos)"]
-            RDS_DB[("PostgreSQL v14+ Instance<br/>(1 vCPU, 2 GB RAM, 40 GB SSD)")]
+        subgraph OBSNode["Huawei Cloud OBS"]
+            OBS_In[("Bucket: bjj-videos-input<br/>(Videos MP4 ≤5MB)")]
+            OBS_Out[("Bucket: bjj-reports-output<br/>(Fotogramas JPG ~80KB)")]
         end
     end
 
-    WebApp -- "HTTPS / WSS (Puerto 443 / TLS 1.3)" --> StreamlitServer
-    StreamlitServer -- "IAM Auth Token / HTTPS REST (API Gateway)" --> FG_Service
-    StreamlitServer -- "TCP 5432 (SSL Encryption)" --> RDS_DB
-    FG_Service -- "S3 API HTTPS (VPC Endpoint Privado)" --> OBS_In
-    FG_Service -- "S3 API HTTPS (VPC Endpoint Privado)" --> OBS_Out
-    FG_Service -- "TCP 5432 (SSL Encryption / Subred Privada)" --> RDS_DB
+    StreamlitLocal -- "HTTPS REST (SDK Huawei)" --> FG_Service
+    StreamlitLocal -- "TCP 5432 (Localhost)" --> PostgresLocal
+    FG_Service -- "S3 API HTTPS (Agency IAM)" --> OBS_In
+    FG_Service -- "S3 API HTTPS (Agency IAM)" --> OBS_Out
 ```
 
 **Figura 5.2**  
-*Diagrama de Despliegue Físico en Huawei Cloud (UML).*
+*Diagrama de Despliegue Físico Simplificado (Arquitectura Híbrida Laptop-Cloud).*
 
 **Tabla 5.1**  
 *Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad*
 
 | Segmento de Enlace | Protocolo / Puerto | Mecanismo de Seguridad | Justificación Técnica |
 | :--- | :---: | :--- | :--- |
-| **Cliente Móvil → Servidor Streamlit** | HTTPS / WSS<br/>(TCP 443) | Cifrado TLS 1.3 con certificados X.509 firmados. | Comunicación web reactiva y segura sobre redes celulares públicas (4G/LTE/5G) de Santa Cruz de la Sierra. |
-| **Servidor Streamlit → FunctionGraph** | HTTPS REST<br/>(TCP 443) | Autenticación basada en IAM AK/SK y tokens de corta duración (*Scoped Tokens*). | Invocación serverless desacoplada con autorización estricta a nivel de infraestructura Huawei Cloud. |
-| **FunctionGraph → Huawei Cloud OBS** | HTTPS S3 API<br/>(TCP 443) | VPC Endpoint privado interno con firma HMAC-SHA256. | Tráfico audiovisual encapsulado en la red troncal interna de Huawei Cloud, con latencia submilisegundo y coste cero de transferencia interna. |
-| **FunctionGraph / Streamlit → RDS PostgreSQL** | TCP 5432 | Conexión relacional con forzado SSL/TLS (`sslmode=require`) y *Security Groups* restrictivos. | Base de datos blindada en subred privada (*Private Subnet*), sin IP pública expuesta, accesible exclusivamente desde los contenedores del clúster. |
+| **Laptop → FunctionGraph** | HTTPS REST (TCP 443) | Autenticación IAM AK/SK | Invocación serverless desde entorno local de desarrollo. |
+| **Laptop → PostgreSQL Local** | TCP 5432 (Localhost) | Conexión local sin red externa | Base de datos relacional ejecutándose nativamente en la laptop del desarrollador. |
+| **FunctionGraph → OBS** | HTTPS S3 API (TCP 443) | Agency IAM con firma HMAC-SHA256 | FunctionGraph lee videos de entrada y escribe fotogramas anotados usando permisos delegados. |
 
 ---
 
@@ -951,19 +938,28 @@ $$t_{\text{serverless}}^{\text{nominal}} = 0.05\text{ s} + 1.90\text{ s} + 0.10\
 
 Queda formalmente demostrado que el límite contractual de 4.0 segundos es un SLA realista que absorbe holgadamente la variabilidad de la infraestructura en la nube.
 
-#### B. Justificación Matemática del Techo Financiero ($< \$30\text{ USD}$ Trimestrales, RP-02)
-El control del volumen de salida de datos (*Data Egress*) constituye la salvaguarda económica crítica del proyecto. La imagen JPG anotada por OpenCV promedia un tamaño nominal de **$\sim 80\text{ KB}$**, con un techo máximo contractual estricto fijado en **$100\text{ KB}$** (RP-02).
+#### B. Justificación Matemática del Techo Financiero (< $30 USD Trimestrales)
+La arquitectura híbrida laptop-cloud garantiza que el consumo facturable de Huawei Cloud se limite estrictamente a los servicios serverless esenciales (FunctionGraph + OBS), eliminando costos de infraestructura permanente (RDS, ECS, API Gateway).
 
-Considerando la tarifa regional de transferencia saliente en Huawei Cloud ($\approx \$0.08\text{ USD por Gigabyte}$ transferido hacia internet):
+**Desglose de Costos Trimestrales:**
 
-* **Escenario Operativo Regular (350 consultas mensuales / 1,050 trimestrales):**
-  $$\text{Volumen Trimestral} = 1,050 \times 80\text{ KB} = 84,000\text{ KB} \approx 0.0801\text{ GB}$$
-  $$\text{Costo Egress Trimestral} = 0.0801\text{ GB} \times \$0.08\text{ USD/GB} \approx \$0.0064\text{ USD}$$
-* **Escenario de Estrés Máximo (2,700 consultas mensuales / 8,100 trimestrales bajo el techo de 100 KB):**
-  $$\text{Volumen Trimestral} = 8,100 \times 100\text{ KB} = 810,000\text{ KB} \approx 0.7724\text{ GB}$$
-  $$\text{Costo Egress Trimestral} = 0.7724\text{ GB} \times \$0.08\text{ USD/GB} \approx \$0.0618\text{ USD}$$
+1. **FunctionGraph (Cómputo Serverless):**
+   - Tier gratuito permanente: 1,000,000 invocaciones/mes y 400,000 GB-segundos/mes sin cargo.
+   - Escenario operativo regular (350 consultas mensuales × 3 meses = 1,050 invocaciones trimestrales):
+     - Cada invocación consume ~2 segundos × 512 MB RAM = 1 GB-segundo.
+     - Total trimestral: 1,050 GB-segundos (dentro del tier gratuito).
+     - **Costo FunctionGraph: $0.00 USD**
 
-Aun bajo un tráfico extraordinario de estrés, el consumo por salida de datos se mantiene por debajo de los **\$0.07 USD trimestrales**. Sumado a la capa gratuita permanente de *FunctionGraph* (que exonera los primeros 1,000,000 de llamadas mensuales y 400,000 GB-segundos de cómputo) y al almacenamiento transitorio en OBS (cuyos videos crudos se purgan automáticamente tras 48 horas mediante reglas de ciclo de vida o *Lifecycle Policies*), el presupuesto operativo de la academia se mantiene inquebrantablemente dentro del límite financiero trimestral ($< \$30\text{ USD}$).
+2. **OBS (Almacenamiento de Objetos):**
+   - Almacenamiento estándar: 10 GB × $0.021/GB/mes = $0.21/mes × 3 = $0.63 USD trimestrales.
+   - Tráfico de salida (Data Egress): 1,050 fotogramas × 80 KB = 84 MB trimestrales.
+     - Tarifa regional: $0.081/GB × 0.084 GB = $0.0068 USD trimestrales.
+   - API Requests: 2,100 PUT/GET requests × $0.005/1,000 = $0.0105 USD trimestrales.
+   - **Costo OBS Total: ~$0.65 USD trimestrales**
+
+**Costo Total Trimestral Huawei Cloud: ~$0.65 USD** (ampliamente inferior al límite de $30 USD).
+
+La laptop del desarrollador asume sin costo adicional la ejecución de Streamlit (frontend), PostgreSQL (persistencia relacional) y el entorno de desarrollo Python, cumpliendo con la restricción presupuestaria del proyecto.
 
 ---
 
@@ -1318,9 +1314,9 @@ classDiagram
 
 ---
 
-## 5.4 Diseño Lógico y Físico de la Base de Datos (PostgreSQL en Huawei Cloud RDS)
+## 5.4 Diseño Lógico de la Base de Datos (PostgreSQL Local en Entorno de Desarrollo)
 
-El diseño de la base de datos relacional se rige por la metodología formal de modelado de bases de datos de **Michael V. Mannino** (Capítulos 5 y 6), asegurando la integridad referencial, la ausencia de redundancias anómalas y el óptimo rendimiento de consulta bajo un clúster *Huawei Cloud RDS for PostgreSQL*.
+El diseño de la base de datos relacional se rige por la metodología formal de modelado de bases de datos de **Michael V. Mannino** (Capítulos 5 y 6), asegurando la integridad referencial, la ausencia de redundancias anómalas y el óptimo rendimiento de consulta bajo una instancia local de PostgreSQL 14 ejecutándose en la laptop del desarrollador durante la fase de construcción y pruebas experimentales.
 
 ### 5.4.1 Mapeo Objeto-Relacional y Normalización
 
@@ -1686,7 +1682,7 @@ La interfaz gráfica de usuario está implementada mediante el framework web de 
 
 ### 5.5.1 Diagrama de Navegación y Flujo de Estados
 
-El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a la cámara y al formulario de subida mientras el practicante no acredite un token de membresía válido emitido por el Head Coach.
+El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a la cámara y al formulario de subida mientras el practicante no acredite un token de membresía válido emitido por el Head Coach. Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (localhost:8501), conectándose mediante HTTPS a los servicios de Huawei Cloud (FunctionGraph vía SDK, OBS vía API S3) y a la base de datos PostgreSQL local vía conexión TCP estándar.
 
 La **Figura 5.7** detalla el diagrama de estados de navegación en la plataforma:
 

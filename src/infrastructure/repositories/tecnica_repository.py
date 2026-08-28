@@ -180,3 +180,50 @@ class TecnicaMaestraRepository:
 
             self.session.add(db_tecnica)
             self.session.commit()
+
+    def actualizar_tecnica(self, id_tecnica: UUID, nuevo_nombre: str) -> Optional[DomainTecnica]:
+        """
+        Actualiza el nombre curricular de una técnica existente (Update en CRUD).
+        """
+        tecnica_actualizada = None
+
+        if id_tecnica in self._catalogo_en_memoria:
+            self._catalogo_en_memoria[id_tecnica].nombre = nuevo_nombre
+            tecnica_actualizada = self._catalogo_en_memoria[id_tecnica]
+
+        if self.session is not None:
+            tecnica_db = (
+                self.session.query(DBTecnica)
+                .filter(DBTecnica.id_tecnica == id_tecnica)
+                .first()
+            )
+            if tecnica_db is not None:
+                tecnica_db.nombre = nuevo_nombre
+                self.session.commit()
+                if tecnica_actualizada is None:
+                    tecnica_actualizada = self.obtener_tecnica_y_reglas(id_tecnica)
+
+        return tecnica_actualizada
+
+    def eliminar_tecnica(self, id_tecnica: UUID) -> bool:
+        """
+        Elimina una técnica maestra del catálogo oficial (Delete en CRUD).
+        """
+        eliminado = False
+
+        if id_tecnica in self._catalogo_en_memoria:
+            del self._catalogo_en_memoria[id_tecnica]
+            eliminado = True
+
+        if self.session is not None:
+            tecnica_db = (
+                self.session.query(DBTecnica)
+                .filter(DBTecnica.id_tecnica == id_tecnica)
+                .first()
+            )
+            if tecnica_db is not None:
+                self.session.delete(tecnica_db)
+                self.session.commit()
+                eliminado = True
+
+        return eliminado

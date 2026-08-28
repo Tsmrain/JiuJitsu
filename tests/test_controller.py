@@ -161,6 +161,20 @@ class TestAnalisisBiomecanicoController(unittest.TestCase):
         self.assertEqual(tecnica_registrada.video_url, "https://obs.huawei.com/patrones/guillotina_profe.mp4")
         self.assertEqual(len(tecnica_registrada.reglas), 1)
 
+    def test_actualizar_y_eliminar_tecnica_maestra_crud(self) -> None:
+        """Prueba 5 (CRUD): Actualizar y eliminar técnicas del currículo oficial."""
+        id_tec = uuid4()
+        self.mock_tecnica_repo.actualizar_tecnica.return_value = MagicMock(nombre="Nuevo Nombre Editado")
+        self.mock_tecnica_repo.eliminar_tecnica.return_value = True
+
+        actualizada = self.controller.actualizar_tecnica_maestra(id_tec, "Nuevo Nombre Editado")
+        self.mock_tecnica_repo.actualizar_tecnica.assert_called_once_with(id_tec, "Nuevo Nombre Editado")
+        self.assertEqual(actualizada.nombre, "Nuevo Nombre Editado")
+
+        eliminada = self.controller.eliminar_tecnica_maestra(id_tec)
+        self.mock_tecnica_repo.eliminar_tecnica.assert_called_once_with(id_tec)
+        self.assertTrue(eliminada)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -107,6 +107,34 @@ class TestRepositories(unittest.TestCase):
         self.assertEqual(recuperada.nombre, "Triángulo desde Guardia")
         self.assertEqual(len(recuperada.reglas), 1)
 
+    def test_tecnica_maestra_actualizar_y_eliminar_crud(self) -> None:
+        """Prueba 6: TecnicaMaestraRepository permite actualizar y eliminar técnicas (CRUD)."""
+        from src.domain.models import TecnicaMaestra
+
+        repo = TecnicaMaestraRepository(session=None)
+        id_tec = uuid4()
+        tecnica = TecnicaMaestra(
+            id=id_tec,
+            nombre="Técnica Original",
+            categoria_tecnica="Defensa",
+            posicion_origen="De Pie",
+            ventana_sakoe_chiba=0.15,
+            video_url="https://obs.huawei.com/tec.mp4",
+            reglas=[],
+        )
+        repo.guardar_tecnica(tecnica)
+
+        # Update
+        actualizada = repo.actualizar_tecnica(id_tec, "Técnica Modificada")
+        self.assertIsNotNone(actualizada)
+        self.assertEqual(actualizada.nombre, "Técnica Modificada")
+
+        # Delete
+        eliminada = repo.eliminar_tecnica(id_tec)
+        self.assertTrue(eliminada)
+        ids_restantes = [t.id for t in repo.listar_tecnicas()]
+        self.assertNotIn(id_tec, ids_restantes)
+
 
 if __name__ == "__main__":
     unittest.main()

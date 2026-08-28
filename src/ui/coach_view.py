@@ -1,8 +1,11 @@
 """
 Vista del Panel del Head Coach / Profesor (Craig Larman / CU-01, RF-01).
-Diseño ultra-simplificado para el tatami:
-El profesor únicamente ingresa el nombre o tema de la clase y sube su video demostrativo.
-Sin formularios burocráticos ni campos innecesarios.
+Soporte completo para operaciones CRUD en las técnicas de la academia:
+- Create: Publicar nueva técnica y video de clase.
+- Read: Listar técnicas vigentes del profesor.
+- Update: Modificar el nombre o tema de una técnica existente.
+- Delete: Eliminar una técnica del currículo oficial.
+Con notificaciones persistentes de éxito o error para el usuario.
 """
 
 from pathlib import Path
@@ -14,9 +17,14 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
     """
-    Renderiza el panel del profesor adaptado a la dinámica real del tatami:
-    Nombre de lo que va a enseñar + Video demostrativo -> Publicar.
+    Renderiza el panel de gestión técnica del profesor con CRUD completo y alertas visuales.
     """
+    # Notificaciones persistentes de feedback al usuario
+    if "coach_mensaje_exito" in st.session_state and st.session_state["coach_mensaje_exito"]:
+        st.success(st.session_state.pop("coach_mensaje_exito"))
+    if "coach_mensaje_error" in st.session_state and st.session_state["coach_mensaje_error"]:
+        st.error(st.session_state.pop("coach_mensaje_error"))
+
     col_t, col_b = st.columns([3, 1])
     with col_t:
         st.markdown(
@@ -26,10 +34,10 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                     Academia Corpo e Mente &middot; Humberto Tavares
                 </div>
                 <div style="color: #FFFFFF; font-size: 1.4rem; font-weight: 800; text-transform: uppercase;">
-                    Panel del Profesor: Publicar Técnica de la Clase
+                    Panel del Profesor: Gestión de Técnicas (CRUD)
                 </div>
                 <div style="color: #8B949E; font-size: 0.85rem; margin-top: 2px;">
-                    Escribe lo que vas a enseñar hoy y sube tu video demostrativo. Tus alumnos se auditarán directamente contra tu ejecución.
+                    Publica, edita o elimina las técnicas enseñadas en clase para la evaluación de tus alumnos.
                 </div>
             </div>
             """,
@@ -42,8 +50,11 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
 
     st.divider()
 
-    col_izq, col_der = st.columns([1.3, 1], gap="large")
+    col_izq, col_der = st.columns([1.2, 1.4], gap="large")
 
+    # ==========================================
+    # 1. CREATE: Publicar Nueva Técnica
+    # ==========================================
     with col_izq:
         with st.container(border=True):
             st.markdown(
@@ -61,7 +72,6 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                 help="Escribe la lección tal como se la anuncias a tus alumnos en el tatami.",
             )
 
-            # Subida directa del video de la demostración del profesor
             video_patron = st.file_uploader(
                 "Video de la Demostración del Profesor",
                 type=["mp4", "mov"],
@@ -78,6 +88,9 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                 width="stretch",
             )
 
+    # ==========================================
+    # 2. READ, UPDATE, DELETE: Técnicas Existentes
+    # ==========================================
     with col_der:
         with st.container(border=True):
             st.markdown(
@@ -90,27 +103,74 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             )
 
             tecnicas_actuales = controller.listar_tecnicas()
+            id_en_edicion = st.session_state.get("coach_edit_id", None)
+
             if tecnicas_actuales:
                 for t in tecnicas_actuales:
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #161922; border: 1px solid #2B303C; border-left: 4px solid #D90429; border-radius: 6px; padding: 12px 14px; margin-bottom: 10px;">
-                            <div style="color: #FFFFFF; font-weight: 700; font-size: 0.95rem;">{t.nombre}</div>
-                            <div style="color: #3FB950; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">
-                                DISPONIBLE PARA EVALUACIÓN EN CLASE
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-            else:
-                st.info("No hay técnicas registradas todavía.")
+                    with st.container(border=True):
+                        # Modo de edición activa para este elemento (UPDATE)
+                        if id_en_edicion == t.id:
+                            st.markdown(
+                                "<div style='color: #D90429; font-weight: 700; font-size: 0.85rem;'>EDITANDO TÉCNICA</div>",
+                                unsafe_allow_html=True,
+                            )
+                            nuevo_nombre = st.text_input(
+                                "Modificar nombre de la técnica:",
+                                value=t.nombre,
+                                key=f"input_edit_{t.id}",
+                            )
+                            col_e1, col_e2 = st.columns(2)
+                            with col_e1:
+                                if st.button("Guardar Cambios", key=f"save_{t.id}", width="stretch"):
+                                    if nuevo_nombre.strip():
+                                        controller.actualizar_tecnica_maestra(t.id, nuevo_nombre.strip())
+                                        st.session_state["coach_edit_id"] = None
+                                        st.session_state["coach_mensaje_exito"] = (
+                                            f"Técnica actualizada a '{nuevo_nombre.strip()}' correctamente."
+                                        )
+                                        st.rerun()
+                                    else:
+                                        st.error("El nombre no puede quedar vacío.")
+                            with col_e2:
+                                if st.button("Cancelar", key=f"cancel_{t.id}", width="stretch"):
+                                    st.session_state["coach_edit_id"] = None
+                                    st.rerun()
+                        else:
+                            # Modo de visualización normal (READ) con acciones (UPDATE / DELETE)
+                            st.markdown(
+                                f"""
+                                <div style="margin-bottom: 6px;">
+                                    <div style="color: #FFFFFF; font-weight: 700; font-size: 1rem;">{t.nombre}</div>
+                                    <div style="color: #3FB950; font-size: 0.75rem; margin-top: 2px; font-weight: 600;">
+                                        DISPONIBLE PARA EVALUACIÓN EN CLASE
+                                    </div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
 
-    # Al presionar guardar, se persiste de forma automática
+                            col_act1, col_act2 = st.columns(2)
+                            with col_act1:
+                                if st.button("Editar", key=f"btn_edit_{t.id}", width="stretch"):
+                                    st.session_state["coach_edit_id"] = t.id
+                                    st.rerun()
+                            with col_act2:
+                                if st.button("Eliminar", key=f"btn_del_{t.id}", width="stretch"):
+                                    nombre_del = t.nombre
+                                    controller.eliminar_tecnica_maestra(t.id)
+                                    st.session_state["coach_mensaje_exito"] = (
+                                        f"Técnica '{nombre_del}' eliminada del catálogo oficial."
+                                    )
+                                    st.rerun()
+            else:
+                st.info("No hay técnicas registradas todavía. Publica una en el panel izquierdo.")
+
+    # ==========================================
+    # Procesar Publicación (CREATE)
+    # ==========================================
     if boton_guardar and video_patron is not None:
         video_bytes = video_patron.read()
 
-        # Inferencia automática de posición y categoría según las palabras del profesor
         nombre_clean = nombre_tecnica.strip()
         nombre_lower = nombre_clean.lower()
 
@@ -149,10 +209,12 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                     reglas_datos=reglas_datos,
                 )
 
-                st.success(
+                # Notificación persistente garantizada al usuario
+                st.session_state["coach_mensaje_exito"] = (
                     f"¡Técnica '{tecnica_creada.nombre}' publicada con éxito! "
-                    "Tus alumnos ya pueden seleccionarla y evaluarse con tu video."
+                    "Ya está disponible en la sala para que todos los alumnos se evalúen con tu video."
                 )
                 st.rerun()
             except Exception as e:
-                st.error(f"Error al guardar la técnica: {str(e)}")
+                st.session_state["coach_mensaje_error"] = f"Falla al registrar la técnica: {str(e)}"
+                st.rerun()

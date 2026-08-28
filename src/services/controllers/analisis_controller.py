@@ -194,3 +194,11 @@ class AnalisisBiomecanicoController:
         self.tecnica_repo.guardar_tecnica(tecnica)
         return tecnica
 
+    def actualizar_tecnica_maestra(self, id_tecnica: UUID, nuevo_nombre: str):
+        """Actualiza el nombre de una técnica maestra existente (Update en CRUD)."""
+        return self.tecnica_repo.actualizar_tecnica(id_tecnica, nuevo_nombre.strip())
+
+    def eliminar_tecnica_maestra(self, id_tecnica: UUID) -> bool:
+        """Elimina una técnica maestra del catálogo oficial (Delete en CRUD)."""
+        return self.tecnica_repo.eliminar_tecnica(id_tecnica)
+

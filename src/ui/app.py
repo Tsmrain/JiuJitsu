@@ -21,6 +21,7 @@ from src.infrastructure.repositories.token_repository import TokenRepository
 from src.infrastructure.storage.obs_adapter import HuaweiOBSStorageAdapter
 from src.services.controllers.analisis_controller import AnalisisBiomecanicoController
 from src.services.pipeline_engine import PipelineBiomecanicoEngine
+from src.ui.coach_view import render_coach_view
 from src.ui.feedback_view import render_feedback_view
 from src.ui.progression_view import render_progression_view
 from src.ui.token_view import render_token_gate
@@ -226,6 +227,8 @@ def main() -> None:
             render_feedback_view()
         elif vista_actual == "progression":
             render_progression_view(controller)
+        elif vista_actual == "coach":
+            render_coach_view(controller)
         else:
             render_upload_view(controller)
 

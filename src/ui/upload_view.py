@@ -44,12 +44,16 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
             )
 
     with col_acciones:
-        col_a1, col_a2 = st.columns(2)
+        col_a1, col_a2, col_a3 = st.columns([1, 1.3, 1])
         with col_a1:
             if st.button("Mi Progreso", use_container_width=True):
                 st.session_state["current_view"] = "progression"
                 st.rerun()
         with col_a2:
+            if st.button("Panel Profesor", use_container_width=True):
+                st.session_state["current_view"] = "coach"
+                st.rerun()
+        with col_a3:
             if st.button("Cerrar Sesión", use_container_width=True):
                 st.session_state["authenticated"] = False
                 st.session_state["token"] = None
@@ -62,43 +66,48 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
     # Contenedor principal en dos paneles anchos
     col_config, col_upload = st.columns([1.1, 1.4], gap="large")
 
+    tecnicas_disponibles = controller.listar_tecnicas()
+
     with col_config:
         with st.container(border=True):
             st.markdown(
                 """
                 <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; border-bottom: 2px solid #D90429; padding-bottom: 6px;">
-                    Parámetros de Evaluación Curricular
+                    Técnica Maestra Homologada por el Profesor
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            categoria = st.selectbox(
-                "Categoría Técnica Curricular",
-                options=["Llave de Brazo", "Pasaje de Guardia", "Estrangulación"],
-                index=0,
-                help="Fundamento técnico establecido en el programa pedagógico de la academia.",
-            )
-
-            posiciones_disponibles = {
-                "Llave de Brazo": ["Guardia Cerrada", "Montada", "De Pie"],
-                "Pasaje de Guardia": ["Torreando", "Knee Slice", "Over-Under"],
-                "Estrangulación": ["Triángulo", "Mata-León", "Guillotina"],
-            }
-            opciones_posicion = posiciones_disponibles.get(categoria, ["Guardia Cerrada"])
-            posicion = st.selectbox(
-                "Posición de Origen",
-                options=opciones_posicion,
-                index=0,
-                help="Postura biomecánica inicial desde la cual se desencadena el movimiento.",
-            )
+            if tecnicas_disponibles:
+                tecnica_elegida = st.selectbox(
+                    "Seleccionar Técnica del Catálogo Oficial",
+                    options=tecnicas_disponibles,
+                    format_func=lambda t: f"{t.nombre} ({t.categoria_tecnica} - {t.posicion_origen})",
+                    help="Técnica canónica grabada y parametrizada por el Head Coach Humberto Tavares.",
+                )
+                id_tecnica_seleccionada = tecnica_elegida.id
+                nombre_tecnica_display = tecnica_elegida.nombre
+                categoria_display = tecnica_elegida.categoria_tecnica
+                posicion_display = tecnica_elegida.posicion_origen
+                ventana_display = int(tecnica_elegida.ventana_sakoe_chiba * 100)
+                video_patron_display = tecnica_elegida.video_url
+            else:
+                st.warning("No hay técnicas registradas por el profesor. Ingrese al 'Panel Profesor' para homologar una.")
+                id_tecnica_seleccionada = uuid4()
+                nombre_tecnica_display = "Armbar desde Guardia Cerrada"
+                categoria_display = "Llave de Brazo"
+                posicion_display = "Guardia Cerrada"
+                ventana_display = 15
+                video_patron_display = "armbar_patron_oficial.mp4"
 
             st.markdown(
                 f"""
                 <div style="background-color: #1A1E26; border: 1px solid #2B303C; border-radius: 6px; padding: 12px; margin-top: 14px;">
-                    <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Patrón Curricular Activo</div>
-                    <div style="color: #FFFFFF; font-weight: 700; font-size: 0.95rem; margin-top: 2px;">{categoria} &mdash; {posicion}</div>
-                    <div style="color: #D90429; font-size: 0.8rem; margin-top: 4px;">Ventana Sakoe-Chiba: 15% &middot; Tolerancia Angular: 15.0&deg;</div>
+                    <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Molde Cinemático Activo del Profesor</div>
+                    <div style="color: #FFFFFF; font-weight: 700; font-size: 0.95rem; margin-top: 2px;">{nombre_tecnica_display}</div>
+                    <div style="color: #D90429; font-size: 0.8rem; margin-top: 4px;">Categoría: {categoria_display} &middot; Origen: {posicion_display}</div>
+                    <div style="color: #8B949E; font-size: 0.75rem; margin-top: 4px;">Ventana DTW Sakoe-Chiba: {ventana_display}% &middot; Video Patrón: {video_patron_display.split('/')[-1]}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -145,7 +154,6 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
 
     if boton_analizar and archivo_subido is not None:
         token_sesion = st.session_state.get("token", "")
-        id_tecnica_seleccionada = uuid4()
         video_bytes = archivo_subido.read()
 
         with st.spinner("Procesando cinemática articular en Huawei Cloud Serverless..."):
@@ -167,7 +175,7 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
                     st.session_state["diagnostico"] = diagnostico
                     st.session_state["video_bytes"] = video_bytes
                     st.session_state["video_nombre"] = archivo_subido.name
-                    st.session_state["tecnica_nombre"] = f"{categoria} desde {posicion}"
+                    st.session_state["tecnica_nombre"] = nombre_tecnica_display
                     st.session_state["current_view"] = "feedback"
                     st.rerun()
 

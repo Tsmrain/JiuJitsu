@@ -131,10 +131,35 @@ class TestAnalisisBiomecanicoController(unittest.TestCase):
                 id_tecnica=self.id_tecnica,
             )
 
-        # Ни pipeline ni OBS ni BD deben ser invocados
+        # Ni pipeline ni OBS ni BD deben ser invocados
         self.mock_pipeline_engine.ejecutar_pipeline_completo.assert_not_called()
         self.mock_storage_adapter.subir_fotograma.assert_not_called()
         self.mock_analisis_repo.guardar_resultado.assert_not_called()
+
+    def test_registrar_tecnica_maestra_head_coach(self) -> None:
+        """Prueba 4 (CU-01): Head Coach registra video patrón y reglas de error en OBS y base de datos."""
+        self.mock_storage_adapter.subir_video.return_value = "https://obs.huawei.com/patrones/guillotina_profe.mp4"
+
+        tecnica_registrada = self.controller.registrar_tecnica_maestra(
+            nombre="Guillotina Frontal",
+            categoria="Estrangulación",
+            posicion="De Pie",
+            ventana_sakoe=0.15,
+            video_bytes=b"BYTES_VIDEO_PROFESOR_MP4",
+            reglas_datos=[
+                {
+                    "articulacion_clave": "hombro_derecho",
+                    "umbral_angular_tolerado": 14.0,
+                    "descripcion_error": "Hombro descolocado sin tracción de cadera",
+                }
+            ],
+        )
+
+        self.mock_storage_adapter.subir_video.assert_called_once()
+        self.mock_tecnica_repo.guardar_tecnica.assert_called_once()
+        self.assertEqual(tecnica_registrada.nombre, "Guillotina Frontal")
+        self.assertEqual(tecnica_registrada.video_url, "https://obs.huawei.com/patrones/guillotina_profe.mp4")
+        self.assertEqual(len(tecnica_registrada.reglas), 1)
 
 
 if __name__ == "__main__":

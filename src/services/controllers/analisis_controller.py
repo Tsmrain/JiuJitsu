@@ -138,3 +138,59 @@ class AnalisisBiomecanicoController:
             desviacion_maxima=resultado_pipeline.desviacion_maxima,
             articulacion_afectada=resultado_pipeline.articulacion_afectada,
         )
+
+    def listar_tecnicas(self):
+        """Retorna las técnicas maestras registradas en el currículo."""
+        return self.tecnica_repo.listar_tecnicas()
+
+    def registrar_tecnica_maestra(
+        self,
+        nombre: str,
+        categoria: str,
+        posicion: str,
+        ventana_sakoe: float,
+        video_bytes: bytes,
+        reglas_datos: list,
+    ):
+        """
+        Orquesta el Caso de Uso CU-01 (Head Coach):
+        1. Sube el video patrón grabado por el profesor a Huawei Cloud OBS.
+        2. Construye la técnica maestra con sus reglas biomecánicas de tolerancia.
+        3. Persiste la técnica en la base de datos para que los alumnos se comparen contra ella.
+        """
+        from src.domain.models import ReglaBiomecanica, TecnicaMaestra
+
+        id_tecnica_nueva = uuid4()
+        nombre_limpio = nombre.strip() or "Técnica Maestra Oficial"
+        slug_nombre = nombre_limpio.lower().replace(" ", "_").replace("/", "_")
+        object_key = f"patrones_maestros/{id_tecnica_nueva}_{slug_nombre}.mp4"
+
+        # 1. Almacenar video patrón en Huawei Cloud OBS
+        video_url = self.storage_adapter.subir_video(video_bytes, object_key)
+
+        # 2. Configurar reglas biomecánicas
+        reglas = []
+        for r in reglas_datos:
+            reglas.append(
+                ReglaBiomecanica(
+                    id=uuid4(),
+                    articulacion_clave=r.get("articulacion_clave", "codo_derecho"),
+                    umbral_angular_tolerado=float(r.get("umbral_angular_tolerado", 15.0)),
+                    descripcion_error=r.get("descripcion_error", "Desviación angular detectada."),
+                )
+            )
+
+        tecnica = TecnicaMaestra(
+            id=id_tecnica_nueva,
+            nombre=nombre_limpio,
+            categoria_tecnica=categoria.strip(),
+            posicion_origen=posicion.strip(),
+            ventana_sakoe_chiba=float(ventana_sakoe),
+            video_url=video_url,
+            reglas=reglas,
+        )
+
+        # 3. Persistir en repositorio
+        self.tecnica_repo.guardar_tecnica(tecnica)
+        return tecnica
+

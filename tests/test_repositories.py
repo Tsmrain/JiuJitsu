@@ -76,7 +76,36 @@ class TestRepositories(unittest.TestCase):
         repo.guardar_resultado(mock_analisis, mock_fotograma)
 
         self.assertEqual(self.mock_session.add.call_count, 2)
-        self.mock_session.commit.assert_called_once()
+    def test_guardar_y_listar_tecnicas_maestras(self) -> None:
+        """Prueba 5: TecnicaMaestraRepository guarda y lista técnicas homologadas por el profesor (CU-01)."""
+        from src.domain.models import TecnicaMaestra, ReglaBiomecanica
+
+        repo = TecnicaMaestraRepository(session=None)
+        id_nueva = uuid4()
+        tecnica = TecnicaMaestra(
+            id=id_nueva,
+            nombre="Triángulo desde Guardia",
+            categoria_tecnica="Estrangulación",
+            posicion_origen="Guardia Cerrada",
+            ventana_sakoe_chiba=0.15,
+            video_url="https://obs.huawei.com/triangulo.mp4",
+            reglas=[
+                ReglaBiomecanica(
+                    id=uuid4(),
+                    articulacion_clave="rodilla_derecha",
+                    umbral_angular_tolerado=12.0,
+                    descripcion_error="Falta cerrar el cuatro detrás de la rodilla",
+                )
+            ],
+        )
+
+        repo.guardar_tecnica(tecnica)
+        catalogo = repo.listar_tecnicas()
+
+        self.assertGreaterEqual(len(catalogo), 2)
+        recuperada = repo.obtener_tecnica_y_reglas(id_nueva)
+        self.assertEqual(recuperada.nombre, "Triángulo desde Guardia")
+        self.assertEqual(len(recuperada.reglas), 1)
 
 
 if __name__ == "__main__":

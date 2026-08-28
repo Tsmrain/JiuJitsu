@@ -73,7 +73,7 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
             st.markdown(
                 """
                 <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; border-bottom: 2px solid #D90429; padding-bottom: 6px;">
-                    Técnica Maestra Homologada por el Profesor
+                    Técnica que Enseñó el Profesor Hoy
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -81,33 +81,33 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
 
             if tecnicas_disponibles:
                 tecnica_elegida = st.selectbox(
-                    "Seleccionar Técnica del Catálogo Oficial",
+                    "Selecciona la técnica que enseñó el profesor",
                     options=tecnicas_disponibles,
                     format_func=lambda t: f"{t.nombre} ({t.categoria_tecnica} - {t.posicion_origen})",
-                    help="Técnica canónica grabada y parametrizada por el Head Coach Humberto Tavares.",
+                    help="Técnica canónica grabada por el Head Coach Humberto Tavares para la clase.",
                 )
                 id_tecnica_seleccionada = tecnica_elegida.id
                 nombre_tecnica_display = tecnica_elegida.nombre
                 categoria_display = tecnica_elegida.categoria_tecnica
                 posicion_display = tecnica_elegida.posicion_origen
-                ventana_display = int(tecnica_elegida.ventana_sakoe_chiba * 100)
                 video_patron_display = tecnica_elegida.video_url
             else:
-                st.warning("No hay técnicas registradas por el profesor. Ingrese al 'Panel Profesor' para homologar una.")
+                st.warning("No hay técnicas registradas por el profesor. Ingrese al 'Panel Profesor' para publicar una.")
                 id_tecnica_seleccionada = uuid4()
-                nombre_tecnica_display = "Armbar desde Guardia Cerrada"
-                categoria_display = "Llave de Brazo"
-                posicion_display = "Guardia Cerrada"
-                ventana_display = 15
-                video_patron_display = "armbar_patron_oficial.mp4"
+                nombre_tecnica_display = "Cómo escapar de la montada"
+                categoria_display = "Escape / Defensa"
+                posicion_display = "Montada"
+                video_patron_display = "escape_montada_profesor.mp4"
 
             st.markdown(
                 f"""
-                <div style="background-color: #1A1E26; border: 1px solid #2B303C; border-radius: 6px; padding: 12px; margin-top: 14px;">
-                    <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Molde Cinemático Activo del Profesor</div>
-                    <div style="color: #FFFFFF; font-weight: 700; font-size: 0.95rem; margin-top: 2px;">{nombre_tecnica_display}</div>
-                    <div style="color: #D90429; font-size: 0.8rem; margin-top: 4px;">Categoría: {categoria_display} &middot; Origen: {posicion_display}</div>
-                    <div style="color: #8B949E; font-size: 0.75rem; margin-top: 4px;">Ventana DTW Sakoe-Chiba: {ventana_display}% &middot; Video Patrón: {video_patron_display.split('/')[-1]}</div>
+                <div style="background-color: #1A1E26; border: 1px solid #2B303C; border-left: 3px solid #D90429; border-radius: 6px; padding: 14px; margin-top: 14px;">
+                    <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Técnica del Profesor Humberto Tavares</div>
+                    <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-top: 2px;">{nombre_tecnica_display}</div>
+                    <div style="color: #D90429; font-size: 0.82rem; margin-top: 4px;">Posición: {posicion_display} &middot; Tipo: {categoria_display}</div>
+                    <div style="color: #C9D1D9; font-size: 0.82rem; margin-top: 8px; line-height: 1.4;">
+                        El profesor enseñó este movimiento en el tatami. Tu intento será evaluado comparando tus ángulos articulares directamente contra la ejecución del profesor.
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -118,16 +118,16 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
             st.markdown(
                 """
                 <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; border-bottom: 2px solid #D90429; padding-bottom: 6px;">
-                    Grabación de Ejecución en Pareja
+                    Tu Turno: Sube tu Video en Pareja
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
             archivo_subido = st.file_uploader(
-                "Cargar archivo de video",
+                "Video de tu intento con tu compañero de tatami",
                 type=["mp4", "mov"],
-                help="Requisito contractual: archivo en formato MP4 o MOV. Tamaño máximo: 5.0 MB (RF-07). Duración recomendada: hasta 6.0 segundos (RP-01).",
+                help="Sube la grabación de tu intento con tu compañero (formato MP4 o MOV, máximo 5 MB).",
             )
 
             archivo_valido = False
@@ -135,7 +135,7 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
                 tamano_mb = archivo_subido.size / (1024 * 1024)
                 if tamano_mb > 5.0:
                     st.error(
-                        f"Rechazo de archivo: El tamaño ({tamano_mb:.2f} MB) supera el límite contractual de 5.0 MB (RF-07). "
+                        f"Rechazo de archivo: El tamaño ({tamano_mb:.2f} MB) supera el límite de 5.0 MB (RF-07). "
                         f"Reduzca la resolución o comprima la grabación antes de reintentar."
                     )
                     archivo_valido = False
@@ -147,7 +147,7 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
 
             st.write("")
             boton_analizar = st.button(
-                "Ejecutar Análisis Biomecánico",
+                "Auditar Mi Técnica contra la del Profesor",
                 disabled=not archivo_valido,
                 width="stretch",
             )

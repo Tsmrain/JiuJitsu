@@ -1,7 +1,7 @@
 """
 Vista del Panel del Head Coach / Profesor (Craig Larman / CU-01, RF-01).
-Diseño directo, sin campos complejos ni letras superpuestas.
-El profesor únicamente asigna el nombre de la técnica y sube su video grabado.
+Experiencia de usuario natural para el tatami: el profesor define qué técnica se practica en la clase
+(ej. 'Cómo escapar de la montada') y sube su video demostrativo.
 """
 
 from pathlib import Path
@@ -13,8 +13,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
     """
-    Renderiza el panel del profesor optimizado para el tatami:
-    Nombre de técnica + Video grabado -> Guardar.
+    Renderiza el panel del profesor adaptado a la dinámica real de clase en el tatami.
     """
     col_t, col_b = st.columns([3, 1])
     with col_t:
@@ -22,13 +21,13 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             """
             <div>
                 <div style="color: #D90429; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                    Panel del Head Coach &middot; Grabación de Técnicas
+                    Academia Corpo e Mente &middot; Humberto Tavares
                 </div>
                 <div style="color: #FFFFFF; font-size: 1.4rem; font-weight: 800; text-transform: uppercase;">
-                    Subir Nueva Técnica del Profesor
+                    Panel del Profesor: Grabación de la Clase
                 </div>
                 <div style="color: #8B949E; font-size: 0.85rem; margin-top: 2px;">
-                    Graba tu técnica y súbela con su nombre. Tus alumnos se evaluarán automáticamente contra este video.
+                    Enseña la técnica del día y sube tu video demostrativo para que tus alumnos aprendan de él y se auditen.
                 </div>
             </div>
             """,
@@ -41,7 +40,6 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
 
     st.divider()
 
-    # Formulario en dos columnas limpias
     col_izq, col_der = st.columns([1.3, 1], gap="large")
 
     with col_izq:
@@ -49,37 +47,39 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             st.markdown(
                 """
                 <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-bottom: 14px; border-bottom: 2px solid #D90429; padding-bottom: 6px;">
-                    Grabación del Profesor
+                    ¿Qué técnica vamos a practicar hoy?
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
             nombre_tecnica = st.text_input(
-                "Nombre de la Técnica",
-                placeholder="Ej. Armbar desde Guardia Cerrada, Triángulo, Pasaje Torreando...",
-                help="Nombre con el que tus alumnos verán y seleccionarán esta técnica.",
+                "Nombre de la Técnica de la Clase",
+                placeholder="Ej. Cómo escapar de la montada, Raspado de Tijera, Pasaje Torreando...",
+                help="Escribe el nombre de la técnica tal como se la anuncias a tus alumnos.",
             )
 
             col_c1, col_c2 = st.columns(2)
             with col_c1:
-                categoria = st.selectbox(
-                    "Categoría",
-                    options=["Llave de Brazo", "Pasaje de Guardia", "Estrangulación", "Derribo", "Raspado"],
+                posicion = st.selectbox(
+                    "Posición de Inicio",
+                    options=["Montada", "Guardia Cerrada", "Media Guardia", "Side Control", "De Pie", "Espalda"],
                     index=0,
+                    help="Posición desde la que arranca la acción técnica.",
                 )
             with col_c2:
-                posicion = st.selectbox(
-                    "Posición de Origen",
-                    options=["Guardia Cerrada", "Montada", "Side Control", "Media Guardia", "De Pie", "Espalda"],
+                categoria = st.selectbox(
+                    "Tipo de Acción",
+                    options=["Escape / Defensa", "Pasaje de Guardia", "Llave / Sumisión", "Raspado / Inversión", "Derribo"],
                     index=0,
+                    help="Finalidad táctica del fundamento técnico.",
                 )
 
-            # Subida directa del video grabado por el profesor
+            # Subida directa del video de la demostración del profesor
             video_patron = st.file_uploader(
-                "Video del Profesor (Grabado en el tatami)",
+                "Video de la Demostración del Profesor",
                 type=["mp4", "mov"],
-                help="Sube tu video ejecutando la técnica a la perfección.",
+                help="Sube tu video en el tatami ejecutando el movimiento paso a paso.",
             )
 
             if video_patron is not None:
@@ -87,7 +87,7 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
 
             st.write("")
             boton_guardar = st.button(
-                "Guardar Técnica del Profesor",
+                "Publicar Técnica para la Clase",
                 disabled=video_patron is None or not nombre_tecnica.strip(),
                 width="stretch",
             )
@@ -97,7 +97,7 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             st.markdown(
                 """
                 <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-bottom: 14px; border-bottom: 2px solid #D90429; padding-bottom: 6px;">
-                    Técnicas Activas en el Sistema
+                    Técnicas Publicadas por el Profesor
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -111,10 +111,10 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                         <div style="background-color: #161922; border: 1px solid #2B303C; border-left: 4px solid #D90429; border-radius: 6px; padding: 12px 14px; margin-bottom: 10px;">
                             <div style="color: #FFFFFF; font-weight: 700; font-size: 0.95rem;">{t.nombre}</div>
                             <div style="color: #8B949E; font-size: 0.8rem; margin-top: 4px;">
-                                Categoría: <span style="color: #F0F6FC;">{t.categoria_tecnica}</span> &bull; Posición: <span style="color: #F0F6FC;">{t.posicion_origen}</span>
+                                Posición: <span style="color: #F0F6FC;">{t.posicion_origen}</span> &bull; Acción: <span style="color: #F0F6FC;">{t.categoria_tecnica}</span>
                             </div>
-                            <div style="color: #D90429; font-size: 0.75rem; margin-top: 4px;">
-                                Molde Activo &bull; Tolerancia Angular Canónica: 15.0&deg;
+                            <div style="color: #3FB950; font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
+                                DISPONIBLE PARA EVALUACIÓN DE ALUMNOS
                             </div>
                         </div>
                         """,
@@ -123,20 +123,20 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             else:
                 st.info("No hay técnicas registradas todavía.")
 
-    # Al presionar guardar, se procesa automáticamente
+    # Al presionar guardar, se persiste y queda lista para los alumnos
     if boton_guardar and video_patron is not None:
         video_bytes = video_patron.read()
 
-        # Generación automática de reglas biomecánicas deterministas sin complicar al profesor
+        # Reglas biomecánicas automáticas asignadas por el sistema
         reglas_datos = [
             {
                 "articulacion_clave": "codo_derecho",
                 "umbral_angular_tolerado": 15.0,
-                "descripcion_error": f"Desviación angular detectada respecto a la técnica grabada por el profesor para {nombre_tecnica.strip()}.",
+                "descripcion_error": f"Desviación postural respecto a la técnica demostrada por el profesor para {nombre_tecnica.strip()}.",
             }
         ]
 
-        with st.spinner("Guardando video del profesor y publicando técnica en el sistema..."):
+        with st.spinner("Publicando técnica para los alumnos en la academia..."):
             try:
                 tecnica_creada = controller.registrar_tecnica_maestra(
                     nombre=nombre_tecnica.strip(),
@@ -148,8 +148,8 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                 )
 
                 st.success(
-                    f"¡Técnica '{tecnica_creada.nombre}' guardada con éxito! "
-                    "Ya está disponible en la sala para que todos los alumnos se evalúen con tu video."
+                    f"¡Técnica '{tecnica_creada.nombre}' publicada exitosamente! "
+                    "Tus alumnos ya pueden verla y evaluar sus videos contra tu demostración."
                 )
                 st.rerun()
             except Exception as e:

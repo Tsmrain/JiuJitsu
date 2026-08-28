@@ -26,11 +26,29 @@ class TecnicaMaestraRepository:
         self._inicializar_catalogo_base()
 
     def _inicializar_catalogo_base(self) -> None:
-        """Carga técnica patrón canónica base de referencia."""
-        tecnica_base = DomainTecnica(
+        """Carga técnicas base de referencia enseñadas por el profesor."""
+        id_montada = UUID("00000000-0000-0000-0000-000000000002")
+        tecnica_montada = DomainTecnica(
+            id=id_montada,
+            nombre="Cómo escapar de la montada (Puente Upa y Codo-Rodilla)",
+            categoria_tecnica="Escape / Defensa",
+            posicion_origen="Montada",
+            ventana_sakoe_chiba=0.15,
+            video_url="https://obs.la-south-2.myhuaweicloud.com/bjj-videos-input/escape_montada_profesor.mp4",
+            reglas=[
+                DomainRegla(
+                    id=uuid4(),
+                    articulacion_clave="cadera_derecha",
+                    umbral_angular_tolerado=15.0,
+                    descripcion_error="Falta elevación pélvica explosiva en el puente antes de girar hacia el lado del bloqueo.",
+                )
+            ],
+        )
+
+        tecnica_armbar = DomainTecnica(
             id=ID_TECNICA_DEFAULT,
-            nombre="Armbar desde Guardia Cerrada (Patrón Profesor)",
-            categoria_tecnica="Llave de Brazo",
+            nombre="Armbar desde Guardia Cerrada",
+            categoria_tecnica="Llave / Sumisión",
             posicion_origen="Guardia Cerrada",
             ventana_sakoe_chiba=0.15,
             video_url="https://obs.la-south-2.myhuaweicloud.com/bjj-videos-input/armbar_profesor.mp4",
@@ -43,7 +61,9 @@ class TecnicaMaestraRepository:
                 )
             ],
         )
-        self._catalogo_en_memoria[ID_TECNICA_DEFAULT] = tecnica_base
+
+        self._catalogo_en_memoria[id_montada] = tecnica_montada
+        self._catalogo_en_memoria[ID_TECNICA_DEFAULT] = tecnica_armbar
 
     def listar_tecnicas(self) -> List[DomainTecnica]:
         """

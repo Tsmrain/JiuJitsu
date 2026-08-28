@@ -62,6 +62,25 @@ class TecnicaMaestraRepository:
             ],
         )
 
+        id_americana = UUID("00000000-0000-0000-0000-000000000003")
+        tecnica_americana = DomainTecnica(
+            id=id_americana,
+            nombre="Cómo finalizar desde la montada y hacer una americana",
+            categoria_tecnica="Sumisión / Finalización",
+            posicion_origen="Montada",
+            ventana_sakoe_chiba=0.15,
+            video_url="https://obs.la-south-2.myhuaweicloud.com/bjj-videos-input/americana_montada_profesor.mp4",
+            reglas=[
+                DomainRegla(
+                    id=uuid4(),
+                    articulacion_clave="hombro_derecho",
+                    umbral_angular_tolerado=15.0,
+                    descripcion_error="Falta aislamiento de la muñeca contra el tatami y deslizamiento del codo antes del arqueo.",
+                )
+            ],
+        )
+
+        self._catalogo_en_memoria[id_americana] = tecnica_americana
         self._catalogo_en_memoria[id_montada] = tecnica_montada
         self._catalogo_en_memoria[ID_TECNICA_DEFAULT] = tecnica_armbar
 

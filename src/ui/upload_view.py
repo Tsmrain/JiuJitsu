@@ -83,30 +83,25 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
                 tecnica_elegida = st.selectbox(
                     "Selecciona la técnica que enseñó el profesor",
                     options=tecnicas_disponibles,
-                    format_func=lambda t: f"{t.nombre} ({t.categoria_tecnica} - {t.posicion_origen})",
+                    format_func=lambda t: t.nombre,
                     help="Técnica canónica grabada por el Head Coach Humberto Tavares para la clase.",
                 )
                 id_tecnica_seleccionada = tecnica_elegida.id
                 nombre_tecnica_display = tecnica_elegida.nombre
-                categoria_display = tecnica_elegida.categoria_tecnica
-                posicion_display = tecnica_elegida.posicion_origen
                 video_patron_display = tecnica_elegida.video_url
             else:
                 st.warning("No hay técnicas registradas por el profesor. Ingrese al 'Panel Profesor' para publicar una.")
                 id_tecnica_seleccionada = uuid4()
-                nombre_tecnica_display = "Cómo escapar de la montada"
-                categoria_display = "Escape / Defensa"
-                posicion_display = "Montada"
-                video_patron_display = "escape_montada_profesor.mp4"
+                nombre_tecnica_display = "Cómo finalizar desde la montada y hacer una americana"
+                video_patron_display = "americana_montada_profesor.mp4"
 
             st.markdown(
                 f"""
                 <div style="background-color: #1A1E26; border: 1px solid #2B303C; border-left: 3px solid #D90429; border-radius: 6px; padding: 14px; margin-top: 14px;">
-                    <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Técnica del Profesor Humberto Tavares</div>
+                    <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Demostración del Profesor Humberto Tavares</div>
                     <div style="color: #FFFFFF; font-weight: 700; font-size: 1.05rem; margin-top: 2px;">{nombre_tecnica_display}</div>
-                    <div style="color: #D90429; font-size: 0.82rem; margin-top: 4px;">Posición: {posicion_display} &middot; Tipo: {categoria_display}</div>
                     <div style="color: #C9D1D9; font-size: 0.82rem; margin-top: 8px; line-height: 1.4;">
-                        El profesor enseñó este movimiento en el tatami. Tu intento será evaluado comparando tus ángulos articulares directamente contra la ejecución del profesor.
+                        El profesor demostró esta técnica en el tatami. Tu intento será evaluado comparando tus ángulos articulares directamente contra la ejecución del profesor.
                     </div>
                 </div>
                 """,

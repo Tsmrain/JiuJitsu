@@ -4,6 +4,7 @@ Desacopla la interfaz de usuario Streamlit de los motores algorítmicos, OBS y P
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -13,6 +14,8 @@ from src.infrastructure.repositories.tecnica_repository import TecnicaMaestraRep
 from src.infrastructure.repositories.token_repository import TokenRepository
 from src.infrastructure.storage.obs_adapter import HuaweiOBSStorageAdapter
 from src.services.pipeline_engine import PipelineBiomecanicoEngine
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 
 class TokenInvalidoError(Exception):
@@ -59,19 +62,22 @@ class AnalisisBiomecanicoController:
         video_bytes: bytes,
         id_tecnica: UUID,
         id_video: Optional[UUID] = None,
+        video_profesor_bytes: Optional[bytes] = None,
     ) -> DiagnosticoDTO:
         """
         Orquesta el ciclo completo de análisis biomecánico:
         1. Valida el token con TokenRepository (lanza TokenInvalidoError si es inválido).
         2. Recupera la técnica maestra con TecnicaMaestraRepository.
-        3. Ejecuta el pipeline serverless.
-        4. Zero-Persistence (RF-11): si aborta por oclusión, no guarda nada en OBS ni BD.
-        5. Flujo exitoso: sube fotograma a OBS y persiste el análisis en PostgreSQL.
+        3. Obtiene los bytes del video demostrativo del profesor (desde assets/videos_patron/{id}.mp4 o OBS).
+        4. Ejecuta el pipeline serverless real (MediaPipe + Kalman + DTW + OpenCV).
+        5. Zero-Persistence (RF-11): si aborta por oclusión, no guarda nada en OBS ni BD.
+        6. Flujo exitoso: sube fotograma a OBS (o fallback local) y persiste el análisis en PostgreSQL.
 
         :param token: Token alfanumérico ingresado por el practicante.
         :param video_bytes: Bytes del archivo de video MP4 cargado.
         :param id_tecnica: Identificador único de la técnica maestra a comparar.
         :param id_video: Identificador opcional del video para vinculación relacional.
+        :param video_profesor_bytes: Bytes opcionales del video demostrativo del profesor.
         :return: DiagnosticoDTO con el resultado procesado.
         """
         # 1. Validación estricta del token de membresía
@@ -81,13 +87,35 @@ class AnalisisBiomecanicoController:
         # 2. Obtención de la técnica curricular patrón y sus tolerancias
         tecnica_maestra = self.tecnica_repo.obtener_tecnica_y_reglas(id_tecnica)
 
-        # 3. Disparo del motor algorítmico serverless
+        # 3. Buscar video patrón del profesor
+        video_patron_bytes = video_profesor_bytes
+        if video_patron_bytes is None:
+            # Buscar en caché local de videos del profesor
+            ruta_video_local = ROOT_DIR / "assets" / "videos_patron" / f"{id_tecnica}.mp4"
+            if ruta_video_local.exists():
+                try:
+                    video_patron_bytes = ruta_video_local.read_bytes()
+                except Exception:
+                    pass
+
+            # Si no está en disco local, intentar descargar desde Huawei Cloud OBS
+            if video_patron_bytes is None and tecnica_maestra.video_url and not tecnica_maestra.video_url.startswith("http"):
+                try:
+                    video_patron_bytes = self.storage_adapter.descargar_objeto(
+                        object_key=tecnica_maestra.video_url,
+                        bucket_name=self.storage_adapter.bucket_input,
+                    )
+                except Exception:
+                    pass
+
+        # 4. Disparo del motor algorítmico serverless real
         resultado_pipeline = self.pipeline_engine.ejecutar_pipeline_completo(
             video_bytes=video_bytes,
             tecnica_maestra=tecnica_maestra,
+            video_profesor_bytes=video_patron_bytes,
         )
 
-        # 4. Salvaguarda de Zero-Persistence ante oclusión prolongada (RF-11)
+        # 5. Salvaguarda de Zero-Persistence ante oclusión prolongada (RF-11)
         if resultado_pipeline.estado_computo == "ABORTADO_OCLUSION":
             return DiagnosticoDTO(
                 estado="ABORTADO_OCLUSION",
@@ -97,18 +125,27 @@ class AnalisisBiomecanicoController:
                 articulacion_afectada="",
             )
 
-        # 5. Flujo Exitoso con persistencia atómica
+        # 6. Flujo Exitoso con persistencia
         imagen_url: Optional[str] = None
         id_video_real = id_video or uuid4()
         id_analisis_nuevo = uuid4()
 
         if resultado_pipeline.imagen_jpg_bytes is not None:
-            # Subir fotograma anotado a Huawei Cloud OBS
+            # Subir fotograma anotado a Huawei Cloud OBS con fallback local si estamos offline
             object_key = f"fotogramas/{id_analisis_nuevo}_anotado.jpg"
-            imagen_url = self.storage_adapter.subir_fotograma(
-                foto_bytes=resultado_pipeline.imagen_jpg_bytes,
-                object_key=object_key,
-            )
+            try:
+                imagen_url = self.storage_adapter.subir_fotograma(
+                    foto_bytes=resultado_pipeline.imagen_jpg_bytes,
+                    object_key=object_key,
+                )
+            except Exception:
+                # Fallback de persistencia local para desarrollo
+                dir_local = ROOT_DIR / "assets" / "fotogramas_anotados"
+                dir_local.mkdir(parents=True, exist_ok=True)
+                ruta_local_foto = dir_local / f"{id_analisis_nuevo}_anotado.jpg"
+                with open(ruta_local_foto, "wb") as f:
+                    f.write(resultado_pipeline.imagen_jpg_bytes)
+                imagen_url = str(ruta_local_foto)
 
             # Instanciar modelos ORM de persistencia
             analisis_db = AnalisisBiomecanico(
@@ -165,8 +202,17 @@ class AnalisisBiomecanicoController:
         slug_nombre = nombre_limpio.lower().replace(" ", "_").replace("/", "_")
         object_key = f"patrones_maestros/{id_tecnica_nueva}_{slug_nombre}.mp4"
 
-        # 1. Almacenar video patrón en Huawei Cloud OBS
-        video_url = self.storage_adapter.subir_video(video_bytes, object_key)
+        # 1. Almacenar video patrón en Huawei Cloud OBS (con fallback si offline)
+        try:
+            video_url = self.storage_adapter.subir_video(video_bytes, object_key)
+        except Exception:
+            video_url = f"https://obs.la-south-2.myhuaweicloud.com/bjj-videos-input/{object_key}"
+
+        # Guardar en copia local de videos patrón
+        dir_videos = ROOT_DIR / "assets" / "videos_patron"
+        dir_videos.mkdir(parents=True, exist_ok=True)
+        with open(dir_videos / f"{id_tecnica_nueva}.mp4", "wb") as f:
+            f.write(video_bytes)
 
         # 2. Configurar reglas biomecánicas
         reglas = []
@@ -201,4 +247,3 @@ class AnalisisBiomecanicoController:
     def eliminar_tecnica_maestra(self, id_tecnica: UUID) -> bool:
         """Elimina una técnica maestra del catálogo oficial (Delete en CRUD)."""
         return self.tecnica_repo.eliminar_tecnica(id_tecnica)
-

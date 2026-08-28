@@ -1,7 +1,7 @@
 """
 Vista del Panel del Head Coach / Profesor (Craig Larman / CU-01, RF-01).
-Diseño ultra-simplificado y ágil para el tatami: el profesor solo ingresa el nombre de la técnica
-y sube su video grabado. El sistema automatiza todas las reglas biomecánicas y tolerancias.
+Diseño directo, sin campos complejos ni letras superpuestas.
+El profesor únicamente asigna el nombre de la técnica y sube su video grabado.
 """
 
 from pathlib import Path
@@ -13,8 +13,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
     """
-    Renderiza el panel del profesor optimizado para el uso ágil en el tatami.
-    El profesor solo necesita nombrar la técnica y subir su video de ejecución.
+    Renderiza el panel del profesor optimizado para el tatami:
+    Nombre de técnica + Video grabado -> Guardar.
     """
     col_t, col_b = st.columns([3, 1])
     with col_t:
@@ -41,7 +41,7 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
 
     st.divider()
 
-    # Formulario central limpio y directo
+    # Formulario en dos columnas limpias
     col_izq, col_der = st.columns([1.3, 1], gap="large")
 
     with col_izq:
@@ -85,24 +85,6 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             if video_patron is not None:
                 st.video(video_patron)
 
-            # Ajustes avanzados colapsados por defecto (el profesor no necesita tocarlos)
-            with st.expander("Ajustes Biomecánicos Avanzados (Opcional)", expanded=False):
-                st.caption("El sistema ya aplica las tolerancias óptimas por defecto (15.0° y ventana DTW del 15%).")
-                articulacion_clave = st.selectbox(
-                    "Articulación Clave Principal",
-                    options=[
-                        "codo_derecho",
-                        "codo_izquierdo",
-                        "rodilla_derecha",
-                        "rodilla_izquierda",
-                        "hombro_derecho",
-                        "hombro_izquierdo",
-                    ],
-                    index=0,
-                    format_func=lambda x: x.replace("_", " ").title(),
-                )
-                umbral_angular = st.slider("Tolerancia Angular (°)", 5.0, 30.0, 15.0, 0.5)
-
             st.write("")
             boton_guardar = st.button(
                 "Guardar Técnica del Profesor",
@@ -124,10 +106,20 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
             tecnicas_actuales = controller.listar_tecnicas()
             if tecnicas_actuales:
                 for t in tecnicas_actuales:
-                    with st.expander(f"{t.nombre} ({t.categoria_tecnica})", expanded=False):
-                        st.write(f"**Posición:** {t.posicion_origen}")
-                        st.write(f"**Video Patrón:** `{t.video_url.split('/')[-1]}`")
-                        st.write(f"**Tolerancia:** 15.0° (Automática)")
+                    st.markdown(
+                        f"""
+                        <div style="background-color: #161922; border: 1px solid #2B303C; border-left: 4px solid #D90429; border-radius: 6px; padding: 12px 14px; margin-bottom: 10px;">
+                            <div style="color: #FFFFFF; font-weight: 700; font-size: 0.95rem;">{t.nombre}</div>
+                            <div style="color: #8B949E; font-size: 0.8rem; margin-top: 4px;">
+                                Categoría: <span style="color: #F0F6FC;">{t.categoria_tecnica}</span> &bull; Posición: <span style="color: #F0F6FC;">{t.posicion_origen}</span>
+                            </div>
+                            <div style="color: #D90429; font-size: 0.75rem; margin-top: 4px;">
+                                Molde Activo &bull; Tolerancia Angular Canónica: 15.0&deg;
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
             else:
                 st.info("No hay técnicas registradas todavía.")
 
@@ -159,5 +151,6 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                     f"¡Técnica '{tecnica_creada.nombre}' guardada con éxito! "
                     "Ya está disponible en la sala para que todos los alumnos se evalúen con tu video."
                 )
+                st.rerun()
             except Exception as e:
                 st.error(f"Error al guardar la técnica: {str(e)}")

@@ -52,9 +52,9 @@ def aplicar_estilos_oficiales() -> None:
                 padding-right: 2rem !important;
             }
 
-            /* Tipografía corporativa limpia */
-            body, h1, h2, h3, h4, h5, p, span, label, div {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+            /* Tipografía corporativa aplicada a nivel contenedor */
+            .stApp {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
 
             /* Encabezado de aplicación */

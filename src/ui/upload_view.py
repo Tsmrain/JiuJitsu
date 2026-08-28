@@ -108,6 +108,15 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
                 unsafe_allow_html=True,
             )
 
+            # Reproductor del video de la técnica del profesor para que el alumno estudie
+            ruta_video_profe = ROOT_DIR / "assets" / "videos_patron" / f"{id_tecnica_seleccionada}.mp4"
+            if ruta_video_profe.exists():
+                st.video(str(ruta_video_profe))
+            elif "videos_patron" in st.session_state and str(id_tecnica_seleccionada) in st.session_state["videos_patron"]:
+                st.video(st.session_state["videos_patron"][str(id_tecnica_seleccionada)])
+            elif video_patron_display and video_patron_display.startswith("http"):
+                st.caption(f"Video patrón de referencia: {video_patron_display.split('/')[-1]}")
+
     with col_upload:
         with st.container(border=True):
             st.markdown(

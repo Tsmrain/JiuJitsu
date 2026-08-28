@@ -149,6 +149,15 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                                 unsafe_allow_html=True,
                             )
 
+                            # Despliegue directo del video demostrativo del profesor
+                            ruta_video_local = ROOT_DIR / "assets" / "videos_patron" / f"{t.id}.mp4"
+                            if ruta_video_local.exists():
+                                st.video(str(ruta_video_local))
+                            elif "videos_patron" in st.session_state and str(t.id) in st.session_state["videos_patron"]:
+                                st.video(st.session_state["videos_patron"][str(t.id)])
+                            elif t.video_url and t.video_url.startswith("http"):
+                                st.caption(f"Video alojado en Huawei OBS: {t.video_url.split('/')[-1]}")
+
                             col_act1, col_act2 = st.columns(2)
                             with col_act1:
                                 if st.button("Editar", key=f"btn_edit_{t.id}", width="stretch"):
@@ -158,6 +167,16 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                                 if st.button("Eliminar", key=f"btn_del_{t.id}", width="stretch"):
                                     nombre_del = t.nombre
                                     controller.eliminar_tecnica_maestra(t.id)
+                                    # Limpieza del archivo de video asociado
+                                    ruta_del = ROOT_DIR / "assets" / "videos_patron" / f"{t.id}.mp4"
+                                    if ruta_del.exists():
+                                        try:
+                                            ruta_del.unlink()
+                                        except Exception:
+                                            pass
+                                    if "videos_patron" in st.session_state and str(t.id) in st.session_state["videos_patron"]:
+                                        del st.session_state["videos_patron"][str(t.id)]
+
                                     st.session_state["coach_mensaje_exito"] = (
                                         f"Técnica '{nombre_del}' eliminada del catálogo oficial."
                                     )
@@ -208,6 +227,17 @@ def render_coach_view(controller: AnalisisBiomecanicoController) -> None:
                     video_bytes=video_bytes,
                     reglas_datos=reglas_datos,
                 )
+
+                # Persistencia local del video para reproducción en la aplicación
+                dir_videos = ROOT_DIR / "assets" / "videos_patron"
+                dir_videos.mkdir(parents=True, exist_ok=True)
+                ruta_local_video = dir_videos / f"{tecnica_creada.id}.mp4"
+                with open(ruta_local_video, "wb") as f_vid:
+                    f_vid.write(video_bytes)
+
+                if "videos_patron" not in st.session_state:
+                    st.session_state["videos_patron"] = {}
+                st.session_state["videos_patron"][str(tecnica_creada.id)] = video_bytes
 
                 # Notificación persistente garantizada al usuario
                 st.session_state["coach_mensaje_exito"] = (

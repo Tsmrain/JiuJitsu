@@ -647,87 +647,78 @@ El Modelo de Dominio conceptual identifica las entidades principales del ecosist
 ```mermaid
 classDiagram
     class EscuelaBJJ {
-        +id: UUID
-        +nombre: String
-        +sede: String
-        +ciudad: String
-        +comunidadWhatsApp: String
+        nombre
+        sede
+        ciudad
+        comunidadWhatsApp
     }
 
     class UsuarioAcademia {
         <<abstract>>
-        +id: UUID
-        +nombreCompleto: String
-        +telefonoWhatsApp: String
-        +correoElectronico: String
-        +fechaRegistro: Date
+        nombreCompleto
+        telefonoWhatsApp
+        correoElectronico
+        fechaRegistro
     }
 
     class HeadCoach {
-        +gradoCinturon: String
-        +licenciaFederativa: String
+        gradoCinturon
+        licenciaFederativa
     }
 
     class Estudiante {
-        +gradoCinturon: String
-        +pesoKg: Float
-        +estadoMembresia: String
+        gradoCinturon
+        pesoKg
+        estadoMembresia
     }
 
     class CodigoActivacion {
-        +id: UUID
-        +token: String
-        +fechaEmision: Date
-        +fechaExpiracion: Date
-        +estado: String
+        token
+        fechaEmision
+        fechaExpiracion
+        estado
     }
 
     class TecnicaMaestra {
-        +id: UUID
-        +nombre: String
-        +categoriaTecnica: String
-        +posicionOrigen: String
-        +ventanaSakoeChiba: Float
-        +videoURL: String
-        +fechaCarga: Date
+        nombre
+        categoriaTecnica
+        posicionOrigen
+        ventanaSakoeChiba
+        videoURL
+        fechaCarga
     }
 
     class ReglaBiomecanica {
-        +id: UUID
-        +articulacionClave: String
-        +umbralAngularTolerado: Float
-        +descripcionError: String
+        articulacionClave
+        umbralAngularTolerado
+        descripcionError
     }
 
     class VideoEjecucion {
-        +id: UUID
-        +fechaCaptura: DateTime
-        +duracionSegundos: Float
-        +pesoMB: Float
-        +videoURL: String
+        fechaCaptura
+        duracionSegundos
+        pesoMB
+        videoURL
     }
 
     class AnalisisBiomecanico {
-        +id: UUID
-        +fechaProcesamiento: DateTime
-        +desviacionAngularMaxima: Float
-        +articulacionAfectada: String
-        +estadoComputo: String
+        fechaProcesamiento
+        desviacionAngularMaxima
+        articulacionAfectada
+        estadoComputo
     }
 
     class FotogramaAnotado {
-        +id: UUID
-        +imagenURL: String
-        +coordenadaErrorX: Integer
-        +coordenadaErrorY: Integer
-        +explicacionCausa: String
+        imagenURL
+        coordenadaErrorX
+        coordenadaErrorY
+        explicacionCausa
     }
 
     class HistorialProgresion {
-        +id: UUID
-        +puntuacionGlobal: Float
-        +cantidadErrores: Integer
-        +fechaUltimaEvaluacion: Date
+        puntuacionGlobal
+        cantidadErrores
+        fechaUltimaEvaluacion
     }
 
     EscuelaBJJ "1" *-- "1..*" UsuarioAcademia : nuclea

@@ -25,7 +25,10 @@ env/
 .DS_Store
 Thumbs.db
 
-# Local User Uploads (Videos de prueba)
+# Local User Uploads & Runtime Artifacts
 assets/videos_patron/*.mp4
 assets/videos_patron/*.mov
 !assets/videos_patron/.gitkeep
+assets/fotogramas_anotados/
+assets/analysis_results/
+skeletonrepositorioextra.txt

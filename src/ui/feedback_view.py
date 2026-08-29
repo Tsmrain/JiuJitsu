@@ -102,7 +102,7 @@ def render_feedback_view() -> None:
                     st.image(
                         foto_a_mostrar,
                         caption="Segmento articular en falla resaltado en rojo (Compresión JPEG < 100 KB / RP-02)",
-                        use_container_width=True,
+                        width="stretch",
                     )
                 else:
                     st.info("Fotograma clave generado y registrado.")
@@ -201,7 +201,7 @@ def render_feedback_view() -> None:
         st.image(
             chart_path,
             caption="Evolución temporal de la similitud cinemática (Ángulos, Posición y Promedio por Fotograma / RF-15)",
-            use_container_width=True,
+            width="stretch",
         )
 
     # Descarga de reportes tabulares CSV (RF-14)
@@ -233,7 +233,7 @@ def render_feedback_view() -> None:
                         file_name=file_name,
                         mime="text/csv",
                         key=f"dl_csv_{i}_{file_name}",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
     st.divider()

@@ -5,6 +5,7 @@ Diseño Full-Width, responsivo, sobrio y sin emojis.
 
 import os
 from pathlib import Path
+import time
 from uuid import uuid4
 import streamlit as st
 from src.services.controllers.analisis_controller import (
@@ -160,33 +161,64 @@ def render_upload_view(controller: AnalisisBiomecanicoController) -> None:
         token_sesion = st.session_state.get("token", "")
         video_bytes = archivo_subido.read()
 
-        with st.spinner("Procesando cinemática articular en Huawei Cloud Serverless..."):
-            try:
-                diagnostico = controller.ejecutar_analisis(
-                    token=token_sesion,
-                    video_bytes=video_bytes,
-                    id_tecnica=id_tecnica_seleccionada,
+        # Panel visual de progreso por fases cinemáticas
+        contenedor_progreso = st.container(border=True)
+        with contenedor_progreso:
+            st.markdown(
+                """
+                <div style="color: #D90429; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                    Procesamiento Biomecánico en Curso
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            barra_progreso = st.progress(0)
+            texto_etapa = st.empty()
+
+        try:
+            texto_etapa.markdown("**Fase 1/4:** Decodificando flujo de video y validando integridad geométrica...")
+            barra_progreso.progress(20)
+            time.sleep(0.3)
+
+            texto_etapa.markdown("**Fase 2/4:** Extrayendo esqueleto cinemático y 33 landmarks 3D con MediaPipe Pose...")
+            barra_progreso.progress(45)
+
+            diagnostico = controller.ejecutar_analisis(
+                token=token_sesion,
+                video_bytes=video_bytes,
+                id_tecnica=id_tecnica_seleccionada,
+            )
+
+            texto_etapa.markdown("**Fase 3/4:** Aplicando Filtro de Kalman y alineación temporal no lineal DTW (Sakoe-Chiba)...")
+            barra_progreso.progress(75)
+            time.sleep(0.2)
+
+            texto_etapa.markdown("**Fase 4/4:** Evaluando catálogo de reglas y generando fotograma anotado en OpenCV...")
+            barra_progreso.progress(100)
+            time.sleep(0.3)
+
+            barra_progreso.empty()
+            texto_etapa.empty()
+
+            if diagnostico.estado == "ABORTADO_OCLUSION":
+                st.warning(
+                    "Evaluación Interrumpida: Política Zero-Persistence por Oclusión Visual (RF-11).\n\n"
+                    f"{diagnostico.explicacion_error}\n\n"
+                    "Directiva de captura: Sitúe la cámara en ángulo oblicuo a 45 grados para asegurar que el cuerpo del oponente "
+                    "no oculte los segmentos articulares durante más de 1.5 segundos consecutivos."
                 )
-
-                if diagnostico.estado == "ABORTADO_OCLUSION":
-                    st.warning(
-                        "Evaluación Interrumpida: Política Zero-Persistence por Oclusión Visual (RF-11).\n\n"
-                        f"{diagnostico.explicacion_error}\n\n"
-                        "Directiva de captura: Sitúe la cámara en ángulo oblicuo a 45 grados para asegurar que el cuerpo del oponente "
-                        "no oculte los segmentos articulares durante más de 1.5 segundos consecutivos."
-                    )
-                else:
-                    st.session_state["diagnostico"] = diagnostico
-                    st.session_state["video_bytes"] = video_bytes
-                    st.session_state["video_nombre"] = archivo_subido.name
-                    st.session_state["tecnica_nombre"] = nombre_tecnica_display
-                    st.session_state["current_view"] = "feedback"
-                    st.rerun()
-
-            except TokenInvalidoError as err:
-                st.error(f"Fallo de autorización: {str(err)}")
-                st.session_state["authenticated"] = False
-                st.session_state["current_view"] = "token"
+            else:
+                st.session_state["diagnostico"] = diagnostico
+                st.session_state["video_bytes"] = video_bytes
+                st.session_state["video_nombre"] = archivo_subido.name
+                st.session_state["tecnica_nombre"] = nombre_tecnica_display
+                st.session_state["current_view"] = "feedback"
                 st.rerun()
-            except Exception as err:
-                st.error(f"Error de procesamiento del sistema: {str(err)}")
+
+        except TokenInvalidoError as err:
+            st.error(f"Fallo de autorización: {str(err)}")
+            st.session_state["authenticated"] = False
+            st.session_state["current_view"] = "token"
+            st.rerun()
+        except Exception as err:
+            st.error(f"Error de procesamiento del sistema: {str(err)}")

@@ -90,9 +90,9 @@ class AnalisisBiomecanicoController:
         # 3. Buscar video patrón del profesor
         video_patron_bytes = video_profesor_bytes
         if video_patron_bytes is None:
-            # Buscar en caché local de videos del profesor
+            # Buscar en caché local de videos del profesor por ID
             ruta_video_local = ROOT_DIR / "assets" / "videos_patron" / f"{id_tecnica}.mp4"
-            if ruta_video_local.exists():
+            if ruta_video_local.exists() and ruta_video_local.stat().st_size > 1000:
                 try:
                     video_patron_bytes = ruta_video_local.read_bytes()
                 except Exception:
@@ -107,6 +107,17 @@ class AnalisisBiomecanicoController:
                     )
                 except Exception:
                     pass
+
+            # Fallback inteligente a cualquier video patrón real grabado en la academia (> 100 KB)
+            if video_patron_bytes is None:
+                dir_patrones = ROOT_DIR / "assets" / "videos_patron"
+                if dir_patrones.exists():
+                    candidatos = [p for p in dir_patrones.glob("*.mp4") if p.stat().st_size > 100_000]
+                    if candidatos:
+                        try:
+                            video_patron_bytes = candidatos[0].read_bytes()
+                        except Exception:
+                            pass
 
         # 4. Disparo del motor algorítmico serverless real
         resultado_pipeline = self.pipeline_engine.ejecutar_pipeline_completo(

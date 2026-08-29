@@ -100,15 +100,51 @@ def render_feedback_view() -> None:
                 else:
                     st.info("Fotograma clave generado y registrado.")
 
-                # Panel de diagnóstico detallado
+                # Cálculo de exceso angular y severidad técnica
+                tolerancia_base = 15.0
+                exceso_angular = max(0.0, diagnostico.desviacion_maxima - tolerancia_base)
+
+                if diagnostico.desviacion_maxima <= 25.0:
+                    badge_severidad = "Ajuste Angular Leve"
+                    color_severidad = "#FFB703"
+                elif diagnostico.desviacion_maxima <= 45.0:
+                    badge_severidad = "Corrección Postural Moderada"
+                    color_severidad = "#FB8500"
+                else:
+                    badge_severidad = "Desalineación Severa / Pérdida de Control en Tatami"
+                    color_severidad = "#D90429"
+
+                # Panel de diagnóstico técnico detallado
                 st.markdown(
                     f"""
-                    <div style="background-color: #1A1518; border: 1px solid rgba(217, 4, 41, 0.5); border-left: 5px solid #D90429; border-radius: 6px; padding: 16px; margin-top: 14px;">
-                        <div style="color: #D90429; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Falla Biomecánica Identificada</div>
-                        <div style="color: #FFFFFF; font-size: 1.05rem; font-weight: 700; margin-top: 4px;">Articulación: {diagnostico.articulacion_afectada.replace('_', ' ').title()}</div>
-                        <div style="color: #E63946; font-size: 0.95rem; font-weight: 600; margin-top: 2px;">Desviación angular: {diagnostico.desviacion_maxima:.1f}&deg;</div>
-                        <div style="color: #C9D1D9; font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
-                            <strong>Causa Motriz:</strong> {diagnostico.explicacion_error}
+                    <div style="background-color: #1A1518; border: 1px solid rgba(217, 4, 41, 0.5); border-left: 5px solid #D90429; border-radius: 6px; padding: 18px; margin-top: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="color: #D90429; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Falla Biomecánica Identificada
+                            </span>
+                            <span style="background-color: {color_severidad}22; color: {color_severidad}; border: 1px solid {color_severidad}; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                                {badge_severidad}
+                            </span>
+                        </div>
+                        <div style="color: #FFFFFF; font-size: 1.1rem; font-weight: 700;">
+                            Articulación: {diagnostico.articulacion_afectada.replace('_', ' ').title()}
+                        </div>
+                        <div style="display: flex; gap: 24px; margin-top: 10px; margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 4px;">
+                            <div>
+                                <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase;">Desviación Registrada</div>
+                                <div style="color: #EF233C; font-size: 1.15rem; font-weight: 800;">{diagnostico.desviacion_maxima:.1f}&deg;</div>
+                            </div>
+                            <div>
+                                <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase;">Tolerancia Homologada</div>
+                                <div style="color: #FFFFFF; font-size: 1.15rem; font-weight: 800;">{tolerancia_base:.1f}&deg;</div>
+                            </div>
+                            <div>
+                                <div style="color: #8B949E; font-size: 0.75rem; text-transform: uppercase;">Exceso Angular</div>
+                                <div style="color: {color_severidad}; font-size: 1.15rem; font-weight: 800;">+{exceso_angular:.1f}&deg;</div>
+                            </div>
+                        </div>
+                        <div style="color: #C9D1D9; font-size: 0.9rem; line-height: 1.45; border-top: 1px solid #2D323E; padding-top: 10px;">
+                            <strong style="color: #FFFFFF;">Directiva Pedagógica:</strong> {diagnostico.explicacion_error}
                         </div>
                     </div>
                     """,

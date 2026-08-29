@@ -1,9 +1,4 @@
-"""
-Módulo de Fachada y Orquestación Serverless: PipelineBiomecanicoEngine (Craig Larman / GoF Facade).
-Implementación real de integración para procesamiento de videos MP4/MOV con MediaPipe Pose,
-cálculo de ángulos articulares 3D relativos, filtrado Kalman (RF-08, RF-11), alineación DTW y OpenCV.
-"""
-
+import logging
 import os
 import tempfile
 from dataclasses import dataclass
@@ -17,6 +12,9 @@ from src.domain.models import ReglaBiomecanica, TecnicaMaestra
 from src.services.dtw_comparator import DTWComparator
 from src.services.kalman_filter import KalmanTracker, OclusionProlongadaError
 from src.services.opencv_annotator import OpenCVAnnotator
+
+logger = logging.getLogger("bjj.pipeline")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 try:
     import mediapipe as mp
@@ -220,6 +218,11 @@ class PipelineBiomecanicoEngine:
                         pt_c = np.array([lms_3d[idx_c].x, lms_3d[idx_c].y, lms_3d[idx_c].z]) / escala
 
                         angulo_calc = self.calcular_angulo_3d(pt_a, pt_v, pt_c)
+
+                        # Filtrar quiebres y saltos anatómicos espurios (< 15° en codos/rodillas)
+                        if angulo_calc < 15.0 and angulos[art_nombre]:
+                            angulo_calc = angulos[art_nombre][-1]
+
                         angulos[art_nombre].append(angulo_calc)
 
                         px = int(np.clip(lms_3d[idx_v].x * ancho, 0, ancho - 1))
@@ -229,13 +232,25 @@ class PipelineBiomecanicoEngine:
                         vis_v = getattr(lms_3d[idx_v], "visibility", 0.9)
                         confs[art_nombre].append(float(vis_v) if vis_v is not None else 0.9)
                 else:
-                    # Cuadro con oclusión o sin detección de atleta en tatami
+                    # Cuadro con oclusión o sin detección de atleta en tatami:
+                    # Propagar cinemáticamente el último ángulo válido en lugar de saltar a 0.0
                     for art_nombre in MAPEO_ARTICULACIONES:
-                        angulos[art_nombre].append(0.0)
-                        coords[art_nombre].append((ancho // 2, alto // 2))
+                        val_prev = angulos[art_nombre][-1] if angulos[art_nombre] else 90.0
+                        angulos[art_nombre].append(val_prev)
+                        coord_prev = coords[art_nombre][-1] if coords[art_nombre] else (ancho // 2, alto // 2)
+                        coords[art_nombre].append(coord_prev)
                         confs[art_nombre].append(0.0)
 
                 total_frames_leidos += 1
+
+            # Suavizado cinemático con filtro de mediana móvil (3 frames) para eliminar ruido de alta frecuencia
+            for art_nombre in MAPEO_ARTICULACIONES:
+                serie_raw = angulos[art_nombre]
+                if len(serie_raw) >= 3:
+                    angulos[art_nombre] = [
+                        float(np.median(serie_raw[max(0, i - 1) : min(len(serie_raw), i + 2)]))
+                        for i in range(len(serie_raw))
+                    ]
         finally:
             cap.release()
             if detector is not None and hasattr(detector, "close"):
@@ -393,6 +408,17 @@ class PipelineBiomecanicoEngine:
         # 6. Evaluación determinista contra el catálogo de reglas biomecánicas (RF-10)
         regla_asociada = articulaciones_reglas.get(articulacion_principal)
         umbral_tolerado = regla_asociada.umbral_angular_tolerado if regla_asociada else 15.0
+
+        logger.info(
+            f"[PIPELINE] DTW Sakoe-Chiba: Distancia={distancia_acumulada:.2f} | "
+            f"Frames Alumno={len(serie_a)}, Profesor={len(serie_p)} | "
+            f"Pico Desviación={desviacion_maxima:.1f}° en Frame={frame_alumno} (Umbral={umbral_tolerado:.1f}°)"
+        )
+        if desviacion_maxima > 90.0:
+            logger.warning(
+                f"[PIPELINE] Desviación {desviacion_maxima:.1f}° supera 90°. "
+                f"Verifique si la técnica se grabó con ángulo/perspectiva invertida."
+            )
 
         if desviacion_maxima > umbral_tolerado:
             descripcion_base = (

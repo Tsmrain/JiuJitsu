@@ -134,6 +134,45 @@ def aplicar_estilos_oficiales() -> None:
                 border-left-width: 6px !important;
             }
 
+            /* Control dimensional estricto para reproductores de video (evita desborde en 9:16 móvil) */
+            div[data-testid="stVideo"] {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                background-color: #0E1117 !important;
+                border-radius: 8px !important;
+                overflow: hidden !important;
+                margin: 0 auto !important;
+                max-height: 420px !important;
+            }
+
+            div[data-testid="stVideo"] > video {
+                max-height: 400px !important;
+                width: auto !important;
+                max-width: 100% !important;
+                object-fit: contain !important;
+                border-radius: 6px !important;
+            }
+
+            /* Control dimensional para fotogramas anotados */
+            div[data-testid="stImage"] {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                background-color: #0E1117 !important;
+                border-radius: 8px !important;
+                overflow: hidden !important;
+                max-height: 420px !important;
+            }
+
+            div[data-testid="stImage"] > img {
+                max-height: 400px !important;
+                width: auto !important;
+                max-width: 100% !important;
+                object-fit: contain !important;
+                border-radius: 6px !important;
+            }
+
             /* Adaptabilidad para dispositivos móviles y tabletas */
             @media (max-width: 900px) {
                 .main .block-container {

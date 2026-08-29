@@ -4,9 +4,9 @@ Desacopla la interfaz de usuario Streamlit de los motores algorítmicos, OBS y P
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from src.infrastructure.database.models import AnalisisBiomecanico, FotogramaAnotado
@@ -33,6 +33,12 @@ class DiagnosticoDTO:
     desviacion_maxima: float
     articulacion_afectada: str
     imagen_bytes: Optional[bytes] = None
+    # Nuevos campos analíticos de similitud temporal y exportación (RF-13, RF-14, RF-15):
+    angle_similarity_percentage: float = 0.0
+    position_similarity_percentage: float = 0.0
+    combined_similarity_percentage: float = 0.0
+    csv_files_paths: List[str] = field(default_factory=list)
+    chart_image_path: str = ""
 
 
 class AnalisisBiomecanicoController:
@@ -122,10 +128,16 @@ class AnalisisBiomecanicoController:
                             pass
 
         # 4. Disparo del motor algorítmico serverless real
+        id_video_real = id_video or uuid4()
+        id_analisis_nuevo = uuid4()
+        dir_artefactos = ROOT_DIR / "assets" / "analysis_results" / str(id_analisis_nuevo)
+
         resultado_pipeline = self.pipeline_engine.ejecutar_pipeline_completo(
             video_bytes=video_bytes,
             tecnica_maestra=tecnica_maestra,
             video_profesor_bytes=video_patron_bytes,
+            id_analisis=str(id_analisis_nuevo),
+            output_analysis_dir=dir_artefactos,
         )
 
         # 5. Salvaguarda de Zero-Persistence ante oclusión prolongada (RF-11)
@@ -136,12 +148,15 @@ class AnalisisBiomecanicoController:
                 explicacion_error=resultado_pipeline.explicacion_error,
                 desviacion_maxima=0.0,
                 articulacion_afectada="",
+                angle_similarity_percentage=getattr(resultado_pipeline, "angle_similarity_percentage", 0.0),
+                position_similarity_percentage=getattr(resultado_pipeline, "position_similarity_percentage", 0.0),
+                combined_similarity_percentage=getattr(resultado_pipeline, "combined_similarity_percentage", 0.0),
+                csv_files_paths=getattr(resultado_pipeline, "csv_files_paths", []),
+                chart_image_path=getattr(resultado_pipeline, "chart_image_path", ""),
             )
 
         # 6. Flujo Exitoso con persistencia
         imagen_url: Optional[str] = None
-        id_video_real = id_video or uuid4()
-        id_analisis_nuevo = uuid4()
 
         if resultado_pipeline.imagen_jpg_bytes is not None:
             # 1. Guardar SIEMPRE en disco local para desarrollo y visualización garantizada
@@ -194,6 +209,11 @@ class AnalisisBiomecanicoController:
             desviacion_maxima=resultado_pipeline.desviacion_maxima,
             articulacion_afectada=resultado_pipeline.articulacion_afectada,
             imagen_bytes=resultado_pipeline.imagen_jpg_bytes,
+            angle_similarity_percentage=getattr(resultado_pipeline, "angle_similarity_percentage", 0.0),
+            position_similarity_percentage=getattr(resultado_pipeline, "position_similarity_percentage", 0.0),
+            combined_similarity_percentage=getattr(resultado_pipeline, "combined_similarity_percentage", 0.0),
+            csv_files_paths=getattr(resultado_pipeline, "csv_files_paths", []),
+            chart_image_path=getattr(resultado_pipeline, "chart_image_path", ""),
         )
 
     def listar_tecnicas(self):

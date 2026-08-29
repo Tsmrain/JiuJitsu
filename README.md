@@ -158,7 +158,7 @@
     - [5.5.3 Sistema de Diseño Visual, Paleta Oficial y Adaptabilidad](#553-sistema-de-diseño-visual-paleta-oficial-y-adaptabilidad)
   - [5.6 Estado de Implementación del Software, Cobertura TDD y Manual de Ejecución Local](#56-estado-de-implementación-del-software-cobertura-tdd-y-manual-de-ejecución-local)
     - [5.6.1 Arquitectura Implementada y Estructura de Paquetes](#561-arquitectura-implementada-y-estructura-de-paquetes)
-    - [5.6.2 Matriz de Trazabilidad y Validación Automatizada (41 Pruebas TDD)](#562-matriz-de-trazabilidad-y-validación-automatizada-41-pruebas-tdd)
+    - [5.6.2 Matriz de Trazabilidad y Validación Automatizada (46 Pruebas TDD)](#562-matriz-de-trazabilidad-y-validación-automatizada-46-pruebas-tdd)
     - [5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador](#563-manual-de-puesta-en-marcha-para-el-tribunal-evaluador)
 
 ---
@@ -593,6 +593,9 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | **RF-10** | Generación de Explicación Textual Determinista | El backend en FunctionGraph deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
 | **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, abortando la ejecución a nivel de base de datos (sin persistir registros en las tablas `AnalisisBiomecanico` ni `HistorialProgresion`) para evitar contaminar el historial de progresión del atleta con cinemáticas ficticias. (Nota técnica: Aunque el cómputo serverless ejecutado hasta el punto de detección de oclusión ya fue facturado por milisegundos de CPU, esta lógica de rechazo prioriza la validez pedagógica y estadística de los datos longitudinales del estudiante sobre el ahorro marginal de cómputo). |
 | **RF-12** | Consulta de Historial de Progresión Técnica | La interfaz web en Streamlit deberá permitir al estudiante autenticado consultar de forma interactiva su historial acumulativo de evaluaciones biomecánicas (`HistorialProgresion`), visualizando la evolución cronológica de su puntuación técnica global (`puntuacionGlobal`) y la tasa de reducción de errores (`cantidadErrores`) a lo largo de sus sucesivas sesiones de entrenamiento en el tatami. |
+| **RF-13** | Cálculo de Similitud de Posición 3D Euclidiana | El sistema deberá calcular la distancia euclidiana 3D para la totalidad de los 33 landmarks anatómicos de MediaPipe Pose ($\sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}$) entre el atleta evaluado y el video patrón del profesor, calculando el promedio espacial y convirtiéndolo en un porcentaje de proximidad posicional $(1 - \bar{d}) \times 100$, complementario al análisis temporal DTW. |
+| **RF-14** | Exportación Tabular de Similitud por Fotograma (CSV) | El sistema deberá generar y permitir la descarga de tres archivos estructurados en formato CSV por cada sesión de auditoría: (1) `skeleton_angle_similarity_{id}.csv` conteniendo los ángulos para 28 grupos anatómicos clave, (2) `skeleton_position_similarity_{id}.csv` registrando las coordenadas espaciales $(X, Y, Z)$ para los 33 landmarks, y (3) `skeleton_eachframe_similarity_{id}.csv` con los porcentajes de similitud angular, posicional y promedio cuadro a cuadro. |
+| **RF-15** | Visualización Gráfica Temporal de Similitud Cinemática | El sistema deberá generar un panel gráfico temporal con Matplotlib utilizando una distribución `GridSpec(2, 3)` que grafique la evolución cuadro a cuadro de la similitud angular (azul), la similitud de posición 3D (verde) y la similitud promedio combinada (rojo carmesí `#D90429`), incluyendo una tarjeta resumen con estadísticas descriptivas, desplegándolo en la interfaz de usuario Streamlit junto a la descarga de los reportes tabulares. |
 
 ---
 
@@ -602,6 +605,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | :---: | :--- | :--- |
 | **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con MediaPipe, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la extracción de 33 landmarks con MediaPipe, el arranque en frío (*cold start*) del contenedor Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
 | **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta transferido hacia el cliente móvil no deberá superar los **100 KB** por consulta. (Nota de Arquitectura: Los 100 KB constituyen la cota superior contractual admisible o *worst-case threshold*, mientras que el promedio nominal comprimido por OpenCV es de ~80 KB. Ambos escenarios garantizan matemáticamente el cumplimiento del límite presupuestario trimestral). |
+| **RP-03** | Techo de Tiempo de Generación Gráfica y Tabular | La exportación de los 3 archivos CSV estructurados y el renderizado en memoria del panel gráfico temporal con Matplotlib no deberá añadir más de **500 milisegundos** al ciclo de procesamiento total, manteniendo el peso del archivo PNG por debajo de los 200 KB para preservar la ligereza del despliegue en tatami. |
 
 ---
 
@@ -1875,7 +1879,8 @@ La implementación del sistema se organiza de forma desacoplada y modular bajo l
 │   │   ├── dtw_comparator.py                   # DTWComparator (Alineación Sakoe-Chiba)
 │   │   ├── kalman_filter.py                    # KalmanTracker / KalmanFilterTracker (3D y RF-11)
 │   │   ├── opencv_annotator.py                 # OpenCVAnnotator (Marcador Rojo 15px)
-│   │   └── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF)
+│   │   ├── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF)
+│   │   └── position_similarity.py              # PositionSimilarityService (Similitud 3D y CSV/Gráficos)
 │   │
 │   └── ui/                                     <-- [Capa de Presentación Web en Streamlit]
 │       ├── __init__.py
@@ -1896,13 +1901,14 @@ La implementación del sistema se organiza de forma desacoplada y modular bajo l
     ├── test_kalman.py                          # Pruebas de filtrado cinemático 3D y RF-11
     ├── test_obs_adapter.py                     # Pruebas del adaptador Huawei Cloud OBS
     ├── test_pipeline.py                        # Pruebas del motor de pipeline biomecánico
+    ├── test_position_similarity.py             # Pruebas de similitud 3D, exportación CSV y gráficos (RF-13, RF-14, RF-15, RP-03)
     ├── test_repositories.py                    # Pruebas de repositorios y persistencia CRUD
     └── test_ui.py                              # Pruebas de estado de interfaz Streamlit
 ```
 
-### 5.6.2 Matriz de Trazabilidad y Validación Automatizada (41 Pruebas TDD)
+### 5.6.2 Matriz de Trazabilidad y Validación Automatizada (46 Pruebas TDD)
 
-La totalidad de los requisitos funcionales, requisitos de rendimiento y restricciones del sistema fueron implementados y verificados siguiendo la metodología **Test-Driven Development (TDD)**. Los 10 módulos de prueba en `tests/` totalizan **41 pruebas unitarias independientes**, ejecutadas en menos de 0.08 segundos con un 100% de éxito:
+La totalidad de los requisitos funcionales, requisitos de rendimiento y restricciones del sistema fueron implementados y verificados siguiendo la metodología **Test-Driven Development (TDD)**. Los 11 módulos de prueba en `tests/` totalizan **46 pruebas unitarias independientes**, ejecutadas en aproximadamente 2 segundos con un 100% de éxito:
 
 | Módulo de Prueba | Archivo de Prueba | Tests | Requisitos Validados y Alcance de Verificación |
 | :--- | :--- | :---: | :--- |
@@ -1914,9 +1920,10 @@ La totalidad de los requisitos funcionales, requisitos de rendimiento y restricc
 | **Filtro de Kalman 3D** | `tests/test_kalman.py` | **3** | **RF-02, RF-08, RF-11:** Invarianza y reducción de ruido en trayectorias espaciales $(X, Y, Z)$, interpolación cinemática en oclusiones breves y disparo de oclusión continua prolongada ($> 1.5\text{ s}$). |
 | **Adaptador Cloud OBS** | `tests/test_obs_adapter.py` | **4** | **Almacenamiento OBS:** Implementación del patrón GoF Adapter para Huawei Cloud OBS, verificación de `subir_video`, `subir_fotograma` y `descargar_objeto` mediante aislamiento con Mocks. |
 | **Motor de Pipeline** | `tests/test_pipeline.py` | **4** | **RF-07, RF-10, RF-11:** Fachada GoF del pipeline biomecánico, integración cinemática integral, validación de corte por oclusión crítica y método `procesar_video`. |
+| **Similitud y Métricas 3D** | `tests/test_position_similarity.py` | **5** | **RF-13, RF-14, RF-15, RP-03:** Similitud de posición 3D Euclidiana (33 landmarks), similitud coseno de 28 grupos articulares, exportación física de 3 CSVs por frame y generación de gráfico temporal GridSpec con Matplotlib ($\le 500\text{ ms}$). |
 | **Capa de Repositorios** | `tests/test_repositories.py` | **6** | **CU-01, RF-09:** `TokenRepository` (validación de membresías vigentes y token sintético de prueba), `TecnicaMaestraRepository` (mapeo de reglas, publicación, listado, actualización y eliminación CRUD) y `AnalisisBiomecanicoRepository`. |
 | **Interfaz de Usuario** | `tests/test_ui.py` | **2** | **Capa UI:** Inicialización determinista del estado reactivo de sesión en Streamlit (`st.session_state`) e inyección de dependencias en la factoría `obtener_controlador()`. |
-| **TOTAL CONSOLIDADO** | `unittest discover tests` | **41** | **41 de 41 Pruebas Unitarias Aprobadas (100% de Éxito, $\sim 0.08\text{ s}$)** |
+| **TOTAL CONSOLIDADO** | `unittest discover tests` | **46** | **46 de 46 Pruebas Unitarias Aprobadas (100% de Éxito, $\sim 2.1\text{ s}$)** |
 
 ### 5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador
 
@@ -1940,7 +1947,7 @@ Para ejecutar y validar localmente la plataforma en cualquier computador con sis
    ```bash
    .venv/bin/python -m unittest discover tests
    ```
-   *(Resultado esperado: 41 tests pasando en verde con veredicto OK).*
+   *(Resultado esperado: 46 tests pasando en verde con veredicto OK).*
 
 4. **Lanzar la aplicación web interactiva en Streamlit:**
    ```bash

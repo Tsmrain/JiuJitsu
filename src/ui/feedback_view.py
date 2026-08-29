@@ -3,6 +3,7 @@ Vista de Entrega y Retroalimentación Visual Biomecánica (Craig Larman / RF-05,
 Diseño Full-Width, sobrio, sin emojis y orientado a visualización técnica de alto impacto.
 """
 
+import os
 from pathlib import Path
 import streamlit as st
 from src.services.controllers.analisis_controller import DiagnosticoDTO
@@ -156,6 +157,84 @@ def render_feedback_view() -> None:
                     """,
                     unsafe_allow_html=True,
                 )
+
+    # Sección de Evolución Temporal y Similitud Global del Movimiento (RF-13, RF-14, RF-15)
+    st.markdown(
+        """
+        <div style="margin-top: 25px; margin-bottom: 15px;">
+            <h4 style="color: #FFFFFF; font-weight: 700; margin-bottom: 2px;">
+                Evolución Temporal y Similitud Global del Movimiento
+            </h4>
+            <p style="color: #8B949E; font-size: 0.85rem;">
+                Métricas multimodales: Similitud Coseno de 28 grupos articulares y Distancia Euclidiana 3D (33 landmarks).
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        st.metric(
+            label="Similitud Angular Global",
+            value=f"{getattr(diagnostico, 'angle_similarity_percentage', 0.0):.1f} %",
+            help="Similaridad coseno promedio entre los vectores de 28 ángulos clave durante la ejecución.",
+        )
+    with col_m2:
+        st.metric(
+            label="Similitud de Posición 3D",
+            value=f"{getattr(diagnostico, 'position_similarity_percentage', 0.0):.1f} %",
+            help="Proximidad espacial euclidiana normalizada de los 33 puntos esqueléticos respecto al patrón.",
+        )
+    with col_m3:
+        st.metric(
+            label="Coincidencia Biomecánica Combinada",
+            value=f"{getattr(diagnostico, 'combined_similarity_percentage', 0.0):.1f} %",
+            delta="Score Integral",
+            delta_color="normal",
+            help="Índice balanceado de conformidad técnica global.",
+        )
+
+    # Gráfico temporal de Matplotlib
+    chart_path = getattr(diagnostico, "chart_image_path", "")
+    if chart_path and os.path.exists(chart_path):
+        st.image(
+            chart_path,
+            caption="Evolución temporal de la similitud cinemática (Ángulos, Posición y Promedio por Fotograma / RF-15)",
+            use_container_width=True,
+        )
+
+    # Descarga de reportes tabulares CSV (RF-14)
+    csv_paths = getattr(diagnostico, "csv_files_paths", [])
+    if csv_paths:
+        st.markdown(
+            "<div style='margin-top: 15px; margin-bottom: 8px; color: #C9D1D9; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;'>"
+            "Descarga de Datos Tabulares por Fotograma (RF-14):"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        col_c1, col_c2, col_c3 = st.columns(3)
+        cols = [col_c1, col_c2, col_c3]
+        for i, c_path in enumerate(csv_paths):
+            col_target = cols[i % 3]
+            if os.path.exists(c_path):
+                file_name = Path(c_path).name
+                with open(c_path, "rb") as fp:
+                    btn_data = fp.read()
+                label_btn = (
+                    "CSV Ángulos Articulares"
+                    if "angle" in file_name
+                    else ("CSV Coordenadas 3D" if "position" in file_name else "CSV Similitud por Frame")
+                )
+                with col_target:
+                    st.download_button(
+                        label=label_btn,
+                        data=btn_data,
+                        file_name=file_name,
+                        mime="text/csv",
+                        key=f"dl_csv_{i}_{file_name}",
+                        use_container_width=True,
+                    )
 
     st.divider()
 

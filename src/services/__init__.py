@@ -14,6 +14,10 @@ from src.services.pipeline_engine import (
     PipelineBiomecanicoEngine,
     ResultadoPipelineDTO,
 )
+from src.services.position_similarity import (
+    GRUPOS_PUNTOS_CLAVE_28,
+    PositionSimilarityService,
+)
 
 __all__ = [
     "KalmanTracker",
@@ -23,4 +27,6 @@ __all__ = [
     "OpenCVAnnotator",
     "PipelineBiomecanicoEngine",
     "ResultadoPipelineDTO",
+    "PositionSimilarityService",
+    "GRUPOS_PUNTOS_CLAVE_28",
 ]

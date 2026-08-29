@@ -52,6 +52,17 @@ MAPEO_ARTICULACIONES = {
     "cadera_izquierda": (11, 23, 25),  # Hombro Izq (11), Cadera Izq (23), Rodilla Izq (25)
 }
 
+PAREJAS_CONTRALATERALES = {
+    "codo_derecho": "codo_izquierdo",
+    "codo_izquierdo": "codo_derecho",
+    "hombro_derecho": "hombro_izquierdo",
+    "hombro_izquierdo": "hombro_derecho",
+    "rodilla_derecha": "rodilla_izquierda",
+    "rodilla_izquierda": "rodilla_derecha",
+    "cadera_derecha": "cadera_izquierda",
+    "cadera_izquierda": "cadera_derecha",
+}
+
 
 class PipelineBiomecanicoEngine:
     """
@@ -405,6 +416,27 @@ class PipelineBiomecanicoEngine:
             serie_p, serie_a, camino
         )
 
+        # 5.1 Comprobación de lateralidad / perfil espejo si la discrepancia es severa (> 35.0°)
+        art_evaluada = articulacion_principal
+        es_espejo = False
+        if series_estudiante_override is None and desviacion_maxima > 35.0 and articulacion_principal in PAREJAS_CONTRALATERALES:
+            art_contra = PAREJAS_CONTRALATERALES[articulacion_principal]
+            serie_contra = series_alumno.get(art_contra)
+            if serie_contra and len(serie_contra) == len(serie_a):
+                _, _, cam_c = self.dtw_comparator.calcular_distancia(serie_p, serie_contra)
+                _, f_a_c, desv_c = self.dtw_comparator.extraer_pico_desviacion(serie_p, serie_contra, cam_c)
+                # Si el miembro contralateral tiene una concordancia notablemente superior (> 15° menor)
+                if desv_c < desviacion_maxima - 15.0:
+                    logger.info(
+                        f"[PIPELINE] Perfil contralateral detectado: {art_contra} tiene desviación {desv_c:.1f}° "
+                        f"(vs {desviacion_maxima:.1f}° en {articulacion_principal}). Adoptando articulación activa."
+                    )
+                    art_evaluada = art_contra
+                    desviacion_maxima = desv_c
+                    frame_alumno = f_a_c
+                    es_espejo = True
+                    coords_suavizadas = coords_alumno.get(art_evaluada, [(320, 240)])
+
         # 6. Evaluación determinista contra el catálogo de reglas biomecánicas (RF-10)
         regla_asociada = articulaciones_reglas.get(articulacion_principal)
         umbral_tolerado = regla_asociada.umbral_angular_tolerado if regla_asociada else 15.0
@@ -424,11 +456,13 @@ class PipelineBiomecanicoEngine:
             descripcion_base = (
                 regla_asociada.descripcion_error
                 if regla_asociada
-                else f"Discrepancia angular excesiva en {articulacion_principal}"
+                else f"Discrepancia angular excesiva en {art_evaluada}"
             )
             explicacion_final = (
                 f"{descripcion_base} (Desviación: {desviacion_maxima:.1f}° | Tolerancia: {umbral_tolerado:.1f}°)"
             )
+            if es_espejo:
+                explicacion_final += f" [Evaluado en {art_evaluada.replace('_', ' ')} por perfil inverso en tatami]"
 
             # 7. Renderizar fotograma anotado con OpenCV (RF-05 / RP-02)
             if frame_clave_override is not None:
@@ -454,7 +488,7 @@ class PipelineBiomecanicoEngine:
             return ResultadoPipelineDTO(
                 estado_computo="EXITOSO",
                 desviacion_maxima=desviacion_maxima,
-                articulacion_afectada=articulacion_principal,
+                articulacion_afectada=art_evaluada,
                 explicacion_error=explicacion_final,
                 fotograma_falla_idx=frame_alumno,
                 imagen_jpg_bytes=imagen_jpg_bytes,
@@ -465,7 +499,7 @@ class PipelineBiomecanicoEngine:
         return ResultadoPipelineDTO(
             estado_computo="SIN_FALLAS",
             desviacion_maxima=desviacion_maxima,
-            articulacion_afectada=articulacion_principal,
+            articulacion_afectada=art_evaluada,
             explicacion_error="Ejecución técnica conforme: los ángulos articulares respetan las tolerancias canónicas del profesor.",
             fotograma_falla_idx=frame_alumno,
             imagen_jpg_bytes=None,

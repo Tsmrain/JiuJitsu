@@ -91,11 +91,17 @@ def render_feedback_view() -> None:
                     delta_color="normal",
                 )
             else:
-                if diagnostico.imagen_url:
+                foto_a_mostrar = None
+                if getattr(diagnostico, "imagen_bytes", None):
+                    foto_a_mostrar = diagnostico.imagen_bytes
+                elif diagnostico.imagen_url:
+                    foto_a_mostrar = diagnostico.imagen_url
+
+                if foto_a_mostrar is not None:
                     st.image(
-                        diagnostico.imagen_url,
+                        foto_a_mostrar,
                         caption="Segmento articular en falla resaltado en rojo (Compresión JPEG < 100 KB / RP-02)",
-                        width="stretch",
+                        use_container_width=True,
                     )
                 else:
                     st.info("Fotograma clave generado y registrado.")

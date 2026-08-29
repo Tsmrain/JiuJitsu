@@ -3,6 +3,7 @@ Controlador de Caso de Uso para Análisis Biomecánico (Craig Larman / GRASP Con
 Desacopla la interfaz de usuario Streamlit de los motores algorítmicos, OBS y PostgreSQL.
 """
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -31,6 +32,7 @@ class DiagnosticoDTO:
     explicacion_error: str
     desviacion_maxima: float
     articulacion_afectada: str
+    imagen_bytes: Optional[bytes] = None
 
 
 class AnalisisBiomecanicoController:
@@ -142,23 +144,29 @@ class AnalisisBiomecanicoController:
         id_analisis_nuevo = uuid4()
 
         if resultado_pipeline.imagen_jpg_bytes is not None:
-            # Subir fotograma anotado a Huawei Cloud OBS con fallback local si estamos offline
+            # 1. Guardar SIEMPRE en disco local para desarrollo y visualización garantizada
+            dir_local = ROOT_DIR / "assets" / "fotogramas_anotados"
+            dir_local.mkdir(parents=True, exist_ok=True)
+            ruta_local_foto = dir_local / f"{id_analisis_nuevo}_anotado.jpg"
+
+            with open(ruta_local_foto, "wb") as f:
+                f.write(resultado_pipeline.imagen_jpg_bytes)
+
+            imagen_url = str(ruta_local_foto)
+
+            # 2. Subir a Huawei Cloud OBS a través del storage adapter
             object_key = f"fotogramas/{id_analisis_nuevo}_anotado.jpg"
             try:
-                imagen_url = self.storage_adapter.subir_fotograma(
+                obs_url = self.storage_adapter.subir_fotograma(
                     foto_bytes=resultado_pipeline.imagen_jpg_bytes,
                     object_key=object_key,
                 )
+                if obs_url:
+                    imagen_url = obs_url
             except Exception:
-                # Fallback de persistencia local para desarrollo
-                dir_local = ROOT_DIR / "assets" / "fotogramas_anotados"
-                dir_local.mkdir(parents=True, exist_ok=True)
-                ruta_local_foto = dir_local / f"{id_analisis_nuevo}_anotado.jpg"
-                with open(ruta_local_foto, "wb") as f:
-                    f.write(resultado_pipeline.imagen_jpg_bytes)
-                imagen_url = str(ruta_local_foto)
+                pass
 
-            # Instanciar modelos ORM de persistencia
+            # 3. Instanciar modelos ORM de persistencia
             analisis_db = AnalisisBiomecanico(
                 id_analisis=id_analisis_nuevo,
                 video_id=id_video_real,
@@ -185,6 +193,7 @@ class AnalisisBiomecanicoController:
             explicacion_error=resultado_pipeline.explicacion_error,
             desviacion_maxima=resultado_pipeline.desviacion_maxima,
             articulacion_afectada=resultado_pipeline.articulacion_afectada,
+            imagen_bytes=resultado_pipeline.imagen_jpg_bytes,
         )
 
     def listar_tecnicas(self):

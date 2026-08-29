@@ -536,6 +536,12 @@ class PipelineBiomecanicoEngine:
                     coords_suavizadas = coords_alumno.get(art_evaluada, [(320, 240)])
 
         # 7. Computar series temporales de similitud angular y posicional (RF-13, RF-14, RF-15)
+        position_service = PositionSimilarityService()
+        landmarks_alumno = lms_33_alumno
+        landmarks_profesor = lms_33_profesor
+        angulos_alumno = ang_28_alumno
+        angulos_profesor = ang_28_profesor
+
         angle_sim_list: List[float] = []
         pos_sim_list: List[float] = []
         avg_sim_list: List[float] = []
@@ -543,17 +549,16 @@ class PipelineBiomecanicoEngine:
         position_records: List[List[Any]] = []
         frame_sim_records: List[List[Any]] = []
 
-        n_sim = min(len(lms_33_alumno), len(lms_33_profesor))
-        if n_sim > 0:
-            for f_i in range(n_sim):
-                l_a = lms_33_alumno[f_i]
-                l_p = lms_33_profesor[f_i]
-                a_a = ang_28_alumno[f_i]
-                a_p = ang_28_profesor[f_i]
+        if landmarks_alumno and landmarks_profesor:
+            for f_i in range(min(len(landmarks_alumno), len(landmarks_profesor))):
+                l_a = landmarks_alumno[f_i]
+                l_p = landmarks_profesor[f_i]
+                a_a = angulos_alumno[f_i] if f_i < len(angulos_alumno) else []
+                a_p = angulos_profesor[f_i] if f_i < len(angulos_profesor) else []
 
-                p_sim = self.position_service.calculate_position_similarity(l_a, l_p)
-                a_sim = self.position_service.calculate_angle_similarity_cosine(a_a, a_p)
-                c_sim = self.position_service.calculate_combined_similarity(a_sim, p_sim)
+                p_sim = position_service.calculate_position_similarity(l_a, l_p)
+                a_sim = position_service.calculate_angle_similarity_cosine(a_a, a_p)
+                c_sim = position_service.calculate_combined_similarity(a_sim, p_sim)
 
                 angle_sim_list.append(a_sim)
                 pos_sim_list.append(p_sim)
@@ -565,46 +570,53 @@ class PipelineBiomecanicoEngine:
                     angle_records.append([f_i, g_i, ang_1, ang_2])
 
                 for pt_i, (c1, c2) in enumerate(zip(l_a, l_p)):
+                    c1_vals = (c1.x, c1.y, getattr(c1, "z", 0.0)) if hasattr(c1, "x") else (c1[0], c1[1], c1[2] if len(c1) > 2 else 0.0)
+                    c2_vals = (c2.x, c2.y, getattr(c2, "z", 0.0)) if hasattr(c2, "x") else (c2[0], c2[1], c2[2] if len(c2) > 2 else 0.0)
                     position_records.append([
                         f_i, pt_i,
-                        c1[0], c1[1], c1[2],
-                        c2[0], c2[1], c2[2],
+                        c1_vals[0], c1_vals[1], c1_vals[2],
+                        c2_vals[0], c2_vals[1], c2_vals[2],
                     ])
 
-        media_ang = float(np.mean(angle_sim_list)) if angle_sim_list else 92.5
-        media_pos = float(np.mean(pos_sim_list)) if pos_sim_list else 88.0
-        media_comb = float(np.mean(avg_sim_list)) if avg_sim_list else 90.25
+            angle_similarity_pct = float(np.mean(angle_sim_list)) if angle_sim_list else 0.0
+            position_similarity_pct = float(np.mean(pos_sim_list)) if pos_sim_list else 0.0
+            combined_similarity_pct = (angle_similarity_pct + position_similarity_pct) / 2.0
+        else:
+            angle_similarity_pct = 0.0
+            position_similarity_pct = 0.0
+            combined_similarity_pct = 0.0
 
         # 8. Generación de artefactos CSV y gráfico temporal con Matplotlib (RF-14, RF-15)
+        video_id = id_analisis or "evaluacion"
+        output_dir = Path(output_analysis_dir) if output_analysis_dir else (ROOT_DIR / "assets" / "analysis_results" / str(video_id))
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         csv_rutas: List[str] = []
-        chart_ruta: str = ""
-        v_id = id_analisis or "evaluacion"
-        dir_artefactos = Path(output_analysis_dir) if output_analysis_dir else (ROOT_DIR / "assets" / "analysis_results" / v_id)
+        chart_path: str = ""
 
         try:
-            dir_artefactos.mkdir(parents=True, exist_ok=True)
             if not angle_records:
                 angle_records = [[0, 0, 90.0, 90.0]]
                 position_records = [[0, 0, 0.5, 0.5, 0.0, 0.5, 0.5, 0.0]]
-                frame_sim_records = [[0, media_ang, media_pos, media_comb]]
+                frame_sim_records = [[0, angle_similarity_pct, position_similarity_pct, combined_similarity_pct]]
                 if not angle_sim_list:
-                    angle_sim_list = [media_ang]
-                    pos_sim_list = [media_pos]
-                    avg_sim_list = [media_comb]
+                    angle_sim_list = [angle_similarity_pct]
+                    pos_sim_list = [position_similarity_pct]
+                    avg_sim_list = [combined_similarity_pct]
 
-            csv_rutas = self.position_service.export_csv_results(
-                output_dir=dir_artefactos,
-                video_id=v_id,
+            csv_rutas = position_service.export_csv_results(
+                output_dir=output_dir,
+                video_id=str(video_id),
                 angle_records=angle_records,
                 position_records=position_records,
                 frame_similarity_records=frame_sim_records,
             )
-            chart_ruta = self.position_service.plot_similarity_graphs(
-                output_dir=dir_artefactos,
-                video_id=v_id,
+            chart_path = position_service.plot_similarity_graphs(
+                output_dir=output_dir,
+                video_id=str(video_id),
                 angle_sim_list=angle_sim_list,
                 pos_sim_list=pos_sim_list,
-                avg_sim_list=avg_sim_list,
+                avg_sim_list=avg_sim_list if avg_sim_list else [(a + p) / 2.0 for a, p in zip(angle_sim_list, pos_sim_list)],
             )
         except Exception as err_art:
             logger.warning(f"[PIPELINE] No se pudieron generar artefactos tabulares o gráficos: {err_art}")
@@ -617,7 +629,7 @@ class PipelineBiomecanicoEngine:
             f"[PIPELINE] DTW Sakoe-Chiba: Distancia={distancia_acumulada:.2f} | "
             f"Frames Alumno={len(serie_a)}, Profesor={len(serie_p)} | "
             f"Pico Desviación={desviacion_maxima:.1f}° en Frame={frame_alumno} (Umbral={umbral_tolerado:.1f}°) | "
-            f"Similitud Combinada={media_comb:.2f}%"
+            f"Similitud Combinada={combined_similarity_pct:.2f}%"
         )
         if desviacion_maxima > 90.0:
             logger.warning(
@@ -638,25 +650,78 @@ class PipelineBiomecanicoEngine:
                 explicacion_final += f" [Evaluado en {art_evaluada.replace('_', ' ')} por perfil inverso en tatami]"
 
             # 10. Renderizar fotograma anotado con OpenCV (RF-05 / RP-02)
+            frame_base = None
+
+            # Prioridad 1: Frame override explícito
             if frame_clave_override is not None:
                 frame_base = frame_clave_override
+            # Prioridad 2: Frame específico del alumno
             elif frames_alumno and 0 <= frame_alumno < len(frames_alumno):
                 frame_base = frames_alumno[frame_alumno]
+            # Prioridad 3: Último frame disponible
             elif frames_alumno:
-                frame_base = frames_alumno[0]
-            else:
-                frame_base = np.full((480, 640, 3), 210, dtype=np.uint8)
+                frame_base = frames_alumno[-1]
+                logger.warning(f"No se pudo obtener frame {frame_alumno}, usando último frame disponible")
+
+            # Si aún no hay frame, crear uno negro de emergencia
+            if frame_base is None:
+                logger.error("No hay frames disponibles para anotar. Creando frame negro de emergencia.")
+                frame_base = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(
+                    frame_base,
+                    "ERROR: No se pudo extraer frames del video",
+                    (50, 240),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (255, 255, 255),
+                    2,
+                )
+
+            # Calcular coordenadas del punto de falla
+            coord_x, coord_y = 320, 240  # Centro del frame por defecto
+
+            if landmarks_alumno and frame_alumno < len(landmarks_alumno):
+                landmarks_frame = landmarks_alumno[frame_alumno]
+                # Mapeo de articulaciones a índices de MediaPipe
+                articulacion_indices = {
+                    'codo_derecho': 14,
+                    'codo_izquierdo': 13,
+                    'hombro_derecho': 12,
+                    'hombro_izquierdo': 11,
+                    'rodilla_derecha': 26,
+                    'rodilla_izquierda': 25,
+                    'cadera_derecha': 24,
+                    'cadera_izquierda': 23,
+                }
+                
+                idx_landmark = articulacion_indices.get(art_evaluada, articulacion_indices.get(articulacion_principal, 14))
+                if idx_landmark < len(landmarks_frame):
+                    landmark = landmarks_frame[idx_landmark]
+                    # Convertir coordenadas normalizadas (0-1) a píxeles
+                    h, w = frame_base.shape[:2]
+                    lm_x = landmark.x if hasattr(landmark, "x") else landmark[0]
+                    lm_y = landmark.y if hasattr(landmark, "y") else landmark[1]
+                    coord_x = int(np.clip(lm_x * w, 0, w - 1))
+                    coord_y = int(np.clip(lm_y * h, 0, h - 1))
+                    logger.info(f"Coordenadas de falla: ({coord_x}, {coord_y}) para {art_evaluada}")
+            elif coords_suavizadas and 0 <= frame_alumno < len(coords_suavizadas):
+                coord_x, coord_y = coords_suavizadas[frame_alumno]
 
             if coordenadas_error_override is not None:
                 coord_x, coord_y = coordenadas_error_override
-            elif coords_suavizadas and 0 <= frame_alumno < len(coords_suavizadas):
-                coord_x, coord_y = coords_suavizadas[frame_alumno]
-            else:
-                coord_x, coord_y = (320, 240)
 
-            imagen_jpg_bytes = self.annotator.marcar_falla(
-                frame_base, coord_x, coord_y, explicacion_final
-            )
+            # Generar imagen anotada
+            try:
+                imagen_jpg_bytes = self.annotator.marcar_falla(
+                    frame_data=frame_base,
+                    coord_x=coord_x,
+                    coord_y=coord_y,
+                    explicacion=explicacion_final,
+                )
+                logger.info(f"Fotograma anotado generado: {len(imagen_jpg_bytes)} bytes")
+            except Exception as e:
+                logger.error(f"Error al generar fotograma anotado: {e}")
+                imagen_jpg_bytes = None
 
             return ResultadoPipelineDTO(
                 estado_computo="EXITOSO",
@@ -667,11 +732,11 @@ class PipelineBiomecanicoEngine:
                 imagen_jpg_bytes=imagen_jpg_bytes,
                 coordenada_error_x=coord_x,
                 coordenada_error_y=coord_y,
-                angle_similarity_percentage=media_ang,
-                position_similarity_percentage=media_pos,
-                combined_similarity_percentage=media_comb,
+                angle_similarity_percentage=angle_similarity_pct,
+                position_similarity_percentage=position_similarity_pct,
+                combined_similarity_percentage=combined_similarity_pct,
                 csv_files_paths=csv_rutas,
-                chart_image_path=chart_ruta,
+                chart_image_path=chart_path,
             )
 
         return ResultadoPipelineDTO(
@@ -681,11 +746,13 @@ class PipelineBiomecanicoEngine:
             explicacion_error="Ejecución técnica conforme: los ángulos articulares respetan las tolerancias canónicas del profesor.",
             fotograma_falla_idx=frame_alumno,
             imagen_jpg_bytes=None,
-            angle_similarity_percentage=media_ang,
-            position_similarity_percentage=media_pos,
-            combined_similarity_percentage=media_comb,
+            coordenada_error_x=None,
+            coordenada_error_y=None,
+            angle_similarity_percentage=angle_similarity_pct,
+            position_similarity_percentage=position_similarity_pct,
+            combined_similarity_percentage=combined_similarity_pct,
             csv_files_paths=csv_rutas,
-            chart_image_path=chart_ruta,
+            chart_image_path=chart_path,
         )
 
     def procesar_video(

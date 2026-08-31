@@ -180,6 +180,55 @@ class TestPipelineBiomecanicoEngine:
         assert resultado["articulacion_afectada"] == "codo_derecho"
         assert resultado["pico_desviacion"] > 0.0
 
+    def test_pipeline_con_extractor_mock_realista(self) -> None:
+        """Valida que ejecutar_pipeline_con_frames integre el extractor cinemático con forma (1, 133, 3)."""
+        import numpy as np
+        from unittest.mock import patch, MagicMock
+
+        tecnica = _crear_tecnica_mock()
+        frames_dummy = [np.zeros((100, 100, 3), dtype=np.uint8) for _ in range(3)]
+
+        # Generar keypoints 3D realistas de 133 articulaciones
+        kpts_133_frame: List[Tuple[float, ...]] = [(0.0, 0.0, 0.0)] * 133
+        # Codo derecho 90°: hombro(6) -> codo(8) -> muñeca(10)
+        kpts_133_frame[6] = (0.0, 1.0, 0.0)
+        kpts_133_frame[8] = (0.0, 0.0, 0.0)
+        kpts_133_frame[10] = (1.0, 0.0, 0.0)
+        # Codo izquierdo 90°: hombro(5) -> codo(7) -> muñeca(9)
+        kpts_133_frame[5] = (0.0, 1.0, 1.0)
+        kpts_133_frame[7] = (0.0, 0.0, 1.0)
+        kpts_133_frame[9] = (1.0, 0.0, 1.0)
+        # Rodilla derecha 180°: cadera(12) -> rodilla(14) -> tobillo(16)
+        kpts_133_frame[12] = (0.0, 2.0, 0.0)
+        kpts_133_frame[14] = (0.0, 1.0, 0.0)
+        kpts_133_frame[16] = (0.0, 0.0, 0.0)
+        # Rodilla izquierda 180°: cadera(11) -> rodilla(13) -> tobillo(15)
+        kpts_133_frame[11] = (1.0, 2.0, 0.0)
+        kpts_133_frame[13] = (1.0, 1.0, 0.0)
+        kpts_133_frame[15] = (1.0, 0.0, 0.0)
+
+        mock_salida_extractor = [list(kpts_133_frame) for _ in range(3)]
+
+
+        with patch.object(
+            self.engine.pose_extractor,
+            "extraer_de_lista_frames",
+            return_value=mock_salida_extractor,
+        ) as mock_extractor:
+            resultado = self.engine.ejecutar_pipeline_con_frames(
+                frames_patron=frames_dummy,
+                frames_ejecucion=frames_dummy,
+                tecnica=tecnica,
+            )
+
+            # Verificar que el extractor fue consultado para los frames
+            assert mock_extractor.call_count == 2
+            assert "distancia_dtw" in resultado
+            assert "pico_desviacion" in resultado
+            assert resultado["distancia_dtw"] == 0.0
+            assert "codo_derecho" in resultado["resultados_por_articulacion"]
+
+
 
 # ──────────────────────────────────────────────
 #  AnalisisBiomecanicoController (Controlador GRASP)

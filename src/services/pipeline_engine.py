@@ -17,11 +17,14 @@ Proyecto: Corpo & Mente Bolivia - Análisis Biomecánico BJJ
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 from src.domain.models import TecnicaMaestra
 from src.services.landmark_adapter import LandmarkAdapter
 from src.services.dtw_comparator import DTWComparator
+from src.services.rtmpose3d_extractor import RTMPose3DExtractor
 
 
 class PipelineBiomecanicoEngine:
@@ -30,19 +33,56 @@ class PipelineBiomecanicoEngine:
     biomecánico para una ejecución de técnica de Jiu-Jitsu.
 
     Flujo del pipeline:
-        1. Adaptación de keypoints → ángulos articulares (por frame)
-        2. Alineación temporal DTW con banda de Sakoe-Chiba
-        3. Detección del pico de desviación angular máxima
-        4. Generación de diagnóstico estructurado
+        1. Inferencia de keypoints 3D desde frames crudos (RTMPose3D)
+        2. Adaptación de keypoints → ángulos articulares (por frame)
+        3. Alineación temporal DTW con banda de Sakoe-Chiba
+        4. Detección del pico de desviación angular máxima
+        5. Generación de diagnóstico estructurado
     """
 
     def __init__(
         self,
         landmark_adapter: LandmarkAdapter,
         dtw_comparator: DTWComparator,
+        pose_extractor: Optional[RTMPose3DExtractor] = None,
     ) -> None:
         self.landmark_adapter = landmark_adapter
         self.dtw_comparator = dtw_comparator
+        self.pose_extractor = pose_extractor or RTMPose3DExtractor.obtener_instancia()
+
+    def ejecutar_pipeline_con_frames(
+        self,
+        frames_patron: List[np.ndarray],
+        frames_ejecucion: List[np.ndarray],
+        tecnica: TecnicaMaestra,
+    ) -> Dict[str, Any]:
+        """Orquesta el pipeline biomecánico a partir de listas de fotogramas crudos (BGR/RGB).
+
+        Flujo:
+            frames -> pose_extractor -> landmark_adapter -> dtw_comparator.
+
+        Args:
+            frames_patron: Lista de imágenes del video patrón de referencia.
+            frames_ejecucion: Lista de imágenes del video de la ejecución del practicante.
+            tecnica: TecnicaMaestra configurada con reglas biomecánicas.
+
+        Returns:
+            Diccionario de diagnóstico biomecánico completo.
+        """
+        if not frames_patron or not frames_ejecucion:
+            raise ValueError(
+                "Las listas de fotogramas no pueden estar vacías para "
+                "ejecutar el pipeline biomecánico."
+            )
+
+        keypoints_patron = self.pose_extractor.extraer_de_lista_frames(frames_patron)
+        keypoints_ejecucion = self.pose_extractor.extraer_de_lista_frames(frames_ejecucion)
+
+        return self.ejecutar_pipeline_completo(
+            keypoints_patron=keypoints_patron,
+            keypoints_ejecucion=keypoints_ejecucion,
+            tecnica=tecnica,
+        )
 
     def ejecutar_pipeline_completo(
         self,

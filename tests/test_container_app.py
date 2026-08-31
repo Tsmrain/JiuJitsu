@@ -35,10 +35,13 @@ class TestContainerApp(unittest.TestCase):
         self.assertEqual(response.json(), {"status": "healthy"})
 
     def test_init_endpoint(self) -> None:
-        """Prueba 2: POST /init retorna 200 y {"status": "initialized"}."""
+        """Prueba 2: POST /init retorna 200 y {"status": "initialized", "model_loaded": True}."""
         response = self.client.post("/init")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "initialized"})
+        data = response.json()
+        self.assertEqual(data.get("status"), "initialized")
+        self.assertTrue(data.get("model_loaded"))
+
 
     @patch("src.infrastructure.serverless.container_app.handler")
     def test_invoke_delegation(self, mock_handler) -> None:

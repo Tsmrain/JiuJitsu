@@ -21,7 +21,10 @@ from typing import Any, Dict
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
+import os
+
 from src.infrastructure.serverless.functiongraph_handler import handler
+from src.services.rtmpose3d_extractor import RTMPose3DExtractor
 
 app = FastAPI(
     title="Corpo & Mente BJJ - FunctionGraph Custom Container Runtime",
@@ -37,27 +40,39 @@ async def health_check() -> Dict[str, str]:
 
 
 @app.post("/init")
-async def init_runtime() -> Dict[str, str]:
+async def init_runtime() -> Dict[str, Any]:
     """Endpoint de inicialización de runtime para mitigar Cold Starts.
 
-    Permite que FunctionGraph verifique que el contenedor está listo
-    antes de rutear tráfico y precargar pesos de modelos en memoria.
+    Precarga el modelo cinemático RTMPose3D en memoria RAM antes de recibir
+    tráfico de producción de FunctionGraph.
     """
-    return {"status": "initialized"}
+    extractor = RTMPose3DExtractor.obtener_instancia()
+    repo_path = os.getenv("RTMPOSE3D_REPO_PATH", "/opt/rtmpose3d")
+    extractor.inicializar_modelo(ruta_checkpoints=repo_path, device="cpu")
+
+    return {"status": "initialized", "model_loaded": extractor.esta_inicializado}
 
 
 @app.post("/invoke")
 async def invoke_handler(request: Request) -> Response:
     """Endpoint principal de invocación de FunctionGraph Custom Container.
 
-    Recibe el payload HTTP, construye el diccionario de evento con el formato
-    estándar de API Gateway y delega la ejecución al handler existente.
+    Recibe el payload HTTP, asegura la inicialización del modelo RTMPose3D,
+    construye el diccionario de evento con el formato estándar de API Gateway
+    y delega la ejecución al handler existente.
 
     Returns:
         JSONResponse con el status_code, headers y body devueltos por el handler.
     """
+    # 0. Verificación / Fallback de inicialización del modelo (Thread-Safe)
+    extractor = RTMPose3DExtractor.obtener_instancia()
+    if not extractor.esta_inicializado:
+        repo_path = os.getenv("RTMPOSE3D_REPO_PATH", "/opt/rtmpose3d")
+        extractor.inicializar_modelo(ruta_checkpoints=repo_path, device="cpu")
+
     # 1. Leer cuerpo crudo de la petición
     body_bytes = await request.body()
+
 
     # Intentar deserializar a string o estructura JSON
     try:

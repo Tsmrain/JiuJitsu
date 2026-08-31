@@ -132,17 +132,20 @@ class AnalisisBiomecanicoController:
         )
 
         # ── Paso 6: Persistir resultados ──
+        self.video_repository.guardar(video)
+
         analisis = AnalisisBiomecanico(
             desviacion_angular_maxima=diagnostico["pico_desviacion"],
             articulacion_afectada=diagnostico["articulacion_afectada"],
             estado_computo="EXITOSO",
+            video_id=video.id_video,
         )
         self.analisis_repository.guardar(analisis)
-        self.video_repository.guardar(video)
 
         # ── Paso 7: Retornar diagnóstico enriquecido ──
         diagnostico["id_analisis"] = str(analisis.id_analisis)
         diagnostico["video_url"] = video_url
+        diagnostico["video_id"] = str(video.id_video)
         diagnostico["estado_computo"] = "EXITOSO"
 
         return diagnostico

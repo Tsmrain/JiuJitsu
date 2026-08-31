@@ -114,30 +114,41 @@ class IVideoEjecucionRepository(ABC):
 class IHuaweiOBSStorageAdapter(ABC):
     """Contrato para el adaptador de almacenamiento Huawei OBS (RF-07).
 
-    Define las operaciones de subida de archivos multimedia al
-    servicio de almacenamiento de objetos en la nube.
+    Define las operaciones de subida y descarga de archivos multimedia
+    al servicio de almacenamiento de objetos en la nube.
     """
 
     @abstractmethod
-    def subir_video(self, video_bytes: bytes, nombre_archivo: str) -> str:
+    def subir_video(self, video_bytes: bytes, video_id: str) -> str:
         """Sube un video al almacenamiento cloud.
 
         Args:
             video_bytes: Contenido binario del video.
-            nombre_archivo: Nombre del archivo destino.
+            video_id: Identificador o nombre del archivo destino.
 
         Returns:
             URL pública o pre-firmada del video subido.
         """
 
     @abstractmethod
-    def subir_fotograma(self, fotograma_bytes: bytes, nombre_archivo: str) -> str:
+    def subir_fotograma(self, frame_bytes: bytes, analisis_id: str) -> str:
         """Sube un fotograma (imagen) al almacenamiento cloud.
 
         Args:
-            fotograma_bytes: Contenido binario del fotograma.
-            nombre_archivo: Nombre del archivo destino.
+            frame_bytes: Contenido binario del fotograma.
+            analisis_id: Identificador o nombre del archivo destino.
 
         Returns:
             URL pública o pre-firmada del fotograma subido.
+        """
+
+    @abstractmethod
+    def descargar_objeto(self, object_key: str) -> bytes:
+        """Descarga un objeto desde el almacenamiento cloud.
+
+        Args:
+            object_key: Clave o nombre del objeto en el bucket.
+
+        Returns:
+            Contenido binario del objeto descargado.
         """

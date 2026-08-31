@@ -60,3 +60,9 @@ Thumbs.db
 *.onnx
 *.pt
 checkpoints/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+

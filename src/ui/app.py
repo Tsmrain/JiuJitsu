@@ -3,7 +3,9 @@ Capa de Presentación - Sistema de Análisis Biomecánico BJJ (Streamlit RBAC)
 
 Implementación con separación estricta de responsabilidades y control de acceso basado en roles (RBAC):
 - CU-01: Gestión Curricular y Homologación de Técnicas (Head Coach / Profesor).
+  Minimalista: El profesor solo define el nombre del tema y sube su video demostrativo.
 - CU-02 / CU-03: Sala de Práctica, Auditoría Biomecánica y Diagnóstico Cinemático (Estudiante / Practicante).
+  El practicante selecciona la técnica, ve el video del profesor, sube su ejecución y recibe la retroalimentación.
 
 Autor: Santiago Borda Zambrana
 Proyecto: Corpo & Mente Bolivia - Análisis Biomecánico BJJ
@@ -34,6 +36,7 @@ from src.infrastructure.repositories.analisis_repository import AnalisisBiomecan
 from src.infrastructure.repositories.tecnica_repository import TecnicaMaestraRepository
 from src.infrastructure.repositories.video_repository import VideoEjecucionRepository
 from src.infrastructure.serverless.functiongraph_handler import handler
+from src.infrastructure.storage.local_storage import LocalVideoStorage
 from src.infrastructure.storage.obs_adapter import HuaweiOBSStorageAdapter
 from src.services.controllers.analisis_controller import AnalisisBiomecanicoController
 from src.services.dtw_comparator import DTWComparator
@@ -52,34 +55,27 @@ st.set_page_config(
 )
 
 # ──────────────────────────────────────────────
-#  Singleton de Almacenamiento Local de Videos
+#  Inicialización de Base de Datos Persistente Local
 # ──────────────────────────────────────────────
 
-class LocalOBSStorageSimulator:
-    """Simulador en memoria/disco local para almacenar y reproducir videos subidos por el profesor."""
+RUTA_BD_LOCAL = os.path.join(RUTA_RAIZ, "corpo_e_mente_local.db")
 
-    _videos: Dict[str, bytes] = {}
-
-    @classmethod
-    def guardar_video(cls, video_id: str, contenido: bytes) -> None:
-        cls._videos[video_id] = contenido
-
-    @classmethod
-    def obtener_video(cls, video_id: str) -> bytes | None:
-        return cls._videos.get(video_id)
-
-
-# ──────────────────────────────────────────────
-#  Inicialización de Infraestructura y Repositorios
-# ──────────────────────────────────────────────
-
-@st.cache_resource
-def get_system_controller() -> tuple[AnalisisBiomecanicoController, TecnicaMaestraRepository]:
-    """Inicializa la base de datos local SQLite y el controlador de caso de uso."""
-    engine = create_engine("sqlite:///:memory:", echo=False)
+def obtener_session_fabrica():
+    """Crea la base de datos persistente SQLite asegurando que las tablas existan siempre."""
+    engine = create_engine(
+        f"sqlite:///{RUTA_BD_LOCAL}",
+        connect_args={"check_same_thread": False},
+        echo=False,
+    )
     Base.metadata.create_all(engine)
-    session = sessionmaker(bind=engine)()
+    return sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
+SESSION_FACTORY = obtener_session_fabrica()
+
+
+def get_system_controller() -> tuple[AnalisisBiomecanicoController, TecnicaMaestraRepository]:
+    """Obtiene el controlador y repositorio vinculados a la sesión de base de datos activa."""
+    session = SESSION_FACTORY()
     tecnica_repo = TecnicaMaestraRepository(session)
     analisis_repo = AnalisisBiomecanicoRepository(session)
     video_repo = VideoEjecucionRepository(session)
@@ -110,30 +106,31 @@ def get_system_controller() -> tuple[AnalisisBiomecanicoController, TecnicaMaest
         obs_adapter=obs_adapter,
     )
 
-    # Cargar técnicas base iniciales de la academia
-    tecnicas_base = [
-        ("Armbar desde Guardia Cerrada", "Sumisión", "Guardia Cerrada", "codo_derecho", 90.0, "Brazo hiper-extendido o flexión insuficiente del codo"),
-        ("Triangle Choke (Triángulo)", "Estrangulamiento", "Guardia Abierta", "rodilla_derecha", 120.0, "Ángulo de pierna insuficiente para cierre arterial"),
-        ("Kimura Lock", "Sumisión de Hombro", "Media Guardia", "codo_izquierdo", 85.0, "Apalancamiento de hombro fuera de rango biomecánico seguro"),
-    ]
+    # Si es la primera vez que se crea la BD, precargar técnicas de referencia
+    if not tecnica_repo.listar_todas():
+        tecnicas_base = [
+            ("Armbar desde Guardia Cerrada", "codo_derecho", 90.0, "Brazo hiper-extendido o flexión insuficiente del codo"),
+            ("Triangle Choke (Triángulo)", "rodilla_derecha", 120.0, "Ángulo de pierna insuficiente para cierre arterial"),
+            ("Kimura Lock", "codo_izquierdo", 85.0, "Apalancamiento de hombro fuera de rango biomecánico seguro"),
+        ]
 
-    for nombre, cat, pos, art, umbral, desc in tecnicas_base:
-        tid = uuid.uuid4()
-        t = TecnicaMaestra(
-            nombre=nombre,
-            categoria=cat,
-            posicion_origen=pos,
-            video_url=f"local://{tid}",
-            ventana_sakoe_chiba=0.15,
-            id_tecnica=tid,
-        )
-        r = ReglaBiomecanica(
-            articulacion_clave=art,
-            umbral_angular_tolerado=umbral,
-            descripcion_error=desc,
-        )
-        t.agregar_regla(r)
-        tecnica_repo.guardar(t)
+        for nombre, art, umbral, desc in tecnicas_base:
+            tid = uuid.uuid4()
+            t = TecnicaMaestra(
+                nombre=nombre,
+                categoria="Fundamental",
+                posicion_origen="Tatami",
+                video_url=f"local://{tid}",
+                ventana_sakoe_chiba=0.15,
+                id_tecnica=tid,
+            )
+            r = ReglaBiomecanica(
+                articulacion_clave=art,
+                umbral_angular_tolerado=umbral,
+                descripcion_error=desc,
+            )
+            t.agregar_regla(r)
+            tecnica_repo.guardar(t)
 
     return controller, tecnica_repo
 
@@ -182,57 +179,23 @@ def render_login() -> None:
 
 
 # ──────────────────────────────────────────────
-#  Pantalla 2: Vista del Profesor (CU-01)
+#  Pantalla 2: Vista del Profesor (CU-01 - Minimalista)
 # ──────────────────────────────────────────────
 
 def render_profesor(controller: AnalisisBiomecanicoController, repo: TecnicaMaestraRepository) -> None:
-    st.markdown("## 📋 Panel de Gestión Curricular - Head Coach (CU-01)")
-    st.caption("Homologación de técnicas maestras y publicación del patrón cinemático de referencia para los alumnos.")
+    st.markdown("## 📋 Panel de Gestión Curricular - Head Coach")
+    st.caption("Publicación minimalista de la técnica demostrativa de la clase para los alumnos.")
 
     st.markdown("---")
 
     col_form, col_list = st.columns([3, 2])
 
     with col_form:
-        st.markdown("#### 🥋 Publicar Nueva Técnica de la Clase")
+        st.markdown("#### 🥋 Publicar Técnica para la Clase")
         with st.form("form_nueva_tecnica", clear_on_submit=True):
             nombre_tecnica = st.text_input(
                 "Nombre de la Técnica / Tema de la Clase:",
                 placeholder="Ej: Cómo finalizar desde la montada y hacer una americana",
-            )
-
-            col_a, col_b = st.columns(2)
-            with col_a:
-                categoria = st.selectbox(
-                    "Categoría:",
-                    options=["Sumisión", "Estrangulamiento", "Pasaje de Guardia", "Raspado (Sweep)", "Defensa / Escape"],
-                )
-            with col_b:
-                posicion = st.selectbox(
-                    "Posición de Origen:",
-                    options=["Guardia Cerrada", "Guardia Abierta", "Media Guardia", "Montada (Mount)", "Control Lateral (Side Control)", "Espalda (Back)"],
-                )
-
-            col_c, col_d = st.columns(2)
-            with col_c:
-                articulacion = st.selectbox(
-                    "Articulación Crítica a Evaluar:",
-                    options=["codo_derecho", "codo_izquierdo", "rodilla_derecha", "rodilla_izquierda"],
-                    format_func=lambda x: x.replace("_", " ").title(),
-                )
-            with col_d:
-                umbral_tolerado = st.slider(
-                    "Ángulo Óptimo Esperado (°):",
-                    min_value=30.0,
-                    max_value=180.0,
-                    value=90.0,
-                    step=5.0,
-                )
-
-            descripcion_falla = st.text_input(
-                "Mensaje Pedagógico de Error:",
-                value="Ángulo articular fuera del rango biomecánico de palanca óptima",
-                help="Retroalimentación instructiva que se le mostrará al alumno si falla la regla.",
             )
 
             video_file = st.file_uploader(
@@ -254,23 +217,24 @@ def render_profesor(controller: AnalisisBiomecanicoController, repo: TecnicaMaes
                         st.error("❌ El video supera los 5 MB permitidos (RF-07).")
                     else:
                         tid = uuid.uuid4()
-                        # Guardar video patrón en simulador de almacenamiento local
-                        LocalOBSStorageSimulator.guardar_video(str(tid), video_bytes)
+                        # Guardar video patrón en almacén local
+                        LocalVideoStorage.guardar_video(str(tid), video_bytes)
 
+                        # Registrar la técnica maestra con configuración cinemática estándar
                         nueva_t = TecnicaMaestra(
                             nombre=nombre_tecnica.strip(),
-                            categoria=categoria,
-                            posicion_origen=posicion,
+                            categoria="Clase del Día",
+                            posicion_origen="Posición Clave",
                             video_url=f"local://{tid}",
                             ventana_sakoe_chiba=0.15,
                             id_tecnica=tid,
                         )
-                        regla = ReglaBiomecanica(
-                            articulacion_clave=articulacion,
-                            umbral_angular_tolerado=umbral_tolerado,
-                            descripcion_error=descripcion_falla.strip(),
-                        )
-                        nueva_t.agregar_regla(regla)
+                        # Reglas automáticas para las 4 articulaciones del BJJ
+                        nueva_t.agregar_regla(ReglaBiomecanica("codo_derecho", 90.0, "Ángulo de codo derecho fuera de alineación óptima"))
+                        nueva_t.agregar_regla(ReglaBiomecanica("codo_izquierdo", 90.0, "Ángulo de codo izquierdo fuera de alineación óptima"))
+                        nueva_t.agregar_regla(ReglaBiomecanica("rodilla_derecha", 110.0, "Base de rodilla derecha inestable o fuera de ángulo"))
+                        nueva_t.agregar_regla(ReglaBiomecanica("rodilla_izquierda", 110.0, "Base de rodilla izquierda inestable o fuera de ángulo"))
+
                         repo.guardar(nueva_t)
 
                         st.success(f"✅ Técnica **'{nombre_tecnica}'** publicada exitosamente y disponible para los alumnos.")
@@ -283,21 +247,18 @@ def render_profesor(controller: AnalisisBiomecanicoController, repo: TecnicaMaes
             st.info("No hay técnicas registradas actualmente.")
         else:
             for t in tecnicas:
-                with st.expander(f"🥋 {t.nombre} ({t.categoria})"):
-                    st.write(f"**Posición inicial:** {t.posicion_origen}")
-                    st.write(f"**Reglas biomecánicas:** {len(t.reglas_biomecanicas)}")
-                    for r in t.reglas_biomecanicas:
-                        st.caption(f"- Articulación: `{r.articulacion_clave}` (Ángulo tolerado: {r.umbral_angular_tolerado}°)")
-                        st.caption(f"  *Feedback de error:* {r.descripcion_error}")
-
-                    # Mostrar video patrón si está guardado en el simulador local
+                with st.expander(f"🥋 {t.nombre}"):
+                    # Mostrar video patrón si está guardado en el almacén local
                     video_id = t.video_url.replace("local://", "")
-                    video_data = LocalOBSStorageSimulator.obtener_video(video_id)
+                    video_data = LocalVideoStorage.obtener_video(video_id)
                     if video_data:
                         st.video(video_data)
+                    else:
+                        st.caption("ℹ️ Video cinemático de referencia de la academia.")
 
                     if st.button(f"🗑️ Eliminar técnica", key=f"del_{t.id_tecnica}"):
                         repo.eliminar(str(t.id_tecnica))
+                        LocalVideoStorage.eliminar_video(video_id)
                         st.warning(f"Técnica eliminada.")
                         st.rerun()
 
@@ -307,7 +268,7 @@ def render_profesor(controller: AnalisisBiomecanicoController, repo: TecnicaMaes
 # ──────────────────────────────────────────────
 
 def render_practicante(controller: AnalisisBiomecanicoController, repo: TecnicaMaestraRepository) -> None:
-    st.markdown("## 🥋 Sala de Práctica y Auditoría Biomecánica (CU-02 / CU-03)")
+    st.markdown("## 🥋 Sala de Práctica y Auditoría Biomecánica")
     st.caption("Contrasta tu ejecución técnica contra el patrón maestro del profesor y recibe diagnóstico cinemático instantáneo.")
 
     st.markdown("---")
@@ -330,11 +291,9 @@ def render_practicante(controller: AnalisisBiomecanicoController, repo: TecnicaM
         )
         tecnica_sel = mapa_tecnicas[tecnica_nombre]
 
-        st.info(f"📍 **Posición:** {tecnica_sel.posicion_origen} | **Categoría:** {tecnica_sel.categoria}")
-
         # Mostrar video demostrativo del profesor si existe
         video_id = tecnica_sel.video_url.replace("local://", "")
-        video_patron = LocalOBSStorageSimulator.obtener_video(video_id)
+        video_patron = LocalVideoStorage.obtener_video(video_id)
         if video_patron:
             st.markdown("#### 🎥 Video Patrón del Profesor (Referencia):")
             st.video(video_patron)
@@ -371,8 +330,7 @@ def render_practicante(controller: AnalisisBiomecanicoController, repo: TecnicaM
     btn_analizar = st.button("🥋 Analizar mi Técnica", type="primary", disabled=(not es_valido or alumno_bytes is None), use_container_width=True)
 
     if btn_analizar and alumno_bytes is not None and es_valido:
-        with st.spinner("Procesando con motor de análisis biomecánico (FunctionGraph Runtime)..."):
-            # Si el profesor subió un video patrón real, lo pasamos al análisis para comparar alumno vs profesor
+        with st.spinner("Procesando comparación biomecánica con el video del profesor..."):
             video_b64 = base64.b64encode(alumno_bytes).decode("utf-8")
             event = {
                 "httpMethod": "POST",
@@ -396,21 +354,19 @@ def render_practicante(controller: AnalisisBiomecanicoController, repo: TecnicaM
                 dtw_dist = diagnostico.get("distancia_dtw", 0.0)
                 fotograma = diagnostico.get("fotograma_error", 0)
 
-                # Buscar regla de la técnica para retroalimentación pedagógica
-                mensaje_feedback = "Ejecución técnica correcta y alineada al patrón del profesor."
-                umbral_regla = 90.0
-                for r in tecnica_sel.reglas_biomecanicas:
+                # Mensaje pedagógico según articulación afectada
+                mensaje_feedback = f"Se detectó diferencia cinemática notable en {art_critica.replace('_', ' ')}."
+                for r in tecnica_sel.reglas:
                     if r.articulacion_clave == art_critica:
                         mensaje_feedback = r.descripcion_error
-                        umbral_regla = r.umbral_angular_tolerado
                         break
 
-                # Métricas visuales
+                # Tarjetas de métricas
                 m1, m2, m3, m4 = st.columns(4)
                 with m1:
                     st.metric("Estado de la Evaluación", "APROBADO" if desviacion <= 15.0 else "CORRECCIÓN REQUERIDA")
                 with m2:
-                    st.metric("Desviación Angular Máxima", f"{desviacion:.1f}°", delta=f"{desviacion - 10:.1f}°" if desviacion > 15 else "-Óptimo")
+                    st.metric("Desviación Angular Máxima", f"{desviacion:.1f}°")
                 with m3:
                     st.metric("Articulación a Ajustar", art_critica.replace("_", " ").title())
                 with m4:
@@ -419,14 +375,14 @@ def render_practicante(controller: AnalisisBiomecanicoController, repo: TecnicaM
                 # Feedback formativo al practicante
                 if desviacion > 15.0:
                     st.warning(
-                        f"⚠️ **Detalle de Corrección en Fotograma #{fotograma}:**\n\n"
+                        f"⚠️ **Punto de Corrección Identificado en Fotograma #{fotograma}:**\n\n"
                         f"**{mensaje_feedback}**\n\n"
-                        f"Tu articulación crítica (`{art_critica.replace('_', ' ').title()}`) se desvió **{desviacion:.1f}°** respecto al patrón de referencia ({umbral_regla}° esperados)."
+                        f"Tu articulación `{art_critica.replace('_', ' ').title()}` tuvo una desviación máxima de **{desviacion:.1f}°** respecto a la ejecución del profesor en ese instante."
                     )
                 else:
                     st.success(
                         f"🎉 **¡Excelente Ejecución!**\n\n"
-                        f"Tu cinemática mantuvo los ángulos correctos a lo largo de todo el movimiento con una desviación mínima de **{desviacion:.1f}°**."
+                        f"Tu movimiento se mantuvo alineado con la técnica del profesor con una desviación máxima de solo **{desviacion:.1f}°**."
                     )
 
                 with st.expander("Ver desglose biomecánico completo (JSON)"):

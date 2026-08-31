@@ -128,10 +128,9 @@ class AnalisisBiomecanicoController:
             frames_patron = []
             if tecnica.video_url:
                 try:
-                    # Si el video patrón está almacenado en OBS o memoria
-                    from src.ui.app import LocalOBSStorageSimulator
+                    from src.infrastructure.storage.local_storage import LocalVideoStorage
                     video_id = tecnica.video_url.replace("local://", "")
-                    patron_bytes = LocalOBSStorageSimulator.obtener_video(video_id)
+                    patron_bytes = LocalVideoStorage.obtener_video(video_id)
                     if not patron_bytes and hasattr(self.obs_adapter, "descargar_objeto"):
                         patron_bytes = self.obs_adapter.descargar_objeto(tecnica.video_url)
                     if patron_bytes:
@@ -141,6 +140,7 @@ class AnalisisBiomecanicoController:
 
             if not frames_patron:
                 frames_patron = frames_ejecucion
+
 
             diagnostico = self.pipeline_engine.ejecutar_pipeline_con_frames(
                 frames_patron=frames_patron,

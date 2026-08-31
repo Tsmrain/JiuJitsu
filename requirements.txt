@@ -1,9 +1,0 @@
-streamlit==1.36.0
-mediapipe==0.10.14
-opencv-python-headless==4.10.0.84
-numpy==1.26.4
-scipy==1.13.1
-SQLAlchemy>=2.0.36
-psycopg2-binary>=2.9.10
-esdk-obs-python==3.24.3
-python-dotenv==1.0.1

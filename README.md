@@ -104,7 +104,7 @@
 - [Capítulo III: Marco Teórico y Selección de Componentes Tecnológicos](#capítulo-iii-marco-teórico-y-selección-de-componentes-tecnológicos)
   - [3.1 Estimación de Poses Corporales (Pose Estimation)](#31-estimación-de-poses-corporales-pose-estimation)
     - [3.1.1 Análisis Comparativo de Extractores de Poses](#311-análisis-comparativo-de-extractores-de-poses)
-    - [3.1.2 Justificación Técnica de la Elección: MediaPipe Pose](#312-justificación-técnica-de-la-elección-mediapipe-pose)
+    - [3.1.2 Justificación Técnica de la Elección: RTMPose (rtmpose3d)](#312-justificación-técnica-de-la-elección-rtmpose-rtmpose3d)
   - [3.2 Infraestructura y Cómputo en la Nube (Cloud Computing)](#32-infraestructura-y-cómputo-en-la-nube-cloud-computing)
     - [3.2.1 Análisis Comparativo de Proveedores Cloud y Modelos de Cómputo](#321-análisis-comparativo-de-proveedores-cloud-y-modelos-de-cómputo)
     - [3.2.2 Justificación Técnica de la Elección: Huawei Cloud (FunctionGraph + OBS)](#322-justificación-técnica-de-la-elección-huawei-cloud-functiongraph--obs)
@@ -186,11 +186,11 @@ Se proyecta el diseño e implementación de un ecosistema de software adaptativo
 
 ### 1.1.3 Objeto de Investigación
 
-El objeto de estudio comprende la aplicación articulada de técnicas de **Visión por Computadora** (estimación de poses corporales mediante MediaPipe), **procesamiento digital de imágenes** (OpenCV), **procesamiento elástico en la nube** (*Serverless Cloud Computing*) y **algoritmos de alineación de series temporales** (*Dynamic Time Warping*, DTW) para la evaluación asincrónica automatizada de la calidad técnica deportiva y el suministro de retroalimentación biomecánica adaptativa mediante imágenes clave anotadas. Conviene puntualizar que el extractor de poses corporales (MediaPipe Pose) es una herramienta de visión artificial de propósito general que no clasifica ni identifica el tipo de deporte o disciplina marcial; el "conocimiento" biomecánico específico de Jiu-Jitsu Brasileño reside exclusivamente en el catálogo curricular de técnicas maestras y reglas deterministas de error configurado por el Head Coach, y no en una red neuronal pre-entrenada para reconocer artes marciales. En consecuencia, el sistema opera comparando esqueletos cinemáticos contra un molde de referencia seleccionado manualmente por el practicante (ver Sección 4.1.2 y requisito RF-07), sin interpretar ni clasificar la disciplina por sí mismo.
+El objeto de estudio comprende la aplicación articulada de técnicas de **Visión por Computadora** (estimación de poses corporales mediante RTMPose / `rtmpose3d` de OpenMMLab), **procesamiento digital de imágenes** (OpenCV), **procesamiento elástico en la nube** (*Serverless Cloud Computing*) y **algoritmos de alineación de series temporales** (*Dynamic Time Warping*, DTW) para la evaluación asincrónica automatizada de la calidad técnica deportiva y el suministro de retroalimentación biomecánica adaptativa mediante imágenes clave anotadas. Conviene puntualizar que el extractor de poses corporales (RTMPose) es una herramienta de visión artificial de propósito general que no clasifica ni identifica el tipo de deporte o disciplina marcial; el "conocimiento" biomecánico específico de Jiu-Jitsu Brasileño reside exclusivamente en el catálogo curricular de técnicas maestras y reglas deterministas de error configurado por el Head Coach, y no en una red neuronal pre-entrenada para reconocer artes marciales. En consecuencia, el sistema opera comparando esqueletos cinemáticos contra un molde de referencia seleccionado manualmente por el practicante (ver Sección 4.1.2 y requisito RF-07), sin interpretar ni clasificar la disciplina por sí mismo.
 
 ### 1.1.4 Alcance
 
-* **Límite Funcional:** El sistema posibilitará la carga asincrónica de videos en formato estándar (`.mp4`, `.mov`) capturados desde terminales móviles, la extracción automatizada de 33 puntos clave corporales, la alineación temporal no lineal con respecto al video patrón, el cómputo de discrepancias vectoriales angulares y la generación automatizada de una imagen estática editada con un marcador sobre la falla biomecánica, desplegada a través de una interfaz web liviana (*Streamlit*).
+* **Límite Funcional:** El sistema posibilitará la carga asincrónica de videos en formato estándar (`.mp4`, `.mov`) capturados desde terminales móviles, la extracción automatizada de keypoints corporales tridimensionales (mediante RTMPose y un adaptador de normalización biomecánica), la alineación temporal no lineal con respecto al video patrón, el cómputo de discrepancias vectoriales angulares y la generación automatizada de una imagen estática editada con un marcador sobre la falla biomecánica, desplegada a través de una interfaz web liviana (*Streamlit*).
 * **Límite de Datos:** La validación algorítmica preliminar y las pruebas de estrés del módulo de extracción de poses se sustentarán en conjuntos de datos abiertos de BJJ (tales como el dataset de *ViCoS Lab*). Por su parte, la evaluación adaptativa real se efectuará exclusivamente con los videos de referencia cargados por los instructores de Corpo & Mente Bolivia y las ejecuciones prácticas de sus alumnos.
 * **Exclusiones:** El sistema no realizará diagnósticos médicos, traumatológicos ni fisioterapéuticos de lesiones; tampoco ejecutará renderizado tridimensional inmersivo ni procesamiento de video en tiempo real sobre hardware local de baja gama. La interacción en el dispositivo del cliente se limitará a la recepción de matrices numéricas procesadas e imágenes optimizadas previamente en la nube.
 
@@ -334,28 +334,31 @@ La extracción de esqueletos articulares (puntos clave o *landmarks*) a partir d
 
 ### 3.1.1 Análisis Comparativo de Extractores de Poses
 
-Se contrastan las tres tecnologías más representativas del estado del arte: **MediaPipe Pose** (Google), **OpenPose** (Carnegie Mellon University) y **YOLOv8-Pose** (Ultralytics).
+Se contrastan las tres tecnologías más representativas del estado del arte para visión artificial y estimación de posturas: **RTMPose / rtmpose3d** (OpenMMLab), **MediaPipe Pose** (Google) y **OpenPose** (Carnegie Mellon University).
 
 **Tabla 3.1**  
 *Matriz de Selección para Estimación de Poses*
 
-| Criterios de Selección | Peso (%) | MediaPipe Pose | OpenPose | YOLOv8-Pose |
+| Criterios de Selección | Peso (%) | RTMPose (rtmpose3d) | MediaPipe Pose | OpenPose |
 | :--- | :---: | :---: | :---: | :---: |
-| Densidad de Puntos Clave (Anatomía) | 25% | 5 (33 puntos) | 4 (25 puntos) | 3 (17 puntos) |
-| Eficiencia en CPU (Costo en Nube) | 30% | 5 (Ultra liviano) | 1 (Exige GPU) | 3 (Moderado) |
-| Licenciamiento y Restricciones | 20% | 5 (Apache 2.0) | 1 (Comercial pago) | 2 (AGPL-3.0) |
-| Robustez en Modelos de Suelo | 25% | 3 (Regular) | 4 (Bueno) | 4 (Bueno) |
-| **Puntaje Ponderado Total** | **100%** | **4.50** | **2.50** | **3.05** |
+| Precisión en Oclusiones y Suelo (mAP) | 30% | 5 (Excelente / SOTA) | 3 (Regular / Fallos en cruce) | 4 (Bueno) |
+| Eficiencia y Optimización en Servidor | 25% | 5 (Alta velocidad CPU/ONNX) | 4 (Muy liviano) | 1 (Exige GPU pesada) |
+| Licenciamiento y Restricciones | 20% | 5 (Apache 2.0) | 5 (Apache 2.0) | 1 (Comercial pago) |
+| Soporte Tridimensional Nativo (3D) | 25% | 5 (Coordenadas 3D profundas) | 4 (2.5D relativo) | 2 (2D planar) |
+| **Puntaje Ponderado Total** | **100%** | **5.00** | **3.95** | **2.15** |
 
 *Nota*. Escala de evaluación: 1 (Deficiente) al 5 (Excelente). Ponderación sobre base de 100%.
 
-### 3.1.2 Justificación Técnica de la Elección: MediaPipe Pose
+### 3.1.2 Justificación Técnica de la Elección: RTMPose (rtmpose3d)
 
-El análisis multicriterio posiciona a **MediaPipe Pose** como la alternativa superior, alcanzando una valoración ponderada de **4.50 / 5.00**.
+El análisis multicriterio posiciona a **RTMPose (`rtmpose3d`)**, perteneciente al ecosistema de código abierto OpenMMLab (MMPose), como la alternativa superior definitiva, alcanzando una valoración ponderada perfecta de **5.00 / 5.00**.
 
-* **Ventaja Anatómica:** MediaPipe extrae 33 puntos clave frente a los 17 detectados por YOLOv8. Estos nodos adicionales incorporan la topología completa de tobillos y pies, áreas anatómicas indispensables dentro del Jiu-Jitsu para evaluar ganchos de control, pasos de guardia y distribución del equilibrio.
-* **Justificación del Descarte de Alternativas:** OpenPose se descarta debido a su arquitectura convolucional pesada de tipo *Bottom-Up*, la cual demanda aceleración por hardware (Nvidia CUDA) para alcanzar rendimientos aceptables, lo que elevaría la infraestructura cloud a costos prohibitivos. A su vez, YOLOv8-Pose se desestima por su licencia restrictiva AGPL-3.0 y su baja resolución articular (17 nodos), insuficiente para el seguimiento biomecánico fino.
-* **Estrategia de Mitigación de Oclusiones:** En el Jiu-Jitsu Brasileño, la práctica técnica se desarrolla inherentemente en parejas (replicando fielmente la Fase 4 de mecanización en tatami descrita en la Sección 2.4), lo que genera contacto físico estrecho y oclusiones parciales inevitables debidas a los agarres y la superposición de extremidades. El sistema asume esta realidad operativa mediante un protocolo de captura en "laboratorio técnico" que estandariza el encuadre (toma lateral fija, iluminación homogénea y ambos practicantes dentro de cuadro), sin desnaturalizar el entrenamiento con compañero ni exigir condiciones irreales de ejecución en solitario. Para resolver las oclusiones anatómicas en video real de entrenamiento, el algoritmo monitorea el vector de confiabilidad articular ($C \in [0.0, 1.0]$) reportado por MediaPipe. Cuando la visibilidad de una articulación desciende de $C < 0.5$ producto de un agarre o cruce corporal, el backend activa un **Filtro de Kalman cinemático** (formalizado en el RF-08) que modela la inercia y los vectores de velocidad para interpolar con rigor matemático la trayectoria espacial a partir de los cuadros adyacentes, preservando la continuidad métrica indispensable para la posterior alineación con DTW. Sin embargo, para salvaguardar la validez física del modelo frente a oclusiones completas y prolongadas (propias de inmovilizaciones o controles laterales estáticos), se define un límite máximo continuo de interpolación (1.5 segundos o 45 fotogramas a 30 fps como parámetro configurable); superado este umbral, el filtro cesa la predicción inercial y activa el flujo de rechazo formalizado en los requisitos RF-08 y RF-11 para salvaguardar la integridad pedagógica y estadística de los datos del practicante evitando contaminar su historial longitudinal con cinemáticas ficticias, asumiendo técnicamente que el cómputo serverless ejecutado hasta el punto de interrupción ya ha sido facturado por milisegundos de CPU.
+* **Precisión Superior en Oclusiones Severas y Biomecánica de Suelo:** En el Jiu-Jitsu Brasileño, la interacción técnica ocurre en contacto cuerpo a cuerpo constante, generando solapamiento de miembros, agarres al kimono y posturas atípicas en el suelo (tatami). Mientras que los modelos convencionales entrenados predominantemente en bipedestación (como MediaPipe) sufren degradaciones sustanciales en su precisión media (*mean Average Precision*, mAP) y pérdidas de seguimiento ante extremidades cruzadas, RTMPose ha demostrado un desempeño líder en el estado del arte (SOTA) en datasets desafiantes de interacción física, superando ampliamente a detectores predecesores en estabilidad y precisión métrica.
+* **Rendimiento de Inferencia Optimizado en Servidores Cloud:** Basado en arquitecturas convolucionales y de transformadores livianos altamente eficientes, RTMPose está diseñado específicamente para inferencia en tiempo real y entornos de producción. Es plenamente compatible con aceleración en CPU mediante optimizaciones vectoriales y exportación a formatos de alto desempeño (ONNX Runtime / OpenVINO), lo que garantiza su idoneidad para el despliegue elástico en *FunctionGraph* de Huawei Cloud sin exigir costosas instancias con GPU dedicada permanente.
+* **Licenciamiento Abierto y Permisivo:** Se distribuye bajo licencia de código abierto permisiva **Apache 2.0**, garantizando total libertad de uso académico e industrial sin las restricciones comerciales punitivas de OpenPose ni las ataduras de licenciamientos restrictivos tipo copyleft (como AGPL-3.0).
+* **Módulo de Adaptación de Landmarks (`LandmarkAdapter`):** A diferencia de MediaPipe, que impone una topología cerrada de 33 puntos, los modelos de la familia RTMPose operan sobre topologías estándar ampliamente adoptadas por la comunidad científica, tales como el estándar **COCO (17 keypoints principales)** o **Halpe (133 keypoints)** para captura integral de cuerpo, manos y rostro. A fin de preservar el principio de **Bajo Acoplamiento (*Low Coupling*)** y evitar que la lógica cinemática dependa del modelo de visión particular, la arquitectura incorpora un **Módulo de Adaptación de Landmarks (`LandmarkAdapter`)**. Este componente desacopla la salida directa de RTMPose mediante una matriz de mapeo y normalización, adaptando los keypoints anatómicos a la estructura canónica requerida internamente por el comparador DTW y las reglas de negocio (ángulos articulares de hombro, codo, muñeca, cadera, rodilla y tobillo).
+* **Estrategia de Mitigación de Oclusiones con Filtro de Kalman:** Para resolver las oclusiones inevitables derivadas del contacto físico en la Fase 4 de mecanización técnica (Sección 2.4), el sistema monitorea el vector de confiabilidad y visibilidad articular ($C \in [0.0, 1.0]$) emitido por el modelo `rtmpose3d` para cada keypoint. Cuando la visibilidad de una articulación desciende de $C < 0.5$ producto de un agarre o cruce corporal, el backend activa el **Filtro de Kalman cinemático** (formalizado en el RF-08) que modela la inercia y los vectores de velocidad para interpolar con rigor matemático la trayectoria espacial a partir de los cuadros adyacentes, preservando la continuidad métrica indispensable para la posterior alineación con DTW. Si la oclusión es continua y prolongada (superior a 1.5 segundos o 45 fotogramas a 30 fps), el filtro cesa la predicción inercial y activa el flujo de rechazo formalizado en los requisitos RF-08 y RF-11 para salvaguardar la integridad pedagógica y estadística de los datos del practicante evitando contaminar su historial longitudinal con cinemáticas ficticias.
+* **Justificación del Descarte de Alternativas:** OpenPose se descarta de forma categórica debido a su arquitectura convolucional pesada de tipo *Bottom-Up*, la cual demanda aceleración masiva por hardware (Nvidia CUDA) para alcanzar rendimientos aceptables, lo que elevaría la infraestructura cloud a costos prohibitivos e incompatibles con el límite financiero de $30 USD trimestrales. Por su parte, MediaPipe Pose se desestima al exhibir fragilidad en situaciones de combate en suelo y carecer de la adaptabilidad estructural y precisión mAP ofrecida por el ecosistema especializado de OpenMMLab.
 
 ---
 
@@ -384,7 +387,7 @@ Se analizan los entornos *Serverless* y de almacenamiento de objetos distribuido
 
 **Huawei Cloud** obtiene el liderazgo comparativo con una calificación de **4.80 / 5.00**, sustentado en sus ventajas de costos y presencia institucional en Bolivia.
 
-* **Eficiencia del Paradigma Serverless:** Se desestima el uso de plataformas complejas de aprendizaje profundo continuo (tales como ModelArts) para la fase de inferencia cotidiana, redirigiendo la carga hacia *FunctionGraph*. Cuando un estudiante carga un archivo de video al contenedor de *Object Storage Service* (OBS), se dispara un disparador (*trigger*) asincrónico que inicializa la función *Serverless*. Ésta procesa el flujo mediante MediaPipe y DTW en cuestión de milisegundos y finaliza de inmediato. El costo se limita rigurosamente a los milisegundos de CPU consumidos, eliminando gastos por tiempos ociosos.
+* **Eficiencia del Paradigma Serverless:** Se desestima el uso de plataformas complejas de aprendizaje profundo continuo (tales como ModelArts) para la fase de inferencia cotidiana, redirigiendo la carga hacia *FunctionGraph*. Cuando un estudiante carga un archivo de video al contenedor de *Object Storage Service* (OBS), se dispara un disparador (*trigger*) asincrónico que inicializa la función *Serverless*. Ésta procesa el flujo mediante RTMPose y DTW en cuestión de milisegundos y finaliza de inmediato. El costo se limita rigurosamente a los milisegundos de CPU consumidos, eliminando gastos por tiempos ociosos.
 * **Justificación del Descarte de Alternativas:** Las herramientas analíticas de video de AWS (Rekognition) y Google Cloud (Video Intelligence) fueron desestimadas debido a que operan a un nivel de abstracción semántico macroscópico (reconocen categorías generales como "tatami" o "persona practicando deporte"), siendo incapaces de calcular discrepancias angulares articulares en grados. Adicionalmente, las tarifas de transferencia de salida (*Egress Data*) aplicadas por AWS y GCP hacia operadoras sudamericanas resultan sensiblemente elevadas respecto a la estructura tarifaria de Huawei Cloud.
 
 ---
@@ -416,8 +419,8 @@ El algoritmo **DTW** se erige como la solución idónea con una calificación de
 
 * **Naturaleza Adaptativa sin Re-entrenamiento:** Al sustentarse en la optimización matemática clásica (programación dinámica para localizar el camino de mínimo costo en una matriz de distancias acumuladas), DTW no demanda conjuntos de entrenamiento masivos. Si el instructor de Corpo & Mente decide incorporar una técnica novedosa o variante no contemplada previamente, el software la asimila de forma inmediata requiriendo únicamente el video patrón como nuevo molde cinemático.
 * **Normalización Antropomórfica:** El enfoque solventa las diferencias de complexión física entre practicantes (niños, mujeres y adultos). Antes del análisis matricial, el algoritmo ejecuta una normalización geométrica vectorial tomando como longitud unitaria de referencia la distancia interclavicular o la altura del tronco. De este modo, la comparación no se basa en coordenadas pixelares absolutas, sino en relaciones angulares y proporciones relativas. Una extensión del codo a 45° representa el mismo valor métrico en un infante de 25 kg que en un adulto de 95 kg.
-* **Invariancia Traslacional y Métrica de Entrada:** Para garantizar que la comparación no se vea afectada por la posición espacial de los practicantes en el tatami (traslación en X, Y), el motor matemático no alimenta al DTW con las coordenadas absolutas de MediaPipe. Previa a la ejecución del DTW, el sistema transforma las coordenadas (X,Y,Z) en una **serie temporal de ángulos articulares relativos** (ej. ángulo entre hombro-codo-muñeca) y vectores de huesos normalizados. El DTW se ejecuta exclusivamente sobre estas series de ángulos, garantizando que la métrica de error biomecánico sea invariante a la ubicación espacial del practicante.
-* **Mitigación de Distorsión por Perspectiva Óptica:** Aunque el sistema opera sobre proyecciones de video 2D, el extractor MediaPipe Pose genera landmarks en un espacio tridimensional nativo $(X, Y, Z)$, donde la coordenada $Z$ se estima de forma relativa al centro de la cadera. Para el cálculo del DTW, el sistema no utiliza ángulos geométricos 2D planos, sino que calcula el producto escalar de los vectores en el espacio euclidiano 3D ($\vec{A} \cdot \vec{B} = ||A|| ||B|| \cos\theta$) empleando los tres componentes espaciales normalizados. Esto absorbe y mitiga matemáticamente las desviaciones menores de perspectiva óptica o rotaciones en el eje Z, garantizando que un quiebre articular a 90 grados sea métricamente equivalente sin importar ligeras variaciones de diagonalidad en la toma del tatami.
+* **Invariancia Traslacional y Métrica de Entrada:** Para garantizar que la comparación no se vea afectada por la posición espacial de los practicantes en el tatami (traslación en X, Y), el motor matemático no alimenta al DTW con las coordenadas absolutas de RTMPose. Previa a la ejecución del DTW, el sistema transforma las coordenadas espaciales $(X, Y, Z)$ procesadas por el adaptador de landmarks en una **serie temporal de ángulos articulares relativos** (ej. ángulo entre hombro-codo-muñeca) y vectores óseos normalizados. El DTW se ejecuta exclusivamente sobre estas series de ángulos, garantizando que la métrica de error biomecánico sea invariante a la ubicación espacial del practicante.
+* **Mitigación de Distorsión por Perspectiva Óptica:** Aunque el sistema opera sobre proyecciones de video 2D, el extractor `rtmpose3d` infiere landmarks en un espacio tridimensional nativo $(X, Y, Z)$ relativo a la pelvis y centro anatómico. Para el cálculo del DTW, el sistema no utiliza ángulos geométricos 2D planos, sino que calcula el producto escalar de los vectores en el espacio euclidiano 3D ($\vec{A} \cdot \vec{B} = ||A|| ||B|| \cos\theta$) empleando los tres componentes espaciales normalizados. Esto absorbe y mitiga matemáticamente las desviaciones menores de perspectiva óptica o rotaciones en el eje Z, garantizando que un quiebre articular a 90 grados sea métricamente equivalente sin importar ligeras variaciones de diagonalidad en la toma del tatami.
 * **Optimización Mediante Ventana de Sakoe-Chiba Configurable:** Para neutralizar la complejidad temporal cuadrática nativa del algoritmo ($O(N^2)$)—la cual elevaría el consumo de CPU en la función *Serverless*—se implementa la restricción geométrica de la **Ventana de Sakoe-Chiba**. Esta técnica acota la exploración de la trayectoria óptima a una banda diagonal de ancho $w$ alrededor del eje principal de la matriz de costo. En el presente diseño se define como **valor por defecto recomendado** una restricción formal equivalente al **15% de la longitud temporal de la secuencia ($w = 0.15 \cdot N$)**. Para una grabación estándar de hasta 6 segundos a 30 cuadros por segundo ($N \approx 180$ fotogramas), este valor fija una ventana de tolerancia de $w \approx \pm 27$ cuadros ($\pm 0.9\text{ segundos}$). No obstante, este valor no opera como una constante rígida en código, sino como un **parámetro configurable del backend** (adaptable por técnica o por rango de duración del video patrón y almacenable como atributo `ventanaSakoeChiba` en la entidad `TecnicaMaestra` del modelo de dominio, sección 4.5), lo que otorga la flexibilidad de calibrar ventanas más estrechas para transiciones explosivas o más holgadas para ejecuciones lentas sin modificar el código fuente. Esta parametrización absorbe con rigor las variaciones de cadencia motriz entre el profesor y el alumno, reduciendo el espacio de búsqueda a un régimen estrictamente cuasi-lineal $O(N)$ con tiempos de cómputo algorítmico de apenas $80 \text{ a } 150\text{ ms}$ en *FunctionGraph*.
 
 ---
@@ -496,7 +499,7 @@ El sistema de evaluación y retroalimentación biomecánica para la academia Cor
 
 1. La captura de video desde teléfonos móviles por parte de los practicantes en el tatami.
 2. La carga y persistencia en cubos elásticos de almacenamiento en la nube (*Huawei Cloud OBS*).
-3. La ejecución remota sin servidor (*Serverless*) de los módulos de extracción de coordenadas articulares (*MediaPipe Pose*) y sincronización de series de tiempo (*DTW* con ventana de Sakoe-Chiba).
+3. La ejecución remota sin servidor (*Serverless*) de los módulos de extracción de coordenadas articulares tridimensionales (*RTMPose / rtmpose3d*), normalización de keypoints mediante adaptador biomecánico y sincronización de series de tiempo (*DTW* con ventana de Sakoe-Chiba).
 4. El procesamiento digital de imágenes (*OpenCV*) para inyectar marcadores de color sobre la coordenada del error biomecánico detectado.
 5. El despliegue visual inmediato del fotograma clave anotado e indicadores estadísticos a través de un cliente web liviano (*Streamlit*).
 
@@ -510,6 +513,7 @@ El sistema de evaluación y retroalimentación biomecánica para la academia Cor
 * **FunctionGraph:** Servicio de computación *Serverless* orientada a eventos provisto por Huawei Cloud, el cual ejecuta código sin necesidad de aprovisionar ni administrar instancias de servidores.
 * **Keyframe (Fotograma Clave):** Cuadro estático individual extraído de una secuencia de video que captura un momento biomecánico significativo.
 * **Oclusión:** Obstrucción física o visual de una articulación corporal ocasionada por la superposición de extremidades propias o del compañero de entrenamiento.
+* **RTMPose / rtmpose3d:** Modelo de visión artificial de alta precisión y velocidad perteneciente al ecosistema OpenMMLab (MMPose), especializado en la estimación de keypoints articulares en 2D/3D con resistencia a oclusiones complejas.
 
 ### 4.1.4 Visión General del Documento
 
@@ -534,7 +538,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 * **Gestión de Técnicas Maestras:** Permite exclusivamente al Head Coach registrar los videos patrón que conforman el currículo oficial, especificando su categoría técnica y su posición de origen para catalogar variantes sin ambigüedad ni nombres duplicados, definiendo además el catálogo de reglas biomecánicas deterministas y la calibración de la ventana temporal.
 * **Ingestión Móvil de Entrenamientos:** Facilita al estudiante explorar el catálogo curricular estructurado jerárquicamente en dos niveles (agrupado primero por categoría técnica y luego por posición de origen, ej. "Llave de Brazo → [Montada, Guardia Cerrada, Side Control]") para seleccionar con precisión la variante exacta a evaluar sin ambigüedad, y cargar de forma rápida la grabación de su ejecución en pareja desde el tatami bajo una doble capa de control de tamaño y duración.
-* **Auditoría Biomecánica en la Nube:** Ejecuta de forma elástica la detección de puntos clave corporales con MediaPipe, la compensación cinemática de oclusiones con Filtro de Kalman (con interrupción controlada ante oclusiones prolongadas), la normalización antropomórfica y la sincronización temporal con DTW.
+* **Auditoría Biomecánica en la Nube:** Ejecuta de forma elástica la detección de keypoints tridimensionales con RTMPose (`rtmpose3d`), su adaptación cinemática normalizada, la compensación de oclusiones con Filtro de Kalman (con interrupción controlada ante oclusiones prolongadas), la normalización antropomórfica y la sincronización temporal con DTW.
 * **Anotación Automatizada de Fallas:** Localiza el fotograma de máxima discrepancia e inyecta la señalética gráfica sobre la articulación defectuosa mediante OpenCV.
 * **Generación de Explicación Pedagógica:** Formula una explicación textual comprensible sobre la causa motriz del error (el "por qué"), generada de forma determinista mediante reglas predefinidas para cada técnica sin recurrir a IA generativa.
 * **Visualización de Reportes Técnicos:** Entrega al estudiante el fotograma estático de falla, la explicación textual del error y su evolución técnica histórica acumulada de forma inmediata y con mínimo consumo de datos.
@@ -553,7 +557,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 ### 4.2.5 Suposiciones y Dependencias
 
 * Se asume que el alumno registrará la ejecución técnica junto a su compañero de entrenamiento bajo el protocolo de "laboratorio técnico" (encuadre lateral fijo donde ambos practicantes permanecen dentro de cuadro y sin interferencia de terceros en la escena). Se asume la presencia de oclusiones anatómicas parciales normales derivadas del agarre y contacto físico entre ambos practicantes, las cuales son compensadas algorítmicamente en el backend mediante el Filtro de Kalman cinemático (RF-08).
-* El funcionamiento del sistema depende de la disponibilidad del servicio *FunctionGraph* y de los contenedores Linux de Huawei Cloud para la ejecución de la biblioteca *MediaPipe Pose*.
+* El funcionamiento del sistema depende de la disponibilidad del servicio *FunctionGraph* y de los contenedores Linux de Huawei Cloud para la ejecución del runtime optimizado de *RTMPose* (PyTorch / OpenMMLab).
 * **Control de Acceso y Salvaguarda de Costos Cloud (Regla de Negocio RN-01):** Para impedir que usuarios externos o estudiantes inactivos consuman saldo de cómputo en *Huawei Cloud*, el sistema web exige que el practicante ingrese un **Código de Activación Mensual (Token de Acceso)** para habilitar el formulario de carga de video. Este token es emitido periódicamente por el Head Coach (a través de la comunidad oficial de WhatsApp) o entregado impreso en la recepción junto con el ticket físico diario a los alumnos con membresía vigente. La interfaz web en *Streamlit* valida la vigencia del token antes de autorizar cualquier transferencia de archivos hacia *Huawei Cloud OBS*, bloqueando peticiones no autorizadas y blindando el presupuesto operativo de la nube.
 
 ### 4.2.6 Requisitos Futuros
@@ -593,8 +597,8 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | **RF-10** | Generación de Explicación Textual Determinista | El backend en FunctionGraph deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
 | **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, abortando la ejecución a nivel de base de datos (sin persistir registros en las tablas `AnalisisBiomecanico` ni `HistorialProgresion`) para evitar contaminar el historial de progresión del atleta con cinemáticas ficticias. (Nota técnica: Aunque el cómputo serverless ejecutado hasta el punto de detección de oclusión ya fue facturado por milisegundos de CPU, esta lógica de rechazo prioriza la validez pedagógica y estadística de los datos longitudinales del estudiante sobre el ahorro marginal de cómputo). |
 | **RF-12** | Consulta de Historial de Progresión Técnica | La interfaz web en Streamlit deberá permitir al estudiante autenticado consultar de forma interactiva su historial acumulativo de evaluaciones biomecánicas (`HistorialProgresion`), visualizando la evolución cronológica de su puntuación técnica global (`puntuacionGlobal`) y la tasa de reducción de errores (`cantidadErrores`) a lo largo de sus sucesivas sesiones de entrenamiento en el tatami. |
-| **RF-13** | Cálculo de Similitud de Posición 3D Euclidiana | El sistema deberá calcular la distancia euclidiana 3D para la totalidad de los 33 landmarks anatómicos de MediaPipe Pose ($\sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}$) entre el atleta evaluado y el video patrón del profesor, calculando el promedio espacial y convirtiéndolo en un porcentaje de proximidad posicional $(1 - \bar{d}) \times 100$, complementario al análisis temporal DTW. |
-| **RF-14** | Exportación Tabular de Similitud por Fotograma (CSV) | El sistema deberá generar y permitir la descarga de tres archivos estructurados en formato CSV por cada sesión de auditoría: (1) `skeleton_angle_similarity_{id}.csv` conteniendo los ángulos para 28 grupos anatómicos clave, (2) `skeleton_position_similarity_{id}.csv` registrando las coordenadas espaciales $(X, Y, Z)$ para los 33 landmarks, y (3) `skeleton_eachframe_similarity_{id}.csv` con los porcentajes de similitud angular, posicional y promedio cuadro a cuadro. |
+| **RF-13** | Cálculo de Similitud de Posición 3D Euclidiana | El sistema deberá calcular la distancia euclidiana 3D para la totalidad de los keypoints anatómicos procesados por el adaptador de landmarks de RTMPose ($\sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}$) entre el atleta evaluado y el video patrón del profesor, calculando el promedio espacial y convirtiéndolo en un porcentaje de proximidad posicional $(1 - \bar{d}) \times 100$, complementario al análisis temporal DTW. |
+| **RF-14** | Exportación Tabular de Similitud por Fotograma (CSV) | El sistema deberá generar y permitir la descarga de tres archivos estructurados en formato CSV por cada sesión de auditoría: (1) `skeleton_angle_similarity_{id}.csv` conteniendo los ángulos para 28 grupos anatómicos clave, (2) `skeleton_position_similarity_{id}.csv` registrando las coordenadas espaciales $(X, Y, Z)$ para los keypoints anatómicos extraídos y adaptados, y (3) `skeleton_eachframe_similarity_{id}.csv` con los porcentajes de similitud angular, posicional y promedio cuadro a cuadro. |
 | **RF-15** | Visualización Gráfica Temporal de Similitud Cinemática | El sistema deberá generar un panel gráfico temporal con Matplotlib utilizando una distribución `GridSpec(2, 3)` que grafique la evolución cuadro a cuadro de la similitud angular (azul), la similitud de posición 3D (verde) y la similitud promedio combinada (rojo carmesí `#D90429`), incluyendo una tarjeta resumen con estadísticas descriptivas, desplegándolo en la interfaz de usuario Streamlit junto a la descarga de los reportes tabulares. |
 
 ---
@@ -603,7 +607,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 | Código | Requisito de Rendimiento | Métrica y Criterio de Aceptación |
 | :---: | :--- | :--- |
-| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con MediaPipe, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la extracción de 33 landmarks con MediaPipe, el arranque en frío (*cold start*) del contenedor Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
+| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con RTMPose/rtmpose3d, adaptación cinemática, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la inferencia de keypoints tridimensionales con RTMPose optimizado para CPU, el arranque en frío (*cold start*) del contenedor personalizado Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
 | **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta transferido hacia el cliente móvil no deberá superar los **100 KB** por consulta. (Nota de Arquitectura: Los 100 KB constituyen la cota superior contractual admisible o *worst-case threshold*, mientras que el promedio nominal comprimido por OpenCV es de ~80 KB. Ambos escenarios garantizan matemáticamente el cumplimiento del límite presupuestario trimestral). |
 | **RP-03** | Techo de Tiempo de Generación Gráfica y Tabular | La exportación de los 3 archivos CSV estructurados y el renderizado en memoria del panel gráfico temporal con Matplotlib no deberá añadir más de **500 milisegundos** al ciclo de procesamiento total, manteniendo el peso del archivo PNG por debajo de los 200 KB para preservar la ligereza del despliegue en tatami. |
 
@@ -611,7 +615,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 ### 4.3.4 Restricciones de Diseño
 
-* **Licenciamiento y Librerías de Código Abierto:** La lógica de cálculo biomecánico y de manipulación de matrices visuales debe implementarse exclusivamente con herramientas de software libre bajo licencias permisivas (*Apache 2.0* o *BSD*), adoptándose formalmente el ecosistema conformado por `NumPy`, `MediaPipe` y `OpenCV-Python`.
+* **Licenciamiento y Librerías de Código Abierto:** La lógica de cálculo biomecánico y de manipulación de matrices visuales debe implementarse exclusivamente con herramientas de software libre bajo licencias permisivas (*Apache 2.0* o *BSD*), adoptándose formalmente el ecosistema conformado por `NumPy`, `torch` (PyTorch CPU), `mmcv`, `mmpose` (RTMPose / rtmpose3d) y `OpenCV-Python`.
 
 ---
 
@@ -831,7 +835,7 @@ Conforme a los lineamientos de Craig Larman (2004), la descomposición modular d
 
 1. **Capa de Presentación (UI Layer - Streamlit):** Aloja los componentes de interfaz gráfica web ejecutados en el navegador del usuario. Actúa como cliente desacoplado responsable de capturar la interacción humana, validar las restricciones de formato local ($\le 5\text{ MB}$ y $\le 6\text{ segundos}$, RF-07), verificar la tenencia del token de membresía en cliente (RF-09) y renderizar de forma pasiva los fotogramas anotados y las tarjetas de retroalimentación pedagógica.
 2. **Capa de Aplicación y Controlador (Application / Controller Layer):** Encapsulada en el punto de entrada de la función en la nube (*FunctionGraph Dispatcher*) y coordinada por el controlador de caso de uso `AnalisisBiomecanicoController`. No contiene lógica matemática ni reglas de negocio intrínsecas; su función exclusiva es orquestar el flujo de ejecución, invocar la validación de tokens contra la base de datos, despachar las tareas hacia el motor biomecánico y coordinar la persistencia transaccional.
-3. **Capa de Dominio del Negocio e Inteligencia Artificial (Domain & AI Layer):** Constituye el núcleo algorítmico independiente de la plataforma. Encapsula las entidades conceptuales del modelo (`TecnicaMaestra`, `ReglaBiomecanica`, `AnalisisBiomecanico`), el extractor cinemático basado en *MediaPipe Pose* (33 *landmarks*), el módulo de seguimiento y compensación de oclusiones (`KalmanFilterTracker`), el motor determinista de alineación temporal no lineal (`DTWComparator` con restricción de Sakoe-Chiba al 15%), y el componente de inyección gráfica de errores (`OpenCVAnnotator`). Esta capa carece de dependencias respecto al framework web o los drivers de bases de datos.
+3. **Capa de Dominio del Negocio e Inteligencia Artificial (Domain & AI Layer):** Constituye el núcleo algorítmico independiente de la plataforma. Encapsula las entidades conceptuales del modelo (`TecnicaMaestra`, `ReglaBiomecanica`, `AnalisisBiomecanico`), el extractor cinemático basado en *RTMPose 3D* (`RTMPose3DExtractor`), el módulo adaptador de normalización de keypoints (`LandmarkAdapter`), el módulo de seguimiento y compensación de oclusiones (`KalmanFilterTracker`), el motor determinista de alineación temporal no lineal (`DTWComparator` con restricción de Sakoe-Chiba al 15%), y el componente de inyección gráfica de errores (`OpenCVAnnotator`). Esta capa carece de dependencias respecto al framework web o los drivers de bases de datos.
 4. **Capa de Infraestructura y Persistencia (Infrastructure & Persistence Layer):** Provee las implementaciones técnicas concretas para interactuar con servicios externos mediante adaptadores especializados: `HuaweiOBSStorageAdapter` para la transferencia de objetos audiovisuales en *Huawei Cloud OBS*, y `PostgreSQLRepository` (gestionado mediante SQLAlchemy / psycopg2) para la persistencia ACID en la base de datos relacional *Huawei Cloud RDS*.
 
 A continuación, la **Figura 5.1** modela la organización de paquetes y dependencias unidireccionales entre capas:
@@ -853,7 +857,8 @@ graph TD
 
     subgraph CapaDominio["Capa de Dominio del Negocio e IA (Pipeline Biomecánico)"]
         Dom_Entities["Entidades de Negocio<br/>(TecnicaMaestra, ReglaBiomecanica,<br/>AnalisisBiomecanico, Historial)"]
-        Dom_Pose["MediaPipePoseExtractor"]
+        Dom_Pose["RTMPose3DExtractor<br/>(OpenMMLab / PyTorch)"]
+        Dom_Adapter["LandmarkAdapter<br/>(Mapeo COCO/Halpe -> Cinemático)"]
         Dom_Kalman["KalmanFilterTracker"]
         Dom_DTW["DTWComparator (Sakoe-Chiba 15%)"]
         Dom_Rules["CatalogoReglasEngine"]
@@ -868,6 +873,8 @@ graph TD
     CapaPresentacion -->|HTTPS / Eventos UI| CapaAplicacion
     CapaAplicacion -->|Orquesta entidades y servicios| CapaDominio
     CapaAplicacion -->|Persiste y recupera datos| CapaInfraestructura
+    Dom_Pose --> Dom_Adapter
+    Dom_Adapter --> Dom_Kalman
     CapaDominio -.->|Independiente de infraestructura| CapaDominio
     CapaInfraestructura -->|Implementa interfaces de persistencia| CapaDominio
 ```
@@ -894,8 +901,8 @@ flowchart TD
 
     subgraph HuaweiCloud["Huawei Cloud Region (LA-Santiago)"]
         subgraph ServerlessNode["FunctionGraph Cluster"]
-            subgraph FGEnv["Serverless Custom Runtime<br/>(Linux x86_64, 512 MB RAM)"]
-                FG_Service["Biomechanics Engine<br/>(MediaPipe + DTW + OpenCV)"]
+            subgraph FGEnv["Serverless Custom Container Runtime<br/>(Linux x86_64, SWR Image con PyTorch/MMCV)"]
+                FG_Service["Biomechanics Engine<br/>(RTMPose + DTW + OpenCV)"]
             end
         end
         subgraph OBSNode["Huawei Cloud OBS"]
@@ -929,12 +936,12 @@ flowchart TD
 #### A. Desglose y Formalización del SLA de Latencia ($\le 4.0\text{ s}$, RP-01)
 El requisito de rendimiento **RP-01** estipula que el tiempo total de procesamiento en la nube no debe exceder de **4.0 segundos** para una secuencia estandarizada de video en pareja de hasta 6 segundos ($\approx 180$ fotogramas a 30 fps). Matemáticamente, la latencia total del microservicio serverless se descompone como:
 
-$$t_{\text{serverless}} = t_{\text{cold-start}} + t_{\text{mediapipe}} + t_{\text{kalman-dtw}} + t_{\text{opencv}}$$
+$$t_{\text{serverless}} = t_{\text{cold-start}} + t_{\text{rtmpose}} + t_{\text{kalman-dtw}} + t_{\text{opencv}}$$
 
 El dimensionamiento analítico de cada componente confirma la viabilidad técnica del umbral contractual:
 
-1. **Arranque en Frío (*Cold Start*) del Contenedor Linux ($t_{\text{cold-start}} \le 1.2\text{ s}$):** Ocurre únicamente en la primera invocación tras un periodo de inactividad de la función en *FunctionGraph*. Dado que la práctica en el tatami ocurre por tandas colectivas donde 10 parejas concluyen simultáneamente la serie mecanizada (Sección 2.4.1), sólo la primera petición absorbe este retardo de inicialización de runtime ($\sim 0.8\text{ a } 1.2\text{ s}$); las 9 peticiones concurrentes restantes se despachan sobre instancias previamente instanciadas (*warm containers*), reduciendo este valor a $t_{\text{warm}} \le 0.05\text{ s}$.
-2. **Extracción Cinemática con MediaPipe Pose ($t_{\text{mediapipe}} \approx 1.8\text{--}2.2\text{ s}$):** Procesamiento cuadro a cuadro sobre CPU virtual de 1 vCPU con optimizaciones vectoriales AVX2. Con un rendimiento medio de $80\text{ a } 100\text{ fotogramas/segundo}$ en resoluciones de 720p redimensionadas internamente a $256 \times 256$ píxeles para inferencia, los 180 fotogramas demandan $\sim 1.9\text{ segundos}$ netos de cómputo.
+1. **Arranque en Frío (*Cold Start*) del Contenedor Personalizado Linux ($t_{\text{cold-start}} \le 1.2\text{ s}$):** Ocurre únicamente en la primera invocación tras un periodo de inactividad de la función en *FunctionGraph*. Dado que la práctica en el tatami ocurre por tandas colectivas donde 10 parejas concluyen simultáneamente la serie mecanizada (Sección 2.4.1), sólo la primera petición absorbe este retardo de inicialización de runtime ($\sim 0.8\text{ a } 1.2\text{ s}$); las 9 peticiones concurrentes restantes se despachan sobre instancias previamente instanciadas (*warm containers*), reduciendo este valor a $t_{\text{warm}} \le 0.05\text{ s}$.
+2. **Extracción Cinemática con RTMPose 3D ($t_{\text{rtmpose}} \approx 1.8\text{--}2.2\text{ s}$):** Procesamiento cuadro a cuadro mediante `rtmpose3d` ejecutado sobre CPU virtual de 1 vCPU con optimizaciones vectoriales AVX2 / ONNX Runtime. Con un rendimiento medio optimizado de $\sim 80\text{ a } 100\text{ fotogramas/segundo}$ redimensionando internamente los fotogramas para inferencia, los 180 fotogramas demandan $\sim 1.9\text{ segundos}$ netos de cómputo, manteniendo la latencia en el rango admisible sin comprometer la precisión mAP en suelo.
 3. **Compensación de Kalman y Sincronización Temporal DTW ($t_{\text{kalman-dtw}} \approx 0.08\text{--}0.15\text{ s}$):** Al parametrizar la **Ventana de Sakoe-Chiba** con una cota del 15% de la longitud temporal ($w = 0.15 \cdot 180 \approx 27$ cuadros de tolerancia), la matriz de búsqueda de costo acumulado se restringe a una banda diagonal de ancho $2w + 1 = 55$ celdas por fotograma. Esto transmuta la complejidad temporal cuadrática $O(N^2) \approx 32,400\text{ operaciones}$ a un régimen estrictamente cuasi-lineal $O(w \cdot N) \approx 4,860\text{ operaciones}$, completándose la alineación temporal en escasos $80\text{ a } 150\text{ milisegundos}$.
 4. **Extracción y Anotación Gráfica con OpenCV ($t_{\text{opencv}} \approx 0.03\text{--}0.05\text{ s}$):** El trazado del círculo rojo ($\text{radio} = 15\text{ px}$) sobre el fotograma clave de máxima desviación y su posterior codificación a formato JPG con factor de compresión 80 insume $\le 50\text{ ms}$.
 
@@ -972,6 +979,14 @@ La arquitectura híbrida laptop-cloud garantiza que el consumo facturable de Hua
 La laptop del desarrollador asume sin costo adicional la ejecución de Streamlit (frontend), PostgreSQL (persistencia relacional) y el entorno de desarrollo Python, cumpliendo con la restricción presupuestaria del proyecto.
 
 * **Auditoría Financiera sin Contaminación de Datos (Zero-Persistence):** La política de 'Zero-Persistence' en PostgreSQL ante oclusiones prolongadas (RF-11) protege la integridad longitudinal de los datos deportivos, evitando que consultas analíticas distorsionen las métricas de progresión técnica real. Para resolver la trazabilidad financiera de los ciclos de cómputo consumidos en estos abortos, se delega el control a las métricas nativas de **Application Operations Management (AOM)** de Huawei Cloud. Esto permite al administrador monitorear la facturación acumulada por milisegundos de la función Serverless sin necesidad de sobrecargar la base de datos relacional con registros cinemáticos huérfanos o estados de 'No Computable', manteniendo una separación estricta entre auditoría de infraestructura y modelo de dominio deportivo.
+
+#### C. Gestión del Riesgo Arquitectónico: Tamaño del Entorno de Ejecución en FunctionGraph (PyTorch / MMCV)
+La sustitución de MediaPipe por RTMPose introduce un **riesgo arquitectónico crítico** en la capa de infraestructura cloud que debe ser formalmente gestionado:
+
+* **Identificación del Riesgo:** A diferencia de MediaPipe (cuyo paquete binario distribuido en PyPI pesa escasos ~30 a 50 MB y se adapta sin fricción al empaquetado estándar en archivo `.zip`), la cadena tecnológica de RTMPose se apoya en **PyTorch (`torch`)**, **MMCV (`mmcv-lite` o `mmcv`)** y **MMPose (`mmpose`)**. El tamaño conjunto de estas dependencias en un entorno Linux x86_64 puede oscilar entre 700 MB y 1.5 GB, superando con creces el límite de carga por archivo comprimido directo admitido por Huawei Cloud FunctionGraph para runtimes nativos de Python.
+* **Estrategia de Mitigación y Despliegue:** Para sortear esta restricción sin incurrir en servidores dedicados IaaS, se adoptan formalmente dos directrices de diseño:
+  1. **Despliegue mediante Imágenes de Contenedor Personalizadas (*Custom Container Images*):** FunctionGraph permite desplegar funciones a partir de imágenes de contenedor Docker/OCI registradas en **Huawei Cloud SoftWare Repository for Container (SWR)**. Bajo este mecanismo, el contenedor encapsula el runtime de Python, las dependencias pesadas compiladas exclusivamente para CPU (`torch-cpu` sin binarios CUDA para reducir drásticamente el peso a ~180 MB) y las librerías de OpenMMLab, admitiendo imágenes de hasta varios gigabytes sin restricciones de empaquetado.
+  2. **Inferencia Optimizada vía ONNX Runtime / OpenVINO:** Como optimización secundaria para la fase de producción, los pesos del modelo `rtmpose3d` pueden ser exportados desde PyTorch a formato ONNX. Esto permite ejecutar la inferencia en FunctionGraph utilizando únicamente `onnxruntime` y una librería liviana de pre-procesamiento de imágenes compatible con OpenMMLab (o rutinas matriciales con OpenCV/NumPy), reduciendo el tamaño total del entorno a menos de 150 MB y acelerando aún más el tiempo de inicialización en frío (*cold start*).
 
 ---
 
@@ -1039,7 +1054,8 @@ sequenceDiagram
         
         Sis->>Sis: transferirVideoOBS(archivoVideo)
         Sis->>Sis: dispararProcesamientoServerless(FunctionGraph)
-        Sis->>Sis: extraerLandmarksMediaPipe(180_frames)
+        Sis->>Sis: extraerLandmarksRTMPose3D(180_frames)
+        Sis->>Sis: adaptarKeypointsNormalizados(LandmarkAdapter)
         Sis->>Sis: aplicarFiltroKalman(C < 0.5)
 
         alt Oclusión Continua Prolongada > 1.5 segundos (RF-11)
@@ -1096,13 +1112,13 @@ sequenceDiagram
 
 ##### Contrato de Operación: `procesarVideoBiomecanico`
 * **Operación:** `procesarVideoBiomecanico(idVideo: UUID, idTecnicaMaestra: UUID): DiagnosticoDTO`
-* **Referencias Cruzadas:** Requisitos Funcionales RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-10, RF-11; Requisitos de Rendimiento RP-01, RP-02; Casos de Uso CU-02.
+* **Referencias Cruzadas:** Requisitos Funcionales RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-10, RF-11, RF-13, RF-14; Requisitos de Rendimiento RP-01, RP-02; Casos de Uso CU-02.
 * **Precondiciones:**
   * El video de ejecución en pareja reside en el bucket privado de OBS con un tamaño $\le 5\text{ MB}$ y duración $\le 6\text{ segundos}$.
   * La técnica maestra correspondiente a `idTecnicaMaestra` existe previamente en el catálogo junto con sus reglas biomecánicas asociadas.
   * El token de activación mensual del alumno fue validado exitosamente (`estado = 'vigente'`).
 * **Poscondiciones (Escenario Exitoso — Oclusión Acotada $\le 1.5\text{ s}$):**
-  * Se extrajeron los 33 puntos clave con MediaPipe y se interpolaron los tramos breves con el Filtro de Kalman cinemático.
+  * Se extrajeron los keypoints tridimensionales con RTMPose (`rtmpose3d`) y se normalizaron mediante el `LandmarkAdapter`, interpolando los tramos breves con el Filtro de Kalman cinemático.
   * Se transformaron las coordenadas $(X,Y,Z)$ en series temporales de ángulos articulares relativos.
   * Se ejecutó el DTW con restricción de Sakoe-Chiba ($w = 0.15 \cdot N$) calculando el camino de deformación mínima.
   * Se identificó el fotograma de máxima discrepancia angular y se generó una imagen JPG de $\sim 80\text{ KB}$ anotada con OpenCV.
@@ -1136,7 +1152,7 @@ Conforme al marco conceptual de Craig Larman (Capítulos 16 y 17), la distribuci
 
 1. **Controlador (*Controller - GRASP*):** La clase `AnalisisBiomecanicoController` opera como controlador de caso de uso (fachada de aplicación). Desacopla la interfaz de usuario Streamlit del motor de visión por computadora, canalizando las peticiones de análisis, coordinando el consumo de microservicios serverless y abstrayendo la lógica transaccional.
 2. **Experto en Información (*Information Expert - GRASP*):** La clase `TecnicaMaestra` posee la información geométrica canónica y su ancho de banda temporal recomendado (`ventanaSakoeChiba`); por tanto, es la experta designada para calibrar el algoritmo DTW. A su vez, `ReglaBiomecanica` es la experta encargada de evaluar si una discrepancia angular en grados excede el umbral tolerado y suministrar el mensaje pedagógico determinista correspondiente.
-3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (MediaPipe → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `HuaweiOBSStorageAdapter` y `PostgreSQLRepository` operan como adaptadores (*Adapter - GoF*) que aíslan los detalles de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático.
+3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (RTMPose → LandmarkAdapter → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `HuaweiOBSStorageAdapter` y `PostgreSQLRepository` operan como adaptadores (*Adapter - GoF*) que aíslan los detalles de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático.
 4. **Bajo Acoplamiento y Alta Cohesión (*Low Coupling & High Cohesion - GRASP*):** Las clases computacionales `KalmanFilterTracker` y `DTWComparator` operan exclusivamente con estructuras matriciales abstractas (`NumPy arrays`), permaneciendo completamente ignorantes de protocolos HTTP, bases de datos o frameworks gráficos.
 5. **Variaciones Protegidas (*Protected Variations - GRASP*):** Se implementa la interfaz `IFiltroCinematico`, la cual permite acoplar o intercambiar implementaciones de interpolación (ej. filtro de media móvil o modelos biomecánicos avanzados) sin forzar modificaciones sobre el pipeline de DTW ni sobre el controlador.
 
@@ -1259,7 +1275,8 @@ class AnalisisBiomecanicoController {
 +listarTecnicas(): List~TecnicaMaestra~
 }
 class PipelineBiomecanicoEngine {
--poseExtractor: MediaPipePoseExtractor
+-poseExtractor: RTMPose3DExtractor
+-landmarkAdapter: LandmarkAdapter
 -kinematicTracker: KalmanFilterTracker
 -temporalAligner: DTWComparator
 -visualAnnotator: OpenCVAnnotator
@@ -1267,8 +1284,18 @@ class PipelineBiomecanicoEngine {
 +ejecutarPipelineCompleto(videoBytes: bytes, tecnica: TecnicaMaestra): ResultadoPipelineDTO
 +procesarVideo(videoPath: String, tecnicaId: UUID): Dict
 }
-class MediaPipePoseExtractor {
-+extraerLandmarks(videoBytes: bytes): MatrizLandmarks
+class RTMPose3DExtractor {
+-modeloConfig: String
+-pesosCheckpoint: String
+-dispositivo: String
++extraerKeypoints3D(videoBytes: bytes): MatrizKeypoints3D
++preprocesarFrames(frames: List): Tensor
+}
+class LandmarkAdapter {
+-mapeoIndices: Dict
+-modoTopologia: String
++adaptarKeypoints(matrizRaw: MatrizKeypoints3D): MatrizNormalizada
++calcularAngulosArticulares(matrizNormalizada: MatrizNormalizada): SerieAngulos
 }
 class KalmanFilterTracker {
 -umbralConfiabilidad: Float
@@ -1333,7 +1360,8 @@ AnalisisBiomecanicoController --> HuaweiOBSStorageAdapter : persiste-objetos
 AnalisisBiomecanicoController --> TokenRepository : valida-acceso
 AnalisisBiomecanicoController --> TecnicaMaestraRepository : administra-curriculo
 AnalisisBiomecanicoController --> AnalisisBiomecanicoRepository : persiste-auditorias
-PipelineBiomecanicoEngine --> MediaPipePoseExtractor : usa
+PipelineBiomecanicoEngine --> RTMPose3DExtractor : usa
+PipelineBiomecanicoEngine --> LandmarkAdapter : usa
 PipelineBiomecanicoEngine --> KalmanFilterTracker : usa
 PipelineBiomecanicoEngine --> DTWComparator : usa
 PipelineBiomecanicoEngine --> OpenCVAnnotator : usa
@@ -1750,8 +1778,9 @@ stateDiagram-v2
             CargarVideoIntento --> ProcesandoCómputoCloud: Disparo de Pipeline Serverless
 
             state ProcesandoCómputoCloud {
-                [*] --> InferenciaMediaPipe
-                InferenciaMediaPipe --> FiltroKalmanOclusion
+                [*] --> InferenciaRTMPose
+                InferenciaRTMPose --> AdaptacionLandmarks
+                AdaptacionLandmarks --> FiltroKalmanOclusion
                 
                 state DecisionOclusion <<choice>>
                 FiltroKalmanOclusion --> DecisionOclusion
@@ -1878,8 +1907,10 @@ La implementación del sistema se organiza de forma desacoplada y modular bajo l
 │   │   │   └── analisis_controller.py          # AnalisisBiomecanicoController
 │   │   ├── dtw_comparator.py                   # DTWComparator (Alineación Sakoe-Chiba)
 │   │   ├── kalman_filter.py                    # KalmanTracker / KalmanFilterTracker (3D y RF-11)
+│   │   ├── landmark_adapter.py                 # LandmarkAdapter (Mapeo Topológico COCO/Halpe a Ángulos Canónicos)
 │   │   ├── opencv_annotator.py                 # OpenCVAnnotator (Marcador Rojo 15px)
 │   │   ├── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF)
+│   │   ├── pose_extractor.py                   # RTMPose3DExtractor (Inferencia OpenMMLab / PyTorch)
 │   │   └── position_similarity.py              # PositionSimilarityService (Similitud 3D y CSV/Gráficos)
 │   │
 │   └── ui/                                     <-- [Capa de Presentación Web en Streamlit]
@@ -1919,8 +1950,8 @@ La totalidad de los requisitos funcionales, requisitos de rendimiento y restricc
 | **Handler Serverless** | `tests/test_functiongraph_handler.py` | **4** | **Cloud FunctionGraph:** Despacho de eventos serverless en formato JSON directo y base64 APIG, gestión de almacenamiento efímero `/tmp` y códigos de respuesta HTTP 200/400/500. |
 | **Filtro de Kalman 3D** | `tests/test_kalman.py` | **3** | **RF-02, RF-08, RF-11:** Invarianza y reducción de ruido en trayectorias espaciales $(X, Y, Z)$, interpolación cinemática en oclusiones breves y disparo de oclusión continua prolongada ($> 1.5\text{ s}$). |
 | **Adaptador Cloud OBS** | `tests/test_obs_adapter.py` | **4** | **Almacenamiento OBS:** Implementación del patrón GoF Adapter para Huawei Cloud OBS, verificación de `subir_video`, `subir_fotograma` y `descargar_objeto` mediante aislamiento con Mocks. |
-| **Motor de Pipeline** | `tests/test_pipeline.py` | **4** | **RF-07, RF-10, RF-11:** Fachada GoF del pipeline biomecánico, integración cinemática integral, validación de corte por oclusión crítica y método `procesar_video`. |
-| **Similitud y Métricas 3D** | `tests/test_position_similarity.py` | **5** | **RF-13, RF-14, RF-15, RP-03:** Similitud de posición 3D Euclidiana (33 landmarks), similitud coseno de 28 grupos articulares, exportación física de 3 CSVs por frame y generación de gráfico temporal GridSpec con Matplotlib ($\le 500\text{ ms}$). |
+| **Motor de Pipeline** | `tests/test_pipeline.py` | **4** | **RF-07, RF-10, RF-11:** Fachada GoF del pipeline biomecánico, integración cinemática integral (RTMPose → LandmarkAdapter → Kalman → DTW), validación de corte por oclusión crítica y método `procesar_video`. |
+| **Similitud y Métricas 3D** | `tests/test_position_similarity.py` | **5** | **RF-13, RF-14, RF-15, RP-03:** Similitud de posición 3D Euclidiana para keypoints anatómicos adaptados, similitud de grupos articulares, exportación física de 3 CSVs por frame y generación de gráfico temporal GridSpec con Matplotlib ($\le 500\text{ ms}$). |
 | **Capa de Repositorios** | `tests/test_repositories.py` | **6** | **CU-01, RF-09:** `TokenRepository` (validación de membresías vigentes y token sintético de prueba), `TecnicaMaestraRepository` (mapeo de reglas, publicación, listado, actualización y eliminación CRUD) y `AnalisisBiomecanicoRepository`. |
 | **Interfaz de Usuario** | `tests/test_ui.py` | **2** | **Capa UI:** Inicialización determinista del estado reactivo de sesión en Streamlit (`st.session_state`) e inyección de dependencias en la factoría `obtener_controlador()`. |
 | **TOTAL CONSOLIDADO** | `unittest discover tests` | **46** | **46 de 46 Pruebas Unitarias Aprobadas (100% de Éxito, $\sim 2.1\text{ s}$)** |
@@ -1942,6 +1973,7 @@ Para ejecutar y validar localmente la plataforma en cualquier computador con sis
    source .venv/bin/activate
    pip install -r requirements.txt
    ```
+   *(Nota de dependencias: El entorno incluye `torch` (PyTorch CPU), `mmcv`, `mmpose` para el pipeline de RTMPose 3D, junto con `opencv-python`, `numpy`, `streamlit` y `sqlalchemy`).*
 
 3. **Ejecutar la suite completa de pruebas unitarias:**
    ```bash

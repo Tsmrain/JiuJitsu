@@ -186,7 +186,12 @@ Se proyecta el diseño e implementación de un ecosistema de software adaptativo
 
 ### 1.1.3 Objeto de Investigación
 
-El objeto de estudio comprende la aplicación articulada de técnicas de **Visión por Computadora** (estimación de poses corporales mediante RTMPose / `rtmpose3d` de OpenMMLab), **procesamiento digital de imágenes** (OpenCV), **procesamiento elástico en la nube** (*Serverless Cloud Computing*) y **algoritmos de alineación de series temporales** (*Dynamic Time Warping*, DTW) para la evaluación asincrónica automatizada de la calidad técnica deportiva y el suministro de retroalimentación biomecánica adaptativa mediante imágenes clave anotadas. Conviene puntualizar que el extractor de poses corporales (RTMPose) es una herramienta de visión artificial de propósito general que no clasifica ni identifica el tipo de deporte o disciplina marcial; el "conocimiento" biomecánico específico de Jiu-Jitsu Brasileño reside exclusivamente en el catálogo curricular de técnicas maestras y reglas deterministas de error configurado por el Head Coach, y no en una red neuronal pre-entrenada para reconocer artes marciales. En consecuencia, el sistema opera comparando esqueletos cinemáticos contra un molde de referencia seleccionado manualmente por el practicante (ver Sección 4.1.2 y requisito RF-07), sin interpretar ni clasificar la disciplina por sí mismo.
+El objeto de estudio comprende el diseño y evaluación de un sistema de **Inteligencia Artificial Híbrida** para la auditoría biomecánica deportiva asincrónica. El sistema articula dos fases metodológicas netamente diferenciadas:
+
+1. **Fase de Percepción Probabilística:** Emplea Redes Neuronales Profundas de visión artificial (**RTMPose / `rtmpose3d`** del ecosistema OpenMMLab) para la estimación de posturas corporales tridimensionales, logrando una extracción cinemática robusta y resiliente ante oclusiones severas y cruces de extremidades en el tatami.
+2. **Fase de Decisión Simbólica Determinista:** Aplica un **Motor de Reglas experto** (reglas biomecánicas canónicas codificadas formalmente) combinado con algoritmos clásicos de optimización temporal no lineal (**Dynamic Time Warping - DTW** con ventana de Sakoe-Chiba) y procesamiento digital de imágenes (**OpenCV**).
+
+Esta separación arquitectónica es deliberada: la pedagogía deportiva y la retroalimentación técnica en artes marciales demandan precisión métrica exacta, explicabilidad causal (caja blanca) y **cero "alucinaciones"**, por lo que el juicio evaluativo se mantiene estrictamente determinista, interpretable y auditable, reservando la capacidad de las redes neuronales probabilísticas exclusivamente para la compleja tarea perceptiva de visión por computadora. En consecuencia, el extractor RTMPose opera como una herramienta perceptiva de propósito general que no clasifica ni infiere la técnica de combate por sí misma; el conocimiento biomecánico reside íntegramente en el catálogo curricular y las reglas de tolerancia angular configuradas por el Head Coach, comparando esqueletos cinemáticos contra un molde de referencia seleccionado manualmente por el practicante (RF-07).
 
 ### 1.1.4 Alcance
 
@@ -609,7 +614,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | :---: | :--- | :--- |
 | **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con RTMPose/rtmpose3d, adaptación cinemática, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la inferencia de keypoints tridimensionales con RTMPose optimizado para CPU, el arranque en frío (*cold start*) del contenedor personalizado Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
 | **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta transferido hacia el cliente móvil no deberá superar los **100 KB** por consulta. (Nota de Arquitectura: Los 100 KB constituyen la cota superior contractual admisible o *worst-case threshold*, mientras que el promedio nominal comprimido por OpenCV es de ~80 KB. Ambos escenarios garantizan matemáticamente el cumplimiento del límite presupuestario trimestral). |
-| **RP-03** | Techo de Tiempo de Generación Gráfica y Tabular | La exportación de los 3 archivos CSV estructurados y el renderizado en memoria del panel gráfico temporal con Matplotlib no deberá añadir más de **500 milisegundos** al ciclo de procesamiento total, manteniendo el peso del archivo PNG por debajo de los 200 KB para preservar la ligereza del despliegue en tatami. |
+| **RP-03** | Techo de Tiempo de Generación Gráfica y Tabular | La exportación de los 3 archivos CSV estructurados y el renderizado en memoria del panel gráfico temporal con Matplotlib no deberá añadir más de **500 ms** al ciclo de procesamiento total, manteniendo el peso del archivo PNG por debajo de los 200 KB para preservar la ligereza del despliegue en tatami. |
 
 ---
 
@@ -888,12 +893,17 @@ graph TD
 
 La topología de despliegue físico materializa el aislamiento estricto de recursos, garantizando que el entorno local de la academia Corpo & Mente no sufra alteraciones en su hardware y que la aplicación web no dependa de servidores dedicados permanentemente encendidos (*IaaS*).
 
-La **Figura 5.2** presenta el Diagrama de Despliegue físico en sintaxis UML:
+#### Separación de Ambientes: Desarrollo/Pruebas vs. Producción Cloud-Native
+Resulta indispensable clarificar la distinción metodológica e ingenieril entre el ambiente de validación experimental y la topología definitiva de producción:
+* **Ambiente de Desarrollo y Validación Experimental (Localhost):** Utilizado rigurosamente durante la fase de Construcción y verificación de pruebas unitarias/TDD documentadas en el presente proyecto. En este escenario, la laptop del desarrollador hospeda localmente el servidor Streamlit (`localhost:8501`) y el motor relacional PostgreSQL 14, conectándose remotamente mediante HTTPS a los servicios serverless de Huawei Cloud (*FunctionGraph* y *OBS*). Este esquema permite iteraciones ágiles de depuración con costo cero de infraestructura de base de datos.
+* **Ambiente de Producción Definitivo (Cloud-Native):** Para la puesta en marcha operativa en la academia deportiva, el frontend en Streamlit se empaqueta en una imagen de contenedor ligero desplegada en una instancia elástica con auto-escalado (*Huawei Cloud Cloud Container Engine - CCE* o *Elastic Cloud Server - ECS* de entrada), mientras que la base de datos migra transparentemente hacia una instancia gestionada de **Huawei Cloud RDS (PostgreSQL)** con respaldos automatizados. Toda la comunicación entre los teléfonos móviles de los atletas y la plataforma opera bajo canales seguros HTTPS (TLS 1.3) sobre redes comerciales 4G/LTE/5G, garantizando alta disponibilidad, aislamiento de red mediante VPC privada y acceso público seguro.
+
+La **Figura 5.2** presenta el Diagrama de Despliegue físico en sintaxis UML modelando el entorno de construcción y validación experimental:
 
 ```mermaid
 flowchart TD
-    subgraph Laptop["Laptop del Desarrollador (Dell Inspiron 3501)"]
-        subgraph LocalEnv["Entorno Local de Desarrollo"]
+    subgraph Laptop["Laptop del Desarrollador (Dell Inspiron 3501 - Entorno Experimental)"]
+        subgraph LocalEnv["Entorno Local de Desarrollo y Pruebas TDD"]
             StreamlitLocal["Streamlit Server<br/>(localhost:8501)"]
             PostgresLocal[("PostgreSQL 14<br/>(Base de Datos Local)")]
         end
@@ -918,7 +928,8 @@ flowchart TD
 ```
 
 **Figura 5.2**  
-*Diagrama de Despliegue Físico Simplificado (Arquitectura Híbrida Laptop-Cloud).*
+*Diagrama de Despliegue Físico Simplificado (Arquitectura Híbrida Laptop-Cloud).*  
+*Nota de Arquitectura*: El diagrama representa el entorno de desarrollo y validación experimental (Localhost). En el entorno de producción real, el frontend Streamlit se despliega en una instancia elástica (ej. Huawei Cloud ECS o Container Service) y la base de datos migra a Huawei Cloud RDS (PostgreSQL Gestionado), permitiendo acceso público seguro vía HTTPS/4G para los atletas.
 
 **Tabla 5.1**  
 *Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad*
@@ -941,8 +952,8 @@ $$t_{\text{serverless}} = t_{\text{cold-start}} + t_{\text{rtmpose}} + t_{\text{
 El dimensionamiento analítico de cada componente confirma la viabilidad técnica del umbral contractual:
 
 1. **Arranque en Frío (*Cold Start*) del Contenedor Personalizado Linux ($t_{\text{cold-start}} \le 1.2\text{ s}$):** Ocurre únicamente en la primera invocación tras un periodo de inactividad de la función en *FunctionGraph*. Dado que la práctica en el tatami ocurre por tandas colectivas donde 10 parejas concluyen simultáneamente la serie mecanizada (Sección 2.4.1), sólo la primera petición absorbe este retardo de inicialización de runtime ($\sim 0.8\text{ a } 1.2\text{ s}$); las 9 peticiones concurrentes restantes se despachan sobre instancias previamente instanciadas (*warm containers*), reduciendo este valor a $t_{\text{warm}} \le 0.05\text{ s}$.
-2. **Extracción Cinemática con RTMPose 3D ($t_{\text{rtmpose}} \approx 1.8\text{--}2.2\text{ s}$):** Procesamiento cuadro a cuadro mediante `rtmpose3d` ejecutado sobre CPU virtual de 1 vCPU con optimizaciones vectoriales AVX2 / ONNX Runtime. Con un rendimiento medio optimizado de $\sim 80\text{ a } 100\text{ fotogramas/segundo}$ redimensionando internamente los fotogramas para inferencia, los 180 fotogramas demandan $\sim 1.9\text{ segundos}$ netos de cómputo, manteniendo la latencia en el rango admisible sin comprometer la precisión mAP en suelo.
-3. **Compensación de Kalman y Sincronización Temporal DTW ($t_{\text{kalman-dtw}} \approx 0.08\text{--}0.15\text{ s}$):** Al parametrizar la **Ventana de Sakoe-Chiba** con una cota del 15% de la longitud temporal ($w = 0.15 \cdot 180 \approx 27$ cuadros de tolerancia), la matriz de búsqueda de costo acumulado se restringe a una banda diagonal de ancho $2w + 1 = 55$ celdas por fotograma. Esto transmuta la complejidad temporal cuadrática $O(N^2) \approx 32,400\text{ operaciones}$ a un régimen estrictamente cuasi-lineal $O(w \cdot N) \approx 4,860\text{ operaciones}$, completándose la alineación temporal en escasos $80\text{ a } 150\text{ milisegundos}$.
+2. **Extracción Cinemática con RTMPose 3D ($t_{\text{rtmpose}} \approx 1.8\text{--}2.2\text{ s}$):** Procesamiento cuadro a cuadro mediante `rtmpose3d` ejecutado con optimizaciones vectoriales AVX2 / ONNX Runtime. *(Nota Técnica de Dimensionamiento: Para garantizar la tasa de inferencia de $\sim 90\text{ fps}$ del modelo RTMPose3D-L optimizado en ONNX, la función Serverless se configura con **2 GB - 4 GB de RAM**. Según la política de asignación elástica de recursos de Huawei Cloud FunctionGraph, este dimensionamiento desbloquea el acceso a **1-2 vCPUs completas con instrucciones vectoriales AVX2**, evitando el estrangulamiento de CPU típico de instancias mínimas de 512 MB. Esto asegura que el tiempo de inferencia ($t_{\text{rtmpose}}$) se mantenga de forma determinista en $\sim 1.9\text{ s}$, cumpliendo holgadamente el SLA de 4.0s).*
+3. **Compensación de Kalman y Sincronización Temporal DTW ($t_{\text{kalman-dtw}} \approx 0.08\text{--}0.15\text{ s}$):** Al parametrizar la **Ventana de Sakoe-Chiba** con una cota del 15% de la longitud temporal ($w = 0.15 \cdot 180 \approx 27$ cuadros de tolerancia), la matriz de búsqueda de costo acumulado se restringe a una banda diagonal de ancho $2w + 1 = 55$ celdas por fotograma. Esto transmuta la complejidad temporal cuadrática $O(N^2) \approx 32,400\text{ operaciones}$ a un régimen estrictamente cuasi-lineal $O(w \cdot N) \approx 4,860\text{ operaciones}$, completándose la alineación temporal en escasos $80\text{ a } 150\text{ ms}$.
 4. **Extracción y Anotación Gráfica con OpenCV ($t_{\text{opencv}} \approx 0.03\text{--}0.05\text{ s}$):** El trazado del círculo rojo ($\text{radio} = 15\text{ px}$) sobre el fotograma clave de máxima desviación y su posterior codificación a formato JPG con factor de compresión 80 insume $\le 50\text{ ms}$.
 
 Sumando los valores en el escenario de arranque en frío más desfavorable:
@@ -961,11 +972,13 @@ La arquitectura híbrida laptop-cloud garantiza que el consumo facturable de Hua
 **Desglose de Costos Trimestrales:**
 
 1. **FunctionGraph (Cómputo Serverless):**
-   - Tier gratuito permanente: 1,000,000 invocaciones/mes y 400,000 GB-segundos/mes sin cargo.
+   - Tier gratuito permanente de Huawei Cloud: 1,000,000 invocaciones/mes y 400,000 GB-segundos/mes sin cargo.
    - Escenario operativo regular (350 consultas mensuales × 3 meses = 1,050 invocaciones trimestrales):
-     - Cada invocación consume ~2 segundos × 512 MB RAM = 1 GB-segundo.
-     - Total trimestral: 1,050 GB-segundos (dentro del tier gratuito).
-     - **Costo FunctionGraph: $0.00 USD**
+     - Configuración de alto rendimiento: cada invocación consume ~2 segundos × 2 GB RAM (desbloqueando 1 vCPU AVX2 completa) = 4 GB-segundos por ejecución.
+     - Total trimestral: $1,050 \times 4\text{ GB-s} = 4,200\text{ GB-segundos}$ trimestrales.
+     - Al estar ampliamente por debajo de la cuota gratuita mensual de 400,000 GB-segundos, el costo es cubierto al 100% por el tier gratuito.
+     - Incluso si se configurase a 4 GB RAM (8 GB-s por invocación = 8,400 GB-s trimestrales) y se agotase la cuota gratuita, el costo facturable a tarifa estándar de $0.00001667/GB-s equivaldría a escasos $0.14 USD.
+     - **Costo FunctionGraph Estimado: $0.00 USD (o < $0.50 USD en contingencia de sobreconsumo)**
 
 2. **OBS (Almacenamiento de Objetos):**
    - Almacenamiento estándar: 10 GB × $0.021/GB/mes = $0.21/mes × 3 = $0.63 USD trimestrales.
@@ -974,7 +987,7 @@ La arquitectura híbrida laptop-cloud garantiza que el consumo facturable de Hua
    - API Requests: 2,100 PUT/GET requests × $0.005/1,000 = $0.0105 USD trimestrales.
    - **Costo OBS Total: ~$0.65 USD trimestrales**
 
-**Costo Total Trimestral Huawei Cloud: ~$0.65 USD** (ampliamente inferior al límite de $30 USD).
+**Costo Total Trimestral Huawei Cloud: ~$0.65 a $1.50 USD** (ampliamente inferior a $5.00 USD y al límite presupuestario de $30 USD).
 
 La laptop del desarrollador asume sin costo adicional la ejecución de Streamlit (frontend), PostgreSQL (persistencia relacional) y el entorno de desarrollo Python, cumpliendo con la restricción presupuestaria del proyecto.
 
@@ -1164,6 +1177,7 @@ Conforme al marco conceptual de Craig Larman (Capítulos 16 y 17), la distribuci
 
 El **Diagrama de Clases de Diseño (DCD)** traduce el Modelo de Dominio conceptual (Sección 4.5) hacia una arquitectura orientada a objetos de software concreta, detallando tipos de datos nativos, visibilidad de atributos (`-` privado, `+` público, `#` protegido), signaturas completas de métodos, navegabilidad y relaciones estructurales.
 
+#### A. Diagrama de Clases UML Consolidado
 La **Figura 5.6** presenta el DCD consolidado del sistema:
 
 ```mermaid
@@ -1370,6 +1384,29 @@ PipelineBiomecanicoEngine --> CatalogoReglasEngine : usa
 
 **Figura 5.6**  
 *Diagrama de Clases de Diseño (DCD) Consolidado (UML).*
+
+#### B. Formalización Matemática del LandmarkAdapter: Cálculo de Ángulos Articulares 3D
+Para garantizar la independencia respecto a la topología específica del modelo de visión por computadora y lograr **invariancia estricta a la traslación, escala y orientación de la cámara**, el componente `LandmarkAdapter` procesa las ternas de keypoints extraídos por RTMPose y calcula las series temporales de ángulos anatómicos en el espacio euclidiano tridimensional.
+
+Para cualquier articulación anatómica compuesta por tres keypoints ordenados en el espacio euclidiano $\mathbb{R}^3$ definidos como:
+* $A = (x_A, y_A, z_A)$: Punto proximal (ej. hombro).
+* $B = (x_B, y_B, z_B)$: Articulación pivote o vértice angular (ej. codo).
+* $C = (x_C, y_C, z_C)$: Punto distal (ej. muñeca).
+
+El adaptador formula los vectores de segmento óseo relativos tomando como origen común la articulación intermedia $B$:
+
+$$\vec{BA} = A - B = (x_A - x_B, \; y_A - y_B, \; z_A - z_B)$$
+
+$$\vec{BC} = C - B = (x_C - x_B, \; y_C - y_B, \; z_C - z_B)$$
+
+El ángulo articular relativo $\theta \in [0^\circ, 180^\circ]$ formado en el vértice $B$ se calcula rigurosamente aplicando la definición del **producto escalar euclidiano** y la norma vectorial tridimensional:
+
+$$\theta = \arccos \left( \frac{\vec{BA} \cdot \vec{BC}}{\|\vec{BA}\| \|\vec{BC}\|} \right) = \arccos \left( \frac{(x_A - x_B)(x_C - x_B) + (y_A - y_B)(y_C - y_B) + (z_A - z_B)(z_C - z_B)}{\sqrt{(x_A - x_B)^2 + (y_A - y_B)^2 + (z_A - z_B)^2} \cdot \sqrt{(x_C - x_B)^2 + (y_C - y_B)^2 + (z_C - z_B)^2}} \right)$$
+
+**Propiedades de Invarianza Biométrica y Justificación:**
+1. **Invarianza Traslacional:** Dado que los vectores $\vec{BA}$ y $\vec{BC}$ se definen mediante la diferencia de coordenadas relativas, si el practicante se desplaza en cualquier dirección sobre el tatami ($X, Y, Z$), la traslación rígida se cancela idénticamente en la resta, garantizando que la posición espacial del atleta no distorsione el valor angular.
+2. **Invarianza de Escala y Antropometría:** Al dividir el producto punto sobre el producto de las normas euclidianas $(\|\vec{BA}\| \|\vec{BC}\|)$, las longitudes absolutas de los miembros se normalizan a la unidad, permitiendo comparar de forma homogénea extremidades de atletas con distintas envergaduras físicas o tomas con diferente distancia focal o proximidad óptica.
+3. **Robustez ante Rotación en Profundidad ($Z$):** El cómputo sobre las 3 componentes espaciales absorbe desviaciones de diagonalidad en la captura del video, proporcionando la señal cinemática canónica y limpia que alimenta al algoritmo DTW (`DTWComparator`) y al motor de reglas (`CatalogoReglasEngine`).
 
 ---
 

@@ -1,0 +1,15 @@
+# Core & UI
+streamlit>=1.30.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+
+# AI & Vision (RTMPose3D / OpenMMLab)
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Database & ORM (Mannino)
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Testing (TDD)
+pytest>=7.0.0

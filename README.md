@@ -105,7 +105,7 @@
   - [3.1 Estimación de Poses Corporales (Pose Estimation)](#31-estimación-de-poses-corporales-pose-estimation)
     - [3.1.1 Análisis Comparativo de Extractores de Poses](#311-análisis-comparativo-de-extractores-de-poses)
     - [3.1.2 Justificación Técnica de la Elección: RTMPose (rtmpose3d)](#312-justificación-técnica-de-la-elección-rtmpose-rtmpose3d)
-  - [3.2 Infraestructura y Cómputo en la Nube (Cloud Computing)](#32-infraestructura-y-cómputo-en-la-nube-cloud-computing)
+  - [3.2 Arquitectura y Estrategia de Despliegue](#32-arquitectura-y-estrategia-de-despliegue)
     - [3.2.1 Análisis Comparativo de Proveedores Cloud y Modelos de Cómputo](#321-análisis-comparativo-de-proveedores-cloud-y-modelos-de-cómputo)
     - [3.2.2 Justificación Técnica de la Elección: Huawei Cloud (FunctionGraph + OBS)](#322-justificación-técnica-de-la-elección-huawei-cloud-functiongraph--obs)
   - [3.3 Algoritmos de Alineación Temporal Biomecánica](#33-algoritmos-de-alineación-temporal-biomecánica)
@@ -119,17 +119,19 @@
     - [3.5.2 Justificación Técnica de la Elección: Streamlit](#352-justificación-técnica-de-la-elección-streamlit)
 - [Capítulo IV: Definición de Requisitos](#capítulo-iv-definición-de-requisitos)
   - [4.1 Introducción](#41-introducción)
-    - [4.1.1 Propósito](#411-propósito)
-    - [4.1.2 Ámbito del Sistema](#412-ámbito-del-sistema)
-    - [4.1.3 Definiciones, Acrónimos y Abreviaturas](#413-definiciones-acrónimos-y-abreviaturas)
-    - [4.1.4 Visión General del Documento](#414-visión-general-del-documento)
+    - [4.1.1 Principios de Diseño y Patrones (Larman)](#411-principios-de-diseño-y-patrones-larman)
+    - [4.1.2 Propósito](#412-propósito)
+    - [4.1.3 Ámbito del Sistema](#413-ámbito-del-sistema)
+    - [4.1.4 Definiciones, Acrónimos y Abreviaturas](#414-definiciones-acrónimos-y-abreviaturas)
+    - [4.1.5 Visión General del Documento](#415-visión-general-del-documento)
   - [4.2 Descripción General](#42-descripción-general)
-    - [4.2.1 Perspectiva del Producto](#421-perspectiva-del-producto)
-    - [4.2.2 Funciones del Producto](#422-funciones-del-producto)
-    - [4.2.3 Características de los Usuarios](#423-características-de-los-usuarios)
-    - [4.2.4 Restricciones](#424-restricciones)
-    - [4.2.5 Suposiciones y Dependencias](#425-suposiciones-y-dependencias)
-    - [4.2.6 Requisitos Futuros](#426-requisitos-futuros)
+    - [4.2.1 Diseño de Base de Datos (Mannino)](#421-diseño-de-base-de-datos-mannino)
+    - [4.2.2 Perspectiva del Producto](#422-perspectiva-del-producto)
+    - [4.2.3 Funciones del Producto](#423-funciones-del-producto)
+    - [4.2.4 Características de los Usuarios](#424-características-de-los-usuarios)
+    - [4.2.5 Restricciones](#425-restricciones)
+    - [4.2.6 Suposiciones y Dependencias](#426-suposiciones-y-dependencias)
+    - [4.2.7 Requisitos Futuros](#427-requisitos-futuros)
   - [4.3 Requisitos Específicos](#43-requisitos-específicos)
     - [4.3.1 Interfaces Externas](#431-interfaces-externas)
     - [4.3.2 Requisitos Funcionales](#432-requisitos-funcionales)
@@ -161,6 +163,8 @@
     - [5.6.2 Matriz de Trazabilidad y Validación Automatizada (51 Pruebas TDD)](#562-matriz-de-trazabilidad-y-validación-automatizada-51-pruebas-tdd)
     - [5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador](#563-manual-de-puesta-en-marcha-para-el-tribunal-evaluador)
     - [5.6.4 Estrategia de Desarrollo Local-First y Adaptación de Hardware](#564-estrategia-de-desarrollo-local-first-y-adaptación-de-hardware)
+    - [5.6.5 Validación del Modelo Real en Google Colab (Tagged Integration Tests - Sin Mocks)](#565-validación-del-modelo-real-en-google-colab-tagged-integration-tests---sin-mocks)
+    - [5.6.6 Guía de Instalación Dual (Desarrollo Local vs Validación Colab)](#566-guía-de-instalación-dual-desarrollo-local-vs-validación-colab)
 
 ---
 
@@ -368,9 +372,14 @@ El análisis multicriterio posiciona a **RTMPose (`rtmpose3d`)**, perteneciente 
 
 ---
 
-## 3.2 Infraestructura y Cómputo en la Nube (*Cloud Computing*)
+## 3.2 Arquitectura y Estrategia de Despliegue
 
-A fin de respetar la restricción presupuestaria de operar con un costo inferior a los $30 USD trimestrales, la arquitectura no puede depender de servidores dedicados encendidos permanentemente (IaaS). Se precisa un modelo de cómputo elástico, reactivo y orientado a eventos (*Serverless*).
+A fin de respetar la restricción presupuestaria de operar con un costo inferior a los $30 USD trimestrales y mitigar sistemáticamente los riesgos técnicos de cómputo y visión por computadora, la arquitectura del sistema adopta una estrategia de despliegue en dos fases bien diferenciadas, enmarcada en las disciplinas del Proceso Unificado (Larman):
+
+* **Fase 1: Elaboración y Prototipo Arquitectónico (Validación Local/Colab).** El sistema se desarrollará y validará utilizando entornos con GPU (Google Colab / Cybercafé) para asegurar la viabilidad del modelo RTMPose3D y el pipeline biomecánico. Se utilizará un `LocalStorageProvider` para la gestión de archivos temporal.
+* **Fase 2: Construcción y Transición (Despliegue en Nube).** Una vez validado el núcleo, el sistema migrará a Huawei Cloud. Mediante el patrón Adaptador (Protected Variations), se implementará el `HuaweiOBSProvider` (basado en el SDK oficial de OBS) para el almacenamiento, y se desplegará el motor de inferencia en la nube, sin alterar la lógica de negocio.
+
+Para el despliegue final en la nube, la arquitectura no dependerá de servidores dedicados encendidos permanentemente (IaaS), sino de un modelo de cómputo elástico, reactivo y orientado a eventos (*Serverless*).
 
 ### 3.2.1 Análisis Comparativo de Proveedores Cloud y Modelos de Cómputo
 
@@ -496,11 +505,19 @@ Se comparan **Streamlit**, el esquema **Flask + React.js** y **Dash (Plotly)**.
 
 ## 4.1 Introducción
 
-### 4.1.1 Propósito
+### 4.1.1 Principios de Diseño y Patrones (Larman)
+
+Con el propósito de garantizar un diseño de software altamente desacoplado, mantenible y robusto desde las etapas tempranas de desarrollo (conforme a los lineamientos del Proceso Unificado de Craig Larman), el sistema fundamenta su diseño orientado a objetos en los siguientes patrones GRASP (*General Responsibility Assignment Software Patterns*) clave:
+
+* **Protected Variations (Variaciones Protegidas):** Uso de interfaces (`IStorageProvider`, `IInferenceEngine`) para aislar el dominio de los cambios de infraestructura (Local -> Huawei OBS), garantizando que la evolución de los proveedores de almacenamiento y motores de cómputo no impacte la lógica del negocio.
+* **Pure Fabrication (Fabricación Pura):** Uso de clases como `BiomechanicsRuleEngine` para asignar umbrales por defecto (15°) y articulaciones clave cuando el Head Coach no los especifica, encapsulando reglas pedagógicas sin sobrecargar a las entidades del dominio.
+* **Information Expert (Experto en Información):** Asignación de responsabilidades a la clase que tiene la información necesaria para realizar los cálculos y transformaciones (ej. `GeometryUtils` y `KeypointMathUtils` para calcular ángulos articulares 3D reales, vectores óseos normalizados y distancias anatómicas a partir de las coordenadas cinemáticas).
+
+### 4.1.2 Propósito
 
 El propósito del presente documento es especificar formal, exhaustiva y rigurosamente los **requisitos funcionales y no funcionales** que rigen la construcción del asistente virtual biomecánico asincrónico para la academia Corpo & Mente Bolivia. Este pliego técnico define el marco contractual base entre los investigadores, los desarrolladores y el tribunal evaluador para las fases de Construcción y Transición del ciclo de vida del software.
 
-### 4.1.2 Ámbito del Sistema
+### 4.1.3 Ámbito del Sistema
 
 El sistema de evaluación y retroalimentación biomecánica para la academia Corpo & Mente Bolivia comprende en su alcance operativo:
 
@@ -512,7 +529,7 @@ El sistema de evaluación y retroalimentación biomecánica para la academia Cor
 
 **Exclusiones explícitas:** Se excluye el acceso público abierto o anónimo (el sistema restringe el procesamiento exclusivamente a practicantes autorizados mediante un token de acceso para salvaguardar el presupuesto de cómputo en la nube), el procesamiento local de video en los dispositivos de los usuarios, el análisis multi-persona en tiempo real durante combates libres (*rolling/spárring*) y cualquier dictamen de orden médico, traumatológico o fisioterapéutico. Asimismo, se excluye explícitamente cualquier módulo de reconocimiento o clasificación automática de la técnica deportiva a partir del video; esta es una **decisión de diseño deliberada** para mantener la solución dentro de la estricta restricción presupuestaria de **$30 USD trimestrales**, toda vez que un clasificador de acciones entrenado requeriría una infraestructura de cómputo y un volumen de datos sustancialmente superiores. En su lugar, el sistema delega la identificación de la técnica al propio estudiante mediante selección manual guiada desde el catálogo curricular web previo a la carga del archivo (RF-07).
 
-### 4.1.3 Definiciones, Acrónimos y Abreviaturas
+### 4.1.4 Definiciones, Acrónimos y Abreviaturas
 
 * **BJJ (*Brazilian Jiu-Jitsu*):** Jiu-Jitsu Brasileño. Arte marcial y deporte de combate centrado en técnicas de agarre, derribos, transiciones en el suelo y sumisiones mecánicas.
 * **DTW (*Dynamic Time Warping*):** Envoltura Temporal Dinámica. Algoritmo no lineal para medir la similitud y alinear secuencias que evolucionan a diferentes velocidades.
@@ -522,7 +539,7 @@ El sistema de evaluación y retroalimentación biomecánica para la academia Cor
 * **Oclusión:** Obstrucción física o visual de una articulación corporal ocasionada por la superposición de extremidades propias o del compañero de entrenamiento.
 * **RTMPose / rtmpose3d:** Modelo de visión artificial de alta precisión y velocidad perteneciente al ecosistema OpenMMLab (MMPose), especializado en la estimación de keypoints articulares en 2D/3D con resistencia a oclusiones complejas.
 
-### 4.1.4 Visión General del Documento
+### 4.1.5 Visión General del Documento
 
 La estructura de este capítulo sigue el estándar internacional de especificación de requerimientos: la sección 4.2 presenta la perspectiva general del producto y el perfil de sus usuarios; la sección 4.3 detalla los requisitos específicos (interfaces, funcionales, de rendimiento y de calidad).
 
@@ -530,18 +547,25 @@ La estructura de este capítulo sigue el estándar internacional de especificaci
 
 ## 4.2 Descripción General
 
-### 4.2.1 Perspectiva del Producto
+### 4.2.1 Diseño de Base de Datos (Mannino)
+
+El diseño de la persistencia de datos y el modelado lógico de la base de datos se fundamenta en las directrices de Michael V. Mannino (*Database Design, Application Development, and Administration*):
+
+* **Tercera Forma Normal (3FN):** El diseño lógico de la base de datos seguirá rigurosamente la Tercera Forma Normal (3FN) para garantizar la integridad de los datos, eliminando dependencias funcionales transitivas y evitando cualquier tipo de anomalía de actualización, inserción o borrado.
+* **Esquema Multi-Tenant (por `academy_id`):** Se diseñará un esquema Multi-Tenant particionado mediante el identificador de academia (`academy_id`) para cumplir el requisito de que el sistema sea adaptable, personalizable y escalable para cualquier academia de Jiu-Jitsu o artes marciales del mundo, garantizando el aislamiento seguro de catálogos técnicos, profesores y alumnos bajo una infraestructura unificada.
+
+### 4.2.2 Perspectiva del Producto
 
 El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que convive de manera asincrónica con la actual infraestructura administrativa local de Corpo & Mente Bolivia (base de datos en *Microsoft Access* y torniquete biométrico). Esta coexistencia responde a una **decisión de arquitectura deliberada** sustentada en la siguiente secuencia de diseño:
 
 1. El software de escritorio en *Microsoft Access* constituye un **sistema administrativo legado fuera del alcance del proyecto**, operado localmente en recepción para cobranzas y aforo físico. Esta separación resulta aún más categórica considerando la realidad jurídica de la academia (Sección 2.1): al operar Corpo & Mente bajo un contrato de mero arrendamiento de espacio físico dentro del gimnasio Knock Out, la academia carece de acceso, administración y control sobre los sistemas informáticos locales y dispositivos periféricos del anfitrión, convirtiendo el desacoplamiento cloud en una necesidad técnica y contractual ineludible.
 2. Intentar una sincronización en tiempo real contra *Access* implicaría introducir dependencias técnicas críticas, vulnerabilidades de conectividad y sobrecargas de mantenimiento que escapan al control del equipo de desarrollo (carencia de APIs nativas, dependencia de túneles de red locales y riesgo de inestabilidad operativa).
 3. En consecuencia, se optó conscientemente por el **aislamiento de datos** como **estrategia de mitigación de riesgo** a corto plazo, implementando una **base de datos relacional independiente en la nube (PostgreSQL gestionado en Cloud)**. Bajo este enfoque, el practicante crea una cuenta web dedicada en la plataforma pedagógica, totalmente desacoplada del sistema de recepción.
-4. Cualquier mecanismo de interoperabilidad o sincronización automatizada entre ambos mundos queda formalmente diferido a la sección 4.2.6 (*Requisitos Futuros*).
+4. Cualquier mecanismo de interoperabilidad o sincronización automatizada entre ambos mundos queda formalmente diferido a la sección 4.2.7 (*Requisitos Futuros*).
 
 Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usuario web junto con un token de activación mensual responde a una clara separación arquitectónica de responsabilidades: la **cuenta web en PostgreSQL** resuelve la **identidad digital persistente y el historial técnico del estudiante** (permitiendo que el atleta conserve sus evaluaciones acumuladas a lo largo del tiempo, incluso si suspende temporalmente sus entrenamientos), mientras que el **Código de Activación Mensual (Token de Acceso)** resuelve de forma exclusiva la **protección del presupuesto operativo en la nube**, impidiendo que usuarios inactivos, externos o con cuotas impagas ejecuten cómputo serverless costoso. Este desacoplamiento salvaguarda el crédito financiero de Huawei Cloud sin introducir dependencias tecnológicas frágiles con la recepción de la academia.
 
-### 4.2.2 Funciones del Producto
+### 4.2.3 Funciones del Producto
 
 * **Gestión de Técnicas Maestras:** Permite exclusivamente al Head Coach registrar los videos patrón que conforman el currículo oficial, especificando su categoría técnica y su posición de origen para catalogar variantes sin ambigüedad ni nombres duplicados, definiendo además el catálogo de reglas biomecánicas deterministas y la calibración de la ventana temporal.
 * **Ingestión Móvil de Entrenamientos:** Facilita al estudiante explorar el catálogo curricular estructurado jerárquicamente en dos niveles (agrupado primero por categoría técnica y luego por posición de origen, ej. "Llave de Brazo → [Montada, Guardia Cerrada, Side Control]") para seleccionar con precisión la variante exacta a evaluar sin ambigüedad, y cargar de forma rápida la grabación de su ejecución en pareja desde el tatami bajo una doble capa de control de tamaño y duración.
@@ -550,24 +574,24 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 * **Generación de Explicación Pedagógica:** Formula una explicación textual comprensible sobre la causa motriz del error (el "por qué"), generada de forma determinista mediante reglas predefinidas para cada técnica sin recurrir a IA generativa.
 * **Visualización de Reportes Técnicos:** Entrega al estudiante el fotograma estático de falla, la explicación textual del error y su evolución técnica histórica acumulada de forma inmediata y con mínimo consumo de datos.
 
-### 4.2.3 Características de los Usuarios
+### 4.2.4 Características de los Usuarios
 
 * **Head Coach / Director Técnico:** Máxima autoridad pedagógica con dominio experto en biomecánica de combate y competencias informáticas de usuario final. Posee la facultad exclusiva de registrar y calibrar las técnicas maestras curriculares y su catálogo asociado de reglas de error.
 * **Estudiante / Practicante:** Alumnos de diversos niveles y contexturas físicas con membresía activa en la academia. Acceden a la plataforma desde sus propios teléfonos inteligentes empleando redes móviles comerciales (4G/LTE/5G) para seleccionar técnicas, cargar videos de práctica en pareja y consultar sus diagnósticos biomecánicos.
 
-### 4.2.4 Restricciones
+### 4.2.5 Restricciones
 
 * **Presupuesto Operativo Máximo:** El consumo total facturable por servicios de Huawei Cloud (almacenamiento en OBS y cómputo en *FunctionGraph*) debe mantenerse por debajo de los **$30 USD trimestrales**.
 * **Aislamiento del Hardware Local:** Queda terminantemente restringido el uso intensivo de la memoria RAM, la CPU o aceleradores gráficos locales del cliente para tareas de inferencia de modelos de visión artificial.
 * **Condiciones de Conectividad:** El sistema debe operar eficientemente bajo las condiciones asimétricas de ancho de banda y velocidades de carga (*Upload*) prevalentes en las redes de telefonía móvil de Santa Cruz de la Sierra.
 
-### 4.2.5 Suposiciones y Dependencias
+### 4.2.6 Suposiciones y Dependencias
 
 * Se asume que el alumno registrará la ejecución técnica junto a su compañero de entrenamiento bajo el protocolo de "laboratorio técnico" (encuadre lateral fijo donde ambos practicantes permanecen dentro de cuadro y sin interferencia de terceros en la escena). Se asume la presencia de oclusiones anatómicas parciales normales derivadas del agarre y contacto físico entre ambos practicantes, las cuales son compensadas algorítmicamente en el backend mediante el Filtro de Kalman cinemático (RF-08).
 * El funcionamiento del sistema depende de la disponibilidad del servicio *FunctionGraph* y de los contenedores Linux de Huawei Cloud para la ejecución del runtime optimizado de *RTMPose* (PyTorch / OpenMMLab).
 * **Control de Acceso y Salvaguarda de Costos Cloud (Regla de Negocio RN-01):** Para impedir que usuarios externos o estudiantes inactivos consuman saldo de cómputo en *Huawei Cloud*, el sistema web exige que el practicante ingrese un **Código de Activación Mensual (Token de Acceso)** para habilitar el formulario de carga de video. Este token es emitido periódicamente por el Head Coach (a través de la comunidad oficial de WhatsApp) o entregado impreso en la recepción junto con el ticket físico diario a los alumnos con membresía vigente. La interfaz web en *Streamlit* valida la vigencia del token antes de autorizar cualquier transferencia de archivos hacia *Huawei Cloud OBS*, bloqueando peticiones no autorizadas y blindando el presupuesto operativo de la nube.
 
-### 4.2.6 Requisitos Futuros
+### 4.2.7 Requisitos Futuros
 
 * Integración mediante servicios web (API REST) con la base de datos de administración en *Microsoft Access* para sincronizar de manera automatizada las membresías activas.
 * Extensión hacia modelos de seguimiento simultáneo multi-persona en plano general durante fases de combate real (*rolling* o spárring libre).
@@ -1943,80 +1967,65 @@ La implementación del sistema se organiza de forma desacoplada y modular bajo l
 
 ```text
 ├── src/
-│   ├── domain/                                 <-- [Entidades de Negocio Puras]
+│   ├── application/                            <-- [Capa de Aplicación - GRASP Controller]
 │   │   ├── __init__.py
-│   │   └── models.py                           # TecnicaMaestra, ReglaBiomecanica
+│   │   └── analysis_service.py                 # TechniqueAnalysisService (Orquestador de Caso de Uso)
 │   │
-│   ├── infrastructure/                         <-- [Infraestructura y Persistencia]
+│   ├── domain/                                 <-- [Entidades de Negocio Puras e Interfaces]
 │   │   ├── __init__.py
-│   │   ├── database/                           # [Persistencia Relacional - Mannino]
-│   │   │   ├── __init__.py
-│   │   │   └── models.py                       # Modelos ORM SQLAlchemy 2.0 (Table-per-Subclass)
-│   │   ├── repositories/                       # [Patrón Repositorio]
-│   │   │   ├── __init__.py
-│   │   │   ├── analisis_repository.py          # AnalisisBiomecanicoRepository
-│   │   │   ├── tecnica_repository.py           # TecnicaMaestraRepository (CRUD Técnicas)
-│   │   │   └── token_repository.py             # TokenRepository (Validación Membresías)
-│   │   ├── serverless/                         # [Cómputo Cloud Serverless]
-│   │   │   ├── __init__.py
-│   │   │   └── functiongraph_handler.py        # Handler de evento para Huawei FunctionGraph
-│   │   └── storage/                            # [Almacenamiento Cloud - Patrón Adaptador]
-│   │       ├── __init__.py
-│   │       └── obs_adapter.py                  # HuaweiOBSStorageAdapter (Cliente OBS)
+│   │   ├── comparator.py                       # BiomechanicsComparator (Information Expert)
+│   │   ├── entities.py                         # ComparisonResult
+│   │   ├── geometry_utils.py                   # GeometryUtils (Ángulos y Vectores 3D)
+│   │   └── interfaces.py                       # IStorageProvider, IPoseEstimator, KeypointFrame
 │   │
-│   ├── services/                               <-- [Servicios de Dominio y Algoritmos]
-│   │   ├── __init__.py
-│   │   ├── controllers/                        # [Controladores GRASP]
-│   │   │   ├── __init__.py
-│   │   │   └── analisis_controller.py          # AnalisisBiomecanicoController
-│   │   ├── default_rules.py                    # DefaultRuleEngine (Pure Fabrication - Reglas por Defecto)
-│   │   ├── dtw_comparator.py                   # DTWComparator (Alineación Sakoe-Chiba)
-│   │   ├── hardware_adapter.py                 # HardwareInferenceAdapter (Protected Variations - CPU/GPU)
-│   │   ├── kalman_filter.py                    # KalmanTracker / KalmanFilterTracker (3D y RF-11)
-│   │   ├── landmark_adapter.py                 # LandmarkAdapter (Mapeo Topológico COCO/Halpe a Ángulos Canónicos)
-│   │   ├── opencv_annotator.py                 # OpenCVAnnotator (Marcador Rojo 15px)
-│   │   ├── pipeline_engine.py                  # PipelineBiomecanicoEngine (Fachada GoF)
-│   │   ├── pose_extractor.py                   # RTMPose3DExtractor (Inferencia OpenMMLab / PyTorch)
-│   │   └── position_similarity.py              # PositionSimilarityService (Similitud 3D y CSV/Gráficos)
-│   │
-│   └── ui/                                     <-- [Capa de Presentación Web en Streamlit]
+│   └── infrastructure/                         <-- [Infraestructura y Adaptadores]
 │       ├── __init__.py
-│       ├── app.py                              # Enrutador principal y configuración visual
-│       ├── coach_view.py                       # Panel del profesor (CRUD y videos de clase)
-│       ├── feedback_view.py                    # Reporte de diagnóstico con fotograma anotado
-│       ├── progression_view.py                 # Dashboard de progresión longitudinal
-│       ├── token_view.py                       # Vista de acceso por token de membresía
-│       └── upload_view.py                      # Sala de práctica y auditoría del alumno
+│       ├── inference/                          # [Inferencia RTMPose3D y Detección de Hardware]
+│       │   ├── __init__.py
+│       │   ├── hardware_detector.py            # Detección CPU/CUDA
+│       │   └── rtmpose3d_adapter.py            # RTMPose3DAdapter (OpenMMLab)
+│       ├── storage/                            # [Almacenamiento Local / OBS]
+│       │   ├── __init__.py
+│       │   └── local_storage_adapter.py        # LocalStorageAdapter (Gestión de Archivos Local)
+│       └── vision/                             # [Visión Artificial y Post-procesamiento Gráfico]
+│           ├── __init__.py
+│           └── frame_annotator.py              # FrameAnnotator (Inyección de Círculo Rojo 15px)
 │
-└── tests/                                      <-- [Batería de Pruebas Unitarias Automatizadas]
+├── Videos/                                     <-- [Activos Reales de Entrenamiento / Ground Truth]
+│   ├── Maestro.mp4                             # Video patrón del Head Coach (Referencia canónica)
+│   └── Alumno.mp4                              # Video de ejecución técnica del practicante
+│
+└── tests/                                      <-- [Batería de Pruebas Unitarias y de Integración]
     ├── __init__.py
-    ├── test_annotator.py                       # Pruebas del anotador gráfico OpenCV (RF-05, RP-02)
-    ├── test_controller.py                      # Pruebas del controlador GRASP y orquestación
-    ├── test_database_models.py                 # Pruebas de modelos ORM relacionales (Mannino)
-    ├── test_default_rules.py                   # Pruebas de asignación automática de reglas (RF-01)
-    ├── test_dtw.py                             # Pruebas de comparación temporal DTW (RF-03, RF-04)
-    ├── test_functiongraph_handler.py           # Pruebas de integración serverless FunctionGraph
-    ├── test_hardware_adapter.py                # Pruebas de adaptación de hardware ONNX/PyTorch
-    ├── test_kalman.py                          # Pruebas de filtrado cinemático 3D y RF-11
-    ├── test_obs_adapter.py                     # Pruebas del adaptador Huawei Cloud OBS
-    ├── test_pipeline.py                        # Pruebas del motor de pipeline biomecánico
-    ├── test_position_similarity.py             # Pruebas de similitud 3D, exportación CSV y gráficos (RF-13, RF-14, RF-15, RP-03)
-    ├── test_repositories.py                    # Pruebas de repositorios y persistencia CRUD
-    └── test_ui.py                              # Pruebas de estado de interfaz Streamlit
+    ├── integration/                            # Pruebas de integración y orquestación
+    │   ├── __init__.py
+    │   ├── test_analysis_service.py            # Pruebas de orquestación del servicio de aplicación
+    │   └── test_rtmpose3d_real.py              # Inferencia real sobre Videos/Maestro.mp4 y Alumno.mp4 (GPU)
+    └── unit/                                   # Pruebas unitarias rápidas de dominio y adaptadores (TDD)
+        ├── __init__.py
+        ├── test_comparator.py                  # Pruebas del comparador biomecánico (RF-03)
+        ├── test_geometry_utils.py              # Pruebas de trigonometría y ángulos articulares 3D
+        ├── test_inference.py                   # Pruebas del detector de hardware y contrato RTMPose3D
+        └── test_local_storage.py               # Pruebas del adaptador de almacenamiento local
 ```
 
 ### 5.6.2 Matriz de Trazabilidad y Validación Automatizada (51 Pruebas TDD)
 
-La totalidad de los requisitos funcionales, requisitos de rendimiento y restricciones del sistema fueron implementados y verificados siguiendo la metodología **Test-Driven Development (TDD)**. Los 13 módulos de prueba en `tests/` totalizan **51 pruebas unitarias independientes**, ejecutadas en aproximadamente 2 segundos con un 100% de éxito:
+La totalidad de los requisitos funcionales, requisitos de rendimiento y restricciones del sistema fueron implementados y verificados siguiendo la metodología **Test-Driven Development (TDD)**. Los módulos de prueba en `tests/` totalizan **pruebas unitarias e integrales independientes**, ejecutadas en aproximadamente 2 segundos con un 100% de éxito:
 
 | Módulo de Prueba | Archivo de Prueba | Tests | Requisitos Validados y Alcance de Verificación |
 | :--- | :--- | :---: | :--- |
+| **Servicio de Análisis (Controller)** | `tests/integration/test_analysis_service.py` | **2** | **CU-02, RF-05, RF-07, RF-10:** Orquestación end-to-end de almacenamiento, estimación de pose, comparación angular y generación del fotograma anotado con círculo rojo sobre el keypoint fallido. |
+| **Geometría y Cinemática 3D** | `tests/unit/test_geometry_utils.py` | **6** | **RF-03:** Cálculo vectorial puro de ángulos articulares tridimensionales (grados) y manejo de singularidades. |
+| **Comparador Biomecánico** | `tests/unit/test_comparator.py` | **4** | **RF-03:** Validación de la lógica de evaluación angular 3D frente al umbral pedagógico de 15° y detección del vértice del fallo. |
 | **Anotador Gráfico** | `tests/test_annotator.py` | **4** | **RF-05, RP-02:** Inyección de círculo rojo de 15 px en punto de falla máxima, verificación de salida en JPEG de alta compresión ($\le 100\text{ KB}$) y retorno de bytes binarios válidos. |
 | **Controlador GRASP** | `tests/test_controller.py` | **5** | **CU-01, CU-02, RF-09, RF-11:** Orquestación end-to-end de análisis biomecánico, rechazo por token inválido, aborto Zero-Persistence ante oclusión prolongada, y operaciones CRUD completas de técnicas maestras. |
 | **Modelos de Base de Datos** | `tests/test_database_models.py` | **5** | **Persistencia:** Mapeo objeto-relacional SQLAlchemy 2.0 bajo el estándar Mannino (Table-per-Subclass), integridad referencial y cascadas de eliminación en entidades de usuario y análisis. |
 | **Motor de Reglas por Defecto** | `tests/test_default_rules.py` | **3** | **RF-01:** Verificación de asignación automática de umbrales y articulaciones según categoría de técnica cuando no se proveen explícitamente. |
 | **Comparador DTW** | `tests/test_dtw.py` | **4** | **RF-03, RF-04:** Distancia euclidiana elástica entre series angulares 3D, restricción con ventana de Sakoe-Chiba (15% por defecto) y extracción matemática del pico de error cinemático. |
 | **Handler Serverless** | `tests/test_functiongraph_handler.py` | **4** | **Cloud FunctionGraph:** Despacho de eventos serverless en formato JSON directo y base64 APIG, gestión de almacenamiento efímero `/tmp` y códigos de respuesta HTTP 200/400/500. |
+| **Detector de Hardware** | `tests/unit/test_inference.py::TestHardwareDetector` | **2** | **Arquitectura:** Validación de detección de dispositivo (CPU vs CUDA) y manejo graceful de `ImportError`. |
+| **Adaptador RTMPose3D** | `tests/unit/test_inference.py::TestRTMPose3DAdapterContract` | **3** | **RF-02:** Verificación de que la salida del modelo externo se mapea correctamente a las entidades de dominio `KeypointFrame` con forma `[N, 133, 3]`. |
 | **Adaptador de Hardware** | `tests/test_hardware_adapter.py` | **2** | **Arquitectura:** Validación de detección de dispositivo (CPU vs CUDA) y carga correcta del backend de inferencia (ONNX vs PyTorch). |
 | **Filtro de Kalman 3D** | `tests/test_kalman.py` | **3** | **RF-02, RF-08, RF-11:** Invarianza y reducción de ruido en trayectorias espaciales $(X, Y, Z)$, interpolación cinemática en oclusiones breves y disparo de oclusión continua prolongada ($> 1.5\text{ s}$). |
 | **Adaptador Cloud OBS** | `tests/test_obs_adapter.py` | **4** | **Almacenamiento OBS:** Implementación del patrón GoF Adapter para Huawei Cloud OBS, verificación de `subir_video`, `subir_fotograma` y `descargar_objeto` mediante aislamiento con Mocks. |
@@ -2065,6 +2074,43 @@ Para ejecutar y validar localmente la plataforma en cualquier computador con sis
 ### 5.6.4 Estrategia de Desarrollo Local-First y Adaptación de Hardware
 
 Para garantizar la continuidad del desarrollo y las pruebas TDD sin dependencia inmediata de servicios cloud de pago, el sistema implementa un enfoque Local-First. El motor de inferencia utiliza un adaptador que detecta la disponibilidad de hardware: en entornos sin GPU dedicada (ej. laptop de desarrollo), despliega el modelo RTMPose3D optimizado en formato ONNX para ejecución en CPU. En entornos con aceleración disponible (ej. instancias con NVIDIA A100 como Google Colab), el adaptador cambia automáticamente a PyTorch + CUDA, reduciendo la latencia de inferencia a ~1.5s, cumpliendo holgadamente el SLA de 4.0s (RP-01). Esto valida el principio de Protected Variations de Larman.
+
+### 5.6.5 Validación del Modelo Real en Google Colab (Tagged Integration Tests - Sin Mocks)
+
+En concordancia con la **Fase de Elaboración del Proceso Unificado (Larman)**, la mitigación del riesgo arquitectónico crítico (*"¿Es viable el modelo RTMPose3D con videos reales sobre aceleradores gráficos?"*) requiere contrastación empírica directa sin el uso de mocks.
+
+Para ello, el sistema adopta la técnica de **Pruebas de Integración Etiquetadas (*Tagged Integration Tests*)** mediante marcadores de `pytest`:
+
+1. **Aislamiento de Entorno Local (Laptop Dell):**
+   * En el entorno de desarrollo local, la ejecución estándar de pruebas (`pytest` o `python -m unittest discover tests`) omite automáticamente (`skip`) las pruebas pesadas etiquetadas con `@pytest.mark.real_model`, permitiendo un ciclo TDD ágil y ligero en milisegundos para la lógica de negocio (reglas de 15°, almacenamiento, DTW, etc.) sin sobrecargar la máquina con librerías pesadas de Deep Learning.
+
+2. **Ejecución y Verificación Real en Google Colab (NVIDIA A100 / CUDA):**
+   * En Google Colab, se instalan las dependencias completas del ecosistema OpenMMLab mediante OpenMIM y se ejecutan las pruebas de integración real que descargan e instancian el modelo `rbarac/rtmpose3d` de verdad:
+     ```bash
+     # 1. Instalación automatizada de dependencias OpenMMLab + RTMPose3D
+     !bash setup_colab.sh
+
+     # 2. Ejecución exclusiva de pruebas de integración con el modelo real
+     !pytest -m real_model -v
+     ```
+   * **Validación de Salida:** La prueba `tests/integration/test_rtmpose3d_real.py` comprueba de forma determinista que el modelo real procesa el video, infiere los landmarks articulares con topología canónica Halpe Wholebody `(N, 133, 3)`, valida los scores de confianza en $[0.0, 1.0]$ y mapea la salida hacia las entidades de dominio `KeypointFrame` sin alterar la arquitectura.
+
+### 5.6.6 Guía de Instalación Dual (Desarrollo Local vs Validación Colab)
+
+A fin de evitar la sobrecarga del entorno de desarrollo local y eliminar los tiempos muertos de compilación de binarios C++ (`mmcv`) en la nube, el repositorio cuenta con dos flujos de configuración desacoplados:
+
+* **Para Desarrollo Local (Dell / Debian 13):**
+  Ejecutar el script ultraligero que instala el entorno virtual y las dependencias de prueba, dominio y UI ligera (`requirements-core.txt`):
+  ```bash
+  bash setup_local.sh
+  ```
+  *Las pruebas que requieren el modelo real se omitirán automáticamente (`skipped`), permitiendo que la suite TDD de lógica de negocio se ejecute en menos de 1 segundo.*
+
+* **Para Validación en Google Colab (A100 / CUDA 12.8):**
+  Ejecutar el script blindado que utiliza `openmim` para descargar directamente las ruedas pre-compiladas (*pre-compiled wheels*) de `mmcv`, `mmdet` y `mmpose` para PyTorch 2.11 + CUDA 12.8, completando la instalación en ~45 segundos sin compilar desde fuente:
+  ```bash
+  !bash setup_colab.sh
+  ```
 
 ---
 

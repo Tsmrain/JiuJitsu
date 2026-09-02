@@ -165,6 +165,7 @@
     - [5.6.4 Estrategia de Desarrollo Local-First y Adaptación de Hardware](#564-estrategia-de-desarrollo-local-first-y-adaptación-de-hardware)
     - [5.6.5 Validación del Modelo Real en Google Colab (Tagged Integration Tests - Sin Mocks)](#565-validación-del-modelo-real-en-google-colab-tagged-integration-tests---sin-mocks)
     - [5.6.6 Guía de Instalación Dual (Desarrollo Local vs Validación Colab)](#566-guía-de-instalación-dual-desarrollo-local-vs-validación-colab)
+    - [5.6.7 Guía de Despliegue en Windows (Cybercafé / Workstation GPU)](#567-guía-de-despliegue-en-windows-cybercafé--workstation-gpu)
 
 ---
 
@@ -1966,6 +1967,12 @@ Con la culminación de las fases de desarrollo backend, infraestructura cloud y 
 La implementación del sistema se organiza de forma desacoplada y modular bajo los directorios `src/` (lógica productiva) y `tests/` (suite de pruebas automatizadas), manteniendo una correspondencia estricta entre especificación y código:
 
 ```text
+├── setup_colab.sh                              # Instalador Plug & Play para Google Colab (A100 / CUDA 12.8)
+├── setup_local.sh                              # Instalador ultraligero para entorno local (Debian/Ubuntu/macOS)
+├── setup_windows_gpu.bat                       # Instalador automatizado para Windows con GPU NVIDIA
+├── requirements-core.txt                       # Dependencias base ligeras (TDD y lógica de dominio)
+├── requirements-ml.txt                         # Dependencias pesadas para aceleración gráfica
+│
 ├── src/
 │   ├── application/                            <-- [Capa de Aplicación - GRASP Controller]
 │   │   ├── __init__.py
@@ -2107,10 +2114,37 @@ A fin de evitar la sobrecarga del entorno de desarrollo local y eliminar los tie
   *Las pruebas que requieren el modelo real se omitirán automáticamente (`skipped`), permitiendo que la suite TDD de lógica de negocio se ejecute en menos de 1 segundo.*
 
 * **Para Validación en Google Colab (A100 / CUDA 12.8):**
-  Ejecutar el script blindado que utiliza `openmim` para descargar directamente las ruedas pre-compiladas (*pre-compiled wheels*) de `mmcv`, `mmdet` y `mmpose` para PyTorch 2.11 + CUDA 12.8, completando la instalación en ~45 segundos sin compilar desde fuente:
+  Ejecutar el script blindado que utiliza `mmcv-lite` y `--no-deps` para OpenMMLab + RTMPose3D sin compilar desde fuente:
   ```bash
   !bash setup_colab.sh
   ```
+
+### 5.6.7 Guía de Despliegue en Windows (Cybercafé / Workstation GPU)
+
+Para validar la inferencia real de RTMPose3D en estaciones de trabajo físicas o computadoras de cibercafé con sistema operativo Windows y tarjetas gráficas NVIDIA (GeForce GTX/RTX con soporte CUDA):
+
+1. **Requisitos Previos:**
+   * Instalar **Python 3.10+** desde [python.org](https://www.python.org/downloads/), marcando obligatoriamente la casilla **"Add Python to PATH"**.
+   * Instalar **Git for Windows** desde [git-scm.com](https://git-scm.com/download/win).
+   * Contar con los controladores oficiales actualizados de NVIDIA instalados en el sistema.
+
+2. **Ejecución del Instalador Automatizado (`setup_windows_gpu.bat`):**
+   Abrir una terminal (`cmd.exe` o PowerShell) en la raíz del proyecto clonado y ejecutar:
+   ```cmd
+   setup_windows_gpu.bat
+   ```
+   *El script automatiza:*
+   * Creación del entorno virtual aislado `.venv`.
+   * Instalación de PyTorch con soporte nativo CUDA 11.8 (`--index-url https://download.pytorch.org/whl/cu118`).
+   * Instalación del stack OpenMMLab (`mmcv`, `mmdet`, `mmpose`) mediante `openmim`.
+   * Instalación de `rtmpose3d` y dependencias del proyecto (`requirements-core.txt`).
+   * Verificación de la presencia de los videos Ground Truth (`Videos\Maestro.mp4` y `Videos\Alumno.mp4`).
+
+3. **Activación del Entorno y Ejecución de Pruebas Reales:**
+   ```cmd
+   .venv\Scripts\activate.bat
+   pytest tests/integration/test_rtmpose3d_real.py -m real_model -v -s
+   ```
 
 ---
 

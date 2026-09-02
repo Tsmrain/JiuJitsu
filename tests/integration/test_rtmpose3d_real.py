@@ -45,7 +45,7 @@ class TestRTMPose3DRealModelIntegration(unittest.TestCase):
         try:
             import rtmpose3d  # noqa: F401
         except ImportError:
-            msg = "Librería rtmpose3d no instalada. Esta prueba requiere el entorno Google Colab."
+            msg = "Librería rtmpose3d no instalada. Esta prueba requiere un entorno con GPU (Google Colab o Windows GPU)."
             if pytest is not None:
                 pytest.skip(msg)
             else:

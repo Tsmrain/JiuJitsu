@@ -1,4 +1,2 @@
-# Dependencias de Machine Learning e Inferencia Pesada (Google Colab / GPU A100)
-torch>=2.0.0
-onnxruntime>=1.15.0
-openmim>=0.3.9
+ultralytics>=8.4.0
+onnxruntime>=1.16.0

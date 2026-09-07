@@ -1,57 +1,32 @@
 @echo off
-echo 🚀 Iniciando configuración para Entorno Windows/GPU...
+REM =========================================================================
+REM Instalador automatizado para Windows con GPU (YOLO26-pose + CUDA)
+REM =========================================================================
 
-:: 1. Verificar si Python está instalado
+echo [1/4] Verificando entorno de Python...
 python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ❌ Error: Python no está instalado o no está en el PATH.
-    echo Por favor, instala Python 3.10+ desde python.org y marca la opción "Add to PATH".
-    pause
+if errorlevel 1 (
+    echo ERROR: Python no se encuentra en el PATH. Instala Python 3.10+ y marca "Add Python to PATH".
     exit /b 1
 )
 
-:: 2. Crear entorno virtual
+echo [2/4] Creando entorno virtual .venv...
 if not exist .venv (
-    echo 📦 Creando entorno virtual .venv...
     python -m venv .venv
 )
 
-:: 3. Activar entorno virtual
-echo 📦 Activando entorno virtual...
+echo [3/4] Activando entorno virtual e instalando dependencias...
 call .venv\Scripts\activate.bat
-
-:: 4. Actualizar herramientas base
-echo 📦 Actualizando pip y setuptools...
-python -m pip install --upgrade pip setuptools wheel
-
-:: 5. Instalar PyTorch con soporte CUDA 11.8 (Compatible con la mayoría de GPUs NVIDIA en Windows)
-echo 🔥 Instalando PyTorch con soporte CUDA...
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-:: 6. Instalar OpenMMLab stack vía MIM
-echo 📦 Instalando stack OpenMMLab (mmcv, mmdet, mmpose)...
-pip install openmim
-mim install mmcv
-mim install mmdet
-mim install mmpose
-
-:: 7. Instalar rtmpose3d y dependencias del proyecto
-echo 📦 Instalando rtmpose3d y dependencias del proyecto...
-pip install git+https://github.com/b-arac/rtmpose3d.git
+python -m pip install --upgrade pip
+pip install "ultralytics>=8.4.0"
 pip install -r requirements-core.txt
 
-:: 8. Verificación de videos Ground Truth
-echo 📦 Verificando activos de video reales en Videos\...
-if exist Videos\Maestro.mp4 (
-    if exist Videos\Alumno.mp4 (
-        echo ✔ Videos reales detectados: Videos\Maestro.mp4 y Videos\Alumno.mp4
-    ) else (
-        echo ⚠ ADVERTENCIA: No se encontró Videos\Alumno.mp4
-    )
-) else (
-    echo ⚠ ADVERTENCIA: Asegúrese de colocar Maestro.mp4 y Alumno.mp4 dentro de la carpeta Videos\
-)
+echo [4/4] Verificando modelo y aceleracion GPU...
+python -c "import torch; print('CUDA disponible:', torch.cuda.is_available()); from ultralytics import YOLO; print('Ultralytics OK')"
 
-echo ✅ ¡Configuración completada!
-echo Para usar el sistema, ejecuta: .venv\Scripts\activate.bat
-pause
+echo =========================================================================
+echo Instalacion de YOLO26-pose completada exitosamente.
+echo Para ejecutar pruebas:
+echo   .venv\Scripts\activate.bat
+echo   pytest -m real_model -v
+echo =========================================================================

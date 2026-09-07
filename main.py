@@ -11,7 +11,8 @@ import os
 from src.infrastructure.adapters.yolo_adapter import YOLOPoseExtractor
 from src.infrastructure.storage import LocalStorageProvider
 from src.application.pipeline import BiomechanicsPipeline
-from src.domain.services import AngleCalculatorImpl, DTWComparatorImpl, FrameAnnotatorImpl
+from src.domain.services import AngleCalculatorImpl, DTWComparatorImpl
+from src.infrastructure.frame_annotator import FrameAnnotatorImpl
 from src.config import VIDEOS_DIR
 from src.utils import verificar_videos, formatear_resumen
 

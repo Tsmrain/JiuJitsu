@@ -1,18 +1,21 @@
 """
-Capa de Dominio (Domain Layer) - JiuJitsu Biomechanics
-Contiene objetos de valor, entidades del negocio y contratos (interfaces).
+Capa de Dominio (Domain Layer - Craig Larman OOAD)
+Contiene entidades, objetos de valor, interfaces y servicios de dominio.
 """
 
+from .entities import TecnicaMaestra, AnalisisBiomecanico, ReglaBiomecanica, FotogramaAnotado
 from .value_objects import Keypoint, Frame, AnguloArticular, ErrorBiomecanico
-from .entities import TecnicaMaestra, ReglaBiomecanica, AnalisisBiomecanico, FotogramaAnotado
 from .interfaces import (
     IPoseExtractor, IAngleCalculator, IDTWComparator,
     IFrameAnnotator, IStorageProvider
 )
+from .repositories import TecnicaMaestraRepository, AnalisisRepository
+from .services import AngleCalculatorImpl, DTWComparatorImpl, RuleEngine
 
 __all__ = [
+    'TecnicaMaestra', 'AnalisisBiomecanico', 'ReglaBiomecanica', 'FotogramaAnotado',
     'Keypoint', 'Frame', 'AnguloArticular', 'ErrorBiomecanico',
-    'TecnicaMaestra', 'ReglaBiomecanica', 'AnalisisBiomecanico', 'FotogramaAnotado',
-    'IPoseExtractor', 'IAngleCalculator', 'IDTWComparator',
-    'IFrameAnnotator', 'IStorageProvider'
+    'IPoseExtractor', 'IAngleCalculator', 'IDTWComparator', 'IFrameAnnotator', 'IStorageProvider',
+    'TecnicaMaestraRepository', 'AnalisisRepository',
+    'AngleCalculatorImpl', 'DTWComparatorImpl', 'RuleEngine'
 ]

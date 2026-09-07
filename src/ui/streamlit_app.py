@@ -12,7 +12,8 @@ if project_root not in sys.path:
 from src.infrastructure.adapters.yolo_adapter import YOLOPoseExtractor
 from src.infrastructure.storage import LocalStorageProvider, DriveStorageProvider
 from src.application.pipeline import BiomechanicsPipeline
-from src.domain.services import AngleCalculatorImpl, DTWComparatorImpl, FrameAnnotatorImpl
+from src.domain.services import AngleCalculatorImpl, DTWComparatorImpl
+from src.infrastructure.frame_annotator import FrameAnnotatorImpl
 
 st.set_page_config(
     page_title="Corpo & Mente BJJ - Análisis Biomecánico",

@@ -1,19 +1,23 @@
 import os
 import cv2
-from .config import INDICES_COCO, FOTOGRAMAS_DIR
+import numpy as np
+
+from ..domain.interfaces import IFrameAnnotator
+from ..config import INDICES_COCO, FOTOGRAMAS_DIR
 
 
-class FrameAnnotator:
+class FrameAnnotatorImpl(IFrameAnnotator):
     """
-    Anotación gráfica de fotogramas clave con OpenCV
-    para generar el entregable visual de error biomecánico (RF-05, RF-06).
+    Servicio de infraestructura para inyección de marcadores visuales con OpenCV (Pure Fabrication).
+    Genera el entregable visual JPG optimizado (~80 KB) sobre la articulación defectuosa (RF-05, RF-06).
     """
 
-    @staticmethod
-    def anotar_error(frame, keypoints, articulacion, error_angulo, frame_idx):
+    def anotar_error(
+        self, frame: np.ndarray, keypoints: np.ndarray,
+        articulacion: str, error: float, frame_idx: int
+    ) -> np.ndarray:
         """
-        Inyecta un marcador visual (círculo rojo y texto descriptivo)
-        en las coordenadas de la articulación con mayor desviación.
+        Inyecta círculos concéntricos rojos y texto descriptivo en las coordenadas de la articulación.
         """
         frame_copy = frame.copy()
         idx = INDICES_COCO.get(articulacion, 7)
@@ -25,10 +29,10 @@ class FrameAnnotator:
             cv2.circle(frame_copy, (x, y), 20, (0, 0, 255), 2)
             cv2.circle(frame_copy, (x, y), 14, (0, 0, 255), -1)
 
-            # Texto descriptivo del error angular
+            # Rótulo de diagnóstico
             nombre_art = articulacion.replace('_', ' ').upper()
             cv2.putText(
-                frame_copy, f"ERROR: {error_angulo:.1f} DEG", (max(10, x - 80), max(20, y - 50)),
+                frame_copy, f"ERROR: {error:.1f} DEG", (max(10, x - 80), max(20, y - 50)),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 255), 2, cv2.LINE_AA
             )
             cv2.putText(
@@ -43,15 +47,11 @@ class FrameAnnotator:
         return frame_copy
 
     @staticmethod
-    def guardar(frame, nombre, directorio=None):
-        """
-        Guarda el fotograma anotado en formato JPG optimizado (~80 KB).
-        """
+    def guardar(frame: np.ndarray, nombre: str, directorio: str = None) -> str:
+        """Guarda un fotograma como imagen JPEG optimizada."""
         if directorio is None:
             directorio = FOTOGRAMAS_DIR
-
         os.makedirs(directorio, exist_ok=True)
         ruta = os.path.join(directorio, nombre)
-        # Calidad JPEG 85 para balance óptimo de compresión y legibilidad (~80 KB)
         cv2.imwrite(ruta, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
         return ruta

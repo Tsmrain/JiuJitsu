@@ -39,7 +39,7 @@ class BiomechanicsPipeline:
             from ..domain.services import DTWComparatorImpl
             dtw_comparator = DTWComparatorImpl()
         if frame_annotator is None:
-            from ..domain.services import FrameAnnotatorImpl
+            from ..infrastructure.frame_annotator import FrameAnnotatorImpl
             frame_annotator = FrameAnnotatorImpl()
         if storage is None:
             from ..infrastructure.storage import LocalStorageProvider
@@ -193,15 +193,8 @@ class BiomechanicsPipeline:
         return similitud
 
     def _generar_mensaje_error(self, articulacion: str, diff: float) -> str:
-        mensajes = {
-            'codo_izq': f"Codo izquierdo desviado {diff:.1f}° del patrón óptimo",
-            'codo_der': f"Codo derecho desviado {diff:.1f}° del patrón óptimo",
-            'rodilla_izq': f"Rodilla izquierda desviada {diff:.1f}° del patrón óptimo",
-            'rodilla_der': f"Rodilla derecha desviada {diff:.1f}° del patrón óptimo",
-            'cadera': f"Alineación de cadera desviada {diff:.1f}° del patrón óptimo",
-            'hombro': f"Ángulo de hombro desviado {diff:.1f}° del patrón óptimo"
-        }
-        return mensajes.get(articulacion, f"Desviación en {articulacion}: {diff:.1f}°")
+        from ..domain.services import RuleEngine
+        return RuleEngine.generar_diagnostico(articulacion, diff)
 
     def _generar_grafica(self, similitud: List[float], mejor_error: Optional[ErrorBiomecanico], session_id: str):
         fig, ax = plt.subplots(figsize=(12, 5))

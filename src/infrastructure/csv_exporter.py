@@ -1,30 +1,27 @@
 import os
 import pandas as pd
-from .config import CSV_DIR
+from typing import Any
+
+from ..config import CSV_DIR
 
 
 class CSVExporter:
     """
-    Exportación de resultados biomecánicos a archivos estructurados CSV (RF-14)
-    para análisis estadístico y trazabilidad de progresión.
+    Servicio de infraestructura para exportación tabular a archivos CSV (RF-14 - Pure Fabrication).
     """
 
     @staticmethod
-    def exportar_angulos(angulos, nombre):
-        """
-        Exporta la serie temporal de ángulos articulares a CSV.
-        """
+    def exportar_angulos(angulos: Any, nombre: str) -> str:
+        """Exporta serie temporal de ángulos articulares a CSV."""
         os.makedirs(CSV_DIR, exist_ok=True)
-        df = pd.DataFrame(angulos)
+        df = angulos if isinstance(angulos, pd.DataFrame) else pd.DataFrame(angulos)
         ruta = os.path.join(CSV_DIR, nombre)
         df.to_csv(ruta, index=False)
         return ruta
 
     @staticmethod
-    def exportar_similitud(similitud, nombre):
-        """
-        Exporta la curva de similitud angular por frame a CSV.
-        """
+    def exportar_similitud(similitud: Any, nombre: str) -> str:
+        """Exporta serie de similitud por frame a CSV."""
         os.makedirs(CSV_DIR, exist_ok=True)
         df = pd.DataFrame({
             'frame': range(len(similitud)),

@@ -104,6 +104,19 @@ class SQLiteDB:
                 explicacion_causa TEXT,
                 FOREIGN KEY (analisis_id) REFERENCES analisis_biomecanico(id_analisis) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS rol_usuario (
+                id_rol TEXT PRIMARY KEY CHECK(id_rol IN ('profesor', 'alumno')),
+                descripcion TEXT NOT NULL
+            );
+
+            INSERT OR IGNORE INTO rol_usuario (id_rol, descripcion) VALUES
+            ('profesor', 'Head Coach / Administrador de Técnicas y Cátedra'),
+            ('alumno', 'Practicante / Atleta en Tatami para Auditoría Biomecánica');
+
+            CREATE INDEX IF NOT EXISTS idx_video_estudiante ON video_ejecucion(estudiante_id);
+            CREATE INDEX IF NOT EXISTS idx_tecnica_categoria_posicion ON tecnica_maestra(categoria_tecnica, posicion_origen);
+            CREATE INDEX IF NOT EXISTS idx_analisis_video ON analisis_biomecanico(video_id);
         ''')
         self.conn.commit()
 
@@ -241,13 +254,14 @@ class AnalisisRepository:
         cursor.execute('''
             INSERT OR REPLACE INTO analisis_biomecanico
             (id_analisis, video_id, desviacion_angular_maxima, articulacion_afectada,
-             cantidad_errores, estado_computo, errores_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+             puntuacion_global, cantidad_errores, estado_computo, errores_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             str(analisis.id),
             str(analisis.video_id),
             analisis.desviacion_angular_maxima,
             analisis.articulacion_afectada,
+            getattr(analisis, 'puntuacion_global', 100.0),
             len(analisis.errores),
             analisis.estado_computo,
             errores_json
@@ -319,6 +333,7 @@ class AnalisisRepository:
             video_id=v_id,
             desviacion_angular_maxima=row['desviacion_angular_maxima'] or 0.0,
             articulacion_afectada=row['articulacion_afectada'] or "",
+            puntuacion_global=row['puntuacion_global'] if 'puntuacion_global' in row.keys() and row['puntuacion_global'] is not None else 100.0,
             estado_computo=row['estado_computo'] or "completado",
             fotograma_anotado=fotograma,
             errores=errores

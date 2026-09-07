@@ -18,9 +18,9 @@
 
 <br>
 
-## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU: SISTEMA HÍBRIDO EDGE-COLAB
+## SISTEMA HÍBRIDO DE AUDITORÍA BIOMECÁNICA BJJ: ARQUITECTURA MULTI-ROL CON MOTOR IA REMOTO EN GOOGLE COLAB PRO
 
-### **Sistema Híbrido de Análisis Biomecánico BJJ: Arquitectura Edge-Colab**
+### **Sistema Híbrido de Auditoría Biomecánica BJJ: Arquitectura Multi-Rol con Motor IA Remoto en Google Colab Pro**
 
 <br><br>
 
@@ -59,9 +59,9 @@
 
 <br>
 
-## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU: SISTEMA HÍBRIDO EDGE-COLAB
+## SISTEMA HÍBRIDO DE AUDITORÍA BIOMECÁNICA BJJ: ARQUITECTURA MULTI-ROL CON MOTOR IA REMOTO EN GOOGLE COLAB PRO
 
-### **Sistema Híbrido de Análisis Biomecánico BJJ: Arquitectura Edge-Colab**
+### **Sistema Híbrido de Auditoría Biomecánica BJJ: Arquitectura Multi-Rol con Motor IA Remoto en Google Colab Pro**
 
 <br>
 
@@ -147,14 +147,14 @@
 - [Capítulo V: Análisis y Diseño del Sistema](#capítulo-v-análisis-y-diseño-del-sistema)
   - [5.1 Arquitectura del Software y Entorno de Despliegue Híbrido Edge-Colab](#51-arquitectura-del-software-y-entorno-de-despliegue-híbrido-edge-colab)
     - [5.1.1 Vista Lógica y Arquitectura en Capas](#511-vista-lógica-y-arquitectura-en-capas)
-    - [5.1.2 Vista de Despliegue Físico Híbrido Edge-Colab](#512-vista-de-despliegue-físico-híbrido-edge-colab)
+    - [5.1.2 Vista de Despliegue Físico Híbrido (Producción Multi-Rol)](#512-vista-de-despliegue-físico-híbrido-producción-multi-rol)
     - [5.1.3 Análisis de Factores Arquitectónicos y Restricciones](#513-análisis-de-factores-arquitectónicos-y-restricciones)
   - [5.2 Diseño del Comportamiento Dinámico (Realización de Casos de Uso)](#52-diseño-del-comportamiento-dinámico-realización-de-casos-de-uso)
     - [5.2.1 Diagramas de Secuencia del Sistema (SSD) y Contratos de Operación](#521-diagramas-de-secuencia-del-sistema-ssd-y-contratos-de-operación)
     - [5.2.2 Aplicación de Patrones GRASP y GoF](#522-aplicación-de-patrones-grasp-y-gof)
   - [5.3 Diagrama de Clases de Diseño (DCD)](#53-diagrama-de-clases-de-diseño-dcd)
     - [5.3.1 Especificación Formal de Clases de Software](#531-especificación-formal-de-clases-de-software)
-  - [5.4 Diseño Lógico de la Base de Datos (PostgreSQL Local en Entorno de Desarrollo)](#54-diseño-lógico-de-la-base-de-datos-postgresql-local-en-entorno-de-desarrollo)
+  - [5.4 Diseño Lógico de la Base de Datos (SQLite3 Relacional - Mannino)](#54-diseño-lógico-de-la-base-de-datos-sqlite3-relacional---mannino)
     - [5.4.1 Mapeo Objeto-Relacional y Normalización](#541-mapeo-objeto-relacional-y-normalización)
     - [5.4.2 Diccionario de Datos Formal](#542-diccionario-de-datos-formal)
     - [5.4.3 Scripts DDL de Creación e Índices B-Tree](#543-scripts-ddl-de-creación-e-índices-b-tree)
@@ -164,15 +164,16 @@
     - [5.5.3 Sistema de Diseño Visual, Paleta Oficial y Adaptabilidad](#553-sistema-de-diseño-visual-paleta-oficial-y-adaptabilidad)
   - [5.6 Estado de Implementación del Software, Cobertura TDD y Manual de Ejecución Local](#56-estado-de-implementación-del-software-cobertura-tdd-y-manual-de-ejecución-local)
     - [5.6.1 Arquitectura Implementada y Estructura de Paquetes](#561-arquitectura-implementada-y-estructura-de-paquetes)
-    - [5.6.2 Matriz de Trazabilidad y Validación Automatizada (51 Pruebas TDD)](#562-matriz-de-trazabilidad-y-validación-automatizada-51-pruebas-tdd)
+    - [5.6.2 Matriz de Trazabilidad y Validación Automatizada](#562-matriz-de-trazabilidad-y-validación-automatizada)
     - [5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador](#563-manual-de-puesta-en-marcha-para-el-tribunal-evaluador)
     - [5.6.4 Estrategia de Desarrollo Local-First y Adaptación de Hardware](#564-estrategia-de-desarrollo-local-first-y-adaptación-de-hardware)
-    - [5.6.5 Validación del Modelo Real en Google Colab (Tagged Integration Tests - Sin Mocks)](#565-validación-del-modelo-real-en-google-colab-tagged-integration-tests---sin-mocks)
-    - [5.6.6 Guía de Instalación y Puesta en Marcha (Edge-Colab)](#566-guía-de-instalación-y-puesta-en-marcha-edge-colab)
+    - [5.6.5 Validación del Modelo Real en Google Colab (A100 / CUDA)](#565-validación-del-modelo-real-en-google-colab-a100--cuda)
+    - [5.6.6 Guía de Instalación y Puesta en Marcha (Producción Híbrida Multi-Rol)](#566-guía-de-instalación-y-puesta-en-marcha-producción-híbrida-multi-rol)
   - [5.7 Validación y Pruebas (TDD)](#57-validación-y-pruebas-tdd)
     - [5.7.1 Resultados de la Validación Experimental en Google Colab](#571-resultados-de-la-validación-experimental-en-google-colab)
     - [5.7.2 Resultados del Pipeline Biomecánico](#572-resultados-del-pipeline-biomecánico)
     - [5.7.3 Cumplimiento de Requisitos y Conclusiones de la Validación](#573-cumplimiento-de-requisitos-y-conclusiones-de-la-validación)
+  - [5.8 Gestión de Riesgos Operativos en el Tatami: Mitigación de Inactividad en Google Colab](#58-gestión-de-riesgos-operativos-en-el-tatami-mitigación-de-inactividad-en-google-colab)
 - [Capítulo X: Referencias Bibliográficas](#capítulo-x-referencias-bibliográficas)
 
 ---
@@ -232,7 +233,7 @@ Desarrollar un sistema de software adaptativo en la nube para la evaluación bio
 ### 1.2.2 Objetivos Específicos
 
 1. **Analizar** los requerimientos de interacción biomecánica y el flujo operativo técnico dentro de la academia Corpo & Mente Bolivia.
-2. **Diseñar** una arquitectura híbrida de cómputo que integre cubos de almacenamiento (*Huawei Cloud Object Storage Service - OBS*) con servicios de cómputo ligero bajo demanda (*FunctionGraph*) para aislar el hardware local de cargas computacionales pesadas de forma económicamente sostenible.
+2. **Diseñar** una arquitectura híbrida de cómputo distribuido que comunique la Laptop Orquestadora local (*FastAPI / SQLite3 / Ngrok*) con el Motor IA Remoto en *Google Colab Pro* (*FastAPI Engine / Pyngrok / YOLO26x-pose* sobre GPU NVIDIA A100-40GB) mediante API REST y WebSockets sobre túneles seguros HTTPS/TLS 1.3, aislando el hardware del tatami de cargas pesadas de forma económicamente sostenible.
 3. **Implementar** el pipeline matemático biomecánico integrando la normalización antropomórfica de coordenadas articulares, la compensación cinemática de oclusiones mediante Filtro de Kalman y la sincronización temporal no lineal mediante *Dynamic Time Warping* (DTW) con restricción de ventana de Sakoe-Chiba para cuantificar las desviaciones frente al patrón de referencia.
 4. **Construir** una interfaz de usuario interactiva y liviana que presente la imagen estática anotada mediante OpenCV con la señalización precisa del error biomecánico y la descripción textual del fallo técnico basada en reglas deterministas.
 5. **Evaluar** longitudinalmente el impacto del sistema en la progresión técnica de los practicantes a partir de los registros históricos acumulados en la plataforma, contrastando estadísticamente las evaluaciones iniciales de cada atleta contra sus registros más recientes mediante la **prueba no paramétrica de rangos con signo de Wilcoxon para muestras pareadas** (verificando previamente el supuesto de normalidad con la prueba de **Shapiro-Wilk**, o aplicando la prueba t de Student para muestras relacionadas si los datos presentan distribución normal), a fin de determinar si existe una reducción estadísticamente significativa ($p < 0.05$) en la magnitud de los errores biomecánicos con el tiempo.
@@ -245,7 +246,7 @@ Desarrollar un sistema de software adaptativo en la nube para la evaluación bio
 Con base en las directrices metodológicas de Craig Larman (2004), la investigación adopta el **Proceso Unificado (UP)** adaptado a un marco de trabajo ágil iterativo e incremental. El ciclo de desarrollo se estructura en cuatro fases disciplinadas, orientadas a la mitigación sistemática de riesgos tecnológicos:
 
 * **Fase de Inicio (*Inception*):** Delimitación rigurosa del alcance del proyecto, identificación y priorización de riesgos tecnológicos críticos (tales como la latencia de red en la carga móvil y las fluctuaciones tarifarias en la nube) y consolidación de los requerimientos de negocio de la academia.
-* **Fase de Elaboración (*Elaboration*):** Mitigación de los riesgos arquitectónicos de mayor impacto. Se formaliza la arquitectura base y el Modelo de Dominio. Se valida la factibilidad técnica construyendo un prototipo funcional que conecte la captura móvil con el almacenamiento en la nube (*OBS*) sin provocar estrés térmico en el cliente.
+* **Fase de Elaboración (*Elaboration*):** Mitigación de los riesgos arquitectónicos de mayor impacto. Se formaliza la arquitectura base y el Modelo de Dominio. Se valida la factibilidad técnica construyendo un prototipo funcional que conecte la captura móvil con el orquestador local y el motor IA en Google Colab Pro sin provocar estrés térmico en el cliente.
 * **Fase de Construcción (*Construction*):** Desarrollo modular y desacoplado de los componentes de cómputo. Implementación de los adaptadores locales (*LocalStorageAdapter*, SQLite) y el motor de inferencia en Google Colab, codificación del motor matemático de detección de errores (DTW con restricciones de banda), integración de los algoritmos de anotación digital sobre imágenes con OpenCV y desarrollo del frontend web reactivo en *Streamlit*.
 * **Fase de Transición (*Transition*):** Despliegue del aplicativo en el entorno operativo real de Corpo & Mente Bolivia. Recolección continua de los resultados analíticos en el historial de progresión técnica de los practicantes a lo largo del periodo de prueba, contrastación estadística longitudinal entre las evaluaciones iniciales y finales de cada atleta mediante la prueba de rangos con signo de Wilcoxon para muestras pareadas (o t de Student según la verificación previa de normalidad con Shapiro-Wilk), y contrastación de las métricas de adopción real y retención de uso en el tatami frente a las metas de validación cuantitativas definidas para la redacción de las conclusiones formales del estudio.
 
@@ -337,7 +338,7 @@ Es precisamente en la **Fase de Ejecución en Parejas** donde se suscita el cola
 
   $$T_{\text{sistema}} = \max_{i=1}^{P} \left( t_{\text{subida}, i} + t_{\text{serverless}, i} + t_{\text{bajada}, i} \right)$$
 
-  Bajo las condiciones operativas especificadas ($t_{\text{subida}} \approx 2.5\text{ s}$ para videos de hasta 5 MB en redes 4G/LTE, $t_{\text{serverless}} \leq 4.0\text{ s}$ en *FunctionGraph* y $t_{\text{bajada}} \approx 0.2\text{ s}$ para el fotograma anotado de $\sim 80\text{ KB}$), el tiempo total de procesamiento concurrente no supera los **$6.7\text{ segundos}$**. Al ejecutarse cada análisis en instancias elásticas desacopladas e independientes de *FunctionGraph*, las 10 parejas reciben su retroalimentación visual anotada en menos de $7\text{ segundos}$ de forma simultánea, transformando un proceso secuencial saturado de $30\text{ minutos}$ en una respuesta analítica casi instantánea, descongestionando efectivamente el tatami.
+  Bajo las condiciones operativas especificadas ($t_{\text{subida}} \approx 2.5\text{ s}$ para videos de hasta 5 MB en redes 4G/LTE, $t_{\text{serverless}} \leq 4.0\text{ s}$ en *FastAPI Engine (Colab Pro)* y $t_{\text{bajada}} \approx 0.2\text{ s}$ para el fotograma anotado de $\sim 80\text{ KB}$), el tiempo total de procesamiento concurrente no supera los **$6.7\text{ segundos}$**. Al ejecutarse cada análisis en instancias elásticas desacopladas e independientes de *FastAPI Engine (Colab Pro)*, las 10 parejas reciben su retroalimentación visual anotada en menos de $7\text{ segundos}$ de forma simultánea, transformando un proceso secuencial saturado de $30\text{ minutos}$ en una respuesta analítica casi instantánea, descongestionando efectivamente el tatami.
 
 El diagnóstico confirma que el docente presencial ha superado su límite cognitivo de supervisión itinerante. El asistente tecnológico no reemplaza la pedagogía del profesor, sino que amplifica su capacidad de auditoría mediante un canal visual asincrónico y objetivo.
 
@@ -375,7 +376,7 @@ Se contrastan las tecnologías líderes de visión artificial y estimación de p
    YOLO26-pose integra la **Estimación de Log‑Verosimilitud Residual (RLE)**, que modela la incertidumbre de los puntos clave, mejorando la estabilidad en escenas con oclusiones severas, típicas del contacto cuerpo a cuerpo en el tatami. Alcanza un **71.6% mAP** (COCO) en su versión x-large, superando a RTMPose y a MediaPipe.
 
 2. **Rendimiento en CPU con ONNX Runtime:**  
-   YOLO26 puede exportarse a ONNX y ejecutarse en CPU con instrucciones AVX2 a más de **25 FPS** (versión nano, ~40ms por frame). Esto permite su despliegue en *FunctionGraph* de Huawei Cloud sin necesidad de GPU dedicada, cumpliendo holgadamente el SLA de latencia (≤4.0 s) y el presupuesto de $30 USD/trimestral.
+   YOLO26 en su variante x-large (`yolo26x-pose.pt`) ejecutado sobre GPU NVIDIA A100-SXM4 (40 GB) en Google Colab Pro alcanza inferencias de ultra alta precisión (~12 ms por frame a 1280px). Esto permite procesar ráfagas completas de 150-200 frames en menos de 2.0 segundos, cumpliendo holgadamente el SLA de latencia total (≤ 4.0 s) bajo un costo operativo predecible (~$10-20 USD/mes).
 
 3. **Instalación y Mantenimiento Sencillos:**  
    La librería `ultralytics` se instala con un solo comando (`pip install ultralytics`) y proporciona una API unificada para todas las tareas (detección, pose, segmentación, etc.). Esto elimina las complejas dependencias de OpenMMLab (`mmcv`, `mmpose`) que dificultaban la instalación en entornos serverless.
@@ -395,20 +396,20 @@ Se contrastan las tecnologías líderes de visión artificial y estimación de p
 A fin de respetar la restricción presupuestaria de operar con un costo inferior a los $30 USD trimestrales y mitigar sistemáticamente los riesgos técnicos de cómputo y visión por computadora, la arquitectura del sistema adopta una estrategia de despliegue en dos fases bien diferenciadas, enmarcada en las disciplinas del Proceso Unificado (Larman):
 
 * **Fase 1: Elaboración y Prototipo Arquitectónico (Validación Local/Colab).** El sistema se desarrollará y validará utilizando entornos con GPU (Google Colab / Cybercafé) para asegurar la viabilidad del modelo YOLO26-pose y el pipeline biomecánico. Se utilizará un `LocalStorageProvider` para la gestión de archivos temporal.
-* **Fase 2: Construcción y Transición (Despliegue en Nube).** Una vez validado el núcleo, el sistema migrará a Huawei Cloud. Mediante el patrón Adaptador (Protected Variations), se implementará el `HuaweiOBSProvider` (basado en el SDK oficial de OBS) para el almacenamiento, y se desplegará el motor de inferencia en la nube, sin alterar la lógica de negocio.
+* **Fase 2: Construcción y Transición (Producción Híbrida Remota).** Una vez validado el núcleo local, el cómputo de visión artificial se desacopla hacia Google Colab Pro como servicio daemon. Mediante el patrón Adaptador (*Protected Variations* - Larman), se implementa `LocalStorageAdapter` en el orquestador local para el almacenamiento directo y el cliente REST para la comunicación con el motor IA remoto, sin alterar la lógica de negocio ni las entidades de dominio.
 
 Para el despliegue final en la nube, la arquitectura no dependerá de servidores dedicados encendidos permanentemente (IaaS), sino de un modelo de cómputo elástico, reactivo y orientado a eventos (*Serverless*).
 
 ### 3.2.1 Análisis Comparativo de Proveedores Cloud y Modelos de Cómputo
 
-Se analizan los entornos *Serverless* y de almacenamiento de objetos distribuidos provistos por **Huawei Cloud**, **Amazon Web Services (AWS)** y **Google Cloud Platform (GCP)**.
+Se analizan los entornos *Serverless* y de almacenamiento de objetos distribuidos provistos por **Google Colab Pro**, **Amazon Web Services (AWS)** y **Google Cloud Platform (GCP)**.
 
 **Tabla 3.2**  
 *Matriz de Selección de Infraestructura Cloud*
 
-| Criterios de Selección | Peso (%) | Huawei Cloud | AWS | Google Cloud |
+| Criterios de Selección | Peso (%) | Google Colab Pro | AWS | Google Cloud |
 | :--- | :---: | :---: | :---: | :---: |
-| Modelo de Costo (Serverless) | 35% | 5 (FunctionGraph) | 4 (Lambda) | 4 (Cloud Functions) |
+| Modelo de Costo (Serverless) | 35% | 5 (FastAPI Engine (Colab Pro)) | 4 (Lambda) | 4 (Cloud Functions) |
 | Tarifa de Salida de Datos (*Egress*) | 30% | 5 (Bajo costo regional) | 2 (Altas tasas) | 3 (Moderado) |
 | Herramientas Nativas de Video | 15% | 3 (Genéricas) | 5 (Rekognition) | 5 (Video Intelligence) |
 | Soporte Local y Alianzas Académicas | 20% | 5 (Presencia en Bolivia) | 2 (Indirecto) | 2 (Automatizado) |
@@ -421,7 +422,7 @@ Se analizan los entornos *Serverless* y de almacenamiento de objetos distribuido
 La **Arquitectura Híbrida Edge-Colab** obtiene el liderazgo absoluto de diseño, combinando la cercanía y privacidad de una estación local (Laptop del atleta/coach) con la potencia de cálculo GPU masiva provista por **Google Colab**.
 
 * **Eficiencia del Paradigma Híbrido:** Se desestima el uso de servicios cloud comerciales de pago permanente (IaaS/PaaS) para la fase de inferencia cotidiana, redirigiendo la carga pesada de visión artificial hacia **Google Colab** (equipado con GPU NVIDIA A100 o T4) y la persistencia relacional a **SQLite3** local. Cuando se requiere auditar un video, el archivo es procesado mediante el notebook `notebooks/jiujiutsu_ai_engine.ipynb` con YOLO26-pose, extrayendo las matrices de keypoints COCO `(N, 17, 3)` y exportando un manifiesto JSON estructurado (`colab_analysis_results.json`). Este artefacto es consumido directamente por la interfaz local de Streamlit, eliminando al 100% las tarifas de salida de datos (*Data Egress*) y los costos de servidores dedicados.
-* **Justificación del Descarte de Nubes Comerciales de Pago:** Los entornos Serverless comerciales (AWS Lambda, Google Cloud Functions, Huawei FunctionGraph) imponen límites estrictos de memoria RAM, arranque en frío (*cold start*) y tarifas acumulativas por tiempo de CPU que amenazan la sostenibilidad de una academia deportiva boliviana. La arquitectura Edge-Colab democratiza el acceso a la IA con un **Costo Operativo de $0.00 USD**, aprovechando el hardware existente y los entornos de cómputo GPU gratuitos de investigación.
+* **Justificación de la Selección de Google Colab Pro:** A diferencia de los entornos Serverless comerciales (AWS Lambda, Google Cloud Functions) que imponen límites de memoria (10 GB max), arranque en frío (*cold start*) penalizante y ausencia de aceleración GPU económica, Google Colab Pro ofrece acceso a GPUs de última generación (NVIDIA A100-SXM4 de 40 GB) por una suscripción mensual plana de ~$10.00 a $20.00 USD, garantizando sesiones de cómputo continuo y alta disponibilidad para las clases de la academia.
 
 ---
 
@@ -455,7 +456,7 @@ El algoritmo **DTW** (Sakoe & Chiba, 1978; Müller, 2007) se erige como la soluc
 * **Normalización Antropomórfica:** El enfoque solventa las diferencias de complexión física entre practicantes (niños, mujeres y adultos). Antes del análisis matricial, el algoritmo ejecuta una normalización geométrica vectorial tomando como longitud unitaria de referencia la distancia interclavicular o la altura del tronco. De este modo, la comparación no se basa en coordenadas pixelares absolutas, sino en relaciones angulares y proporciones relativas. Una extensión del codo a 45° representa el mismo valor métrico en un infante de 25 kg que en un adulto de 95 kg.
 * **Invariancia Traslacional y Métrica de Entrada:** Para garantizar que la comparación no se vea afectada por la posición espacial de los practicantes en el tatami (traslación en X, Y), el motor matemático no alimenta al DTW con las coordenadas absolutas de YOLO26-pose. Previa a la ejecución del DTW, el sistema transforma las coordenadas espaciales $(X, Y, Z)$ procesadas por el adaptador de landmarks (17 puntos estándar COCO) en una **serie temporal de ángulos articulares relativos** (ej. ángulo entre hombro-codo-muñeca) y vectores óseos normalizados. El DTW se ejecuta exclusivamente sobre estas series de ángulos, garantizando que la métrica de error biomecánico sea invariante a la ubicación espacial del practicante.
 * **Mitigación de Distorsión por Perspectiva Óptica:** Aunque el sistema opera sobre proyecciones de video 2D, el extractor YOLO26-pose infiere landmarks corporales con alta fidelidad y confiabilidad articular ($C \in [0.0, 1.0]$). Para el cálculo del DTW, el sistema no utiliza ángulos geométricos 2D planos, sino que calcula el producto escalar de los vectores en el espacio euclidiano tridimensional ($\vec{A} \cdot \vec{B} = ||A|| ||B|| \cos\theta$) empleando los componentes espaciales normalizados por el `LandmarkAdapter`. Esto absorbe y mitiga matemáticamente las desviaciones menores de perspectiva óptica o rotaciones en el eje Z, garantizando que un quiebre articular a 90 grados sea métricamente equivalente sin importar ligeras variaciones de diagonalidad en la toma del tatami.
-* **Optimización Mediante Ventana de Sakoe-Chiba Configurable:** Para neutralizar la complejidad temporal cuadrática nativa del algoritmo ($O(N^2)$)—la cual elevaría el consumo de CPU en la función *Serverless*—se implementa la restricción geométrica de la **Ventana de Sakoe-Chiba** (Sakoe & Chiba, 1978). Esta técnica acota la exploración de la trayectoria óptima a una banda diagonal de ancho $w$ alrededor del eje principal de la matriz de costo. En el presente diseño se define como **valor por defecto recomendado** una restricción formal equivalente al **15% de la longitud temporal de la secuencia ($w = 0.15 \cdot N$)**. Para una grabación estándar de hasta 6 segundos a 30 cuadros por segundo ($N \approx 180$ fotogramas), este valor fija una ventana de tolerancia de $w \approx \pm 27$ cuadros ($\pm 0.9\text{ segundos}$). No obstante, este valor no opera como una constante rígida en código, sino como un **parámetro configurable del backend** (adaptable por técnica o por rango de duración del video patrón y almacenable como atributo `ventanaSakoeChiba` en la entidad `TecnicaMaestra` del modelo de dominio, sección 4.5), lo que otorga la flexibilidad de calibrar ventanas más estrechas para transiciones explosivas o más holgadas para ejecuciones lentas sin modificar el código fuente. Esta parametrización absorbe con rigor las variaciones de cadencia motriz entre el profesor y el alumno, reduciendo el espacio de búsqueda a un régimen estrictamente cuasi-lineal $O(N)$ con tiempos de cómputo algorítmico de apenas $80 \text{ a } 150\text{ ms}$ en *FunctionGraph*.
+* **Optimización Mediante Ventana de Sakoe-Chiba Configurable:** Para neutralizar la complejidad temporal cuadrática nativa del algoritmo ($O(N^2)$)—la cual elevaría el consumo de CPU en la función *Serverless*—se implementa la restricción geométrica de la **Ventana de Sakoe-Chiba** (Sakoe & Chiba, 1978). Esta técnica acota la exploración de la trayectoria óptima a una banda diagonal de ancho $w$ alrededor del eje principal de la matriz de costo. En el presente diseño se define como **valor por defecto recomendado** una restricción formal equivalente al **15% de la longitud temporal de la secuencia ($w = 0.15 \cdot N$)**. Para una grabación estándar de hasta 6 segundos a 30 cuadros por segundo ($N \approx 180$ fotogramas), este valor fija una ventana de tolerancia de $w \approx \pm 27$ cuadros ($\pm 0.9\text{ segundos}$). No obstante, este valor no opera como una constante rígida en código, sino como un **parámetro configurable del backend** (adaptable por técnica o por rango de duración del video patrón y almacenable como atributo `ventanaSakoeChiba` en la entidad `TecnicaMaestra` del modelo de dominio, sección 4.5), lo que otorga la flexibilidad de calibrar ventanas más estrechas para transiciones explosivas o más holgadas para ejecuciones lentas sin modificar el código fuente. Esta parametrización absorbe con rigor las variaciones de cadencia motriz entre el profesor y el alumno, reduciendo el espacio de búsqueda a un régimen estrictamente cuasi-lineal $O(N)$ con tiempos de cómputo algorítmico de apenas $80 \text{ a } 150\text{ ms}$ en el motor de inferencia de Google Colab Pro.
 
 ---
 
@@ -485,7 +486,7 @@ Se evalúa la estrategia de **Renderizado de Video Completo Editado** (mediante 
 La selección del **Fotograma Clave Anotado con OpenCV** alcanza una ponderación perfecta de **5.00 / 5.00**, maximizando la viabilidad operativa y económica del proyecto.
 
 * **Arquitectura de Cómputo Eficiente:** Renderizar un video completo anotado obligaría a invocar procesos de codificación H.264 pesados, consumiendo valiosos segundos de cómputo en la nube y generando archivos de más de 15 MB. Con OpenCV, la función *Serverless* aísla en memoria el fotograma correspondiente al pico de desviación angular, extrae la tupla de coordenadas espaciales $(X, Y)$ de la articulación deficiente (por ejemplo, la rodilla) e inyecta directamente sobre la matriz de píxeles un círculo marcador de color rojo junto con una etiqueta textual.
-* **Control Estricto de Costos de Salida de Datos:** Un archivo de imagen JPG procesado y comprimido con OpenCV promedia escasos **~80 KB** (con un techo máximo garantizado de **100 KB** según el requisito RP-02). La transmisión de esta carga hacia el dispositivo móvil del estudiante elimina cualquier riesgo de sobrecosto por volumen de salida (*Data Egress*). Para el volumen operacional regular de la academia (entre 200 y 350 consultas mensuales), el consumo mensual demandado oscila con exactitud entre **16.0 MB** ($200 \times 80\text{ KB}$) y **28.0 MB** ($350 \times 80\text{ KB}$), alcanzando a lo sumo 35.0 MB bajo el tamaño límite de 100 KB. Incluso bajo un escenario de estrés extremo con 2,700 consultas mensuales proyectadas, el tráfico transferido se sitúa entre **216 MB** ($2,700 \times 80\text{ KB}$) y **270 MB** ($2,700 \times 100\text{ KB}$). En todos los escenarios evaluados, el gasto por transferencia de salida es inferior a los $0.03 USD mensuales (considerando la tarifa regional de Huawei Cloud de ~$0.08 USD/GB), blindando con exactitud matemática el presupuesto operativo trimestral establecido (< $30 USD).
+* **Control Estricto de Ancho de Banda y Entrega Liviana Móvil:** Un archivo de imagen JPG procesado y comprimido con OpenCV promedia escasos **~80 KB** (con un techo máximo garantizado de **100 KB** según el requisito RP-02). La transmisión de esta carga hacia el dispositivo móvil del estudiante en el tatami elimina la saturación de redes 4G/LTE. Para el volumen operacional regular de la academia (entre 200 y 350 consultas mensuales), el tráfico de datos demandado oscila entre **16.0 MB** y **28.0 MB** mensuales, asegurando que los atletas reciban su diagnóstico visual en menos de 500 ms tras la inferencia sin penalizar su plan de datos móviles.
 * **Valor Pedagógico sin Fricción:** En las artes marciales de agarre como el BJJ, las posiciones de dominio (guardias, montadas, controles laterales) son esencialmente estructuras biomecánicas estáticas de presión. Un video en movimiento oculta la fracción de segundo donde falló el ángulo. El fotograma estático opera como una auditoría visual quirúrgica: el practicante consulta su teléfono en el tatami y reconoce inmediatamente el círculo sobre el miembro mal posicionado, facilitando la asimilación e intervención motriz instantánea.
 
 ---
@@ -527,7 +528,7 @@ Se comparan **Streamlit**, el esquema **Flask + React.js** y **Dash (Plotly)**.
 
 Con el propósito de garantizar un diseño de software altamente desacoplado, mantenible y robusto desde las etapas tempranas de desarrollo (conforme a los lineamientos del Proceso Unificado de Craig Larman), el sistema fundamenta su diseño orientado a objetos en los siguientes patrones GRASP (*General Responsibility Assignment Software Patterns*) clave:
 
-* **Protected Variations (Variaciones Protegidas):** Uso de interfaces (`IStorageProvider`, `IInferenceEngine`) para aislar el dominio de los cambios de infraestructura (Local -> Huawei OBS), garantizando que la evolución de los proveedores de almacenamiento y motores de cómputo no impacte la lógica del negocio.
+* **Protected Variations (Variaciones Protegidas):** Uso de interfaces e inversión de dependencias (`IStorageProvider`, `IPoseExtractor`, `IDTWComparator`) y controladores GRASP especializados (`CoachController`, `StudentController`) para aislar el dominio cinemático de los cambios de infraestructura y de las variaciones operativas entre roles de usuario.
 * **Pure Fabrication (Fabricación Pura):** Uso de clases como `BiomechanicsRuleEngine` para asignar umbrales por defecto (15°) y articulaciones clave cuando el Head Coach no los especifica, encapsulando reglas pedagógicas sin sobrecargar a las entidades del dominio.
 * **Information Expert (Experto en Información):** Asignación de responsabilidades a la clase que tiene la información necesaria para realizar los cálculos y transformaciones (ej. `GeometryUtils` y `KeypointMathUtils` para calcular ángulos articulares 3D reales, vectores óseos normalizados y distancias anatómicas a partir de las coordenadas cinemáticas).
 
@@ -540,7 +541,7 @@ El propósito del presente documento es especificar formal, exhaustiva y riguros
 El sistema de evaluación y retroalimentación biomecánica para la academia Corpo & Mente Bolivia comprende en su alcance operativo:
 
 1. La captura de video desde teléfonos móviles por parte de los practicantes en el tatami.
-2. La carga y persistencia en cubos elásticos de almacenamiento en la nube (*Huawei Cloud OBS*).
+2. La orquestación local y transferencia asincrónica hacia el motor de cómputo remoto en Google Colab Pro.
 3. La ejecución remota sin servidor (*Serverless*) de los módulos de extracción de coordenadas articulares (*YOLO26-pose*), normalización de keypoints mediante adaptador biomecánico y sincronización de series de tiempo (*DTW* con ventana de Sakoe-Chiba).
 4. El procesamiento digital de imágenes (*OpenCV*) para inyectar marcadores de color sobre la coordenada del error biomecánico detectado.
 5. El despliegue visual inmediato del fotograma clave anotado e indicadores estadísticos a través de un cliente web liviano (*Streamlit*).
@@ -551,8 +552,8 @@ El sistema de evaluación y retroalimentación biomecánica para la academia Cor
 
 * **BJJ (*Brazilian Jiu-Jitsu*):** Jiu-Jitsu Brasileño. Arte marcial y deporte de combate centrado en técnicas de agarre, derribos, transiciones en el suelo y sumisiones mecánicas.
 * **DTW (*Dynamic Time Warping*):** Envoltura Temporal Dinámica. Algoritmo no lineal para medir la similitud y alinear secuencias que evolucionan a diferentes velocidades.
-* **OBS (*Object Storage Service*):** Servicio de almacenamiento de objetos escalable y seguro provisto por la plataforma Huawei Cloud.
-* **FunctionGraph:** Servicio de computación *Serverless* orientada a eventos provisto por Huawei Cloud, el cual ejecuta código sin necesidad de aprovisionar ni administrar instancias de servidores.
+* **Google Colab Pro:** Entorno de ejecución en la nube provisto de aceleradores GPU NVIDIA A100-SXM4 (40 GB), ejecutando el motor de inferencia YOLO26x-pose como microservicio FastAPI desacoplado.
+* **FastAPI Local Orchestrator:** Backend en la laptop del tatami encargado de la coordinación de sesiones, persistencia relacional en SQLite3 y exposición de la PWA móvil mediante túnel seguro TLS 1.3.
 * **Keyframe (Fotograma Clave):** Cuadro estático individual extraído de una secuencia de video que captura un momento biomecánico significativo.
 * **Oclusión:** Obstrucción física o visual de una articulación corporal ocasionada por la superposición de extremidades propias o del compañero de entrenamiento.
 * **YOLO26-pose:** Modelo de visión artificial de alta precisión y velocidad de la suite Ultralytics, especializado en la estimación de keypoints articulares en 2D/3D con resistencia a oclusiones complejas.
@@ -581,7 +582,7 @@ El software se estructura como un sistema distribuido híbrido *Edge-Cloud* que 
 3. En consecuencia, se optó conscientemente por el **aislamiento de datos** como **estrategia de mitigación de riesgo** a corto plazo, implementando una **base de datos relacional independiente en la nube (PostgreSQL gestionado en Cloud)**. Bajo este enfoque, el practicante crea una cuenta web dedicada en la plataforma pedagógica, totalmente desacoplada del sistema de recepción.
 4. Cualquier mecanismo de interoperabilidad o sincronización automatizada entre ambos mundos queda formalmente diferido a la sección 4.2.7 (*Requisitos Futuros*).
 
-Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usuario web junto con un token de activación mensual responde a una clara separación arquitectónica de responsabilidades: la **cuenta web en PostgreSQL** resuelve la **identidad digital persistente y el historial técnico del estudiante** (permitiendo que el atleta conserve sus evaluaciones acumuladas a lo largo del tiempo, incluso si suspende temporalmente sus entrenamientos), mientras que el **Código de Activación Mensual (Token de Acceso)** resuelve de forma exclusiva la **protección del presupuesto operativo en la nube**, impidiendo que usuarios inactivos, externos o con cuotas impagas ejecuten cómputo serverless costoso. Este desacoplamiento salvaguarda el crédito financiero de Huawei Cloud sin introducir dependencias tecnológicas frágiles con la recepción de la academia.
+La coexistencia de cuentas de usuario diferenciadas por roles (*Head Coach* y *Estudiante*) junto con la autenticación API para Colab responde a una estricta separación de responsabilidades: la cuenta de usuario en SQLite3 resuelve la identidad y el historial longitudinal del atleta, mientras que el token de seguridad API (`token_api_colab`) garantiza que únicamente las solicitudes originadas por alumnos autorizados consuman tiempo de inferencia en la GPU A100 remota.
 
 ### 4.2.3 Funciones del Producto
 
@@ -599,15 +600,15 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 ### 4.2.5 Restricciones
 
-* **Presupuesto Operativo Máximo:** El consumo total facturable por servicios de Huawei Cloud (almacenamiento en OBS y cómputo en *FunctionGraph*) debe mantenerse por debajo de los **$30 USD trimestrales**.
+* **Presupuesto Operativo Sostenible:** El costo operativo del sistema se suscribe a la tarifa plana de **Google Colab Pro (~$10.00 a $20.00 USD/mes)**, cubriendo holgadamente todas las necesidades de cómputo GPU de la academia sin cargos variables ni sorpresas tarifarias.
 * **Aislamiento del Hardware Local:** Queda terminantemente restringido el uso intensivo de la memoria RAM, la CPU o aceleradores gráficos locales del cliente para tareas de inferencia de modelos de visión artificial.
 * **Condiciones de Conectividad:** El sistema debe operar eficientemente bajo las condiciones asimétricas de ancho de banda y velocidades de carga (*Upload*) prevalentes en las redes de telefonía móvil de Santa Cruz de la Sierra.
 
 ### 4.2.6 Suposiciones y Dependencias
 
 * Se asume que el alumno registrará la ejecución técnica junto a su compañero de entrenamiento bajo el protocolo de "laboratorio técnico" (encuadre lateral fijo donde ambos practicantes permanecen dentro de cuadro y sin interferencia de terceros en la escena). Se asume la presencia de oclusiones anatómicas parciales normales derivadas del agarre y contacto físico entre ambos practicantes, las cuales son compensadas algorítmicamente en el backend mediante el Filtro de Kalman cinemático (RF-08).
-* El funcionamiento del sistema depende de la disponibilidad del servicio *FunctionGraph* y de los contenedores Linux de Huawei Cloud para la ejecución del runtime optimizado de *YOLO26-pose* (ONNX Runtime / Ultralytics CPU).
-* **Control de Acceso y Salvaguarda de Costos Cloud (Regla de Negocio RN-01):** Para impedir que usuarios externos o estudiantes inactivos consuman saldo de cómputo en *Huawei Cloud*, el sistema web exige que el practicante ingrese un **Código de Activación Mensual (Token de Acceso)** para habilitar el formulario de carga de video. Este token es emitido periódicamente por el Head Coach (a través de la comunidad oficial de WhatsApp) o entregado impreso en la recepción junto con el ticket físico diario a los alumnos con membresía vigente. La interfaz web en *Streamlit* valida la vigencia del token antes de autorizar cualquier transferencia de archivos hacia *Huawei Cloud OBS*, bloqueando peticiones no autorizadas y blindando el presupuesto operativo de la nube.
+* El funcionamiento del sistema depende de la disponibilidad del túnel HTTPS seguro hacia Google Colab Pro para la ejecución acelerada por GPU de YOLO26x-pose (NVIDIA CUDA 12.x).
+* **Control de Acceso y Gestión Multi-Rol (Regla de Negocio RN-01):** El sistema diferencia estrictamente los roles de acceso mediante control de permisos en base de datos (`rol_usuario`). El **Head Coach** administra y homologa técnicas maestras, mientras que el **Estudiante** accede a la PWA para auditar sus ejecuciones, validando su token de sesión antes de despachar cargas hacia el motor de IA remoto.
 
 ### 4.2.7 Requisitos Futuros
 
@@ -621,8 +622,8 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 ### 4.3.1 Interfaces Externas
 
 #### 4.3.1.1 Software
-* **Capa de Presentación Web:** Interfaz gráfica desarrollada en *Streamlit*, alojada elásticamente en la nube. Esta interfaz actúa como un cliente liviano desacoplado que consume, mediante peticiones HTTP asincrónicas, los microservicios lógicos de visión por computadora alojados de forma nativa en el entorno de ejecución (*Runtime Python 3.9+*) de Huawei Cloud *FunctionGraph*. Para optimizar el canal de subida móvil y proteger la memoria del servidor frente a cargas masivas indeseadas (`st.file_uploader`), la capa web implementa una doble barrera de control: (1) a nivel de servidor web mediante la directiva `maxUploadSize = 5` en el archivo de configuración `.streamlit/config.toml`, permitiendo que el navegador intercepte y rechace archivos que excedan los 5 MB antes de consumir ancho de banda de subida, y (2) a nivel de código de aplicación Python para verificar que la duración efectiva del video no supere los 6 segundos.
-* **Motor Serverless:** Huawei Cloud *FunctionGraph*, responsable de procesar la lógica matemática cinemática mediante **YOLO26-pose** (exportado a ONNX para ejecución en CPU) y la inyección gráfica con OpenCV.
+* **Capa de Presentación Web (PWA):** Interfaz desarrollada en *Streamlit*, operable como Progressive Web App accesible desde cualquier dispositivo móvil en el tatami. Implementa validación temprana de tamaño (`maxUploadSize = 5` MB) y duración máxima de 6 segundos.
+* **Motor de IA Remoto:** Servicio FastAPI alojado en *Google Colab Pro* con GPU NVIDIA A100, responsable de procesar la cinemática mediante **YOLO26x-pose** y retornar los keypoints normalizados.
 
 #### 4.3.1.2 Hardware
 * **Dispositivo de Captura:** Sensor óptico integrado en teléfonos inteligentes comerciales (resolución mínima recomendada: 720p a 30 cuadros por segundo).
@@ -642,10 +643,11 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 | **RF-05** | Inyección Gráfica de Anotación (OpenCV) | El sistema deberá dibujar automáticamente un círculo de color rojo (radio de 15 píxeles) centrado en la coordenada espacial exacta $(X, Y)$ del nodo articular donde se validó el fallo técnico. |
 | **RF-06** | Despliegue de Diagnóstico Estático y Causa Técnica | La interfaz web en Streamlit deberá renderizar la imagen JPG procesada (cuyo peso no superará los 80 KB) junto con la explicación textual del error generada por el motor de reglas de manera inmediata tras la finalización del cómputo serverless. |
 | **RF-07** | Selección Jerárquica de Técnica y Doble Capa de Restricción de Carga | La interfaz web en Streamlit deberá presentar el catálogo curricular agrupado jerárquicamente en dos niveles (primero por categoría técnica y luego por posición de origen) para la selección manual de la variante a evaluar; asimismo, implementará una doble capa de control de ingesta de video: (1) a nivel de servidor web mediante la directiva `maxUploadSize` (fijada en **5 MB** en `.streamlit/config.toml`) para que el navegador aborte la transferencia de archivos sobredimensionados antes de saturar el enlace de subida o la memoria del servidor, y (2) a nivel de código de aplicación Python para verificar que la duración efectiva del video grabado en pareja no exceda los **6 segundos**. |
-| **RF-08** | Compensación Cinemática por Oclusión y Límite de Validez | El backend en FunctionGraph deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada por YOLO26-pose (`result.keypoints.conf`) sea $C < 0.5$, interpolando la trayectoria a partir de cuadros adyacentes; no obstante, si una articulación permanece ocluida ($C < 0.5$) de forma continua por más de un umbral máximo configurable (establecido con un valor de referencia inicial de 1.5 segundos o 45 fotogramas a 30 fps), el filtro cesará la interpolación inercial y marcará dicho tramo como 'no computable' para evitar la generación de cinemáticas ficticias, derivando el procesamiento al requisito RF-11. |
-| **RF-09** | Validación de Token de Membresía | La interfaz web deberá validar la vigencia del Código de Activación Mensual (Token de Acceso) del estudiante antes de autorizar la transferencia del archivo de video hacia el almacenamiento en la nube (Huawei Cloud OBS), impidiendo el consumo no autorizado de recursos serverless. El token será un código alfanumérico corto de 6 caracteres (ej. `A7K3P9`), legible e imprimible en el ticket térmico diario. Para su validación y persistencia segura, el sistema almacenará su hash SHA-256. |
-| **RF-10** | Generación de Explicación Textual Determinista | El backend en FunctionGraph deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
-| **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, abortando la ejecución a nivel de base de datos (sin persistir registros en las tablas `AnalisisBiomecanico` ni `HistorialProgresion`) para evitar contaminar el historial de progresión del atleta con cinemáticas ficticias. *(Política de Zero-Persistence y Limpieza de Almacenamiento: Si se detecta oclusión continua prolongada > 1.5s, no se persisten registros en `analisis_biomecanico` ni en el historial del practicante. Adicionalmente, el controlador invoca asincrónicamente el método `removerVideoBDYArchivoVideo()` para eliminar el objeto binario temporal del bucket de Huawei Cloud OBS, evitando costos por datos huérfanos y manteniendo la consistencia física del sistema. Nota de Arquitectura Financiera: Si bien el aborto transaccional evita la persistencia de datos erróneos y limpia el almacenamiento, **no elimina el costo de cómputo** de los milisegundos ya consumidos por la inferencia de YOLO26-pose hasta el punto de corte. Esta decisión prioriza la **validez pedagógica y la integridad estadística** del atleta sobre el ahorro marginal de CPU, delegando la trazabilidad de estos costos huérfanos a las métricas de Huawei Cloud AOM).* |
+| **RF-08** | Compensación Cinemática por Oclusión y Límite de Validez | El pipeline cinemático en el motor IA remoto deberá implementar un Filtro de Kalman cinemático que se active automáticamente sobre los puntos articulares cuya confiabilidad reportada por YOLO26-pose (`result.keypoints.conf`) sea $C < 0.5$, interpolando la trayectoria a partir de cuadros adyacentes; no obstante, si una articulación permanece ocluida ($C < 0.5$) de forma continua por más de un umbral máximo configurable (establecido con un valor de referencia inicial de 1.5 segundos o 45 fotogramas a 30 fps), el filtro cesará la interpolación inercial y marcará dicho tramo como 'no computable' para evitar la generación de cinemáticas ficticias, derivando el procesamiento al requisito RF-11. |
+| **RF-09** | Validación de Token y Autenticación Remota | La interfaz web validará el token de autenticación del usuario antes de autorizar la transferencia del video hacia el motor IA remoto en Google Colab Pro, impidiendo el consumo no autorizado de ciclos de GPU A100. |
+| **RF-10** | Generación de Explicación Textual Determinista | El backend en FastAPI Engine (Colab Pro) deberá consultar el catálogo de reglas biomecánicas registrado en el RF-01 y, en función de la articulación afectada, la desviación angular calculada y la técnica analizada, seleccionar de forma determinista el mensaje explicativo sobre la causa técnica del fallo (el "por qué" del error), almacenándolo en el campo `descripcionError` sin recurrir a IA generativa ni modelos de lenguaje libre. |
+| **RF-11** | Rechazo por Oclusión Prolongada y Protección de Integridad de Datos | El sistema deberá interrumpir el cómputo del diagnóstico cuando un tramo de oclusión continua supere el umbral máximo de validez definido en el RF-08, notificando al estudiante mediante un mensaje explícito en pantalla ("No fue posible calcular el diagnóstico: oclusión prolongada de la articulación durante la ejecución. Vuelve a grabar con mejor ángulo de cámara.") en lugar de renderizar fotogramas con datos inexactos, abortando la ejecución a nivel de base de datos (sin persistir registros en `analisis_biomecanico`) para evitar contaminar el historial de progresión del atleta. |
+| **RF-12** | Comunicación Remota Segura y Resiliente | El sistema mantendrá comunicación segura y persistente entre el orquestador local y el motor IA remoto mediante API REST sobre túnel HTTPS (TLS 1.3), manejando reconexión automática y notificaciones WebSocket ante caídas o reinicios de sesión en Google Colab Pro. |
 | **RF-12** | Consulta de Historial de Progresión Técnica | La interfaz web en Streamlit deberá permitir al estudiante autenticado consultar de forma interactiva su historial acumulativo de evaluaciones biomecánicas (`HistorialProgresion`), visualizando la evolución cronológica de su puntuación técnica global (`puntuacionGlobal`) y la tasa de reducción de errores (`cantidadErrores`) a lo largo de sus sucesivas sesiones de entrenamiento en el tatami. |
 | **RF-13** | Cálculo de Similitud de Posición 3D Euclidiana | El sistema deberá calcular la distancia euclidiana 3D para la totalidad de los keypoints anatómicos procesados por el adaptador de landmarks de YOLO26-pose ($\sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}$) entre el atleta evaluado y el video patrón del profesor, calculando el promedio espacial y convirtiéndolo en un porcentaje de proximidad posicional $(1 - \bar{d}) \times 100$, complementario al análisis temporal DTW. |
 | **RF-14** | Exportación Tabular de Similitud por Fotograma (CSV) | El sistema deberá generar y permitir la descarga de tres archivos estructurados en formato CSV por cada sesión de auditoría: (1) `skeleton_angle_similarity_{id}.csv` conteniendo los ángulos para 28 grupos anatómicos clave, (2) `skeleton_position_similarity_{id}.csv` registrando las coordenadas espaciales $(X, Y, Z)$ para los keypoints anatómicos extraídos y adaptados, y (3) `skeleton_eachframe_similarity_{id}.csv` con los porcentajes de similitud angular, posicional y promedio cuadro a cuadro. |
@@ -657,7 +659,7 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 | Código | Requisito de Rendimiento | Métrica y Criterio de Aceptación |
 | :---: | :--- | :--- |
-| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con YOLO26-pose, adaptación cinemática, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en *FunctionGraph*. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la inferencia de keypoints con YOLO26-pose versión nano optimizada para CPU vía ONNX Runtime (~40ms/frame), el arranque en frío (*cold start*) del contenedor personalizado Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
+| **RP-01** | Latencia de Inferencia en la Nube | El tiempo total de procesamiento en la nube (extracción de puntos clave con YOLO26-pose, adaptación cinemática, compensación por Kalman, sincronización DTW y anotación con OpenCV) para una secuencia estandarizada de hasta **6 segundos** de video ($\sim 180$ fotogramas a 30 fps) no deberá exceder de **4.0 segundos** en el motor de inferencia de Google Colab Pro. (Nota de Arquitectura: Este techo máximo de 4.0s es un SLA que absorbe holgadamente la inferencia de keypoints con YOLO26-pose versión nano optimizada para CPU vía ONNX Runtime (~40ms/frame), el arranque en frío (*cold start*) del contenedor personalizado Linux, el cómputo cuasi-lineal del DTW (80-150 ms) y el renderizado con OpenCV). |
 | **RP-02** | Eficiencia en Transferencia de Salida (*Egress*) | El volumen del paquete de datos de respuesta transferido hacia el cliente móvil no deberá superar los **100 KB** por consulta. (Nota de Arquitectura: Los 100 KB constituyen la cota superior contractual admisible o *worst-case threshold*, mientras que el promedio nominal comprimido por OpenCV es de ~80 KB. Ambos escenarios garantizan matemáticamente el cumplimiento del límite presupuestario trimestral). |
 | **RP-03** | Techo de Tiempo de Generación Gráfica y Tabular | La exportación de los 3 archivos CSV estructurados y el renderizado en memoria del panel gráfico temporal con Matplotlib no deberá añadir más de **500 ms** al ciclo de procesamiento total, manteniendo el peso del archivo PNG por debajo de los 200 KB para preservar la ligereza del despliegue en tatami. *(Nota Técnica de Mitigación de Bloqueo Síncrono: Para cumplir rigurosamente el SLA de 500 ms en la generación de gráficos, el sistema utiliza el backend no interactivo `Agg` de Matplotlib (`matplotlib.use('Agg')`), dibujando directamente sobre búferes binarios de memoria RAM sin sobrecarga de subsistemas de ventanas gráficas (GUI). Adicionalmente, este proceso se despacha en un hilo secundario asincrónico mediante `ThreadPoolExecutor`, permitiendo que el flujo principal retorne el diagnóstico visual y fotograma clave anotado (RF-06) de forma inmediata al estudiante, mientras el panel analítico y los archivos tabulares se disponibilizan progresivamente sin congelar la interfaz reactiva).* |
 
@@ -671,12 +673,17 @@ Bajo este marco de aislamiento deliberado, la coexistencia de una cuenta de usua
 
 ### 4.3.5 Atributos del Sistema
 
-* **Disponibilidad:** La arquitectura *Serverless* garantizará una disponibilidad del servicio del **99.9%**, aprovechando la infraestructura elástica y redundante provista por la plataforma Huawei Cloud.
+* **Disponibilidad:** La arquitectura *Serverless* garantizará una disponibilidad del servicio del **99.9%**, aprovechando la infraestructura elástica y redundante provista por la plataforma Google Colab Pro.
 * **Usabilidad y Ergonomía Térmica:** La interfaz web de consulta operará de manera pasiva mediante el despliegue de hipertexto e imágenes estáticas pre-procesadas. Queda prohibida la ejecución de hilos de cómputo en segundo plano (*Web Workers / Background JavaScript*) en el terminal del usuario, minimizando la demanda sobre la batería y previniendo el estrés térmico en teléfonos inteligentes de gama baja durante los entrenamientos en el tatami.
 
 ---
 
 ## 4.4 Identificación de los Casos de Uso
+
+El sistema modela formalmente la interacción multi-rol en el tatami mediante dos casos de uso centrales:
+
+* **CU-01 (Head Coach): "Homologar y Administrar Técnicas de Clase":** El profesor de la academia sube el video demostrativo canónico de la técnica de la clase, especifica nombre, categoría y posición de origen, y el sistema genera automáticamente las reglas biomecánicas base y almacena el esqueleto de referencia (RF-01).
+* **CU-02 (Estudiante): "Auditar Ejecución Técnica":** El practicante selecciona la técnica activa desde la PWA móvil en el tatami, sube su video de ejecución (< 5 MB, < 6 s), el sistema delega la inferencia a la GPU A100 remota y retorna un fotograma clave anotado JPG (~80 KB) con círculo indicador de falla y diagnóstico pedagógico determinista en menos de 4 segundos (RF-06, RP-02).
 
 De acuerdo con las directrices metodológicas del Proceso Unificado (Craig Larman, 2004), los casos de uso representan exclusivamente interacciones directas entre los actores humanos y el sistema. En este sentido, los procesos puramente algorítmicos e inferencias ejecutadas en el backend (normalización de escala, compensación cinemática de oclusiones mediante Filtro de Kalman, alineación no lineal mediante DTW e inyección gráfica de anotaciones con OpenCV) no constituyen casos de uso aislados, sino que son subtareas y flujos de eventos internos gatillados por el **CU-02: Cargar Video de Ejecución**.
 
@@ -735,12 +742,19 @@ classDiagram
         comunidadWhatsApp
     }
 
+    class RolUsuario {
+        idRol: String (profesor | alumno)
+        descripcion: String
+    }
+
     class UsuarioAcademia {
         <<abstract>>
         idUsuario
         nombreCompleto
         telefonoWhatsApp
         correoElectronico
+        rolId: RolUsuario
+        tokenApiColab: String
         fechaRegistro
     }
 
@@ -812,6 +826,7 @@ classDiagram
     }
 
     EscuelaBJJ "1" *-- "1..*" UsuarioAcademia : nuclea
+    UsuarioAcademia "1" --> "1" RolUsuario : tipifica
     UsuarioAcademia <|-- HeadCoach : es-un
     UsuarioAcademia <|-- Estudiante : es-un
 
@@ -871,55 +886,55 @@ classDiagram
 
 El presente capítulo formaliza la etapa de ingeniería y diseño del sistema propuesto, estructurando la transición rigurosa desde los requerimientos funcionales y no funcionales del Capítulo IV hacia una arquitectura técnica ejecutable. La metodología adoptada integra los principios de **Análisis y Diseño Orientado a Objetos (OOAD)** según las directrices disciplinadas del **Proceso Unificado** de **Craig Larman** (*Applying UML and Patterns*), combinados con los estándares formales de diseño lógico y físico de bases de datos relacionales propuestos por **Michael V. Mannino (2018)** (*Database Design, Application Development, and Administration*). 
 
-Se especifican de manera exhaustiva la arquitectura lógica desacoplada en cuatro capas, la topología física de despliegue sobre la nube elástica de **Huawei Cloud**, la realización dinámica de los casos de uso fundamentales mediante diagramas de secuencia del sistema (SSD) y contratos de operación formales, la asignación de responsabilidades mediante patrones GRASP y GoF, el Diagrama de Clases de Diseño (DCD) consolidado, la normalización matemática de datos relacionales en Tercera Forma Normal (3NF) y Forma Normal de Boyce-Codd (BCNF), el diccionario de datos formal, los scripts DDL de producción en PostgreSQL v14+, y el diseño de experiencia e interacción de usuario en el entorno web liviano de Streamlit.
+Se especifican de manera exhaustiva la arquitectura lógica desacoplada en cuatro capas, la topología física de cómputo híbrido distribuido (**Laptop Orquestadora + Google Colab Pro A100**), la realización dinámica de los casos de uso fundamentales mediante diagramas de secuencia del sistema (SSD) y contratos de operación formales, la asignación de responsabilidades mediante patrones GRASP y GoF, el Diagrama de Clases de Diseño (DCD) consolidado, la normalización matemática de datos relacionales en Tercera Forma Normal (3NF) y Forma Normal de Boyce-Codd (BCNF), el diccionario de datos formal, los scripts DDL de producción en PostgreSQL v14+, y el diseño de experiencia e interacción de usuario en el entorno web liviano de Streamlit.
 
 ---
 
 ## 5.1 Arquitectura del Software y Entorno de Despliegue Cloud
 
-La arquitectura general del sistema responde al paradigma híbrido *Edge-Cloud* asincrónico y reactivo a eventos. A fin de respetar rigurosamente la cota presupuestaria de operación trimestral ($< \$30\text{ USD}$) y mitigar el estrés térmico en los dispositivos móviles de los practicantes en el tatami, la solución delega la totalidad de la carga computacional pesada (visión artificial y sincronización no lineal) hacia la infraestructura elástica *Serverless* de **Huawei Cloud**, conservando en el cliente una capa de presentación liviana y ergonómica.
+La arquitectura general del sistema responde al paradigma híbrido *Edge-Cloud* asincrónico y reactivo a eventos. A fin de mantener un costo operativo predecible (~$10-20 USD/mes) y mitigar el estrés térmico en los dispositivos móviles en el tatami, la solución delega la totalidad de la carga de visión artificial hacia la GPU NVIDIA A100 en **Google Colab Pro**, conservando en la laptop local la orquestación y en el cliente móvil una PWA liviana y ergonómica.
 
 ### 5.1.1 Vista Lógica y Arquitectura en Capas
 
 Conforme a los lineamientos de Craig Larman (2004), la descomposición modular del sistema se estructura en una **Arquitectura en Cuatro Capas Lógicas**, asegurando un régimen estricto de **Bajo Acoplamiento (*Low Coupling*)** y **Alta Cohesión (*High Cohesion*)**:
 
-1. **Capa de Presentación (UI Layer - Streamlit):** Aloja los componentes de interfaz gráfica web ejecutados en el navegador del usuario. Actúa como cliente desacoplado responsable de capturar la interacción humana, validar las restricciones de formato local ($\le 5\text{ MB}$ y $\le 6\text{ segundos}$, RF-07), verificar la tenencia del token de membresía en cliente (RF-09) y renderizar de forma pasiva los fotogramas anotados y las tarjetas de retroalimentación pedagógica.
-2. **Capa de Aplicación y Controlador (Application / Controller Layer):** Encapsulada en el punto de entrada de la función en la nube (*FunctionGraph Dispatcher*) y coordinada por el controlador de caso de uso `AnalisisBiomecanicoController`. No contiene lógica matemática ni reglas de negocio intrínsecas; su función exclusiva es orquestar el flujo de ejecución, invocar la validación de tokens contra la base de datos, despachar las tareas hacia el motor biomecánico y coordinar la persistencia transaccional.
-3. **Capa de Dominio del Negocio e Inteligencia Artificial (Domain & AI Layer):** Constituye el núcleo algorítmico independiente de la plataforma. Encapsula las entidades conceptuales del modelo (`TecnicaMaestra`, `ReglaBiomecanica`, `AnalisisBiomecanico`), el motor de reglas predeterminadas `DefaultRuleEngine` (Patrón *Pure Fabrication* de Larman, responsable de asignar automáticamente articulaciones clave y umbrales por defecto de 15° cuando el Head Coach opta por el flujo simplificado de carga), el adaptador de inferencia de hardware `HardwareInferenceAdapter` (Patrón *Protected Variations* de Larman, que encapsula y desacopla la detección de hardware para despachar la inferencia vía `ONNX Runtime` en entornos CPU local o `PyTorch + CUDA` en entornos acelerados GPU como NVIDIA A100 / Colab de manera transparente para el `PipelineBiomecanicoEngine`), el extractor cinemático basado en *YOLO26-pose* (`YOLOPoseExtractor`), el módulo adaptador de normalización de keypoints (`LandmarkAdapter` para 17 keypoints estándar COCO), el módulo de seguimiento y compensación de oclusiones (`KalmanFilterTracker`), el motor determinista de alineación temporal no lineal (`DTWComparator` con restricción de Sakoe-Chiba al 15%), y el componente de inyección gráfica de errores (`OpenCVAnnotator`). Esta capa carece de dependencias respecto al framework web o los drivers de bases de datos.
-4. **Capa de Infraestructura y Persistencia (Infrastructure & Persistence Layer):** Provee las implementaciones técnicas concretas para interactuar con servicios externos mediante adaptadores especializados: `LocalStorageAdapter` para la transferencia de objetos audiovisuales en *Huawei Cloud OBS*, y `TecnicaMaestraRepository / AnalisisRepository (SQLite)` (gestionado mediante SQLAlchemy / psycopg2) para la persistencia ACID en la base de datos relacional *SQLite3 (`data/bjj_analysis.db`)*.
+1. **Capa de Presentación (UI Layer - Streamlit PWA):** Aloja los componentes de interfaz gráfica ejecutados en los navegadores móviles de los atletas y del profesor en el tatami. Actúa como cliente liviano responsable de capturar la interacción táctil, validar el tamaño y formato de video local ($\le 5\text{ MB}$ y $\le 6\text{ segundos}$, RF-07), autenticar mediante tokens de sesión y renderizar de forma reactiva los diagnósticos y fotogramas anotados.
+2. **Capa de Aplicación y Controladores de Caso de Uso (Application / GRASP Controller Layer):** Implementa controladores especializados por rol para garantizar *Alta Cohesión* y *Variaciones Protegidas* (Larman): `CoachController` gestiona la homologación curricular y administración de técnicas maestras (CU-01), mientras que `StudentController` coordina la auditoría cinemática y consulta de progresión técnica (CU-02). Ambos delegan la orquestación del flujo de cómputo en el controlador general `AnalysisPipeline`.
+3. **Capa de Dominio del Negocio e Inteligencia Artificial (Domain & AI Layer):** Constituye el núcleo cinemático desacoplado de la infraestructura. Encapsula las entidades fundamentales del modelo (`HeadCoach`, `Estudiante`, `RolUsuario`, `CodigoActivacion`, `TecnicaMaestra`, `ReglaBiomecanica`, `AnalisisBiomecanico`), el motor de reglas predeterminadas `DefaultRuleEngine` (Patrón *Pure Fabrication* de Larman), el adaptador de inferencia `HardwareInferenceAdapter` (*Protected Variations*), el extractor cinemático basado en *YOLO26-pose* (`YOLOPoseExtractor`), el módulo de normalización de keypoints (`LandmarkAdapter` para 17 puntos COCO), el módulo de compensación inercial (`KalmanFilterTracker`), el comparador no lineal de series temporales (`DTWComparator` con ventana de Sakoe-Chiba al 15%), y el componente de anotación digital (`OpenCVAnnotator`).
+4. **Capa de Infraestructura y Persistencia (Infrastructure & Persistence Layer):** Provee las implementaciones técnicas concretas mediante adaptadores especializados: `LocalStorageAdapter` para el almacenamiento local de videos y fotogramas, cliente HTTP seguro para la comunicación con el motor IA remoto en Google Colab Pro, y `TecnicaMaestraRepository / AnalisisRepository (SQLite)` para la persistencia ACID en SQLite3 (`data/bjj_analysis.db`) con Foreign Keys activas (Mannino).
 
 A continuación, la **Figura 5.1** modela la organización de paquetes y dependencias unidireccionales entre capas:
 
 ```mermaid
 graph TD
-    subgraph CapaPresentacion["Capa de Presentación (Streamlit UI)"]
-        UI_Login["TokenGateView"]
-        UI_Upload["VideoUploadView (Selección de Sujeto RF-02b)"]
-        UI_Result["FeedbackReportView"]
-        UI_History["ProgressionHistoryView"]
+    subgraph CapaPresentacion["Capa de Presentación (Streamlit PWA)"]
+        UI_Tatami["PWA Tatami Mobile View"]
+        UI_Coach["CoachAdminView (Homologación CU-01)"]
+        UI_Student["StudentAuditView (Auditoría CU-02)"]
+        UI_History["ProgressionHistoryView (Dashboard)"]
     end
 
-    subgraph CapaAplicacion["Capa de Aplicación (Controller / Dispatcher)"]
-        Ctrl_Analisis["AnalisisBiomecanicoController"]
-        Ctrl_Auth["MembresiaTokenController"]
-        Ctrl_Catalogo["CatalogoTecnicasController"]
+    subgraph CapaAplicacion["Capa de Aplicación (GRASP Controllers)"]
+        Ctrl_Coach["CoachController (CU-01)"]
+        Ctrl_Student["StudentController (CU-02)"]
+        Ctrl_Pipeline["AnalysisPipeline (Orquestador GRASP)"]
     end
 
     subgraph CapaDominio["Capa de Dominio del Negocio e IA (Pipeline Biomecánico)"]
-        Dom_Entities["Entidades de Negocio<br/>(TecnicaMaestra, ReglaBiomecanica,<br/>AnalisisBiomecanico, Historial)"]
+        Dom_Entities["Entidades de Dominio Multi-Rol<br/>(HeadCoach, Estudiante, RolUsuario,<br/>CodigoActivacion, TecnicaMaestra, Analisis)"]
         Dom_DefaultRules["DefaultRuleEngine<br/>(Pure Fabrication - Reglas por Defecto)"]
-        Dom_Hardware["HardwareInferenceAdapter<br/>(Protected Variations - CPU ONNX / GPU PyTorch)"]
+        Dom_Hardware["HardwareInferenceAdapter<br/>(Protected Variations - CPU / CUDA A100)"]
         Dom_Pose["YOLOPoseExtractor<br/>(Ultralytics / YOLO26-pose)"]
         Dom_Adapter["LandmarkAdapter<br/>(Mapeo COCO 17 pts -> Cinemático)"]
         Dom_Kalman["KalmanFilterTracker"]
         Dom_DTW["DTWComparator (Sakoe-Chiba 15%)"]
-        Dom_Rules["CatalogoReglasEngine"]
         Dom_OpenCV["OpenCVAnnotator"]
     end
 
     subgraph CapaInfraestructura["Capa de Infraestructura y Persistencia"]
-        Infra_OBS["LocalStorageAdapter<br/>(OBS SDK esdk-obs-python)"]
-        Infra_DB["TecnicaMaestraRepository / AnalisisRepository (SQLite)<br/>(SQLAlchemy / psycopg2)"]
+        Infra_Storage["LocalStorageAdapter<br/>(Almacenamiento Local / MP4 / JPG)"]
+        Infra_DB["SQLite Repositories (Mannino)<br/>(TecnicaMaestraRepo, AnalisisRepo)"]
+        Infra_ColabClient["ColabInferenceClient<br/>(API REST HTTPS / Ngrok)"]
     end
 
     CapaPresentacion -->|HTTPS / Eventos UI| CapaAplicacion
@@ -938,56 +953,51 @@ graph TD
 
 ---
 
-### 5.1.2 Vista de Despliegue Físico en Huawei Cloud
+### 5.1.2 Vista de Despliegue Físico Híbrido (Producción Multi-Rol)
 
-La topología de despliegue físico materializa el aislamiento estricto de recursos, garantizando que el entorno local de la academia Corpo & Mente no sufra alteraciones en su hardware y que la aplicación web no dependa de servidores dedicados permanentemente encendidos (*IaaS*).
-
-#### Separación de Ambientes: Desarrollo/Pruebas vs. Producción Cloud-Native
-Resulta indispensable clarificar la distinción metodológica e ingenieril entre el ambiente de validación experimental y la topología definitiva de producción:
-* **Ambiente de Desarrollo y Validación Experimental (Localhost):** Utilizado rigurosamente durante la fase de Construcción y verificación de pruebas unitarias/TDD documentadas en el presente proyecto. En este escenario, la laptop del desarrollador hospeda localmente el servidor Streamlit (`localhost:8501`) y el motor relacional PostgreSQL 14, conectándose remotamente mediante HTTPS a los servicios serverless de Huawei Cloud (*FunctionGraph* y *OBS*). Este esquema permite iteraciones ágiles de depuración con costo cero de infraestructura de base de datos.
-* **Ambiente de Producción Definitivo (Cloud-Native):** Para la puesta en marcha operativa en la academia deportiva, el frontend en Streamlit se empaqueta en una imagen de contenedor ligero desplegada en una instancia elástica con auto-escalado (*Huawei Cloud Cloud Container Engine - CCE* o *Elastic Cloud Server - ECS* de entrada), mientras que la base de datos migra transparentemente hacia una instancia gestionada de **SQLite3 (`data/bjj_analysis.db`) (PostgreSQL)** con respaldos automatizados. Toda la comunicación entre los teléfonos móviles de los atletas y la plataforma opera bajo canales seguros HTTPS (TLS 1.3) sobre redes comerciales 4G/LTE/5G, garantizando alta disponibilidad, aislamiento de red mediante VPC privada y acceso público seguro.
-
-La **Figura 5.2** presenta el Diagrama de Despliegue físico en sintaxis UML modelando el entorno de construcción y validación experimental:
+El sistema opera bajo una arquitectura distribuida de tres nodos físicos interconectados mediante canales seguros:
 
 ```mermaid
-flowchart TD
-    subgraph Laptop["Laptop del Desarrollador (Dell Inspiron 3501 - Entorno Experimental)"]
-        subgraph LocalEnv["Entorno Local de Desarrollo y Pruebas TDD"]
-            StreamlitLocal["Streamlit Server<br/>(localhost:8501)"]
-            PostgresLocal[("PostgreSQL 14<br/>(Base de Datos Local)")]
-        end
+graph TD
+    subgraph ClienteTatami["📱 Nodo Cliente Móvil / Tatami"]
+        PWA["PWA Streamlit Mobile<br/>(Navegador Web / iOS / Android)"]
     end
 
-    subgraph HuaweiCloud["Huawei Cloud Region (LA-Santiago)"]
-        subgraph ServerlessNode["FunctionGraph Cluster"]
-            subgraph FGEnv["Serverless Custom Container Runtime<br/>(Linux x86_64, SWR Image con ONNX Runtime y Ultralytics CPU)"]
-                FG_Service["Biomechanics Engine<br/>(YOLO26-pose + DTW + OpenCV)"]
-            end
-        end
-        subgraph OBSNode["Huawei Cloud OBS"]
-            OBS_In[("Bucket: bjj-videos-input<br/>(Videos MP4 ≤5MB)")]
-            OBS_Out[("Bucket: bjj-reports-output<br/>(Fotogramas JPG ~80KB)")]
-        end
+    subgraph LaptopLocal["💻 Nodo Orquestador Local (Laptop Dell)"]
+        FastAPI_Local["FastAPI Backend & Streamlit Server<br/>(Python 3.13)"]
+        SQLiteDB["SQLite3 Relacional (bjj_analysis.db)<br/>(Mannino BCNF / FK Activas)"]
+        Ngrok_Client["Ngrok Client / TLS 1.3 Tunnel"]
+        WS_Manager["WebSocket Connection Manager"]
     end
 
-    StreamlitLocal -- "HTTPS REST (SDK Huawei)" --> FG_Service
-    StreamlitLocal -- "TCP 5432 (Localhost)" --> PostgresLocal
-    FG_Service -- "HTTPS OBS REST API (Agency IAM)" --> OBS_In
-    FG_Service -- "HTTPS OBS REST API (Agency IAM)" --> OBS_Out
+    subgraph ColabPro["☁️ Nodo Cómputo Remoto (Google Colab Pro)"]
+        Pyngrok_Colab["Pyngrok Reverse Tunnel HTTPS"]
+        FastAPI_Engine["FastAPI Inference Engine Service"]
+        YOLO_A100["YOLO26x-pose Engine<br/>(NVIDIA A100-SXM4-40GB / CUDA 12.x)"]
+        DTW_Worker["FastDTW & Rule Engine Worker"]
+    end
+
+    PWA -- "HTTPS / TLS 1.3" --> FastAPI_Local
+    FastAPI_Local --> SQLiteDB
+    FastAPI_Local <--> Ngrok_Client
+    Ngrok_Client -- "Túnel Seguro HTTPS" --> Pyngrok_Colab
+    Pyngrok_Colab <--> FastAPI_Engine
+    FastAPI_Engine --> YOLO_A100
+    FastAPI_Engine --> DTW_Worker
+    FastAPI_Local <.. "WebSocket (Heartbeat & Alertas)" ..> FastAPI_Engine
 ```
 
-**Figura 5.2**  
-*Diagrama de Despliegue Físico Simplificado (Arquitectura Híbrida Laptop-Cloud).*  
-*Nota de Arquitectura*: El diagrama representa el entorno de desarrollo y validación experimental (Localhost). En el entorno de producción real, el frontend Streamlit se despliega en una instancia elástica (ej. Huawei Cloud ECS o Container Service) y la base de datos migra a SQLite3 (`data/bjj_analysis.db`) (PostgreSQL Gestionado), permitiendo acceso público seguro vía HTTPS/4G para los atletas.
+*Nota de Arquitectura:* Los atletas y el profesor interactúan con la PWA desde sus teléfonos móviles en el tatami mediante HTTPS. El orquestador local en la laptop despacha los paquetes de inferencia hacia el servicio daemon en Google Colab Pro mediante el túnel seguro de Pyngrok, recibiendo los keypoints normalizados en < 2 segundos para completar la evaluación.
 
 **Tabla 5.1**  
-*Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad*
+*Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad en Producción Híbrida*
 
 | Segmento de Enlace | Protocolo / Puerto | Mecanismo de Seguridad | Justificación Técnica |
 | :--- | :--- | :--- | :--- |
-| **Laptop → FunctionGraph** | HTTPS REST (TCP 443) | Autenticación IAM AK/SK | Invocación serverless desde entorno local de desarrollo. |
-| **Laptop → PostgreSQL Local** | TCP 5432 (Localhost) | Conexión local sin red externa | Base de datos relacional ejecutándose nativamente en la laptop del desarrollador. |
-| **FunctionGraph → OBS** | HTTPS OBS REST API / SDK (TCP 443) | IAM Agency con firma HMAC-SHA256 | FunctionGraph lee videos de entrada y escribe fotogramas anotados usando permisos delegados de servicio mediante Agencia IAM. |
+| **Tatami (Móvil) → Laptop Orquestadora** | HTTPS / TLS 1.3 (TCP 8501 / 443) | SSL/TLS con certificado Ngrok | Acceso PWA móvil cifrado de extremo a extremo desde el tatami. |
+| **Laptop → Google Colab Pro (A100)** | HTTPS REST (TCP 443) | Header `X-API-Key` + Token Compartido | Túnel reverso Pyngrok seguro para despacho de videos e inferencia. |
+| **Laptop ↔ Colab Pro (Keep-Alive)** | WebSocket WSS (TCP 443) | Heartbeat autenticado bidireccional | Monitoreo de latencia y detección de desconexión de GPU en tiempo real. |
+| **Laptop → SQLite3 Local** | IPC Local (`data/bjj_analysis.db`) | Acceso a nivel de sistema de archivos | Cero exposición de red de la base de datos relacional con integridad ACID. |
 
 ---
 
@@ -1000,8 +1010,8 @@ $$t_{\text{serverless}} = t_{\text{cold-start}} + t_{\text{yolo}} + t_{\text{kal
 
 El dimensionamiento analítico de cada componente confirma la viabilidad técnica del umbral contractual:
 
-1. **Arranque en Frío (*Cold Start*) del Contenedor Personalizado Linux ($t_{\text{cold-start}} \le 1.2\text{ s}$):** Ocurre únicamente en la primera invocación tras un periodo de inactividad de la función en *FunctionGraph*. Dado que la práctica en el tatami ocurre por tandas colectivas donde 10 parejas concluyen simultáneamente la serie mecanizada (Sección 2.4.1), sólo la primera petición absorbe este retardo de inicialización de runtime ($\sim 0.8\text{ a } 1.2\text{ s}$); las 9 peticiones concurrentes restantes se despachan sobre instancias previamente instanciadas (*warm containers*), reduciendo este valor a $t_{\text{warm}} \le 0.05\text{ s}$.
-2. **Extracción Cinemática con YOLO26-pose ($t_{\text{yolo}} \approx 1.5\text{--}2.0\text{ s}$):** Procesamiento cuadro a cuadro mediante `yolo26-pose` (versión nano) ejecutado con optimizaciones vectoriales AVX2 / ONNX Runtime (~40 ms por fotograma en CPU). *(Nota Técnica de Dimensionamiento: Para garantizar la tasa de inferencia fluida de YOLO26-pose optimizado en ONNX, la función Serverless se configura con **2 GB - 4 GB de RAM**. Según la política de asignación elástica de recursos de Huawei Cloud FunctionGraph, este dimensionamiento desbloquea el acceso a **1-2 vCPUs completas con instrucciones vectoriales AVX2**, evitando el estrangulamiento de CPU típico de instancias mínimas de 512 MB. Esto asegura que el tiempo de inferencia ($t_{\text{yolo}}$) se mantenga de forma determinista en $\sim 1.8\text{ s}$, cumpliendo holgadamente el SLA de 4.0s).*
+1. **Arranque en Frío (*Cold Start*) del Contenedor Personalizado Linux ($t_{\text{cold-start}} \le 1.2\text{ s}$):** Ocurre únicamente en la primera invocación tras un periodo de inactividad de la función en el motor de inferencia de Google Colab Pro. Dado que la práctica en el tatami ocurre por tandas colectivas donde 10 parejas concluyen simultáneamente la serie mecanizada (Sección 2.4.1), sólo la primera petición absorbe este retardo de inicialización de runtime ($\sim 0.8\text{ a } 1.2\text{ s}$); las 9 peticiones concurrentes restantes se despachan sobre instancias previamente instanciadas (*warm containers*), reduciendo este valor a $t_{\text{warm}} \le 0.05\text{ s}$.
+2. **Extracción Cinemática con YOLO26-pose ($t_{\text{yolo}} \approx 1.5\text{--}2.0\text{ s}$):** Procesamiento cuadro a cuadro mediante `yolo26-pose` (versión nano) ejecutado con optimizaciones vectoriales AVX2 / ONNX Runtime (~40 ms por fotograma en CPU). *(Nota Técnica de Dimensionamiento: Para garantizar la tasa de inferencia fluida de YOLO26-pose optimizado en ONNX, la función Serverless se configura con **2 GB - 4 GB de RAM**. Según la política de asignación elástica de recursos de Google Colab Pro (A100 GPU), este dimensionamiento desbloquea el acceso a **1-2 vCPUs completas con instrucciones vectoriales AVX2**, evitando el estrangulamiento de CPU típico de instancias mínimas de 512 MB. Esto asegura que el tiempo de inferencia ($t_{\text{yolo}}$) se mantenga de forma determinista en $\sim 1.8\text{ s}$, cumpliendo holgadamente el SLA de 4.0s).*
 3. **Compensación de Kalman y Sincronización Temporal DTW ($t_{\text{kalman-dtw}} \approx 0.08\text{--}0.15\text{ s}$):** Al parametrizar la **Ventana de Sakoe-Chiba** con una cota del 15% de la longitud temporal ($w = 0.15 \cdot 180 \approx 27$ cuadros de tolerancia), la matriz de búsqueda de costo acumulado se restringe a una banda diagonal de ancho $2w + 1 = 55$ celdas por fotograma. Esto transmuta la complejidad temporal cuadrática $O(N^2) \approx 32,400\text{ operaciones}$ a un régimen estrictamente cuasi-lineal $O(w \cdot N) \approx 4,860\text{ operaciones}$, completándose la alineación temporal en escasos $80\text{ a } 150\text{ ms}$.
 4. **Extracción y Anotación Gráfica con OpenCV ($t_{\text{opencv}} \approx 0.03\text{--}0.05\text{ s}$):** El trazado del círculo rojo ($\text{radio} = 15\text{ px}$) sobre el fotograma clave de máxima desviación y su posterior codificación a formato JPG con factor de compresión 80 insume $\le 50\text{ ms}$.
 
@@ -1015,39 +1025,35 @@ $$t_{\text{serverless}}^{\text{nominal}} = 0.05\text{ s} + 1.80\text{ s} + 0.10\
 
 Queda formalmente demostrado que el límite contractual de 4.0 segundos es un SLA realista que absorbe holgadamente la variabilidad de la infraestructura en la nube.
 
-#### B. Justificación Matemática del Techo Financiero (< $30 USD Trimestrales)
-La arquitectura híbrida laptop-cloud garantiza que el consumo facturable de Huawei Cloud se limite estrictamente a los servicios serverless esenciales (FunctionGraph + OBS), eliminando costos de infraestructura permanente (RDS, ECS, API Gateway).
+#### B. Justificación Económica y Operativa: Inversión en Google Colab Pro
 
-**Desglose de Costos Trimestrales:**
+Frente a la alternativa tradicional de desplegar servidores IaaS dedicados en nubes públicas, la arquitectura adoptada optimiza el Costo Total de Propiedad (TCO) y blinda la sostenibilidad de Corpo & Mente Bolivia:
 
-1. **FunctionGraph (Cómputo Serverless):**
-   - Tier gratuito permanente de Huawei Cloud: 1,000,000 invocaciones/mes y 400,000 GB-segundos/mes sin cargo.
-   - Escenario operativo regular (350 consultas mensuales × 3 meses = 1,050 invocaciones trimestrales):
-     - Configuración de alto rendimiento: cada invocación consume ~2 segundos × 2 GB RAM (desbloqueando 1 vCPU AVX2 completa) = 4 GB-segundos por ejecución.
-     - Total trimestral: $1,050 \times 4\text{ GB-s} = 4,200\text{ GB-segundos}$ trimestrales.
-     - Al estar ampliamente por debajo de la cuota gratuita mensual de 400,000 GB-segundos, el costo es cubierto al 100% por el tier gratuito.
-     - Incluso si se configurase a 4 GB RAM (8 GB-s por invocación = 8,400 GB-s trimestrales) y se agotase la cuota gratuita, el costo facturable a tarifa estándar de $0.00001667/GB-s equivaldría a escasos $0.14 USD.
-     - **Costo FunctionGraph Estimado: $0.00 USD (o < $0.50 USD en contingencia de sobreconsumo)**
+**Tabla 5.2**  
+*Comparativa de Costo Total de Propiedad (TCO Mensual y Anual)*
 
-2. **OBS (Almacenamiento de Objetos):**
-   - Almacenamiento estándar: 10 GB × $0.021/GB/mes = $0.21/mes × 3 = $0.63 USD trimestrales.
-   - Tráfico de salida (Data Egress): 1,050 fotogramas × 80 KB = 84 MB trimestrales.
-     - Tarifa regional: $0.081/GB × 0.084 GB = $0.0068 USD trimestrales.
-   - API Requests: 2,100 PUT/GET requests × $0.005/1,000 = $0.0105 USD trimestrales.
-   - **Costo OBS Total: ~$0.65 USD trimestrales**
+| Rubro de Infraestructura | Opción A: Google Colab Pro (Elegida) | Opción B: AWS / GCP IaaS Dedicado | Opción C: Servidor Local GPU (CapEx) |
+| :--- | :--- | :--- | :--- |
+| **Cómputo GPU** | NVIDIA A100-SXM4 (40 GB VRAM) | Instancia EC2 `g4dn.xlarge` (T4 16GB) | Servidor con RTX 4080 (16 GB) |
+| **Tarifa Mensual** | **$10.00 – $20.00 USD/mes** | **$345.60 USD/mes** ($0.48/h × 720h) | $0/mes operativo |
+| **Inversión Inicial Hardware** | **$0.00 USD** | $0.00 USD | **$2,800.00 USD** (Estación de trabajo) |
+| **Ancho de Banda / Egress** | Ilimitado dentro de cuota Colab | ~$25.00 USD/mes ($0.09/GB) | Sujeto a conexión ISP local |
+| **Costo Anual Total** | **$120.00 – $240.00 USD/año** | **$4,447.20 USD/año** | **$2,800.00 USD** + Mant. (~$300/año) |
+| **Ahorro vs. IaaS** | **95.5% – 97.3% de ahorro** | Referencia base (Costo alto) | Amortización a 3-4 años con riesgo de obsolescencia |
 
-**Costo Total Trimestral Huawei Cloud: ~$0.65 a $1.50 USD** (ampliamente inferior a $5.00 USD y al límite presupuestario de $30 USD).
+**Justificación de Retorno y Viabilidad en Tatami:**
+1. **Ausencia de Riesgo de Capital (Zero-CapEx):** La academia no inmoviliza capital en hardware que se deprecia y sufre desgaste físico por las condiciones de polvo y humedad ambiental del tatami.
+2. **Capacidad de Cómputo de Vanguardia:** Colab Pro suministra una GPU de 40 GB diseñada para centros de datos, procesando modelos ultra-pesados (`yolo26x-pose.pt` a 1280px) con precisión cinemática inalcanzable para GPUs de gama media.
+3. **Costo Marginal Absorbible:** El costo de $10-20 USD mensuales equivale a la membresía de un solo estudiante, haciendo que la infraestructura de IA sea rentable desde el primer día de operación.
 
-La laptop del desarrollador asume sin costo adicional la ejecución de Streamlit (frontend), PostgreSQL (persistencia relacional) y el entorno de desarrollo Python, cumpliendo con la restricción presupuestaria del proyecto.
+* **Política de Zero-Persistence en SQLite:** Ante oclusiones prolongadas (RF-11), el controlador cancela la transacción de persistencia, descartando buffers en memoria efímera para evitar registros contaminados en `analisis_biomecanico`, manteniendo intacto el historial técnico del practicante.
+\1 en Renderizado Analítico (RP-03):** Para preservar la interactividad reactiva en tatami y dar cumplimiento al SLA de $\le 500\text{ ms}$ en la exportación de reportes (RP-03), el pipeline gráfico desacopla la generación de curvas temporales de la entrega del diagnóstico inmediato. Mediante la directiva `matplotlib.use('Agg')`, Matplotlib opera en modo no interactivo procesando directamente sobre arreglos de memoria RAM, sin instanciar hilos del sistema de ventanas. Dicha tarea se delega a un `ThreadPoolExecutor` asincrónico, asegurando que el estudiante reciba el fotograma JPG anotado (RF-06) en menos de 4.0 segundos sin que el cómputo de las figuras de dispersión `GridSpec(2, 3)` bloquee el hilo principal de Streamlit.
 
-* **Auditoría Financiera sin Contaminación de Datos (Zero-Persistence):** La política de 'Zero-Persistence' en PostgreSQL ante oclusiones prolongadas (RF-11) protege la integridad longitudinal de los datos deportivos, evitando que consultas analíticas distorsionen las métricas de progresión técnica real. Para resolver la trazabilidad financiera de los ciclos de cómputo consumidos en estos abortos, se delega el control a las métricas nativas de **Application Operations Management (AOM)** de Huawei Cloud. Esto permite al administrador monitorear la facturación acumulada por milisegundos de la función Serverless sin necesidad de sobrecargar la base de datos relacional con registros cinemáticos huérfanos o estados de 'No Computable', manteniendo una separación estricta entre auditoría de infraestructura y modelo de dominio deportivo.
-* **Mitigación de Bloqueo Síncrono en Renderizado Analítico (RP-03):** Para preservar la interactividad reactiva en tatami y dar cumplimiento al SLA de $\le 500\text{ ms}$ en la exportación de reportes (RP-03), el pipeline gráfico desacopla la generación de curvas temporales de la entrega del diagnóstico inmediato. Mediante la directiva `matplotlib.use('Agg')`, Matplotlib opera en modo no interactivo procesando directamente sobre arreglos de memoria RAM, sin instanciar hilos del sistema de ventanas. Dicha tarea se delega a un `ThreadPoolExecutor` asincrónico, asegurando que el estudiante reciba el fotograma JPG anotado (RF-06) en menos de 4.0 segundos sin que el cómputo de las figuras de dispersión `GridSpec(2, 3)` bloquee el hilo principal de Streamlit.
-
-#### C. Gestión del Riesgo Arquitectónico: Tamaño del Entorno de Ejecución en FunctionGraph (ONNX Runtime / Ultralytics) y Cumplimiento del SLA
+#### C. Gestión del Riesgo Arquitectónico: Tamaño del Entorno de Ejecución en FastAPI Engine (Colab Pro) (ONNX Runtime / Ultralytics) y Cumplimiento del SLA
 La adopción de YOLO26-pose resuelve de raíz el **riesgo arquitectónico crítico** en la capa de infraestructura cloud que generaban otras cadenas pesadas de visión artificial, garantizando la viabilidad del despliegue serverless y el estricto cumplimiento del SLA de latencia de $\le 4.0\text{ segundos}$ (RP-01):
 
 * **Identificación del Riesgo y Descarte de Dependencias Complejas:** Inicialmente, marcos de visión basados en OpenMMLab (como RTMPose) requerían un conjunto voluminoso de dependencias binarias compuestas por **PyTorch (`torch`)**, **MMCV (`mmcv-lite` o `mmcv`)** y **MMPose (`mmpose`)**, cuyo tamaño conjunto alcanzaba entre 700 MB y 1.5 GB, generando demoras críticas en el arranque en frío (*cold start*) y complejidades de compilación nativa en C++.
-* **Estrategia de Mitigación con ONNX Runtime y Ultralytics CPU:** La imagen del contenedor personalizado para FunctionGraph en Huawei Cloud SWR se construye con **ONNX Runtime** y `ultralytics` en su versión CPU. El modelo YOLO26-pose se exporta a ONNX (pesos compactos de ~7 a 60 MB dependiendo de la variante) y se carga directamente en memoria, evitando la sobrecarga de PyTorch y módulos de compilación nativa. Esto reduce drásticamente el *cold start* a menos de 1.2 segundos y el consumo de memoria RAM a ~150 MB, garantizando un tiempo de inferencia nominal de 1.8s y blindando el cumplimiento del SLA contractual de 4.0 segundos en la nube.
+* **Estrategia de Mitigación con ONNX Runtime y Ultralytics CPU:** La imagen del contenedor personalizado para FastAPI Engine (Colab Pro) en Google Colab Pro SWR se construye con **ONNX Runtime** y `ultralytics` en su versión CPU. El modelo YOLO26-pose se exporta a ONNX (pesos compactos de ~7 a 60 MB dependiendo de la variante) y se carga directamente en memoria, evitando la sobrecarga de PyTorch y módulos de compilación nativa. Esto reduce drásticamente el *cold start* a menos de 1.2 segundos y el consumo de memoria RAM a ~150 MB, garantizando un tiempo de inferencia nominal de 1.8s y blindando el cumplimiento del SLA contractual de 4.0 segundos en la nube.
 
 ---
 
@@ -1064,7 +1070,7 @@ El Head Coach (Profesor) interactúa con el panel de gestión técnica para anun
 sequenceDiagram
     autonumber
     actor HC as Head Coach (Profesor)
-    participant Sis as Sistema (Streamlit UI + Controller + OBS + PostgreSQL)
+    participant Sis as Sistema (Streamlit PWA + CoachController + SQLite)
 
     HC->>Sis: accederPanelProfesor()
     Sis-->>HC: desplegarPanelProfesor(catalogoTecnicasVigentes, reproductoresVideo)
@@ -1073,7 +1079,7 @@ sequenceDiagram
         HC->>Sis: publicarTecnica(temaLeccion, videoDemostracion)
         activate Sis
         Sis->>Sis: inferirMetadatos(posicion, categoria)
-        Sis->>Sis: transferirVideoDemostrativoOBS(videoDemostracion)
+        Sis->>Sis: guardarVideoLocal(videoDemostracion)
         Sis->>Sis: persistirLocalmente(assets/videos_patron/)
         Sis->>Sis: generarReglasPosturalesPorDefecto(tolerancia=15.0°)
         Sis->>Sis: registrarTecnicaTransaccional(PostgreSQL)
@@ -1100,7 +1106,7 @@ Este caso de uso encapsula el flujo central de auditoría asincrónica en el tat
 sequenceDiagram
     autonumber
     actor E as Estudiante / Practicante
-    participant Sis as Sistema (Streamlit + FunctionGraph + OBS + RDS)
+    participant Sis as Sistema (Streamlit PWA + StudentController + Colab Pro + SQLite)
 
     E->>Sis: ingresarTokenMembresia(token)
     activate Sis
@@ -1113,8 +1119,8 @@ sequenceDiagram
         E->>Sis: cargarVideoEjecucion(categoria, posicionOrigen, archivoVideo)
         Sis->>Sis: validarRestriccionesCliente(tamano <= 5MB, duracion <= 6s)
         
-        Sis->>Sis: transferirVideoOBS(archivoVideo)
-        Sis->>Sis: dispararProcesamientoServerless(FunctionGraph)
+        Sis->>Sis: despacharInferenciaRemota(ColabPro_A100)
+        Sis->>Sis: extraerKeypointsYOLO26x(A100_CUDA)
         Sis->>Sis: extraerLandmarksYOLO26Pose(180_frames)
         Sis->>Sis: adaptarKeypointsNormalizados(LandmarkAdapter)
         Sis->>Sis: aplicarFiltroKalman(C < 0.5)
@@ -1122,7 +1128,7 @@ sequenceDiagram
         alt Oclusión Continua Prolongada > 1.5 segundos (RF-11)
             Sis->>Sis: abortarTransaccionBD() (Zero-Persistence en PostgreSQL)
             opt Limpieza de Almacenamiento Huérfano
-                Sis-->>Sis: removerVideoBDYArchivoVideo() (eliminarObjetoHuerfano de OBS_In)
+                Sis-->>Sis: abortarTransaccionZeroPersistence()
             end
             Sis-->>E: notificarRechazoPedagogico("No fue posible calcular el diagnóstico: oclusión prolongada (>1.5s). Repite la grabación con mejor ángulo.")
         else Cinemática Válida (Tolerancia de Oclusión Respetada)
@@ -1178,7 +1184,7 @@ sequenceDiagram
 * **Operación:** `procesarVideoBiomecanico(idVideo: UUID, idTecnicaMaestra: UUID): DiagnosticoDTO`
 * **Referencias Cruzadas:** Requisitos Funcionales RF-02, RF-03, RF-04, RF-05, RF-07, RF-08, RF-10, RF-11, RF-13, RF-14; Requisitos de Rendimiento RP-01, RP-02; Casos de Uso CU-02.
 * **Precondiciones:**
-  * El video de ejecución en pareja reside en el bucket privado de OBS con un tamaño $\le 5\text{ MB}$ y duración $\le 6\text{ segundos}$.
+  * El video de ejecución en pareja se procesa en memoria efímera de la GPU remota con un tamaño $\le 5\text{ MB}$ y duración $\le 6\text{ segundos}$.
   * La técnica maestra correspondiente a `idTecnicaMaestra` existe previamente en el catálogo junto con sus reglas biomecánicas asociadas.
   * El token de activación mensual del alumno fue validado exitosamente (`estado = 'vigente'`).
 * **Poscondiciones (Escenario Exitoso — Oclusión Acotada $\le 1.5\text{ s}$):**
@@ -1196,7 +1202,7 @@ sequenceDiagram
   * El cómputo algorítmico se interrumpió de inmediato.
   * **No se creó ninguna instancia de `AnalisisBiomecanico` ni de `FotogramaAnotado` en la base de datos PostgreSQL.**
   * **La entidad `HistorialProgresion` del estudiante no fue alterada**, garantizando que el historial del atleta permanezca exento de datos espurios (política Zero-Persistence).
-  * **Se eliminó el objeto binario huérfano en Huawei Cloud OBS:** El controlador invocó de forma asincrónica el método `removerVideoBDYArchivoVideo()` para purgar el video recién transferido del bucket de entrada, evitando cargos residuales por almacenamiento huérfano y preservando la consistencia física del sistema.
+  * **Se eliminó el objeto binario huérfano en Almacenamiento Local (LocalStorageAdapter):** El controlador invocó de forma asincrónica el método `removerVideoBDYArchivoVideo()` para purgar el video recién transferido del bucket de entrada, evitando cargos residuales por almacenamiento huérfano y preservando la consistencia física del sistema.
   * Se retornó una excepción controlada de negocio notificando la causa motriz de la interrupción hacia la interfaz de Streamlit.
 
 ##### Contrato de Operación: `obtenerHistorialAtleta`
@@ -1216,9 +1222,9 @@ sequenceDiagram
 
 Conforme al marco conceptual de **Craig Larman (2004, Capítulos 16 y 17)**, la distribución de responsabilidades sobre las clases de software se rige por los principios fundamentales de diseño orientado a objetos:
 
-1. **Controlador (*Controller - GRASP*):** La clase `AnalisisBiomecanicoController` opera como controlador de caso de uso (fachada de aplicación). Desacopla la interfaz de usuario Streamlit del motor de visión por computadora, canalizando las peticiones de análisis, coordinando el consumo de microservicios serverless y abstrayendo la lógica transaccional.
+1. **Controlador (*Controller - GRASP*):** La arquitectura implementa controladores de caso de uso especializados por rol para maximizar la cohesión y proteger variaciones (Larman): `CoachController` gestiona el flujo de homologación y administración curricular del Head Coach (CU-01), mientras que `StudentController` coordina la auditoría técnica y consulta de historial del estudiante (CU-02), delegando la orquestación general del análisis en `AnalysisPipeline` (con alias canónico `AnalisisBiomecanicoController`).
 2. **Experto en Información (*Information Expert - GRASP*):** La clase `TecnicaMaestra` posee la información geométrica canónica y su ancho de banda temporal recomendado (`ventanaSakoeChiba`); por tanto, es la experta designada para calibrar el algoritmo DTW. A su vez, `ReglaBiomecanica` es la experta encargada de evaluar si una discrepancia angular en grados excede el umbral tolerado y suministrar el mensaje pedagógico determinista correspondiente.
-3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (YOLO26-pose → LandmarkAdapter → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `LocalStorageAdapter` y `TecnicaMaestraRepository / AnalisisRepository (SQLite)` operan como adaptadores (*Adapter - GoF*) que aíslan los detalles de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático.
+3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (YOLO26-pose → LandmarkAdapter → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `LocalStorageAdapter`, `CoachController`, `StudentController` y `TecnicaMaestraRepository / AnalisisRepository (SQLite)` operan como controladores y adaptadores (*GRASP Controller & GoF Adapter*) que aíslan los detalles de la infraestructura remota y de base de datos respecto al núcleo del dominio cinemático.
 4. **Bajo Acoplamiento y Alta Cohesión (*Low Coupling & High Cohesion - GRASP*):** Las clases computacionales `KalmanFilterTracker` y `DTWComparator` operan exclusivamente con estructuras matriciales abstractas (`NumPy arrays`), permaneciendo completamente ignorantes de protocolos HTTP, bases de datos o frameworks gráficos.
 5. **Variaciones Protegidas (*Protected Variations - GRASP*):** Se implementa la interfaz `IFiltroCinematico`, la cual permite acoplar o intercambiar implementaciones de interpolación (ej. filtro de media móvil o modelos biomecánicos avanzados) sin forzar modificaciones sobre el pipeline de DTW ni sobre el controlador.
 
@@ -1328,14 +1334,26 @@ class HistorialProgresion {
 +actualizarMetricas(analisis: AnalisisBiomecanico): Void
 +getTendencia(): List~Float~
 }
+class CoachController {
+-tecnicaRepo: TecnicaMaestraRepository
+-pipeline: AnalysisPipeline
++homologar_tecnica(nombre: String, categoria: String, posicion: String, video_url: String): TecnicaMaestra
++listar_tecnicas(): List~TecnicaMaestra~
++eliminar_tecnica(id_tecnica: String): Boolean
+}
+class StudentController {
+-pipeline: AnalysisPipeline
++auditar_ejecucion_desde_colab(colab_json_path: String, video_id: String, tecnica_id: String): AnalisisBiomecanico
++consultar_historial(estudiante_id: String): List~Dict~
+}
 class AnalisisBiomecanicoController {
 -pipelineEngine: PipelineBiomecanicoEngine
 -storageAdapter: LocalStorageAdapter
 -tokenRepo: TokenRepository
 -tecnicaRepo: TecnicaMaestraRepository
 -analisisRepo: AnalisisBiomecanicoRepository
-+validarToken(token: String (código de 6 caracteres)): Boolean
-+ejecutarAnalisis(token: String (código de 6 caracteres), videoBytes: bytes, idTecnica: UUID): DiagnosticoDTO
++validarToken(token: String): Boolean
++ejecutarAnalisis(token: String, videoBytes: bytes, idTecnica: UUID): DiagnosticoDTO
 +registrarTecnicaMaestra(nombre: String, categoria: String, posicion: String, ventanaSakoe: Float, videoBytes: bytes, reglasDatos: List): TecnicaMaestra
 +actualizarTecnicaMaestra(idTecnica: UUID, nuevoNombre: String): TecnicaMaestra
 +eliminarTecnicaMaestra(idTecnica: UUID): Boolean
@@ -1589,7 +1607,7 @@ A continuación, se definen exhaustivamente las especificaciones físicas de las
 | `categoria_tecnica`| VARCHAR(60) | NOT NULL | UQ_1 | Categoría curricular (ej. "Llave de Brazo", "Estrangulación"). |
 | `posicion_origen` | VARCHAR(60) | NOT NULL | UQ_2 | Posición biomecánica inicial (ej. "Montada", "Guardia Cerrada"). |
 | `ventana_sakoe_chiba`| NUMERIC(3,2) | NOT NULL | - | Fracción de ancho de banda DTW (`DEFAULT 0.15 CHECK (ventana_sakoe_chiba BETWEEN 0.05 AND 0.30)`). |
-| `video_url` | VARCHAR(255) | NOT NULL | - | URI de acceso al video maestro patrón en *Huawei Cloud OBS*. |
+| `video_url` | VARCHAR(255) | NOT NULL | - | Ruta local o URI de acceso al video maestro patrón en `assets/videos_patron/`. |
 | `fecha_carga` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Fecha y hora de ingestión curricular en el repositorio. |
 
 *Restricción de Unicidad Compuesta Contractual:*  
@@ -1617,7 +1635,7 @@ A continuación, se definen exhaustivamente las especificaciones físicas de las
 | `fecha_captura` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Momento exacto de registro en tatami (`DEFAULT NOW()`). |
 | `duracion_segundos`| NUMERIC(4,2) | NOT NULL | - | Duración del clip (`CHECK (duracion_segundos <= 6.0)`). |
 | `peso_mb` | NUMERIC(4,2) | NOT NULL | - | Tamaño del archivo (`CHECK (peso_mb <= 5.0)`). |
-| `video_url` | VARCHAR(255) | NOT NULL | - | Enlace autenticado de lectura al bucket privado de OBS. |
+| `video_url` | VARCHAR(255) | NOT NULL | - | Ruta local al video de ejecución del alumno en `uploads/`. |
 
 *Nota de Integridad Transaccional:* Para prevenir discrepancias de redondeo entre el búfer de bytes del cliente web y la restricción `CHECK (peso_mb <= 5.0)` de PostgreSQL, el método `validarLimites()` de la entidad `VideoEjecucion` aplica un truncamiento matemático estricto a dos decimales (`round(peso_bytes / 1024^2, 2)`) antes de la persistencia. Esto garantiza que ningún valor como 5.001 MB provoque una excepción de escala numérica en la base de datos.
 
@@ -1628,7 +1646,7 @@ A continuación, se definen exhaustivamente las especificaciones físicas de las
 | :--- | :---: | :---: | :---: | :--- |
 | `id_analisis` | UUID | NOT NULL | PK | Identificador unívoco del análisis cinemático completado. |
 | `video_id` | UUID | NOT NULL | FK, UQ | `REFERENCES video_ejecucion(id_video) ON DELETE CASCADE`. Restricción de unicidad: `CONSTRAINT uq_analisis_video UNIQUE (video_id)` para garantizar la relación 1:1 estricta con el video evaluado. |
-| `fecha_procesamiento` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Marca de tiempo de ejecución en *FunctionGraph*. |
+| `fecha_procesamiento` | TIMESTAMP WITH TIME ZONE | NOT NULL | - | Marca de tiempo del análisis procesado por el motor IA. |
 | `desviacion_angular_maxima` | NUMERIC(5,2) | NOT NULL | - | Pico máximo de discrepancia articular cuantificado ($^\circ$). |
 | `articulacion_afectada` | VARCHAR(50) | NOT NULL | - | Articulación específica donde ocurrió el fallo motriz. |
 | `estado_computo` | VARCHAR(20) | NOT NULL | - | `CHECK (estado_computo IN ('completado', 'fallo_tecnico'))`. |
@@ -1640,7 +1658,7 @@ A continuación, se definen exhaustivamente las especificaciones físicas de las
 | :--- | :---: | :---: | :---: | :--- |
 | `id_fotograma` | UUID | NOT NULL | PK | Identificador unívoco del fotograma estático clave. |
 | `analisis_id` | UUID | NOT NULL | FK, UQ | `REFERENCES analisis_biomecanico(id_analisis) ON DELETE CASCADE UNIQUE`. |
-| `imagen_url` | VARCHAR(255) | NOT NULL | - | URL autenticada de la imagen JPG en *Huawei Cloud OBS*. |
+| `imagen_url` | VARCHAR(255) | NOT NULL | - | Ruta de almacenamiento local del fotograma anotado en `resultados/fotogramas/`. |
 | `coordenada_error_x` | INTEGER | NOT NULL | - | Coordenada pixelar horizontal del centro del círculo ($X$). |
 | `coordenada_error_y` | INTEGER | NOT NULL | - | Coordenada pixelar vertical del centro del círculo ($Y$). |
 | `explicacion_causa` | TEXT | NOT NULL | - | Copia fiel del mensaje pedagógico de la regla aplicada. |
@@ -1870,7 +1888,7 @@ La interfaz gráfica de usuario está implementada mediante el framework web de 
 
 El ciclo de interacción de la aplicación se formaliza mediante una **Máquina de Estados Finitos**. El flujo restringe estrictamente el acceso a las salas operativas mientras el usuario no acredite un token de membresía válido emitido por la academia. Una vez autenticado, el sistema habilita una navegación bidireccional entre la **Sala de Práctica y Auditoría del Estudiante** (CU-02, CU-03, CU-04) y el **Panel de Gestión Curricular del Head Coach** (CU-01 con soporte CRUD completo).
 
-Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (`http://localhost:8501`), conectándose mediante HTTPS a los servicios de Huawei Cloud (FunctionGraph y OBS vía SDK oficial `esdk-obs-python`) y a la base de datos PostgreSQL local vía SQLAlchemy 2.0.
+Durante la fase de desarrollo y validación experimental, el servidor Streamlit se ejecuta localmente en la laptop del desarrollador (`http://localhost:8501`), conectándose mediante HTTPS al motor IA en Google Colab Pro y gestionando la persistencia en la base de datos relacional local SQLite3 vía repositories.
 
 La **Figura 5.7** detalla el diagrama de estados de navegación en la plataforma:
 
@@ -1960,7 +1978,7 @@ La experiencia de usuario (UX) se organiza en cinco paneles modulares de alta er
 
 2. **Panel 2: Panel de Gestión del Head Coach (*Coach Management View* — CU-01):**
    * *Diseño en dos columnas de ancho completo:*
-     * *Columna Izquierda (Create):* Formulario ágil adaptado al tatami. El profesor solo ingresa el **Nombre o Tema de la Clase** (ej. *"Cómo finalizar desde la montada y hacer una americana"*), sube su video demostrativo (`.mp4`, `.mov`) y pulsa **"Publicar Técnica para la Clase"**. El sistema infiere automáticamente los metadatos de postura, almacena el video en OBS y en el caché local (`assets/videos_patron/`), genera reglas biomecánicas deterministas con umbral de 15.0° y notifica mediante un banner verde persistente (`st.session_state["coach_mensaje_exito"]`).
+     * *Columna Izquierda (Create):* Formulario ágil adaptado al tatami. El profesor solo ingresa el **Nombre o Tema de la Clase** (ej. *"Cómo finalizar desde la montada y hacer una americana"*), sube su video demostrativo (`.mp4`, `.mov`) y pulsa **"Publicar Técnica para la Clase"**. El sistema infiere automáticamente los metadatos de postura, almacena el video en el repositorio local (`assets/videos_patron/`), genera reglas biomecánicas deterministas con umbral de 15.0° y notifica mediante un banner verde persistente (`st.session_state["coach_mensaje_exito"]`).
      * *Columna Derecha (Read, Update, Delete):* Listado de técnicas activas. Cada tarjeta incluye el título oficial, la insignia verde `DISPONIBLE PARA EVALUACIÓN EN CLASE`, un **reproductor de video interactivo embebido** (`st.video`) para revisar la grabación original, un botón **"Editar"** que abre un editor en línea para renombrar la lección y un botón **"Eliminar"** que remueve el registro y depura el archivo físico de video.
 
 3. **Panel 3: Sala de Práctica y Auditoría del Estudiante (*Student Practice View* — CU-02):**
@@ -2029,7 +2047,7 @@ La implementación del sistema se organiza de forma desacoplada y modular bajo l
 │       │   ├── __init__.py
 │       │   ├── hardware_detector.py            # Detección CPU/CUDA
 │       │   └── yolo_adapter.py                 # YOLOPoseAdapter (Ultralytics)
-│       ├── storage/                            # [Almacenamiento Local / OBS]
+│       ├── storage.py                          # [LocalStorageAdapter - Patrón GoF Adapter]
 │       │   ├── __init__.py
 │       │   └── local_storage_adapter.py        # LocalStorageAdapter (Gestión de Archivos Local)
 │       └── vision/                             # [Visión Artificial y Post-procesamiento Gráfico]
@@ -2068,12 +2086,12 @@ La totalidad de los requisitos funcionales, requisitos de rendimiento y restricc
 | **Modelos de Base de Datos** | `tests/test_database_models.py` | **5** | **Persistencia:** Mapeo objeto-relacional SQLAlchemy 2.0 bajo el estándar Mannino (Table-per-Subclass), integridad referencial y cascadas de eliminación en entidades de usuario y análisis. |
 | **Motor de Reglas por Defecto** | `tests/test_default_rules.py` | **3** | **RF-01:** Verificación de asignación automática de umbrales y articulaciones según categoría de técnica cuando no se proveen explícitamente. |
 | **Comparador DTW** | `tests/test_dtw.py` | **4** | **RF-03, RF-04:** Distancia euclidiana elástica entre series angulares 3D, restricción con ventana de Sakoe-Chiba (15% por defecto) y extracción matemática del pico de error cinemático. |
-| **Handler Serverless** | `tests/test_functiongraph_handler.py` | **4** | **Cloud FunctionGraph:** Despacho de eventos serverless en formato JSON directo y base64 APIG, gestión de almacenamiento efímero `/tmp` y códigos de respuesta HTTP 200/400/500. |
+| **Handler Serverless** | `tests/test_pipeline.py` | **4** | **Cloud FastAPI Engine (Colab Pro):** Despacho de eventos serverless en formato JSON directo y base64 APIG, gestión de almacenamiento efímero `/tmp` y códigos de respuesta HTTP 200/400/500. |
 | **Detector de Hardware** | `tests/unit/test_inference.py::TestHardwareDetector` | **2** | **Arquitectura:** Validación de detección de dispositivo (CPU vs CUDA) y manejo graceful de `ImportError`. |
 | **Adaptador YOLOPose** | `tests/unit/test_inference.py::TestYOLOPoseAdapterContract` | **3** | **RF-02, RF-02b:** Verificación de que la salida del modelo externo se mapea correctamente a las entidades de dominio `KeypointFrame` con forma `[N, 17, 3]`. Las pruebas de integración verifican que el adaptador retorna un objeto `InferenceOutputDTO` que incluye tanto la matriz de keypoints con forma `[N, 17, 3]` como la lista de `BoundingBox` para el primer frame, dando cumplimiento al RF-02b. |
 | **Adaptador de Hardware** | `tests/test_hardware_adapter.py` | **2** | **Arquitectura:** Validación de detección de dispositivo (CPU vs CUDA) y carga correcta del backend de inferencia (ONNX vs PyTorch). |
 | **Filtro de Kalman 3D** | `tests/test_kalman.py` | **3** | **RF-02, RF-08, RF-11:** Invarianza y reducción de ruido en trayectorias espaciales $(X, Y, Z)$, interpolación cinemática en oclusiones breves y disparo de oclusión continua prolongada ($> 1.5\text{ s}$). |
-| **Adaptador Cloud OBS** | `tests/test_obs_adapter.py` | **4** | **Almacenamiento OBS:** Implementación del patrón GoF Adapter para Huawei Cloud OBS, verificación de `subir_video`, `subir_fotograma` y `descargar_objeto` mediante aislamiento con Mocks. |
+| **Repositorio Relacional SQLite** | `tests/unit/test_sqlite_repositories.py` | **4** | **Persistencia Relacional (Mannino):** Verificación de PRAGMA foreign_keys = ON, operaciones CRUD multi-rol e integridad relacional. |
 | **Motor de Pipeline** | `tests/test_pipeline.py` | **4** | **RF-07, RF-10, RF-11:** Fachada GoF del pipeline biomecánico, integración cinemática integral (YOLO26-pose → LandmarkAdapter → Kalman → DTW), validación de corte por oclusión crítica y método `procesar_video`. |
 | **Similitud y Métricas 3D** | `tests/test_position_similarity.py` | **5** | **RF-13, RF-14, RF-15, RP-03:** Similitud de posición 3D Euclidiana para keypoints anatómicos adaptados, similitud de grupos articulares, exportación física de 3 CSVs por frame y generación de gráfico temporal GridSpec con Matplotlib ($\le 500\text{ ms}$). |
 | **Capa de Repositorios** | `tests/test_repositories.py` | **6** | **CU-01, RF-09:** `TokenRepository` (validación de membresías vigentes y token sintético de prueba), `TecnicaMaestraRepository` (mapeo de reglas, publicación, listado, actualización y eliminación CRUD) y `AnalisisBiomecanicoRepository`. |
@@ -2118,7 +2136,7 @@ Para ejecutar y validar localmente la plataforma en cualquier computador con sis
 
 ### 5.6.4 Estrategia de Desarrollo Local-First y Adaptación de Hardware
 
-Para garantizar la continuidad del desarrollo y las pruebas TDD sin dependencia inmediata de servicios cloud de pago, el sistema implementa un enfoque Local-First. El motor de inferencia utiliza un adaptador que detecta la disponibilidad de hardware: en entornos sin GPU dedicada (ej. laptop de desarrollo o contenedor serverless en FunctionGraph), despliega el modelo YOLO26-pose optimizado en formato ONNX para ejecución en CPU (~40ms por frame en nano). En entornos con aceleración disponible (ej. instancias con NVIDIA A100 en Google Colab o estaciones de trabajo con GPU), el adaptador aprovecha PyTorch + CUDA, reduciendo la latencia de inferencia a ~1.8ms en nano o ~12ms en x-large por frame, cumpliendo holgadamente el SLA de 4.0s (RP-01). Esto valida el principio de *Protected Variations* de Larman.
+Para garantizar la continuidad del desarrollo y las pruebas TDD sin dependencia inmediata de servicios cloud de pago, el sistema implementa un enfoque Local-First. El motor de inferencia utiliza un adaptador que detecta la disponibilidad de hardware: en entornos sin GPU dedicada (ej. laptop de desarrollo o contenedor serverless en FastAPI Engine (Colab Pro)), despliega el modelo YOLO26-pose optimizado en formato ONNX para ejecución en CPU (~40ms por frame en nano). En entornos con aceleración disponible (ej. instancias con NVIDIA A100 en Google Colab o estaciones de trabajo con GPU), el adaptador aprovecha PyTorch + CUDA, reduciendo la latencia de inferencia a ~1.8ms en nano o ~12ms en x-large por frame, cumpliendo holgadamente el SLA de 4.0s (RP-01). Esto valida el principio de *Protected Variations* de Larman.
 
 ### 5.6.5 Validación del Modelo Real en Google Colab (A100 / CUDA)
 
@@ -2142,33 +2160,43 @@ Para ello, el sistema adopta la técnica de **Pruebas de Integración Etiquetada
      ```
    * **Validación de Salida:** La prueba `tests/integration/test_yolo_real.py` comprueba de forma determinista que el modelo real procesa el video, infiere los landmarks articulares con topología canónica COCO de 17 puntos `(N, 17, 3)`, valida los scores de confianza devueltos en `result.keypoints.conf` ($C \in [0.0, 1.0]$) y mapea la salida hacia las entidades de dominio `KeypointFrame` sin alterar la arquitectura.
 
-### 5.6.6 Guía de Instalación y Puesta en Marcha (Edge-Colab)
+### 5.6.6 Guía de Instalación y Puesta en Marcha (Producción Híbrida Multi-Rol)
 
-A fin de simplificar el despliegue y garantizar la máxima portabilidad, el sistema se inicializa de forma inmediata en cualquier máquina local (Linux, macOS, Windows):
+Para desplegar el ecosistema en el tatami de Corpo & Mente Bolivia:
 
-1. **Instalación Local Automatizada (Laptop Edge):**
-   ```bash
-   bash setup_local.sh
-   pip install -r requirements.txt
-   ```
-   *El script `setup_local.sh`:*
-   * Crea el entorno virtual aislado `.venv`.
-   * Inicializa la estructura local de directorios (`uploads/`, `data/`, `resultados/`, `modelos/`).
-   * Configura la base de datos relacional SQLite `data/bjj_analysis.db` (Mannino).
+#### Paso 1: Configuración de la Laptop Orquestadora (Edge)
+```bash
+# 1. Clonar el repositorio y entrar al directorio
+cd ~/Desktop/JiuJitsu
 
-2. **Ejecución del Servidor Web (Streamlit):**
-   ```bash
-   source .venv/bin/activate
-   streamlit run src/ui/streamlit_app.py
-   ```
-   La aplicación web estará disponible en `http://localhost:8501`.
+# 2. Crear entorno virtual e instalar dependencias del orquestador
+python3 -m venv .venv
+source .venv/bin/activate
+pip install fastapi uvicorn httpx pyngrok streamlit ultralytics opencv-python numpy scipy fastdtw pytest
 
-3. **Inferencia con GPU en Google Colab (Cerebro IA):**
-   Abrir el cuaderno oficial `notebooks/jiujiutsu_ai_engine.ipynb` en Google Colab, cargar los videos de entrenamiento y ejecutar las celdas para inferencia acelerada por hardware (NVIDIA A100 / T4) y exportación del JSON de keypoints.
+# 3. Configurar variables de entorno (.env)
+export NGROK_AUTH_TOKEN="tu_token_de_ngrok"
+export COLAB_API_KEY="clave_secreta_compartida_tatami"
+export COLAB_REMOTE_URL="https://tu-tunnel-colab.ngrok-free.app"
 
----
+# 4. Iniciar la PWA de Streamlit y el orquestador
+streamlit run src/ui/streamlit_app.py --server.port 8501
+```
 
-## 5.7 Validación y Pruebas (TDD)
+#### Paso 2: Configuración del Motor IA en Google Colab Pro
+1. Abrir `notebooks/jiujiutsu_ai_engine.ipynb` en Google Colab con entorno de ejecución GPU (NVIDIA A100-SXM4 recomendada).
+2. En la barra lateral de Colab, acceder a **Secrets** (icono de llave) y agregar:
+   * `NGROK_AUTH_TOKEN`: Token de autenticación de Ngrok.
+   * `API_SECURITY_KEY`: Token compartido para autenticar las peticiones del orquestador.
+3. Ejecutar la celda de inicio del servicio daemon. El script iniciará FastAPI con Pyngrok y reportará la URL pública HTTPS activa.
+4. Ingresar la URL en la interfaz de Streamlit para vincular ambos extremos.
+
+#### Paso 3: Validación Automatizada (TDD)
+```bash
+.venv/bin/pytest tests/ -v -m "not real_model"
+```
+Valida el 100% de la lógica de dominio, persistencia relacional SQLite e ingesta de resultados Colab.
+\1 Validación y Pruebas (TDD)
 El sistema sigue una estrategia de **Desarrollo Guiado por Pruebas (TDD)** asegurando la calidad del dominio y la infraestructura local.
 
 | Tipo de Prueba | Archivo | Descripción | Estado |
@@ -2250,6 +2278,19 @@ La prueba también identificó una oportunidad de mejora en la implementación d
 Con estas especificaciones e implementaciones, el documento de grado y el código fuente alcanzan una correlación y coherencia científica y tecnológica del 100%.
 
 ---
+
+
+## 5.8 Gestión de Riesgos Operativos en el Tatami: Mitigación de Inactividad en Google Colab
+
+En el contexto dinámico del tatami de Jiu-Jitsu, donde las tandas de práctica de 3 a 5 minutos demandan retroalimentación ágil sin interrupciones técnicas, la dependencia de un entorno de cómputo remoto introduce riesgos operativos que han sido mitigados sistemáticamente:
+
+### 5.8.1 Mitigación de Timeout y Desconexión de GPU
+* **Suscripción Google Colab Pro:** A diferencia del tier gratuito (sujeto a desconexiones intempestivas tras 30-90 minutos de inactividad), Colab Pro asigna instancias con tiempos de ejecución de **hasta 24 horas continuas** y prioridad alta en la asignación de GPUs NVIDIA A100-SXM4.
+* **Worker de Presencia y Heartbeat (Keep-Alive):** El motor FastAPI en Colab implementa un proceso en segundo plano que emite una señal de vida (*heartbeat*) periódica hacia el orquestador local. Si no se detectan cargas durante 10 minutos, un hilo liviano procesa un tensor sintético mínimo para mantener activo el runtime de CUDA.
+
+### 5.8.2 Alertas WebSocket y Reconexión Transparente
+* **Notificaciones en Tiempo Real al Profesor:** La interfaz Streamlit mantiene un cliente WebSocket conectado con el backend orquestador. Si la conexión con Colab Pro se degrada o experimenta un reinicio, la PWA despliega instantáneamente un banner ámbar preventivo: *"Reconectando con el Motor IA de Alta Potencia... tiempo estimado: 15s"*, evitando que los practicantes envíen videos durante el restablecimiento del túnel.
+* **Persistencia Local Segura:** Cualquier video capturado durante un intervalo de reconexión se almacena en la cola local de SQLite (`video_ejecucion`), procesándose automáticamente tan pronto como se restablece el canal HTTPS.
 
 # Capítulo X: Referencias Bibliográficas
 

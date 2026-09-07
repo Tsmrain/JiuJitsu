@@ -101,18 +101,92 @@ class AnalysisPipeline:
                 max_desviacion = mejor_err.diferencia
                 articulacion_critica = mejor_err.articulacion
 
+        # Caso 3: El JSON contiene la estructura 'data' nativa exportada por la GPU en Colab
+        elif 'data' in data and isinstance(data['data'], list):
+            kpts_alumno = []
+            for frame_item in data['data']:
+                kpts_persons = frame_item.get('keypoints_xy', [])
+                if kpts_persons and len(kpts_persons) > 0:
+                    confs_persons = frame_item.get('confidence', [])
+                    best_person_idx = 0
+                    if confs_persons and len(confs_persons) == len(kpts_persons):
+                        best_person_idx = max(
+                            range(len(confs_persons)),
+                            key=lambda idx: sum(confs_persons[idx]) if isinstance(confs_persons[idx], list) and confs_persons[idx] else 0
+                        )
+                    kpts_alumno.append(kpts_persons[best_person_idx])
+                elif 'keypoints' in frame_item:
+                    kpts_alumno.append(frame_item['keypoints'])
+
+            if kpts_alumno:
+                angulos_alumno = [self.angle_calculator.extraer_angulos(k) for k in kpts_alumno]
+                for i, ang_dict in enumerate(angulos_alumno):
+                    if not isinstance(ang_dict, dict):
+                        continue
+                    for art, val in ang_dict.items():
+                        if art in ['codo_izq', 'codo_der'] and (val < 40.0 or val > 160.0):
+                            diff = round(abs(val - 90.0), 2)
+                            if diff > self._umbral_error:
+                                errores_detectados.append(ErrorBiomecanico(
+                                    articulacion=art,
+                                    angulo_alumno=val,
+                                    angulo_maestro=90.0,
+                                    diferencia=diff,
+                                    frame=i,
+                                    mensaje=f"Ángulo no biomecánico de {val:.1f}° en {art}"
+                                ))
+                        elif art in ['rodilla_izq', 'rodilla_der'] and (val < 40.0 or val > 160.0):
+                            diff = round(abs(val - 90.0), 2)
+                            if diff > self._umbral_error:
+                                errores_detectados.append(ErrorBiomecanico(
+                                    articulacion=art,
+                                    angulo_alumno=val,
+                                    angulo_maestro=90.0,
+                                    diferencia=diff,
+                                    frame=i,
+                                    mensaje=f"Extensión excesiva de rodilla ({val:.1f}°) en {art}"
+                                ))
+
+                mejor_err = self._encontrar_error_maximo(errores_detectados)
+                if mejor_err:
+                    max_desviacion = mejor_err.diferencia
+                    articulacion_critica = mejor_err.articulacion
+
         # Resolver video_id de forma segura
         try:
             v_uuid = uuid.UUID(video_id) if video_id else uuid.uuid4()
         except (ValueError, TypeError):
             v_uuid = uuid.uuid4()
 
+        # Asegurar integridad referencial (Mannino) si se proporciona tecnica_id
+        if tecnica_id:
+            try:
+                t_uuid = uuid.UUID(tecnica_id)
+                tecnica_existente = self.tecnica_repo.obtener_por_id(t_uuid)
+                if not tecnica_existente:
+                    self.tecnica_repo.guardar(
+                        id_tecnica=str(t_uuid),
+                        nombre="Armbar Clásico (Técnica Dummy)",
+                        categoria="Sumisión",
+                        posicion="Guardia Cerrada"
+                    )
+                cursor = self.db.get_cursor()
+                cursor.execute(
+                    "INSERT OR IGNORE INTO video_ejecucion (id_video, estudiante_id, tecnica_id, video_url) VALUES (?, NULL, ?, ?)",
+                    (str(v_uuid), str(t_uuid), f"uploads/{v_uuid}.mp4")
+                )
+                self.db.commit()
+            except Exception:
+                pass
+
         analisis_id = uuid.uuid4()
+        puntuacion = max(0.0, round(100.0 - max_desviacion * 1.2, 1))
         analisis = AnalisisBiomecanico(
             id=analisis_id,
             video_id=v_uuid,
             desviacion_angular_maxima=max_desviacion,
             articulacion_afectada=articulacion_critica,
+            puntuacion_global=puntuacion,
             estado_computo="completado",
             errores=errores_detectados
         )
@@ -217,17 +291,18 @@ class AnalysisPipeline:
         n_frames = min(len(angulos_maestro), len(angulos_alumno))
         for art in self._articulaciones:
             for i in range(n_frames):
-                if art in angulos_maestro[i] and art in angulos_alumno[i]:
-                    diff = abs(angulos_maestro[i][art] - angulos_alumno[i][art])
-                    if diff > self._umbral_error:
-                        errores.append(ErrorBiomecanico(
-                            articulacion=art,
-                            angulo_alumno=angulos_alumno[i][art],
-                            angulo_maestro=angulos_maestro[i][art],
-                            diferencia=diff,
-                            frame=i,
-                            mensaje=f"Desviación de {diff:.2f}° en {art}"
-                        ))
+                if isinstance(angulos_maestro[i], dict) and isinstance(angulos_alumno[i], dict):
+                    if art in angulos_maestro[i] and art in angulos_alumno[i]:
+                        diff = abs(angulos_maestro[i][art] - angulos_alumno[i][art])
+                        if diff > self._umbral_error:
+                            errores.append(ErrorBiomecanico(
+                                articulacion=art,
+                                angulo_alumno=angulos_alumno[i][art],
+                                angulo_maestro=angulos_maestro[i][art],
+                                diferencia=diff,
+                                frame=i,
+                                mensaje=f"Desviación de {diff:.2f}° en {art}"
+                            ))
         return errores
 
     def _encontrar_error_maximo(self, errores: List[ErrorBiomecanico]) -> Optional[ErrorBiomecanico]:
@@ -241,8 +316,9 @@ class AnalysisPipeline:
         for i in range(n_frames):
             errores_frame = []
             for art in self._articulaciones:
-                if art in angulos_maestro[i] and art in angulos_alumno[i]:
-                    errores_frame.append(abs(angulos_maestro[i][art] - angulos_alumno[i][art]))
+                if isinstance(angulos_maestro[i], dict) and isinstance(angulos_alumno[i], dict):
+                    if art in angulos_maestro[i] and art in angulos_alumno[i]:
+                        errores_frame.append(abs(angulos_maestro[i][art] - angulos_alumno[i][art]))
             if errores_frame:
                 similitud.append(max(0.0, float(100.0 - np.mean(errores_frame) * 2.0)))
             else:

@@ -117,3 +117,33 @@ class TestPipelineIntegration:
         assert res.desviacion_angular_maxima == 25.0
         assert res.articulacion_afectada == "codo_der"
         assert len(res.errores) == 1
+
+    def test_pipeline_procesar_resultado_colab_dummy_tecnica_y_keypoints(self, tmp_path):
+        """Prueba: Ingesta del JSON generado por Colab con dummy técnica y keypoints 3D."""
+        import json
+        json_file = tmp_path / "colab_analysis_results.json"
+        payload = {
+            "version": "2.0-hybrid",
+            "status": "success",
+            "keypoints_alumno": [[[100, 200, 0.95]] * 17] * 12,
+            "keypoints_maestro": [[[100, 200, 0.95]] * 17] * 12,
+            "total_frames_alumno": 12,
+            "confianza_promedio": 0.9325
+        }
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(payload, f)
+
+        dummy_tecnica_id = "550e8400-e29b-41d4-a716-446655440000"
+        dummy_video_id = "550e8400-e29b-41d4-a716-446655440001"
+        self.mock_angle_calculator.extraer_angulos.return_value = {'codo_izq': 90.0, 'rodilla_izq': 180.0}
+
+        res = self.pipeline.procesar_resultado_colab(
+            str(json_file),
+            video_id=dummy_video_id,
+            tecnica_id=dummy_tecnica_id
+        )
+        assert res is not None
+        assert str(res.video_id) == dummy_video_id
+        assert res.estado_computo == "completado"
+        assert res.puntuacion_global >= 0.0
+

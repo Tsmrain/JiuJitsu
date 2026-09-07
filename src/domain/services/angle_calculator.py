@@ -36,6 +36,7 @@ class AngleCalculatorImpl(IAngleCalculator):
         """
         Extrae los ángulos articulares clave para Jiu-Jitsu Brasileño (RF-02).
         """
+        keypoints = np.asarray(keypoints)
         angulos = {}
         if len(keypoints) > 16:
             # Codo izquierdo (5, 7, 9)

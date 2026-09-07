@@ -1,21 +1,23 @@
 #!/bin/bash
-set -e
+echo "====================================="
+echo "  JiuJitsu Tesis - Setup Local"
+echo "====================================="
 
-echo "=== Configurando entorno local liviano para desarrollo (Linux/macOS) ==="
-
+# Crear entorno virtual si no existe
 if [ ! -d ".venv" ]; then
-    echo "Creando entorno virtual .venv..."
+    echo "🐍 Creando entorno virtual .venv..."
     python3 -m venv .venv
 fi
 
-echo "Activando entorno virtual..."
 source .venv/bin/activate
 
-echo "Instalando dependencias base..."
-python3 -m pip install --upgrade pip
-pip install -r requirements-core.txt
+# Instalar dependencias
+echo "📦 Instalando dependencias desde requirements.txt..."
+pip install --upgrade pip
+pip install -r requirements.txt
 
-echo "=== Entorno local listo para TDD ==="
-echo "Para ejecutar la suite de pruebas ligeras:"
-echo "  source .venv/bin/activate"
-echo "  pytest -v"
+# Crear directorios necesarios
+mkdir -p videos Videos resultados/fotogramas resultados/csv resultados/graficas modelos
+
+echo "✅ Setup local completado!"
+echo "📁 Para activar: source .venv/bin/activate"

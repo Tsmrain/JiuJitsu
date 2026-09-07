@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+venv/
+ENV/
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Colab
+*.ipynb_checkpoints/
+.ipynb_checkpoints/
+
+# Drive
+/drive/
+
+# Modelos descargados
+*.pt
+*.pth
+*.onnx
+
+# Resultados generados
+resultados/
+
+# Videos adicionales (se conservan los videos de prueba de referencia)
+*.mov
+*.avi
+videos/*.mp4
+!Videos/Maestro.mp4
+!Videos/Alumno.mp4

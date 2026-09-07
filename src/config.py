@@ -1,57 +1,46 @@
 import os
+from pathlib import Path
 
-# =============================================
-# CONFIGURACIÓN DE RUTAS
-# =============================================
-
-# Detectar si estamos en Google Colab
+# =============================================================================
+# Raíz del proyecto y detección de Colab
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 IS_COLAB = 'COLAB_GPU' in os.environ or 'COLAB_TPU_ADDR' in os.environ or os.path.exists('/content')
 
-if IS_COLAB:
-    # En Colab, preferir Drive si existe, o el directorio clonado en /content
-    DRIVE_ROOT = "/content/drive/MyDrive"
-    DRIVE_PROJECT = os.path.join(DRIVE_ROOT, "JiuJitsu_Tesis")
-    if os.path.exists(DRIVE_PROJECT):
-        PROJECT_ROOT = DRIVE_PROJECT
-    elif os.path.exists("/content/JiuJitsu"):
-        PROJECT_ROOT = "/content/JiuJitsu"
-    else:
-        PROJECT_ROOT = os.getcwd()
-else:
-    # En local, usar directorio raíz del proyecto
-    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UPLOAD_FOLDER = PROJECT_ROOT / 'uploads'
+DATA_DIR = PROJECT_ROOT / 'data'
+RESULTS_DIR = PROJECT_ROOT / 'resultados'
+DB_PATH = DATA_DIR / 'bjj_analysis.db'
 
-# Subdirectorios
-if os.path.exists(os.path.join(PROJECT_ROOT, "Videos")):
-    VIDEOS_DIR = os.path.join(PROJECT_ROOT, "Videos")
-else:
-    VIDEOS_DIR = os.path.join(PROJECT_ROOT, "videos")
+# Modelos y Videos
+MODELS_DIR = PROJECT_ROOT / 'modelos'
+MODELOS_DIR = MODELS_DIR
+VIDEOS_DIR = PROJECT_ROOT / 'Videos'
 
-RESULTADOS_DIR = os.path.join(PROJECT_ROOT, "resultados")
-FOTOGRAMAS_DIR = os.path.join(RESULTADOS_DIR, "fotogramas")
-CSV_DIR = os.path.join(RESULTADOS_DIR, "csv")
-GRAFICAS_DIR = os.path.join(RESULTADOS_DIR, "graficas")
-MODELOS_DIR = os.path.join(PROJECT_ROOT, "modelos")
+# Compatibilidad con módulos existentes
+RESULTADOS_DIR = RESULTS_DIR
+FOTOGRAMAS_DIR = RESULTS_DIR / 'fotogramas'
+CSV_DIR = RESULTS_DIR / 'csv'
+GRAFICAS_DIR = RESULTS_DIR / 'graficas'
 
-# Crear directorios si no existen
-for d in [VIDEOS_DIR, RESULTADOS_DIR, FOTOGRAMAS_DIR, CSV_DIR, GRAFICAS_DIR, MODELOS_DIR]:
-    os.makedirs(d, exist_ok=True)
+# =============================================================================
+# INICIALIZACIÓN DE DIRECTORIOS (IDEMPOTENTE)
+# =============================================================================
+for directory in [UPLOAD_FOLDER, DATA_DIR, MODELS_DIR, VIDEOS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
 
-# =============================================
-# CONFIGURACIÓN DE MODELO
-# =============================================
+for sub_dir in ['fotogramas', 'graficas', 'csv']:
+    (RESULTS_DIR / sub_dir).mkdir(parents=True, exist_ok=True)
 
-MODELO_YOLO = "yolo26n-pose.pt"  # Puede actualizarse a "yolo26x-pose.pt" en GPUs de alta gama
-UMBRAL_ERROR = 15.0              # Grados de tolerancia angular (RF-01)
+# =============================================================================
+# PARÁMETROS CINEMÁTICOS Y MODELO DE IA
+# =============================================================================
+MODELO_YOLO = "yolo26n-pose.pt"  # O yolo26x-pose.pt en A100 Colab
+UMBRAL_ERROR = 15.0              # Tolerancia angular en grados (RF-01)
 VENTANA_DTW = 0.15               # 15% de la longitud de la serie (Sakoe-Chiba, RF-03)
 
-# =============================================
-# ARTICULACIONES Y MAPEO COCO (17 Keypoints)
-# =============================================
-
+# Articulaciones y Mapeo COCO estándar (17 keypoints)
 ARTICULACIONES = ['codo_izq', 'codo_der', 'rodilla_izq', 'rodilla_der', 'cadera', 'hombro']
 
-# Mapeo de articulación a índice COCO representativo (0-16)
 INDICES_COCO = {
     'codo_izq': 7,
     'codo_der': 8,

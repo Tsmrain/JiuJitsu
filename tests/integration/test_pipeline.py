@@ -66,3 +66,54 @@ class TestPipelineIntegration:
 
         with pytest.raises(ValueError, match="No se detectaron poses"):
             self.pipeline.ejecutar("maestro.mp4", "alumno.mp4")
+
+    def test_pipeline_exportar_e_importar_colab(self, tmp_path):
+        """Prueba: generación de manifiesto Colab y posterior análisis de keypoints JSON devueltos."""
+        import os
+        dest_payload = tmp_path / "colab_payload.json"
+        res_payload = self.pipeline.exportar_payload_colab("Videos/Maestro.mp4", "Videos/Alumno.mp4", str(dest_payload))
+        assert os.path.exists(res_payload)
+
+        colab_data = {
+            "version": "2.0-hybrid",
+            "keypoints_maestro": np.ones((5, 17, 2)).tolist(),
+            "keypoints_alumno": np.ones((5, 17, 2)).tolist()
+        }
+        self.mock_angle_calculator.extraer_angulos.return_value = {'codo_izq': 90.0}
+        self.mock_dtw_comparator.comparar_articulacion.return_value = (
+            0.0, [(i, i) for i in range(5)], [90.0] * 5, [90.0] * 5
+        )
+        self.mock_storage.guardar_csv.return_value = str(tmp_path / "test.csv")
+
+        resultado = self.pipeline.ejecutar_desde_colab_json(colab_data)
+        assert resultado is not None
+        assert resultado.estado_computo == "completado"
+
+    def test_pipeline_procesar_resultado_colab_json(self, tmp_path):
+        """Prueba: Ingesta del JSON exportado por Colab con persistencia en SQLite (Mannino)."""
+        import json
+        json_file = tmp_path / "colab_results.json"
+        payload = {
+            "errores": [
+                {
+                    "articulacion": "codo_der",
+                    "angulo_alumno": 85.0,
+                    "angulo_maestro": 110.0,
+                    "diferencia": 25.0,
+                    "frame": 10,
+                    "mensaje": "Desviación de 25.00° en codo_der"
+                }
+            ]
+        }
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(payload, f)
+
+        res = self.pipeline.procesar_resultado_colab(
+            str(json_file),
+            video_id="550e8400-e29b-41d4-a716-446655440000",
+            tecnica_id="123e4567-e89b-12d3-a456-426614174000"
+        )
+        assert res is not None
+        assert res.desviacion_angular_maxima == 25.0
+        assert res.articulacion_afectada == "codo_der"
+        assert len(res.errores) == 1

@@ -1,6 +1,6 @@
-# JiuJitsu Tesis - Análisis Biomecánico con YOLO26-pose
+# JiuJitsu Tesis - Sistema Híbrido de Análisis Biomecánico BJJ (Edge-Colab)
 
-Sistema para comparar movimientos de Jiu-Jitsu Brasileño entre maestro y alumno usando Visión por Computadora (YOLO26-pose, normalización cinemática y DTW con restricción de Sakoe-Chiba).
+Sistema para comparar movimientos de Jiu-Jitsu Brasileño entre maestro y alumno usando Visión por Computadora (YOLO26-pose, normalización cinemática y DTW con restricción de Sakoe-Chiba) bajo una arquitectura híbrida **Edge-Colab** con persistencia relacional en **SQLite3** (Mannino).
 
 Implementado bajo la **Arquitectura en Capas de Craig Larman** y patrones de asignación de responsabilidades **GRASP / GoF**.
 
@@ -10,63 +10,82 @@ Implementado bajo la **Arquitectura en Capas de Craig Larman** y patrones de asi
 
 ```
 JiuJitsu/
-├── .gitignore
-├── README.md               # Documento Formal Completo de Tesis de Grado (Capítulos I a X)
+├── README.md               # Documento Formal de Tesis (Capítulos I a X, Arquitectura Edge-Colab)
 ├── QUICKSTART.md           # Guía rápida de ejecución y despliegue
-├── requirements.txt        # Dependencias oficiales del pipeline
-├── setup_colab.sh          # Script de instalación para Google Colab
-├── setup_local.sh          # Script de instalación para entorno local (.venv)
-├── setup_windows_gpu.bat   # Script de instalación para Windows con NVIDIA GPU
+├── requirements.txt        # Dependencias oficiales del sistema (Edge-Colab)
+├── setup_local.sh          # Script de instalación automatizada local (.venv + SQLite)
+├── pytest.ini              # Configuración de pruebas automatizadas y markers
 ├── main.py                 # Punto de entrada principal CLI (Inyección de Dependencias)
 ├── src/                    # Código fuente modular en capas (Larman OOAD)
-│   ├── __init__.py
-│   ├── config.py           # Configuración de rutas, umbrales y topología COCO
+│   ├── config.py           # Configuración de rutas locales, umbrales y topología COCO
+│   ├── utils.py            # Funciones auxiliares y reportes estadísticos
 │   ├── domain/             # CAPA DE DOMINIO (Entidades, Objetos de Valor e Interfaces)
 │   │   ├── entities.py     # TecnicaMaestra, AnalisisBiomecanico, ReglaBiomecanica
 │   │   ├── value_objects.py# Keypoint, Frame, AnguloArticular, ErrorBiomecanico
 │   │   ├── interfaces.py   # Contratos abstractos (IPoseExtractor, IStorageProvider...)
-│   │   └── services.py     # Servicios de dominio (AngleCalculatorImpl, DTWComparatorImpl...)
+│   │   ├── repositories.py # Interfaces de repositorios (Mannino)
+│   │   └── services/       # SERVICIOS DE DOMINIO (Information Expert / Pure Fabrication)
+│   │       ├── angle_calculator.py # Cálculo cinemático de ángulos articulares
+│   │       ├── dtw_comparator.py   # DTW con ventana Sakoe-Chiba O(N)
+│   │       └── rule_engine.py      # Motor de evaluación determinista de reglas (RF-10)
 │   ├── application/        # CAPA DE APLICACIÓN (Controladores de Casos de Uso)
 │   │   ├── pipeline.py     # BiomechanicsPipeline (Larman Controller / Low Coupling)
-│   │   └── services.py     # AnalysisAppService (Coordinador de casos de uso y repositorios)
+│   │   ├── dto.py          # Data Transfer Objects (AnalisisDTO, ErrorDTO...)
+│   │   └── services.py     # Coordinador de casos de uso de alto nivel
 │   ├── infrastructure/     # CAPA DE INFRAESTRUCTURA (Adaptadores y Persistencia)
 │   │   ├── adapters/       # YOLOPoseExtractor (Protected Variations / YOLO26-pose)
-│   │   ├── storage.py      # LocalStorageProvider, DriveStorageProvider
-│   │   └── repositories.py # TecnicaMaestraRepository, AnalisisRepository (Mannino)
-│   ├── ui/                 # CAPA DE PRESENTACIÓN (Streamlit)
-│   │   └── streamlit_app.py# Interfaz web interactiva con carga de videos y métricas
-│   └── utils.py            # Funciones auxiliares y reportes estadísticos
-├── tests/                  # Suite de pruebas unitarias (TDD)
-│   ├── __init__.py
-│   ├── test_domain_entities.py      # Pruebas de objetos de valor y entidades
-│   ├── test_repositories.py         # Pruebas de persistencia en repositorios
-│   ├── test_application_pipeline.py # Pruebas del controlador con Inyección de Dependencias
-│   ├── test_angle_calculator.py     # Pruebas de cálculo cinemático
-│   ├── test_dtw_comparator.py       # Pruebas de alineación DTW Sakoe-Chiba
-│   └── test_pipeline.py             # Pruebas end-to-end con mocks
+│   │   ├── storage.py      # LocalStorageAdapter (uploads/ & resultados/)
+│   │   ├── repositories.py # SQLiteDB, TecnicaMaestraRepository, AnalisisRepository (Mannino)
+│   │   ├── frame_annotator.py # Anotador gráfico de fotogramas con OpenCV
+│   │   └── csv_exporter.py    # Exportador de series cinemáticas a CSV
+│   └── ui/                 # CAPA DE PRESENTACIÓN (Streamlit)
+│       └── streamlit_app.py# Interfaz web interactiva (Modos: Local, Colab JSON, SQLite)
+├── tests/                  # Suite de pruebas automatizadas bajo disciplina TDD
+│   ├── unit/               # Pruebas unitarias de dominio, cinemática y repositorios SQLite
+│   ├── integration/        # Pruebas de integración del controlador (con Mocks)
+│   └── real/               # Pruebas con modelo real en Colab GPU (@pytest.mark.real_model)
 ├── notebooks/
-│   └── colab_demo.ipynb    # Notebook interactivo para Google Colab
-├── Videos/                 # Videos Ground Truth de benchmark
-│   ├── Maestro.mp4         (1.96 MB, 783 frames)
-│   └── Alumno.mp4          (0.72 MB, 276 frames)
-└── assets/                 # Logotipos institucionales (UPSA, Corpo & Mente)
+│   └── jiujiutsu_ai_engine.ipynb # Cuaderno oficial de Google Colab (GPU A100 / T4)
+├── uploads/                # Directorio de videos MP4 cargados localmente
+├── data/
+│   └── bjj_analysis.db     # Base de datos relacional SQLite (Mannino)
+├── resultados/             # Entregables visuales y datos tabulares
+│   ├── fotogramas/         # Fotogramas clave anotados con OpenCV
+│   ├── graficas/           # Curvas temporales de evolución cinemática
+│   └── csv/                # Tablas de discrepancias articulares
+└── Videos/                 # Videos de referencia canónica (Ground Truth)
+    ├── Maestro.mp4         (1.96 MB, 783 frames)
+    └── Alumno.mp4          (0.72 MB, 276 frames)
 ```
 
 ---
 
 ## 🚀 Opciones de Ejecución
 
-### 1. Interfaz Web Reactiva (Streamlit)
+### 1. Inicialización y Despliegue Local Automatizado
 
 ```bash
+# Ejecutar script de aprovisionamiento
+bash setup_local.sh
+pip install -r requirements.txt
+
 # Activar entorno virtual
 source .venv/bin/activate
 
-# Lanzar aplicación web
+# Iniciar servidor interactivo de Streamlit
 streamlit run src/ui/streamlit_app.py
 ```
+La aplicación web estará disponible en `http://localhost:8501`.
 
-### 2. Línea de Comandos (CLI)
+### 2. Flujo Híbrido con Google Colab (Cerebro IA)
+
+1. Abrir `notebooks/jiujiutsu_ai_engine.ipynb` en [Google Colab](https://colab.research.google.com/).
+2. Activar entorno de ejecución con acelerador GPU (NVIDIA A100 o T4).
+3. Cargar los videos `Maestro.mp4` y `Alumno.mp4` y ejecutar las celdas de inferencia.
+4. Descargar el archivo `colab_analysis_results.json` generado.
+5. En la interfaz local de Streamlit, seleccionar la pestaña **"Importar Resultados de Google Colab"** y cargar el JSON para visualizar fotogramas anotados y persistir en SQLite.
+
+### 3. Línea de Comandos (CLI Local)
 
 ```bash
 # Ejecutar con videos por defecto (Videos/Maestro.mp4 y Videos/Alumno.mp4)
@@ -76,21 +95,17 @@ python3 main.py
 python3 main.py --maestro Videos/Maestro.mp4 --alumno Videos/Alumno.mp4 --output resultados/
 ```
 
-### 3. Google Colab (Acelerado con GPU A100 / T4)
-
-1. Abrir [Google Colab](https://colab.research.google.com/).
-2. Subir o abrir `notebooks/colab_demo.ipynb`.
-3. Seleccionar acelerador por hardware GPU.
-4. Ejecutar las celdas secuencialmente para clonar el repositorio, aprovisionar dependencias y ejecutar el análisis.
-
 ---
 
-## 🧪 Ejecución de Pruebas Unitarias
+## 🧪 Validación de la Suite de Pruebas (TDD)
 
 ```bash
-.venv/bin/pytest tests/ -v
+# Ejecutar pruebas unitarias y de integración locales
+.venv/bin/pytest tests/ -v -m "not real_model"
+
+# Ejecutar pruebas sobre modelo real (requiere GPU y pesos de YOLO)
+.venv/bin/pytest -m real_model -v
 ```
-*(Total: 25 pruebas unitarias automatizadas con 100% de éxito).*
 
 ---
 

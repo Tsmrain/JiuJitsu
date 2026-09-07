@@ -18,7 +18,9 @@
 
 <br>
 
-## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRACTICANTES DE LA ACADEMIA CORPO & MENTE BOLIVIA
+## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU: SISTEMA HÍBRIDO EDGE-COLAB
+
+### **Sistema Híbrido de Análisis Biomecánico BJJ: Arquitectura Edge-Colab**
 
 <br><br>
 
@@ -57,7 +59,9 @@
 
 <br>
 
-## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU PARA PRACTICANTES DE LA ACADEMIA CORPO & MENTE BOLIVIA
+## APLICACIÓN WEB CON INTELIGENCIA ARTIFICIAL PARA ANALIZAR VIDEOS DE ENTRENAMIENTO DE ARTES MARCIALES EN BRAZILIAN JIU-JITSU: SISTEMA HÍBRIDO EDGE-COLAB
+
+### **Sistema Híbrido de Análisis Biomecánico BJJ: Arquitectura Edge-Colab**
 
 <br>
 
@@ -107,7 +111,7 @@
     - [3.1.2 Justificación Técnica de la Elección: YOLO26-pose](#312-justificación-técnica-de-la-elección-yolo26-pose)
   - [3.2 Arquitectura y Estrategia de Despliegue](#32-arquitectura-y-estrategia-de-despliegue)
     - [3.2.1 Análisis Comparativo de Proveedores Cloud y Modelos de Cómputo](#321-análisis-comparativo-de-proveedores-cloud-y-modelos-de-cómputo)
-    - [3.2.2 Justificación Técnica de la Elección: Huawei Cloud (FunctionGraph + OBS)](#322-justificación-técnica-de-la-elección-huawei-cloud-functiongraph--obs)
+    - [3.2.2 Justificación Técnica de la Elección: Arquitectura Híbrida Edge-Colab (Laptop + Google Colab)](#322-justificación-técnica-de-la-elección-arquitectura-híbrida-edge-colab-laptop--google-colab)
   - [3.3 Algoritmos de Alineación Temporal Biomecánica](#33-algoritmos-de-alineación-temporal-biomecánica)
     - [3.3.1 Análisis Comparativo de Algoritmos de Comparación de Series](#331-análisis-comparativo-de-algoritmos-de-comparación-de-series)
     - [3.3.2 Justificación Técnica de la Elección: Dynamic Time Warping (DTW)](#332-justificación-técnica-de-la-elección-dynamic-time-warping-dtw)
@@ -141,9 +145,9 @@
   - [4.4 Identificación de los Casos de Uso](#44-identificación-de-los-casos-de-uso)
   - [4.5 Diagrama de Dominio](#45-diagrama-de-dominio)
 - [Capítulo V: Análisis y Diseño del Sistema](#capítulo-v-análisis-y-diseño-del-sistema)
-  - [5.1 Arquitectura del Software y Entorno de Despliegue Cloud](#51-arquitectura-del-software-y-entorno-de-despliegue-cloud)
+  - [5.1 Arquitectura del Software y Entorno de Despliegue Híbrido Edge-Colab](#51-arquitectura-del-software-y-entorno-de-despliegue-híbrido-edge-colab)
     - [5.1.1 Vista Lógica y Arquitectura en Capas](#511-vista-lógica-y-arquitectura-en-capas)
-    - [5.1.2 Vista de Despliegue Físico en Huawei Cloud](#512-vista-de-despliegue-físico-en-huawei-cloud)
+    - [5.1.2 Vista de Despliegue Físico Híbrido Edge-Colab](#512-vista-de-despliegue-físico-híbrido-edge-colab)
     - [5.1.3 Análisis de Factores Arquitectónicos y Restricciones](#513-análisis-de-factores-arquitectónicos-y-restricciones)
   - [5.2 Diseño del Comportamiento Dinámico (Realización de Casos de Uso)](#52-diseño-del-comportamiento-dinámico-realización-de-casos-de-uso)
     - [5.2.1 Diagramas de Secuencia del Sistema (SSD) y Contratos de Operación](#521-diagramas-de-secuencia-del-sistema-ssd-y-contratos-de-operación)
@@ -164,10 +168,9 @@
     - [5.6.3 Manual de Puesta en Marcha para el Tribunal Evaluador](#563-manual-de-puesta-en-marcha-para-el-tribunal-evaluador)
     - [5.6.4 Estrategia de Desarrollo Local-First y Adaptación de Hardware](#564-estrategia-de-desarrollo-local-first-y-adaptación-de-hardware)
     - [5.6.5 Validación del Modelo Real en Google Colab (Tagged Integration Tests - Sin Mocks)](#565-validación-del-modelo-real-en-google-colab-tagged-integration-tests---sin-mocks)
-    - [5.6.6 Guía de Instalación Dual (Desarrollo Local vs Validación Colab)](#566-guía-de-instalación-dual-desarrollo-local-vs-validación-colab)
-    - [5.6.7 Guía de Despliegue en Windows (Cybercafé / Workstation GPU)](#567-guía-de-despliegue-en-windows-cybercafé--workstation-gpu)
-  - [5.7 Resultados de la Validación Experimental en Google Colab](#57-resultados-de-la-validación-experimental-en-google-colab)
-    - [5.7.1 Entorno de Validación](#571-entorno-de-validación)
+    - [5.6.6 Guía de Instalación y Puesta en Marcha (Edge-Colab)](#566-guía-de-instalación-y-puesta-en-marcha-edge-colab)
+  - [5.7 Validación y Pruebas (TDD)](#57-validación-y-pruebas-tdd)
+    - [5.7.1 Resultados de la Validación Experimental en Google Colab](#571-resultados-de-la-validación-experimental-en-google-colab)
     - [5.7.2 Resultados del Pipeline Biomecánico](#572-resultados-del-pipeline-biomecánico)
     - [5.7.3 Cumplimiento de Requisitos y Conclusiones de la Validación](#573-cumplimiento-de-requisitos-y-conclusiones-de-la-validación)
 - [Capítulo X: Referencias Bibliográficas](#capítulo-x-referencias-bibliográficas)
@@ -188,7 +191,7 @@ En la academia **Corpo & Mente Bolivia**, ubicada en Santa Cruz de la Sierra, la
 
 ### 1.1.2 Situación Deseada
 
-Se proyecta el diseño e implementación de un ecosistema de software adaptativo y multiplataforma sustentado sobre una arquitectura en la nube (*Huawei Cloud*), orientado a actuar como un asistente virtual biomecánico asincrónico. En este escenario ideal:
+Se proyecta el diseño e implementación de un ecosistema de software adaptativo y multiplataforma sustentado sobre una arquitectura híbrida Edge-Colab (*Laptop + Google Colab*), orientado a actuar como un asistente virtual biomecánico asincrónico. En este escenario ideal:
 
 * **Adaptabilidad de cátedra:** El profesor de Corpo & Mente carga un único video patrón con la ejecución canónica de la técnica, el cual se procesa en la nube para extraer un esqueleto matemático de referencia.
 * **Carga móvil accesible:** Los estudiantes graban sus ejecuciones directamente desde sus dispositivos móviles en el tatami y las cargan a la plataforma de forma ágil y liviana.
@@ -243,7 +246,7 @@ Con base en las directrices metodológicas de Craig Larman (2004), la investigac
 
 * **Fase de Inicio (*Inception*):** Delimitación rigurosa del alcance del proyecto, identificación y priorización de riesgos tecnológicos críticos (tales como la latencia de red en la carga móvil y las fluctuaciones tarifarias en la nube) y consolidación de los requerimientos de negocio de la academia.
 * **Fase de Elaboración (*Elaboration*):** Mitigación de los riesgos arquitectónicos de mayor impacto. Se formaliza la arquitectura base y el Modelo de Dominio. Se valida la factibilidad técnica construyendo un prototipo funcional que conecte la captura móvil con el almacenamiento en la nube (*OBS*) sin provocar estrés térmico en el cliente.
-* **Fase de Construcción (*Construction*):** Desarrollo modular y desacoplado de los componentes de cómputo. Implementación de los microservicios sin servidor (*Serverless* con *FunctionGraph*), codificación del motor matemático de detección de errores (DTW con restricciones de banda), integración de los algoritmos de anotación digital sobre imágenes con OpenCV y desarrollo del frontend web reactivo en *Streamlit*.
+* **Fase de Construcción (*Construction*):** Desarrollo modular y desacoplado de los componentes de cómputo. Implementación de los adaptadores locales (*LocalStorageAdapter*, SQLite) y el motor de inferencia en Google Colab, codificación del motor matemático de detección de errores (DTW con restricciones de banda), integración de los algoritmos de anotación digital sobre imágenes con OpenCV y desarrollo del frontend web reactivo en *Streamlit*.
 * **Fase de Transición (*Transition*):** Despliegue del aplicativo en el entorno operativo real de Corpo & Mente Bolivia. Recolección continua de los resultados analíticos en el historial de progresión técnica de los practicantes a lo largo del periodo de prueba, contrastación estadística longitudinal entre las evaluaciones iniciales y finales de cada atleta mediante la prueba de rangos con signo de Wilcoxon para muestras pareadas (o t de Student según la verificación previa de normalidad con Shapiro-Wilk), y contrastación de las métricas de adopción real y retención de uso en el tatami frente a las metas de validación cuantitativas definidas para la redacción de las conclusiones formales del estudio.
 
 ### 1.3.1 Criterios de Aceptación de la Fase de Transición
@@ -413,12 +416,12 @@ Se analizan los entornos *Serverless* y de almacenamiento de objetos distribuido
 
 *Nota*. Evaluación técnica adaptada a los requerimientos de tráfico regional y presupuesto en Bolivia.
 
-### 3.2.2 Justificación Técnica de la Elección: Huawei Cloud (FunctionGraph + OBS)
+### 3.2.2 Justificación Técnica de la Elección: Arquitectura Híbrida Edge-Colab (Laptop + Google Colab)
 
-**Huawei Cloud** obtiene el liderazgo comparativo con una calificación de **4.80 / 5.00**, sustentado en sus ventajas de costos y presencia institucional en Bolivia.
+La **Arquitectura Híbrida Edge-Colab** obtiene el liderazgo absoluto de diseño, combinando la cercanía y privacidad de una estación local (Laptop del atleta/coach) con la potencia de cálculo GPU masiva provista por **Google Colab**.
 
-* **Eficiencia del Paradigma Serverless:** Se desestima el uso de plataformas complejas de aprendizaje profundo continuo (tales como ModelArts) para la fase de inferencia cotidiana, redirigiendo la carga hacia *FunctionGraph*. Cuando un estudiante carga un archivo de video al contenedor de *Object Storage Service* (OBS), se dispara un disparador (*trigger*) asincrónico que inicializa la función *Serverless*. Ésta procesa el flujo mediante YOLO26-pose y DTW en cuestión de milisegundos y finaliza de inmediato. El costo se limita rigurosamente a los milisegundos de CPU consumidos, eliminando gastos por tiempos ociosos.
-* **Justificación del Descarte de Alternativas:** Las herramientas analíticas de video de AWS (Rekognition) y Google Cloud (Video Intelligence) fueron desestimadas debido a que operan a un nivel de abstracción semántico macroscópico (reconocen categorías generales como "tatami" o "persona practicando deporte"), siendo incapaces de calcular discrepancias angulares articulares en grados. Adicionalmente, las tarifas de transferencia de salida (*Egress Data*) aplicadas por AWS y GCP hacia operadoras sudamericanas resultan sensiblemente elevadas respecto a la estructura tarifaria de Huawei Cloud.
+* **Eficiencia del Paradigma Híbrido:** Se desestima el uso de servicios cloud comerciales de pago permanente (IaaS/PaaS) para la fase de inferencia cotidiana, redirigiendo la carga pesada de visión artificial hacia **Google Colab** (equipado con GPU NVIDIA A100 o T4) y la persistencia relacional a **SQLite3** local. Cuando se requiere auditar un video, el archivo es procesado mediante el notebook `notebooks/jiujiutsu_ai_engine.ipynb` con YOLO26-pose, extrayendo las matrices de keypoints COCO `(N, 17, 3)` y exportando un manifiesto JSON estructurado (`colab_analysis_results.json`). Este artefacto es consumido directamente por la interfaz local de Streamlit, eliminando al 100% las tarifas de salida de datos (*Data Egress*) y los costos de servidores dedicados.
+* **Justificación del Descarte de Nubes Comerciales de Pago:** Los entornos Serverless comerciales (AWS Lambda, Google Cloud Functions, Huawei FunctionGraph) imponen límites estrictos de memoria RAM, arranque en frío (*cold start*) y tarifas acumulativas por tiempo de CPU que amenazan la sostenibilidad de una academia deportiva boliviana. La arquitectura Edge-Colab democratiza el acceso a la IA con un **Costo Operativo de $0.00 USD**, aprovechando el hardware existente y los entornos de cómputo GPU gratuitos de investigación.
 
 ---
 
@@ -883,7 +886,7 @@ Conforme a los lineamientos de Craig Larman (2004), la descomposición modular d
 1. **Capa de Presentación (UI Layer - Streamlit):** Aloja los componentes de interfaz gráfica web ejecutados en el navegador del usuario. Actúa como cliente desacoplado responsable de capturar la interacción humana, validar las restricciones de formato local ($\le 5\text{ MB}$ y $\le 6\text{ segundos}$, RF-07), verificar la tenencia del token de membresía en cliente (RF-09) y renderizar de forma pasiva los fotogramas anotados y las tarjetas de retroalimentación pedagógica.
 2. **Capa de Aplicación y Controlador (Application / Controller Layer):** Encapsulada en el punto de entrada de la función en la nube (*FunctionGraph Dispatcher*) y coordinada por el controlador de caso de uso `AnalisisBiomecanicoController`. No contiene lógica matemática ni reglas de negocio intrínsecas; su función exclusiva es orquestar el flujo de ejecución, invocar la validación de tokens contra la base de datos, despachar las tareas hacia el motor biomecánico y coordinar la persistencia transaccional.
 3. **Capa de Dominio del Negocio e Inteligencia Artificial (Domain & AI Layer):** Constituye el núcleo algorítmico independiente de la plataforma. Encapsula las entidades conceptuales del modelo (`TecnicaMaestra`, `ReglaBiomecanica`, `AnalisisBiomecanico`), el motor de reglas predeterminadas `DefaultRuleEngine` (Patrón *Pure Fabrication* de Larman, responsable de asignar automáticamente articulaciones clave y umbrales por defecto de 15° cuando el Head Coach opta por el flujo simplificado de carga), el adaptador de inferencia de hardware `HardwareInferenceAdapter` (Patrón *Protected Variations* de Larman, que encapsula y desacopla la detección de hardware para despachar la inferencia vía `ONNX Runtime` en entornos CPU local o `PyTorch + CUDA` en entornos acelerados GPU como NVIDIA A100 / Colab de manera transparente para el `PipelineBiomecanicoEngine`), el extractor cinemático basado en *YOLO26-pose* (`YOLOPoseExtractor`), el módulo adaptador de normalización de keypoints (`LandmarkAdapter` para 17 keypoints estándar COCO), el módulo de seguimiento y compensación de oclusiones (`KalmanFilterTracker`), el motor determinista de alineación temporal no lineal (`DTWComparator` con restricción de Sakoe-Chiba al 15%), y el componente de inyección gráfica de errores (`OpenCVAnnotator`). Esta capa carece de dependencias respecto al framework web o los drivers de bases de datos.
-4. **Capa de Infraestructura y Persistencia (Infrastructure & Persistence Layer):** Provee las implementaciones técnicas concretas para interactuar con servicios externos mediante adaptadores especializados: `HuaweiOBSStorageAdapter` para la transferencia de objetos audiovisuales en *Huawei Cloud OBS*, y `PostgreSQLRepository` (gestionado mediante SQLAlchemy / psycopg2) para la persistencia ACID en la base de datos relacional *Huawei Cloud RDS*.
+4. **Capa de Infraestructura y Persistencia (Infrastructure & Persistence Layer):** Provee las implementaciones técnicas concretas para interactuar con servicios externos mediante adaptadores especializados: `LocalStorageAdapter` para la transferencia de objetos audiovisuales en *Huawei Cloud OBS*, y `TecnicaMaestraRepository / AnalisisRepository (SQLite)` (gestionado mediante SQLAlchemy / psycopg2) para la persistencia ACID en la base de datos relacional *SQLite3 (`data/bjj_analysis.db`)*.
 
 A continuación, la **Figura 5.1** modela la organización de paquetes y dependencias unidireccionales entre capas:
 
@@ -915,8 +918,8 @@ graph TD
     end
 
     subgraph CapaInfraestructura["Capa de Infraestructura y Persistencia"]
-        Infra_OBS["HuaweiOBSStorageAdapter<br/>(OBS SDK esdk-obs-python)"]
-        Infra_DB["PostgreSQLRepository<br/>(SQLAlchemy / psycopg2)"]
+        Infra_OBS["LocalStorageAdapter<br/>(OBS SDK esdk-obs-python)"]
+        Infra_DB["TecnicaMaestraRepository / AnalisisRepository (SQLite)<br/>(SQLAlchemy / psycopg2)"]
     end
 
     CapaPresentacion -->|HTTPS / Eventos UI| CapaAplicacion
@@ -942,7 +945,7 @@ La topología de despliegue físico materializa el aislamiento estricto de recur
 #### Separación de Ambientes: Desarrollo/Pruebas vs. Producción Cloud-Native
 Resulta indispensable clarificar la distinción metodológica e ingenieril entre el ambiente de validación experimental y la topología definitiva de producción:
 * **Ambiente de Desarrollo y Validación Experimental (Localhost):** Utilizado rigurosamente durante la fase de Construcción y verificación de pruebas unitarias/TDD documentadas en el presente proyecto. En este escenario, la laptop del desarrollador hospeda localmente el servidor Streamlit (`localhost:8501`) y el motor relacional PostgreSQL 14, conectándose remotamente mediante HTTPS a los servicios serverless de Huawei Cloud (*FunctionGraph* y *OBS*). Este esquema permite iteraciones ágiles de depuración con costo cero de infraestructura de base de datos.
-* **Ambiente de Producción Definitivo (Cloud-Native):** Para la puesta en marcha operativa en la academia deportiva, el frontend en Streamlit se empaqueta en una imagen de contenedor ligero desplegada en una instancia elástica con auto-escalado (*Huawei Cloud Cloud Container Engine - CCE* o *Elastic Cloud Server - ECS* de entrada), mientras que la base de datos migra transparentemente hacia una instancia gestionada de **Huawei Cloud RDS (PostgreSQL)** con respaldos automatizados. Toda la comunicación entre los teléfonos móviles de los atletas y la plataforma opera bajo canales seguros HTTPS (TLS 1.3) sobre redes comerciales 4G/LTE/5G, garantizando alta disponibilidad, aislamiento de red mediante VPC privada y acceso público seguro.
+* **Ambiente de Producción Definitivo (Cloud-Native):** Para la puesta en marcha operativa en la academia deportiva, el frontend en Streamlit se empaqueta en una imagen de contenedor ligero desplegada en una instancia elástica con auto-escalado (*Huawei Cloud Cloud Container Engine - CCE* o *Elastic Cloud Server - ECS* de entrada), mientras que la base de datos migra transparentemente hacia una instancia gestionada de **SQLite3 (`data/bjj_analysis.db`) (PostgreSQL)** con respaldos automatizados. Toda la comunicación entre los teléfonos móviles de los atletas y la plataforma opera bajo canales seguros HTTPS (TLS 1.3) sobre redes comerciales 4G/LTE/5G, garantizando alta disponibilidad, aislamiento de red mediante VPC privada y acceso público seguro.
 
 La **Figura 5.2** presenta el Diagrama de Despliegue físico en sintaxis UML modelando el entorno de construcción y validación experimental:
 
@@ -975,7 +978,7 @@ flowchart TD
 
 **Figura 5.2**  
 *Diagrama de Despliegue Físico Simplificado (Arquitectura Híbrida Laptop-Cloud).*  
-*Nota de Arquitectura*: El diagrama representa el entorno de desarrollo y validación experimental (Localhost). En el entorno de producción real, el frontend Streamlit se despliega en una instancia elástica (ej. Huawei Cloud ECS o Container Service) y la base de datos migra a Huawei Cloud RDS (PostgreSQL Gestionado), permitiendo acceso público seguro vía HTTPS/4G para los atletas.
+*Nota de Arquitectura*: El diagrama representa el entorno de desarrollo y validación experimental (Localhost). En el entorno de producción real, el frontend Streamlit se despliega en una instancia elástica (ej. Huawei Cloud ECS o Container Service) y la base de datos migra a SQLite3 (`data/bjj_analysis.db`) (PostgreSQL Gestionado), permitiendo acceso público seguro vía HTTPS/4G para los atletas.
 
 **Tabla 5.1**  
 *Especificación de Enlaces de Red, Protocolos y Mecanismos de Seguridad*
@@ -1215,7 +1218,7 @@ Conforme al marco conceptual de **Craig Larman (2004, Capítulos 16 y 17)**, la 
 
 1. **Controlador (*Controller - GRASP*):** La clase `AnalisisBiomecanicoController` opera como controlador de caso de uso (fachada de aplicación). Desacopla la interfaz de usuario Streamlit del motor de visión por computadora, canalizando las peticiones de análisis, coordinando el consumo de microservicios serverless y abstrayendo la lógica transaccional.
 2. **Experto en Información (*Information Expert - GRASP*):** La clase `TecnicaMaestra` posee la información geométrica canónica y su ancho de banda temporal recomendado (`ventanaSakoeChiba`); por tanto, es la experta designada para calibrar el algoritmo DTW. A su vez, `ReglaBiomecanica` es la experta encargada de evaluar si una discrepancia angular en grados excede el umbral tolerado y suministrar el mensaje pedagógico determinista correspondiente.
-3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (YOLO26-pose → LandmarkAdapter → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `HuaweiOBSStorageAdapter` y `PostgreSQLRepository` operan como adaptadores (*Adapter - GoF*) que aíslan los detalles de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático.
+3. **Fabricación Pura (*Pure Fabrication - GRASP*) y Fachada (*Facade - GoF*):** La clase `PipelineBiomecanicoEngine` es una construcción artificial de software creada para encapsular la coreografía completa del pipeline de visión artificial (YOLO26-pose → LandmarkAdapter → Kalman → DTW → OpenCV → Reglas). Esta fachada desacopla al controlador de aplicación (`AnalisisBiomecanicoController`) de los detalles de bajo nivel de cada componente algorítmico, preservando la Alta Cohesión del controlador y facilitando la mantenibilidad del sistema. Adicionalmente, las clases `LocalStorageAdapter` y `TecnicaMaestraRepository / AnalisisRepository (SQLite)` operan como adaptadores (*Adapter - GoF*) que aíslan los detalles de las bibliotecas de proveedores de infraestructura (SDK de Huawei Cloud OBS y SQLAlchemy/psycopg2) respecto al núcleo del dominio cinemático.
 4. **Bajo Acoplamiento y Alta Cohesión (*Low Coupling & High Cohesion - GRASP*):** Las clases computacionales `KalmanFilterTracker` y `DTWComparator` operan exclusivamente con estructuras matriciales abstractas (`NumPy arrays`), permaneciendo completamente ignorantes de protocolos HTTP, bases de datos o frameworks gráficos.
 5. **Variaciones Protegidas (*Protected Variations - GRASP*):** Se implementa la interfaz `IFiltroCinematico`, la cual permite acoplar o intercambiar implementaciones de interpolación (ej. filtro de media móvil o modelos biomecánicos avanzados) sin forzar modificaciones sobre el pipeline de DTW ni sobre el controlador.
 
@@ -1327,7 +1330,7 @@ class HistorialProgresion {
 }
 class AnalisisBiomecanicoController {
 -pipelineEngine: PipelineBiomecanicoEngine
--storageAdapter: HuaweiOBSStorageAdapter
+-storageAdapter: LocalStorageAdapter
 -tokenRepo: TokenRepository
 -tecnicaRepo: TecnicaMaestraRepository
 -analisisRepo: AnalisisBiomecanicoRepository
@@ -1408,7 +1411,7 @@ class HardwareInferenceAdapter {
 +obtenerBackendInferencia(): String
 +ejecutarInferencia(modelo: Any, tensorFrames: Any): MatrizKeypoints3D
 }
-class HuaweiOBSStorageAdapter {
+class LocalStorageAdapter {
 -bucketInput: String
 -bucketOutput: String
 +subirVideo(videoBytes: bytes, objectKey: String): String
@@ -1448,7 +1451,7 @@ Estudiante "1" *-- "1" HistorialProgresion : posee
 AnalisisBiomecanicoController ..> VideoEjecucion : orquesta
 AnalisisBiomecanicoController ..> AnalisisBiomecanico : crea
 AnalisisBiomecanicoController --> PipelineBiomecanicoEngine : delega-pipeline
-AnalisisBiomecanicoController --> HuaweiOBSStorageAdapter : persiste-objetos
+AnalisisBiomecanicoController --> LocalStorageAdapter : persiste-objetos
 AnalisisBiomecanicoController --> TokenRepository : valida-acceso
 AnalisisBiomecanicoController --> TecnicaMaestraRepository : administra-curriculo
 AnalisisBiomecanicoController --> AnalisisBiomecanicoRepository : persiste-auditorias
@@ -1657,12 +1660,12 @@ A continuación, se definen exhaustivamente las especificaciones físicas de las
 
 ### 5.4.3 Scripts DDL de Creación e Índices B-Tree
 
-El siguiente script en lenguaje SQL ANSI compatible con **PostgreSQL v14+** materializa la totalidad de la estructura de tablas, restricciones de integridad referencial, checks y los índices B-Tree de alta velocidad para la base de datos en Huawei Cloud RDS:
+El siguiente script en lenguaje SQL ANSI compatible con **PostgreSQL v14+** materializa la totalidad de la estructura de tablas, restricciones de integridad referencial, checks y los índices B-Tree de alta velocidad para la base de datos en SQLite3 (`data/bjj_analysis.db`):
 
 ```sql
 -- =============================================================================
 -- ESQUEMA DDL DE BASE DE DATOS - SISTEMA DE AUDITORÍA BIOMECÁNICA (BJJ)
--- DBMS: PostgreSQL 14+ (Huawei Cloud RDS)
+-- DBMS: PostgreSQL 14+ (SQLite3 (`data/bjj_analysis.db`))
 -- =============================================================================
 
 -- Habilitación de extensión para generación de identificadores universales (UUID v4)
@@ -2139,52 +2142,43 @@ Para ello, el sistema adopta la técnica de **Pruebas de Integración Etiquetada
      ```
    * **Validación de Salida:** La prueba `tests/integration/test_yolo_real.py` comprueba de forma determinista que el modelo real procesa el video, infiere los landmarks articulares con topología canónica COCO de 17 puntos `(N, 17, 3)`, valida los scores de confianza devueltos en `result.keypoints.conf` ($C \in [0.0, 1.0]$) y mapea la salida hacia las entidades de dominio `KeypointFrame` sin alterar la arquitectura.
 
-### 5.6.6 Guía de Instalación Dual (Desarrollo Local vs Validación Colab)
+### 5.6.6 Guía de Instalación y Puesta en Marcha (Edge-Colab)
 
-A fin de optimizar el entorno de desarrollo local y garantizar la máxima portabilidad en la nube, el repositorio cuenta con dos flujos de configuración desacoplados:
+A fin de simplificar el despliegue y garantizar la máxima portabilidad, el sistema se inicializa de forma inmediata en cualquier máquina local (Linux, macOS, Windows):
 
-* **Para Desarrollo Local (Dell / Debian 13):**
-  Ejecutar el script ligero que prepara el entorno virtual con las dependencias base de prueba, dominio y UI (`requirements-core.txt`):
-  ```bash
-  bash setup_local.sh
-  ```
-  *Permite ejecutar la suite completa de reglas de negocio, algoritmos de geometría 3D y DTW en menos de 2 segundos.*
-
-* **Para Validación en Google Colab (NVIDIA A100 / CUDA 12.8):**
-  Ejecutar el script automatizado para instalar `ultralytics>=8.4.0` y dependencias de inferencia:
-  ```bash
-  !bash setup_colab.sh
-  ```
-
-### 5.6.7 Guía de Despliegue en Windows (Cybercafé / Workstation GPU)
-
-Para validar la inferencia real de YOLO26-pose en estaciones de trabajo físicas o computadoras de cibercafé con sistema operativo Windows y tarjetas gráficas NVIDIA (GeForce GTX/RTX con soporte CUDA):
-
-1. **Requisitos Previos:**
-   * Instalar **Python 3.10+** desde [python.org](https://www.python.org/downloads/), marcando obligatoriamente la casilla **"Add Python to PATH"**.
-   * Instalar **Git for Windows** desde [git-scm.com](https://git-scm.com/download/win).
-   * Contar con los controladores oficiales actualizados de NVIDIA instalados en el sistema.
-
-2. **Ejecución del Instalador Automatizado (`setup_windows_gpu.bat`):**
-   Abrir una terminal (`cmd.exe` o PowerShell) en la raíz del proyecto clonado y ejecutar:
-   ```cmd
-   setup_windows_gpu.bat
+1. **Instalación Local Automatizada (Laptop Edge):**
+   ```bash
+   bash setup_local.sh
+   pip install -r requirements.txt
    ```
-   *El script automatiza:*
-   * Creación del entorno virtual aislado `.venv`.
-   * Instalación de `ultralytics>=8.4.0` con detección automática de PyTorch + CUDA.
-   * Instalación de dependencias del proyecto (`requirements-core.txt`).
-   * Verificación de la presencia de los videos Ground Truth (`Videos\Maestro.mp4` y `Videos\Alumno.mp4`).
+   *El script `setup_local.sh`:*
+   * Crea el entorno virtual aislado `.venv`.
+   * Inicializa la estructura local de directorios (`uploads/`, `data/`, `resultados/`, `modelos/`).
+   * Configura la base de datos relacional SQLite `data/bjj_analysis.db` (Mannino).
 
-3. **Activación del Entorno y Ejecución de Pruebas Reales:**
-   ```cmd
-   .venv\Scripts\activate.bat
-   pytest -m real_model -v
+2. **Ejecución del Servidor Web (Streamlit):**
+   ```bash
+   source .venv/bin/activate
+   streamlit run src/ui/streamlit_app.py
    ```
+   La aplicación web estará disponible en `http://localhost:8501`.
+
+3. **Inferencia con GPU en Google Colab (Cerebro IA):**
+   Abrir el cuaderno oficial `notebooks/jiujiutsu_ai_engine.ipynb` en Google Colab, cargar los videos de entrenamiento y ejecutar las celdas para inferencia acelerada por hardware (NVIDIA A100 / T4) y exportación del JSON de keypoints.
 
 ---
 
-## 5.7 Resultados de la Validación Experimental en Google Colab
+## 5.7 Validación y Pruebas (TDD)
+El sistema sigue una estrategia de **Desarrollo Guiado por Pruebas (TDD)** asegurando la calidad del dominio y la infraestructura local.
+
+| Tipo de Prueba | Archivo | Descripción | Estado |
+| :--- | :--- | :--- | :---: |
+| **Unitaria** | `tests/unit/test_value_objects.py` | Validación de inmutabilidad y reglas de negocio (ej. umbrales angulares). | ✅ |
+| **Unitaria** | `tests/unit/test_sqlite_repositories.py` | Verificación de integridad referencial (Foreign Keys) y operaciones CRUD en SQLite. | ✅ |
+| **Integración** | `tests/integration/test_pipeline.py` | Orquestación del flujo: Carga Local -> Mock de JSON Colab -> Persistencia SQLite. | ✅ |
+| **Real (Colab)** | `notebooks/jiujiutsu_ai_engine.ipynb` | Inferencia real con YOLO26-pose en GPU NVIDIA T4/A100 de Google Colab. | ⏸️ |
+
+### 5.7.1 Resultados de la Validación Experimental en Google Colab
 
 Con el objetivo de validar la viabilidad técnica del pipeline biomecánico descrito en los requisitos funcionales (RF-02 a RF-15) y los requisitos de rendimiento (RP-01 a RP-03), se ejecutó una prueba de concepto (PoC) en el entorno de Google Colab. Esta validación experimental constituye la evidencia empírica del correcto funcionamiento del sistema, utilizando hardware acelerado (NVIDIA A100) y el modelo de visión artificial seleccionado (YOLO26-pose).
 

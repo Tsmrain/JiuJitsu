@@ -1,25 +1,25 @@
+import json
+import uuid
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 from datetime import datetime
-from typing import List, Optional, Dict
-from uuid import uuid4
+from typing import List, Dict, Any, Optional, Union
 
-from ..domain.interfaces import (
+from src.config import UPLOAD_FOLDER, RESULTS_DIR, ARTICULACIONES, UMBRAL_ERROR
+from src.infrastructure.repositories import SQLiteDB, AnalisisRepository, TecnicaMaestraRepository
+from src.domain.entities import AnalisisBiomecanico, FotogramaAnotado
+from src.domain.value_objects import ErrorBiomecanico
+from src.infrastructure.storage import LocalStorageAdapter
+from src.domain.interfaces import (
     IPoseExtractor, IAngleCalculator, IDTWComparator,
     IFrameAnnotator, IStorageProvider
 )
-from ..domain.entities import AnalisisBiomecanico, FotogramaAnotado
-from ..domain.value_objects import ErrorBiomecanico
-from ..config import ARTICULACIONES, UMBRAL_ERROR
 
 
-class BiomechanicsPipeline:
-    """
-    Controlador de Caso de Uso (Larman Controller - GRASP).
-    Orquesta el flujo completo de análisis biomecánico con bajo acoplamiento (Low Coupling)
-    comunicándose exclusivamente a través de interfaces de dominio e inyección de dependencias.
-    """
+class AnalysisPipeline:
+    """Controlador GRASP para orquestar el análisis biomecánico híbrido (Edge-Colab)."""
 
     def __init__(
         self,
@@ -27,118 +27,157 @@ class BiomechanicsPipeline:
         angle_calculator: Optional[IAngleCalculator] = None,
         dtw_comparator: Optional[IDTWComparator] = None,
         frame_annotator: Optional[IFrameAnnotator] = None,
-        storage: Optional[IStorageProvider] = None
+        storage: Optional[IStorageProvider] = None,
+        db: Optional[SQLiteDB] = None,
+        analisis_repo: Optional[AnalisisRepository] = None,
+        tecnica_repo: Optional[TecnicaMaestraRepository] = None
     ):
-        if pose_extractor is None:
-            from ..infrastructure.adapters.yolo_adapter import YOLOPoseExtractor
-            pose_extractor = YOLOPoseExtractor()
+        if storage is None:
+            storage = LocalStorageAdapter()
         if angle_calculator is None:
-            from ..domain.services import AngleCalculatorImpl
+            from src.domain.services import AngleCalculatorImpl
             angle_calculator = AngleCalculatorImpl()
         if dtw_comparator is None:
-            from ..domain.services import DTWComparatorImpl
+            from src.domain.services import DTWComparatorImpl
             dtw_comparator = DTWComparatorImpl()
         if frame_annotator is None:
-            from ..infrastructure.frame_annotator import FrameAnnotatorImpl
+            from src.infrastructure.frame_annotator import FrameAnnotatorImpl
             frame_annotator = FrameAnnotatorImpl()
-        if storage is None:
-            from ..infrastructure.storage import LocalStorageProvider
-            storage = LocalStorageProvider()
 
-        self.pose_extractor = pose_extractor
+        self.storage = storage
         self.angle_calculator = angle_calculator
         self.dtw_comparator = dtw_comparator
         self.frame_annotator = frame_annotator
-        self.storage = storage
+        self.pose_extractor = pose_extractor
+        self.db = db or SQLiteDB()
+        self.analisis_repo = analisis_repo or AnalisisRepository()
+        self.tecnica_repo = tecnica_repo or TecnicaMaestraRepository()
 
         self._articulaciones = ARTICULACIONES
         self._umbral_error = UMBRAL_ERROR
 
+    def procesar_resultado_colab(
+        self, json_path: str, video_id: Optional[str] = None, tecnica_id: Optional[str] = None
+    ) -> AnalisisBiomecanico:
+        """
+        Ingesta el JSON exportado por Google Colab y persiste el análisis en SQLite (Mannino).
+        """
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        errores_detectados: List[ErrorBiomecanico] = []
+        max_desviacion = 0.0
+        articulacion_critica = ""
+
+        # Caso 1: El JSON contiene lista explícita de errores
+        if 'errores' in data and data['errores']:
+            for error in data['errores']:
+                e = ErrorBiomecanico(
+                    articulacion=error['articulacion'],
+                    angulo_alumno=error['angulo_alumno'],
+                    angulo_maestro=error['angulo_maestro'],
+                    diferencia=error['diferencia'],
+                    frame=error['frame'],
+                    mensaje=error.get('mensaje', f"Desviación de {error['diferencia']:.2f}° en {error['articulacion']}")
+                )
+                errores_detectados.append(e)
+                if abs(error['diferencia']) > max_desviacion:
+                    max_desviacion = abs(error['diferencia'])
+                    articulacion_critica = error['articulacion']
+
+        # Caso 2: El JSON contiene keypoints crudos de Colab
+        elif 'keypoints_alumno' in data:
+            kpts_alumno = np.array(data['keypoints_alumno'])
+            kpts_maestro = np.array(data.get('keypoints_maestro', data['keypoints_alumno']))
+            if len(kpts_maestro) == 0:
+                kpts_maestro = kpts_alumno
+
+            angulos_maestro = [self.angle_calculator.extraer_angulos(k) for k in kpts_maestro]
+            angulos_alumno = [self.angle_calculator.extraer_angulos(k) for k in kpts_alumno]
+            errores_detectados = self._detectar_errores(angulos_maestro, angulos_alumno)
+
+            mejor_err = self._encontrar_error_maximo(errores_detectados)
+            if mejor_err:
+                max_desviacion = mejor_err.diferencia
+                articulacion_critica = mejor_err.articulacion
+
+        # Resolver video_id de forma segura
+        try:
+            v_uuid = uuid.UUID(video_id) if video_id else uuid.uuid4()
+        except (ValueError, TypeError):
+            v_uuid = uuid.uuid4()
+
+        analisis_id = uuid.uuid4()
+        analisis = AnalisisBiomecanico(
+            id=analisis_id,
+            video_id=v_uuid,
+            desviacion_angular_maxima=max_desviacion,
+            articulacion_afectada=articulacion_critica,
+            estado_computo="completado",
+            errores=errores_detectados
+        )
+
+        # Persistencia Relacional (Mannino)
+        self.analisis_repo.guardar(analisis)
+        return analisis
+
+    def obtener_historial_estudiante(self, estudiante_id: str):
+        """Consulta el historial de progresión longitudinal desde SQLite."""
+        cursor = self.db.get_cursor()
+        cursor.execute('''
+            SELECT a.fecha_procesamiento, a.puntuacion_global, t.nombre as tecnica
+            FROM analisis_biomecanico a
+            JOIN video_ejecucion v ON a.video_id = v.id_video
+            JOIN tecnica_maestra t ON v.tecnica_id = t.id_tecnica
+            WHERE v.estudiante_id = ?
+            ORDER BY a.fecha_procesamiento DESC
+        ''', (estudiante_id,))
+        return [dict(row) for row in cursor.fetchall()]
+
     def ejecutar(self, video_maestro: str, video_alumno: str, tecnica: Optional[str] = None) -> AnalisisBiomecanico:
         """
-        Ejecuta el pipeline completo comparando el video del alumno contra el patrón del maestro.
-        Retorna: AnalisisBiomecanico (Entidad de dominio con identidad y estado consolidado).
+        Ejecución directa en la laptop local (modo Edge).
         """
         session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        print(f"\n{'='*55}")
-        print(f"🥋 INICIANDO ANÁLISIS BIOMECÁNICO - {session_id}")
-        print(f"{'='*55}")
+        if self.pose_extractor is None:
+            from src.infrastructure.adapters.yolo_adapter import YOLOPoseExtractor
+            self.pose_extractor = YOLOPoseExtractor()
 
-        # 1. Extraer keypoints mediante IPoseExtractor
-        print("\n📹 1. Extrayendo keypoints...")
         kpts_maestro, frames_maestro = self.pose_extractor.extraer_keypoints(video_maestro)
         kpts_alumno, frames_alumno = self.pose_extractor.extraer_keypoints(video_alumno)
-        print(f"   Maestro: {len(kpts_maestro)} frames leídos")
-        print(f"   Alumno:  {len(kpts_alumno)} frames leídos")
 
         if len(kpts_maestro) == 0 or len(kpts_alumno) == 0:
             raise ValueError("No se detectaron poses en uno o ambos videos.")
 
-        # 2. Calcular ángulos cinemáticos mediante IAngleCalculator
-        print("\n📐 2. Calculando ángulos articulares...")
         angulos_maestro = [self.angle_calculator.extraer_angulos(k) for k in kpts_maestro]
         angulos_alumno = [self.angle_calculator.extraer_angulos(k) for k in kpts_alumno]
-
-        count_m = sum(1 for a in angulos_maestro if a)
-        count_a = sum(1 for a in angulos_alumno if a)
-        print(f"   Maestro: {count_m}/{len(angulos_maestro)} frames válidos")
-        print(f"   Alumno:  {count_a}/{len(angulos_alumno)} frames válidos")
-
-        # 3. Detectar errores biomecánicos y calcular DTW
-        print("\n🔄 3. Aplicando DTW y calculando discrepancias...")
-        distancias_dtw = {}
-        for art in self._articulaciones:
-            dist, path, sm, sa = self.dtw_comparator.comparar_articulacion(
-                angulos_maestro, angulos_alumno, art
-            )
-            if dist is not None:
-                distancias_dtw[art] = dist
-                print(f"   {art:<12}: DTW = {dist:.2f}")
-
         errores = self._detectar_errores(angulos_maestro, angulos_alumno)
-
-        # 4. Encontrar error máximo global (RF-04)
         mejor_error = self._encontrar_error_maximo(errores)
-        if mejor_error:
-            print(f"\n   🔴 ERROR MÁXIMO GLOBAL: {mejor_error.articulacion.replace('_', ' ').upper()} "
-                  f"con {mejor_error.diferencia:.2f}° en frame {mejor_error.frame}")
 
-        # 5. Anotar fotograma clave con IFrameAnnotator y persistir con IStorageProvider
-        print("\n🖍️ 4. Generando entregable visual anotado...")
         fotograma = None
         if mejor_error and len(frames_alumno) > mejor_error.frame:
             frame = frames_alumno[mejor_error.frame]
             kpts = kpts_alumno[mejor_error.frame]
-
             frame_anotado = self.frame_annotator.anotar_error(
                 frame, kpts, mejor_error.articulacion,
                 mejor_error.diferencia, mejor_error.frame
             )
-
             nombre_img = f"frame_error_{session_id}.jpg"
             url_img = self.storage.guardar_imagen(frame_anotado, nombre_img)
-
             fotograma = FotogramaAnotado(
                 imagen_url=url_img,
                 coordenada_error_x=int(kpts[0][0]) if len(kpts) > 0 else 0,
                 coordenada_error_y=int(kpts[0][1]) if len(kpts) > 0 else 0,
-                explicacion_causa=f"Error crítico en {mejor_error.articulacion}: {mejor_error.diferencia:.1f}°"
+                explicacion_causa=f"Error en {mejor_error.articulacion}: {mejor_error.diferencia:.1f}°"
             )
-            print(f"   ✅ Fotograma anotado guardado en: {url_img}")
 
-        # 6. Generar gráfica de similitud angular temporal
-        print("\n📊 5. Generando curva de evolución temporal de similitud...")
         similitud = self._calcular_similitud(angulos_maestro, angulos_alumno)
         self._generar_grafica(similitud, mejor_error, session_id)
-
-        # 7. Exportar series tabulares a CSV
-        print("\n📄 6. Exportando datos a formato CSV...")
         self._exportar_csv(angulos_alumno, similitud, session_id)
 
-        # 8. Consolidar entidad AnalisisBiomecanico
         analisis = AnalisisBiomecanico(
-            id=uuid4(),
-            video_id=uuid4(),
+            id=uuid.uuid4(),
+            video_id=uuid.uuid4(),
             fecha_procesamiento=datetime.now(),
             desviacion_angular_maxima=mejor_error.diferencia if mejor_error else 0.0,
             articulacion_afectada=mejor_error.articulacion if mejor_error else "",
@@ -146,15 +185,36 @@ class BiomechanicsPipeline:
             fotograma_anotado=fotograma,
             errores=errores
         )
-
-        print(f"\n✅ ANÁLISIS BIOMECÁNICO COMPLETADO EXITOSAMENTE - {session_id}")
         return analisis
 
+    def exportar_payload_colab(self, video_maestro: str, video_alumno: str, ruta_salida: Optional[str] = None) -> str:
+        payload = {
+            "version": "2.0-hybrid",
+            "fecha": datetime.now().isoformat(),
+            "video_maestro": os.path.basename(video_maestro),
+            "video_alumno": os.path.basename(video_alumno),
+            "articulaciones": self._articulaciones,
+            "umbral_error": self._umbral_error
+        }
+        dest = ruta_salida or os.path.join(str(RESULTS_DIR), "colab_payload.json")
+        with open(dest, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+        return dest
+
+    def ejecutar_desde_colab_json(self, colab_json: Union[str, dict]) -> AnalisisBiomecanico:
+        if isinstance(colab_json, str):
+            return self.procesar_resultado_colab(colab_json)
+        temp_dest = os.path.join(str(RESULTS_DIR), "temp_colab_eval.json")
+        with open(temp_dest, 'w', encoding='utf-8') as f:
+            json.dump(colab_json, f)
+        res = self.procesar_resultado_colab(temp_dest)
+        if os.path.exists(temp_dest):
+            os.unlink(temp_dest)
+        return res
+
     def _detectar_errores(self, angulos_maestro: List[dict], angulos_alumno: List[dict]) -> List[ErrorBiomecanico]:
-        """Detecta discrepancias angulares en las articulaciones evaluadas."""
         errores = []
         n_frames = min(len(angulos_maestro), len(angulos_alumno))
-
         for art in self._articulaciones:
             for i in range(n_frames):
                 if art in angulos_maestro[i] and art in angulos_alumno[i]:
@@ -166,21 +226,18 @@ class BiomechanicsPipeline:
                             angulo_maestro=angulos_maestro[i][art],
                             diferencia=diff,
                             frame=i,
-                            mensaje=self._generar_mensaje_error(art, diff)
+                            mensaje=f"Desviación de {diff:.2f}° en {art}"
                         ))
         return errores
 
     def _encontrar_error_maximo(self, errores: List[ErrorBiomecanico]) -> Optional[ErrorBiomecanico]:
-        """Identifica el error con mayor discrepancia angular (Information Expert)."""
         if not errores:
             return None
         return max(errores, key=lambda e: e.diferencia)
 
     def _calcular_similitud(self, angulos_maestro: List[dict], angulos_alumno: List[dict]) -> List[float]:
-        """Calcula el porcentaje de similitud angular por frame."""
         similitud = []
         n_frames = min(len(angulos_maestro), len(angulos_alumno))
-
         for i in range(n_frames):
             errores_frame = []
             for art in self._articulaciones:
@@ -192,36 +249,19 @@ class BiomechanicsPipeline:
                 similitud.append(0.0)
         return similitud
 
-    def _generar_mensaje_error(self, articulacion: str, diff: float) -> str:
-        from ..domain.services import RuleEngine
-        return RuleEngine.generar_diagnostico(articulacion, diff)
-
     def _generar_grafica(self, similitud: List[float], mejor_error: Optional[ErrorBiomecanico], session_id: str):
-        fig, ax = plt.subplots(figsize=(12, 5))
-        ax.plot(similitud, color='#D90429', linewidth=2, label='Similitud Angular (%)')
-        ax.fill_between(range(len(similitud)), 0, similitud, color='#D90429', alpha=0.1)
-
-        if mejor_error and mejor_error.frame < len(similitud):
-            frame = mejor_error.frame
-            ax.axvline(x=frame, color='#2B2D42', linestyle='--', alpha=0.7,
-                       label=f"Pico de Error (Frame {frame})")
-            ax.scatter(frame, similitud[frame], color='#D90429', s=130, zorder=5,
-                       edgecolors='white', linewidth=2)
-
-        ax.set_title('Evolución de Similitud Angular por Frame - Análisis Biomecánico', fontsize=12)
-        ax.set_xlabel('Número de Frame', fontsize=11)
-        ax.set_ylabel('Similitud (%)', fontsize=11)
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.plot(similitud, color='#D90429', linewidth=2, label='Similitud (%)')
+        ax.set_title('Evolución de Similitud Angular')
         ax.set_ylim(0, 105)
         ax.grid(True, linestyle=':', alpha=0.6)
-        ax.legend(loc='lower right')
-
-        nombre_grafica = f"similitud_{session_id}.png"
-        self.storage.guardar_imagen(fig, nombre_grafica)
+        ax.legend()
+        self.storage.guardar_imagen(fig, f"similitud_{session_id}.png")
         plt.close(fig)
 
     def _exportar_csv(self, angulos: List[dict], similitud: List[float], session_id: str):
-        self.storage.guardar_csv(angulos, f"skeleton_angle_similarity_{session_id}.csv")
-        self.storage.guardar_csv(
-            {'frame': range(len(similitud)), 'similitud_angular': similitud},
-            f"skeleton_eachframe_similarity_{session_id}.csv"
-        )
+        self.storage.guardar_csv(angulos, f"angulos_{session_id}.csv")
+
+
+# Alias de compatibilidad canónica
+BiomechanicsPipeline = AnalysisPipeline

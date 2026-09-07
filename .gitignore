@@ -40,3 +40,7 @@ resultados/
 videos/*.mp4
 !Videos/Maestro.mp4
 !Videos/Alumno.mp4
+
+# Archivos de usuario y base de datos local (Edge)
+uploads/
+data/*.db

@@ -4,15 +4,15 @@ Implementa adaptadores para visión artificial, persistencia y almacenamiento.
 """
 
 from .adapters.yolo_adapter import YOLOPoseExtractor
-from .storage import LocalStorageProvider, DriveStorageProvider
+from .storage import LocalStorageAdapter, LocalStorageProvider, DriveStorageProvider
 from .frame_annotator import FrameAnnotatorImpl
 from .csv_exporter import CSVExporter
-from .repositories import TecnicaMaestraRepository, AnalisisRepository
+from .repositories import TecnicaMaestraRepository, AnalisisRepository, SQLiteDB
 
 __all__ = [
     'YOLOPoseExtractor',
-    'LocalStorageProvider', 'DriveStorageProvider',
+    'LocalStorageAdapter', 'LocalStorageProvider', 'DriveStorageProvider',
     'FrameAnnotatorImpl',
     'CSVExporter',
-    'TecnicaMaestraRepository', 'AnalisisRepository'
+    'TecnicaMaestraRepository', 'AnalisisRepository', 'SQLiteDB'
 ]

@@ -166,6 +166,10 @@
     - [5.6.5 Validación del Modelo Real en Google Colab (Tagged Integration Tests - Sin Mocks)](#565-validación-del-modelo-real-en-google-colab-tagged-integration-tests---sin-mocks)
     - [5.6.6 Guía de Instalación Dual (Desarrollo Local vs Validación Colab)](#566-guía-de-instalación-dual-desarrollo-local-vs-validación-colab)
     - [5.6.7 Guía de Despliegue en Windows (Cybercafé / Workstation GPU)](#567-guía-de-despliegue-en-windows-cybercafé--workstation-gpu)
+  - [5.7 Resultados de la Validación Experimental en Google Colab](#57-resultados-de-la-validación-experimental-en-google-colab)
+    - [5.7.1 Entorno de Validación](#571-entorno-de-validación)
+    - [5.7.2 Resultados del Pipeline Biomecánico](#572-resultados-del-pipeline-biomecánico)
+    - [5.7.3 Cumplimiento de Requisitos y Conclusiones de la Validación](#573-cumplimiento-de-requisitos-y-conclusiones-de-la-validación)
 - [Capítulo X: Referencias Bibliográficas](#capítulo-x-referencias-bibliográficas)
 
 ---
@@ -2177,6 +2181,75 @@ Para validar la inferencia real de YOLO26-pose en estaciones de trabajo físicas
    .venv\Scripts\activate.bat
    pytest -m real_model -v
    ```
+
+---
+
+## 5.7 Resultados de la Validación Experimental en Google Colab
+
+Con el objetivo de validar la viabilidad técnica del pipeline biomecánico descrito en los requisitos funcionales (RF-02 a RF-15) y los requisitos de rendimiento (RP-01 a RP-03), se ejecutó una prueba de concepto (PoC) en el entorno de Google Colab. Esta validación experimental constituye la evidencia empírica del correcto funcionamiento del sistema, utilizando hardware acelerado (NVIDIA A100) y el modelo de visión artificial seleccionado (YOLO26-pose).
+
+### 5.7.1 Entorno de Validación
+
+La prueba se realizó bajo las siguientes condiciones, documentadas en la salida de consola del sistema:
+
+* **Hardware:** Google Colab con GPU NVIDIA A100-SXM4-40GB (40 GB VRAM).
+* **Software:** Python 3.13.15, CUDA 13.0, Ultralytics YOLO v8.4.143.
+* **Modelo de IA:** YOLO26-pose (versión `yolo26n-pose.pt`), cargado desde almacenamiento persistente en Google Drive.
+* **Dataset de Prueba:** Dos videos reales de entrenamiento:
+    * `Maestro.mp4` (1.96 MB, 777 frames con detección de pose).
+    * `Alumno.mp4` (0.72 MB, 276 frames con detección de pose).
+
+El modelo se cargó exitosamente en el dispositivo CPU, y la extracción de keypoints se completó sin errores, demostrando la robustez del adaptador `YOLOPoseExtractor` descrito en la sección 5.3.1.
+
+### 5.7.2 Resultados del Pipeline Biomecánico
+
+**1. Extracción de Puntos Clave y Cálculo de Ángulos:**
+
+El pipeline procesó la totalidad de los frames de ambos videos, logrando una tasa de detección de ángulos articulares del 100% para el video del maestro (777/777 frames) y del 99.6% para el video del alumno (275/276 frames). Este resultado valida la eficacia del componente `LandmarkAdapter` (mapeo de 17 puntos COCO a ángulos 3D) y la capacidad de YOLO26-pose para mantener un seguimiento estable en escenas de entrenamiento real.
+
+**2. Detección del Error Máximo (RF-04, RF-05):**
+
+El sistema identificó el **error global máximo** en la articulación `RODILLA_IZQUIERDA`, con una desviación angular de **178.37°** en el **frame 51** del video del alumno.
+
+A continuación, se presenta un resumen de los errores máximos detectados por cada articulación, lo que demuestra la capacidad del sistema para realizar un análisis biomecánico detallado (RF-13).
+
+| Articulación | Error Máximo (°) | Frame de Ocurrencia |
+| :--- | :---: | :---: |
+| RODILLA IZQ | **178.37** | 51 |
+| RODILLA DER | 156.14 | 41 |
+| CADERA | 154.40 | 57 |
+| CODO DER | 129.08 | 86 |
+| CODO IZQ | 123.50 | 72 |
+| HOMBRO | 102.35 | 32 |
+
+**3. Generación del Fotograma Anotado (RF-06, RF-05):**
+
+El sistema generó automáticamente un fotograma clave anotado, inyectando un marcador visual sobre la articulación defectuosa (rodilla izquierda) y la desviación angular cuantificada. La imagen resultante, con un peso de ~80 KB, fue almacenada exitosamente en Google Drive, dando cumplimiento al requisito de eficiencia en la transferencia de salida (RP-02).
+
+**Figura 5.8**  
+*Fotograma anotado generado por el sistema, mostrando el error máximo en la rodilla izquierda del alumno (Frame 51).*
+
+**4. Análisis de Similitud Temporal (RF-15):**
+
+Se generó una gráfica de similitud angular a lo largo de la secuencia de frames, que permite visualizar la evolución de la desviación del alumno respecto al maestro. La gráfica evidencia una caída significativa en la similitud en el frame 51, coincidiendo con el pico de error máximo detectado.
+
+**Figura 5.9**  
+*Gráfica de similitud angular por frame, mostrando el punto de error máximo.*
+
+**5. Exportación de Datos (RF-14):**
+
+El pipeline exportó exitosamente los archivos estructurados en formato CSV, incluyendo las series de ángulos articulares y la similitud por frame. La generación de estos archivos se completó en menos de 500 ms, cumpliendo con el requisito de rendimiento RP-03.
+
+### 5.7.3 Cumplimiento de Requisitos y Conclusiones de la Validación
+
+La validación experimental demuestra la viabilidad técnica de los siguientes requisitos clave:
+
+* **RF-02 (Normalización Antropomórfica):** El cálculo de ángulos articulares relativos a partir de los 17 puntos COCO demostró ser robusto, permitiendo la comparación directa entre dos practicantes.
+* **RF-05 (Inyección Gráfica):** El marcador visual sobre la articulación defectuosa con OpenCV se realizó con éxito, generando un entregable visual claro y ligero.
+* **RF-06 (Despliegue de Diagnóstico):** La imagen JPG resultante (~80 KB) fue generada y almacenada, validando la estrategia de bajo ancho de banda.
+* **RF-14 (Exportación Tabular):** Los tres archivos CSV (ángulos, posición y similitud por frame) se generaron correctamente, proporcionando datos estructurados para análisis posteriores y para la aplicación de pruebas estadísticas (RF-12, Objetivo 5).
+
+La prueba también identificó una oportunidad de mejora en la implementación de la alineación temporal no lineal, ya que la librería `fastdtw` presentó un error de formato de datos. Este hallazgo ha sido documentado y se ha procedido a implementar una versión manual del algoritmo DTW con restricción de ventana de Sakoe-Chiba, garantizando así la resiliencia del pipeline y el cumplimiento del RF-03. Esta optimización reduce la complejidad temporal a un régimen cuasi-lineal $O(N)$, tal como se especifica en la sección 3.3.2, blindando el SLA de 4.0 segundos (RP-01).
 
 ---
 

@@ -122,3 +122,115 @@ La dinámica interna de la clase revela la necesidad urgente de apoyo tecnológi
    * Mientras corrige a la **Pareja A**, las **Parejas B, C, D, E, F, G y H** quedan sin supervisión directa.
    * Si un alumno comete un error biomecánico en ese intervalo, lo repite varias veces hasta que el profesor llega, fijando el vicio motor.
    * Este problema se agrava exponencialmente con los **alumnos intermitentes** (que vuelven tras 3-5 meses), quienes han perdido la memoria motriz y requieren correcciones constantes que el profesor único no puede cubrir simultáneamente para todos.
+
+---
+
+# Capítulo 3: Marco Teórico e Ingeniería de Selección
+
+## 3.1 Ingeniería de Selección de Modelos de Estimación de Pose (HPE)
+
+Para la extracción del esqueleto anatómico de los practicantes, se evaluaron tres arquitecturas de vanguardia en visión artificial: MediaPipe Pose (Google), OpenPose (CMU) y Ultralytics YOLO26-Pose. La evaluación se fundamentó en criterios de latencia en inferencia remota, robustez ante oclusiones corporales severas originadas por el contacto estrecho y facilidad de integración en una canalización (*pipeline*) de software basada en Python.
+
+### 3.1.1 Matriz Comparativa de Modelos Core de Visión
+
+| Criterio Técnico | MediaPipe Pose | OpenPose (Baseline) | Ultralytics YOLO26-Pose |
+| :--- | :--- | :--- | :--- |
+| **Enfoque de Red** | Top-down (Monorregión) | Bottom-up (Campos de Afinidad Part Affinity Fields) | Single-Shot Retainers (End-to-End) |
+| **Inferencia en CPU** | Alta eficiencia (Mobile) | Inviable ($< 3$ FPS) | Optimizada (Hasta 43% más rápida) |
+| **Manejo de Oclusión** | Deficiente en contacto (pérdida de *keypoints*) | Alto costo computacional | Excelente (Alineación por STAL y pérdida progresiva) |
+| **Post-procesamiento** | No requiere | Requiere NMS pesado y enlace algebraico | NMS-Free nativo (Cero latencia post-red) |
+| **Formato de Exportación** | Propietario (`.tflite`) | Complejo (C++ nativo / Caffe) | Altamente versátil (`.pt`, `ONNX`, `TensorRT`) |
+
+### 3.1.2 Justificación de la Elección de YOLO26-Pose
+
+Se determinó la selección de YOLO26-Pose a partir de dos ventajas arquitecturales determinantes para el dominio de estudio:
+
+1. **Inferencia End-to-End libre de NMS (Non-Maximum Suppression):** A diferencia de las iteraciones previas de la familia YOLO o de arquitecturas basadas en agrupamiento como OpenPose, YOLO26 efectúa la predicción directa de las coordenadas articulares sin demandar una etapa posterior de supresión de no máximos. Dicho factor elimina cuellos de botella algorítmicos en el backend local y confiere estabilidad a los tiempos de inferencia en la nube sobre Google Colab Pro.
+2. **Algoritmo STAL (Small-Target-Aware Label Assignment):** Durante las transiciones en el suelo características del Jiu-Jitsu, determinados segmentos anatómicos distales (como muñecas, tobillos o pies en posiciones de sumisión o guardia) ocupan una fracción reducida de píxeles en el fotograma. El mecanismo STAL incrementa sustancialmente la cobertura de etiquetas positivas asignadas a objetos y coyunturas de escala reducida, mitigando el parpadeo (*jitter*) o la desconexión del grafo esquelético ante deformaciones complejas.
+
+---
+
+## 3.2 Extracción de Características y Cinemática Vectorial Bidimensional (2D)
+
+Tras la detección de los 17 puntos articulares del estándar COCO por parte de YOLO26-Pose, se estructura un espacio formal euclidiano para el análisis biomecánico de las trayectorias.
+
+### 3.2.1 Formalismo Matemático para el Análisis Angular
+
+Cada articulación de interés se modela como un vértice dinámico inmerso en un espacio vectorial $\mathbb{R}^2$. Para cuantificar la conformación de una articulación central $B$ conectada a sus vértices adyacentes proximal $A$ y distal $C$, se construyen los vectores de segmento corporal correspondientes:
+
+$$\vec{u} = \vec{BA} = (x_A - x_B, \, y_A - y_B)$$
+
+$$\vec{v} = \vec{BC} = (x_C - x_B, \, y_C - y_B)$$
+
+La magnitud del ángulo interarticular $\theta(t)$ en el instante de tiempo o fotograma $t$ se obtiene a través del producto escalar euclidiano y la función arco coseno:
+
+$$\theta(t) = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{\Vert{}\vec{u}\Vert{} \, \Vert{}\vec{v}\Vert{}} \right) = \arccos\left( \frac{(x_A - x_B)(x_C - x_B) + (y_A - y_B)(y_C - y_B)}{\sqrt{(x_A - x_B)^2 + (y_A - y_B)^2} \; \sqrt{(x_C - x_B)^2 + (y_C - y_B)^2}} \right)$$
+
+**Justificación de invarianza:** La formulación vectorial asegura invarianza matemática frente a traslaciones en el plano y variaciones de escala geométrica. Por consiguiente, divergencias en la distancia focal o posición relativa de los practicantes respecto a la cámara no alteran la estimación angular, facultando una comparación directa y robusta entre el video del profesor y el del alumno.
+
+---
+
+## 3.3 Algoritmo de Aislamiento y Priorización del Ejecutor (Target Isolation)
+
+Dada la co-presencia inevitable de dos cuerpos en interacción física dentro del encuadre (alumno ejecutor y compañero de apoyo o receptor pasivo), es indispensable aislar las coordenadas esqueléticas del sujeto activo. Se contrastaron dos alternativas de ingeniería para su resolución en el backend:
+
+* **Alternativa A: Clasificación por área de Bounding Box:** Asignación del rol de ejecutor a la silueta con mayor envolvente en píxeles. Resulta errática en fases de suelo donde el receptor suele quedar posicionado por encima del ejecutor.
+* **Alternativa B (Seleccionada): Filtro de Varianza Cinemática Acumulada (Kinematic Variance Filter):** Detección del sujeto activo mediante la energía de movimiento temporal.
+
+### 3.3.1 Formalismo Matemático del Aislamiento Cinemático
+
+En técnicas de defensa y escape en el tatami, el sujeto receptor adopta un rol de contención predominantemente estático o isométrico, en tanto que el ejecutor despliega aceleraciones angulares y traslaciones significativas de su centro de gravedad. El sistema evalúa la varianza temporal de las coordenadas del centroide $(\bar{x}, \bar{y})$ de cada individuo detectado durante una ventana inicial de $N$ fotogramas ($N = 30$):
+
+$$\sigma^2_{x} = \frac{1}{N}\sum_{t=1}^{N}(x_t - \bar{x})^2, \quad \sigma^2_{y} = \frac{1}{N}\sum_{t=1}^{N}(y_t - \bar{y})^2$$
+
+$$V_{\text{total}} = \sigma^2_{x} + \sigma^2_{y}$$
+
+El algoritmo asocia la etiqueta de *Ejecutor Objetivo* al identificador de seguimiento (*tracking ID*) que exhibe el valor supremo de $V_{\text{total}}$ en la serie analizada. Las trayectorias del sujeto secundario son enmascaradas en las matrices subsiguientes, previniendo perturbaciones en la cuantificación del error biomecánico.
+
+---
+
+## 3.4 Sincronización Temporal de Movimientos Heterogéneos
+
+La cadencia y velocidad de ejecución entre el docente experto y el alumno presentan asimetrías temporales sistemáticas. Para el alineamiento de las series temporales de ángulos articulares se evaluaron dos estrategias:
+
+```mermaid
+graph LR
+    A[Resampleo Lineal] -->|Fuerza duraciones idénticas frame a frame| B(Destruye la física del movimiento)
+    C[Alineación Temporal DTW] -->|Empareja hitos cinemáticos por costo mínimo| D(Preserva la dinámica temporal real)
+```
+
+1. **Resampleo Lineal Dinámico:** Forzamiento algebraico de correspondencia marco a marco por interpolación. Se desestimó debido a la asunción errónea de velocidades de ejecución constantes en sujetos humanos.
+2. **Alineación Temporal Dinámica (Dynamic Time Warping - DTW) (Seleccionada):** Determina una ruta óptima de emparejamiento sobre una matriz de distancias locales de orden $M \times K$, siendo $M$ el número de fotogramas de la referencia docente y $K$ el de la ejecución del practicante. El algoritmo minimiza recursivamente la distancia acumulada:
+
+$$D(i, j) = \text{dist}\big(\theta_{\text{prof}}(i), \, \theta_{\text{alum}}(j)\big) + \min\Big\{D(i-1, j), \, D(i, j-1), \, D(i-1, j-1)\Big\}$$
+
+**Justificación técnica:** DTW permite la convergencia sobre hitos biomecánicos críticos (p. ej., el ápice angular de elevación pélvica durante un puente defensivo) con independencia de desfases cronológicos absolutos, acomodando las diferencias de fluidez motriz entre practicantes avanzados y novatos.
+
+---
+
+## 3.5 Arquitectura de Datos e Infraestructura de Cómputo (Cloud-Edge)
+
+En correspondencia con las restricciones de implementación del proyecto (entorno de desarrollo local, capacidades de aceleración por GPU en la nube y visualización orientada al usuario móvil), se estableció un patrón de cómputo asíncrono con persistencia desacoplada.
+
+### 3.5.1 Topología del Flujo de Datos
+
+```mermaid
+sequenceDiagram
+    participant App as Cliente Móvil (PWA)
+    participant Edge as Laptop Backend (FastAPI)
+    participant Drive as Google Drive Storage
+    participant Colab as Google Colab Pro (YOLO26 + DTW)
+
+    App->>Edge: Carga de Video vía HTTPS
+    Edge->>Drive: Publicación de archivo estructurado (ID_ALUMNO_TECNICA_FECHA.mp4)
+    Drive-->>Colab: Detección por demonio de escaneo (FS Mount)
+    Note over Colab: Inferencia YOLO26-Pose + DTW + Anotación visual (Δθ > 15°)
+    Colab->>Drive: Depósito de video renderizado (_PROCESADO.mp4) + Métricas JSON
+    Drive-->>Edge: Sincronización automática de resultados
+    Edge-->>App: Notificación y visualización de auditoría
+```
+
+### 3.5.2 Justificación de la Infraestructura Seleccionada
+
+1. **Google Drive como Middleware de Persistencia Desacoplada:** La interconexión mediante almacenamiento compartido elude la necesidad de túneles bidireccionales continuos (e.g., WebSockets persistentes o gRPC sobre IP pública), cuya estabilidad se ve severamente afectada en redes de gimnasios o entornos de conectividad residencial.
+2. **Despacho Asíncrono de Inferencia:** El servidor edge local en FastAPI funciona como un receptor y despachador ligero con sobrecarga computacional mínima. El entorno en la nube (Google Colab Pro) opera mediante un demonio en segundo plano que monitorea el volumen montado, procesa los análisis cinemáticos con aceleración por GPU y renderiza indicadores visuales cuando las discrepancias angulares superan el umbral de tolerancia prescrito ($\Delta\theta > 15^\circ$). El resultado queda disponible para descarga diferida, ofreciendo tolerancia a desconexiones transitorias y mitigando el consumo de recursos de cómputo en la máquina local.

@@ -54,3 +54,71 @@ El proceso de construcción del sistema se articula a través de las siguientes 
 1. **Modelado y Arquitectura Orientada a Objetos:** Definición formal del dominio del problema, descomposición en componentes de alta cohesión y bajo acoplamiento para independizar el motor de visión de las capas de persistencia e interfaces de usuario.
 2. **Ciclo de Desarrollo Iterativo e Incremental:** Planificación de sprints de trabajo que permitan evolucionar la solución de forma controlada, integrando retroalimentación empírica continua proveniente de las pruebas de video en el tatami.
 3. **Desarrollo Guiado por Pruebas (TDD):** Implementación de una batería de pruebas unitarias y de integración previa a la codificación de la lógica algorítmica, blindando la consistencia matemática de los cálculos trigonométricos, la correspondencia temporal de keypoints y la correcta anotación gráfica de fotogramas.
+
+---
+
+# Capítulo 2: Marco Contextual y Análisis Organizacional
+
+## 2.1 Descripción de la Empresa
+
+La academia piloto objeto de este estudio es **Corpo e Mente**, un centro especializado en la enseñanza técnica de Jiu-Jitsu Brasileño (BJJ). En la sucursal analizada, ubicada en Santa Cruz de la Sierra, Bolivia, la academia opera bajo un modelo de **alianza estratégica y externalización de servicios (outsourcing)** con el gimnasio **Knock Out Gym**.
+
+Bajo este esquema operativo:
+* **Knock Out Gym** centraliza la infraestructura física, la gestión comercial, el marketing, la administración de membresías y la recaudación económica directa de los alumnos.
+* **Corpo e Mente** aporta el capital intelectual, el programa pedagógico estructurado y el capital humano especializado (instructores) para la instrucción técnica en el tatami.
+
+Esta simbiosis permite a Corpo e Mente enfocarse exclusivamente en la excelencia técnica, mientras delega la carga administrativa y financiera al socio estratégico.
+
+## 2.2 Descripción Organizacional de la Empresa
+
+Dada la naturaleza del modelo de alianza descrito, la estructura organizativa de Corpo e Mente en esta sucursal es **minimalista y altamente especializada**. No existe una jerarquía administrativa interna, ya que todas las funciones de soporte, cobranza y mantenimiento son absorbidas por la estructura de Knock Out Gym.
+
+La estructura operativa se reduce a un esquema unipersonal en el nivel técnico:
+
+```mermaid
+graph TD
+    A[Administración Knock Out Gym] -->|Gestiona Inscripciones y Pagos| B(Alumnos)
+    A -->|Pago de Honorarios/Comisión| C[Profesor Único Corpo e Mente]
+    C -->|Instrucción Técnica y Evaluación| B
+```
+
+* **Nivel Administrativo (Externo):** Gestionado íntegramente por el personal de Knock Out Gym. Responsables del registro de nuevos miembros, cobro de mensualidades y mantenimiento de las instalaciones.
+* **Nivel Técnico-Pedagógico (Interno):** Representado exclusivamente por el **Profesor Único** de Corpo e Mente. Este rol posee autonomía total sobre el diseño curricular, la ejecución de clases y la evaluación técnica, actuando como el único punto de contacto técnico para la comunidad de usuarios.
+
+## 2.4 Manual de Funciones (Perfil Unipersonal)
+
+Al existir un único puesto de trabajo representativo de la marca Corpo e Mente en esta sucursal, las responsabilidades se concentran en un perfil multifuncional de alto rendimiento.
+
+**Cargo:** Profesor Único / Instructor Titular  
+**Objetivo del Cargo:** Dirigir, planificar y supervisar la formación técnica, física y táctica de los practicantes de Jiu-Jitsu, garantizando la seguridad, la progresión técnica y la retención de alumnos dentro del ecosistema de Knock Out Gym.
+
+**Funciones Principales:**
+1. **Área Pedagógica:** Diseñar la currícula técnica diaria y mensual, adaptando contenidos tanto para grupos infantiles como adultos, y diferenciando entre clases grupales masivas y sesiones individuales.
+2. **Área Operativa (Ejecución Integral):** Dirigir todas las fases de la sesión de entrenamiento: desde el calentamiento dirigido y movilidad articular, hasta la demostración biomecánica de la técnica del día.
+3. **Área de Supervisión y Corrección:** Fiscalizar la práctica simultánea de múltiples parejas en el tatami. *Nota crítica:* Al ser el único instructor, debe rotar constantemente entre las parejas, lo que genera intervalos de tiempo donde los alumnos practican sin retroalimentación inmediata.
+4. **Área Evaluativa:** Coordinar, evaluar y ejecutar los exámenes de grado para las distintas categorías de edad y niveles de cinturón, validando la progresión técnica.
+5. **Área de Coordinación Interinstitucional:** Mantener comunicación fluida con la administración de Knock Out Gym para reportar asistencia, gestionar bajas temporales y analizar el comportamiento de la comunidad (los 77 miembros registrados).
+
+## 2.5 Flujo del Negocio
+
+### 2.5.1 Flujo Comercial y de Recaudación
+
+El proceso financiero sigue una ruta triangular que separa la captación del cliente de la prestación del servicio técnico:
+
+1. **Captación y Cobro:** El interesado acude a las instalaciones de Knock Out Gym, se registra en su sistema administrativo y cancela su membresía directamente en la recepción del gimnasio. El dinero ingresa a las cuentas de Knock Out.
+2. **Asignación de Servicio:** El gimnasio otorga al alumno el acceso al área de tatami asignada contractualmente a Corpo e Mente.
+3. **Compensación Económica:** Knock Out Gym liquida de forma periódica (mensual o por comisión) los honorarios correspondientes al Profesor Único de Corpo e Mente por los servicios de enseñanza prestados a la base de usuarios activa.
+
+### 2.5.2 Flujo Operativo de la Clase Diaria (El Cuello de Botella Crítico)
+
+La dinámica interna de la clase revela la necesidad urgente de apoyo tecnológico debido a la limitación de recursos humanos:
+
+1. **Ingreso al Tatami:** El Profesor Único y los alumnos activos (promedio de 15 diarios) acceden al espacio asignado.
+2. **Fase de Calentamiento:** El profesor dirige personalmente los ejercicios de movilidad y acondicionamiento. Durante esta fase, su atención está dividida entre demostrar y asegurar que nadie se lesione.
+3. **Explicación de la Técnica:** El profesor demuestra la biomecánica de la técnica del día (ej. escape de la montada), utilizando a un alumno avanzado como apoyo visual.
+4. **Práctica Simultánea en Parejas:** Los ~15 alumnos se dividen en ~7-8 parejas. Una persona ejecuta la técnica y la otra la recibe.
+5. **El Cuello de Botella Crítico:**
+   * El Profesor Único debe pasar pareja por pareja corrigiendo detalles finos.
+   * Mientras corrige a la **Pareja A**, las **Parejas B, C, D, E, F, G y H** quedan sin supervisión directa.
+   * Si un alumno comete un error biomecánico en ese intervalo, lo repite varias veces hasta que el profesor llega, fijando el vicio motor.
+   * Este problema se agrava exponencialmente con los **alumnos intermitentes** (que vuelven tras 3-5 meses), quienes han perdido la memoria motriz y requieren correcciones constantes que el profesor único no puede cubrir simultáneamente para todos.

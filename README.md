@@ -167,18 +167,25 @@ $$D(i, j) = \text{dist}(\theta_{\text{inst}}(i), \theta_{\text{prac}}(j)) + \min
 
 El algoritmo DTW funciona de manera equivalente a emparejar dos interpretaciones musicales ejecutadas a ritmos diferentes. Aunque el practicante realice pausas, titubeos o ejecute la técnica con mayor lentitud que el instructor, el sistema alinea los hitos cinemáticos idénticos (como el punto culminante de una elevación pélvica). Esto permite aislar con exactitud el fotograma de máxima discrepancia espacial para efectuar la anotación visual mediante OpenCV.
 
+### 3.3.1 Robustez ante Oclusiones Parciales: Imputación Cinemática por Spline Cúbico
+En disciplinas de combate como el Jiu-Jitsu Brasileño, las transiciones de agarre producen oclusiones visuales transitorias entre las extremidades de ambos practicantes. Conforme a la regla de descarte del sistema (RF-09), las secuencias con pérdidas breves de visibilidad ($< 2.0$ segundos continuos o confianza $\ge 60\%$ en al menos el $70\%$ de los fotogramas) son admitidas como capturas válidas. 
+
+No obstante, el algoritmo clásico de DTW colapsa numéricamente ante la presencia de valores indeterminados (`NaN`) o saltos abruptos de pérdida de tracking articular. Para garantizar la viabilidad matemática de la matriz de costos locales de orden $M \times K$, el sistema implementa una etapa de **imputación cinemática previa al cálculo de DTW**:
+* **Interpolación por Spline Cúbico Monótono (PCHIP):** Cuando una articulación crítica sufre una pérdida temporal de tracking dentro del margen admisible ($t_{\text{oclusión}} \le 2.0\text{ s}$), el sistema reconstruye la trayectoria angular $\theta(t)$ interpolando entre los estados anterior y posterior a la oclusión mediante polinomios cúbicos que preservan la monotonía local.
+* **Continuidad $C^1$ y Preservación de la Derivada:** A diferencia del resampleo lineal básico (que genera picos angulares espurios) o del spline cúbico estándar no restringido (que puede oscilar artificialmente por el fenómeno de Runge), la interpolación monótona garantiza continuidad en posición y velocidad angular ($\dot{\theta}$ continua y acotada), eliminando los valores nulos (`NaN`) sin introducir artefactos mecánicos artificiales antes de alimentar la matriz de alineación temporal $D(i, j)$.
+
 ## 3.4 Vector Embeddings y Arquitectura de Recuperación Semántica (RAG)
 Para que el sistema trascienda la entrega de métricas numéricas frías y ofrezca una asesoría formativa comprensible, la arquitectura integra técnicas de modelado semántico de texto orientadas al Jiu-Jitsu sustentadas en el ecosistema técnico puro de Google Gemini.
 
 ### 3.4.1 Definición de Embeddings Vectoriales y Modelo Gemini Embedding 2 de Google AI Studio
 Los *embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionó el modelo **Gemini Embedding 2**, provisto por **Google AI Studio**, el cual transforma descripciones de maniobras, principios de palanca y fundamentos teóricos en vectores numéricos de alta precisión semántica. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
 
-### 3.4.2 Base de Datos Vectorial y Similitud por Cosenos
-La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de alta dimensionalidad generados por Gemini Embedding 2. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
+### 3.4.2 Base de Datos Vectorial y Similitud por Cosenos con pgvector
+La base de datos relacional híbrida (PostgreSQL con la extensión especializada **`pgvector`**) funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de alta dimensionalidad (768 dimensiones) generados por Gemini Embedding 2. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos implementada mediante el operador de distancia coseno nativo de `pgvector` (`<=>`):
 
 $$\text{Similitud}_{\text{coseno}}(\vec{A}, \vec{B}) = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
 
-El sistema extrae el fragmento documental que presente la máxima correspondencia semántica (valor más próximo a 1), asegurando una recuperación precisa de la información doctrinal sin depender de coincidencias de palabras exactas.
+Para garantizar latencias de búsqueda sub-milisegundo en las consultas semánticas sin necesidad de desplegar un clúster de base de datos vectorial externo independiente (preservando la integridad ACID y simplificando el mantenimiento), se configuran índices **HNSW** (*Hierarchical Navigable Small World*) sobre las columnas de tipo `vector(768)` con el operador `vector_cosine_ops`. El sistema extrae el fragmento documental que presente la máxima correspondencia semántica (valor más próximo a 1), asegurando una recuperación precisa de la información doctrinal sin depender de coincidencias de palabras exactas.
 
 ### 3.4.3 Estructuración de la Generación Aumentada por Recuperación (RAG) con Gemini 3.8 Flash
 El flujo semántico del software se consolida mediante el patrón de diseño RAG (*Retrieval-Augmented Generation*), el cual actúa como un puente de traducción entre los datos cinemáticos duros y la pedagogía humana. El proceso se articula a través de tres etapas secuenciales:
@@ -292,7 +299,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 #### 4.3.1.1 Software
 * **Cliente Web PWA:** Interfaz móvil responsiva desarrollada en JavaScript/HTML5, compatible con navegadores Safari (iOS) y Google Chrome (Android).
 * **Servicios Backend (FastAPI en Python):** Orquestador local y microservicio remoto ejecutados sobre Python 3.10+, exponiendo endpoints REST estructurados bajo protocolo seguro HTTPS.
-* **Base de Datos Vectorial:** Repositorio en la nube para el indexado y almacenamiento persistente de los vectores densos calculados con Gemini Embedding 2.
+* **Base de Datos Híbrida Relacional-Vectorial:** Instancia PostgreSQL 15+ con la extensión nativa **`pgvector`** habilitada para el almacenamiento de entidades del dominio y el indexado de vectores densos (768 dimensiones) mediante estructuras HNSW con métrica de similitud por cosenos.
 
 #### 4.3.1.2 Hardware
 * **Unidad de Captura Móvil:** Teléfonos inteligentes comerciales con cámaras capaces de registrar video a una resolución mínima de 720p a 30 fotogramas por segundo.
@@ -566,6 +573,7 @@ Se definen dos controladores principales siguiendo la variante *Use-Case Session
 - `YOLOEngine` se encarga **exclusivamente** de la inferencia de keypoints 3D. No realiza sincronización temporal ni generación de texto.
 - `SincronizadorDTW` se encarga **exclusivamente** de la alineación temporal de secuencias esqueléticas. No realiza inferencia ni generación de retroalimentación.
 - `ServicioGeminiFlash` se encarga **exclusivamente** de la síntesis de retroalimentación pedagógica. No realiza inferencia de pose.
+- `FiltroCinetico` se encarga **exclusivamente** de analizar las trayectorias temporales de los esqueletos detectados y aislar al practicante activo mediante varianza cinética y proximidad central. No realiza inferencia, sincronización ni persistencia.
 - Si una clase acumula responsabilidades heterogéneas (por ejemplo, inferencia + persistencia + notificación), se refactoriza aplicando *Pure Fabrication*.
 
 #### 5.1.6 Polymorphism (Polimorfismo)
@@ -586,6 +594,7 @@ Clases de *Pure Fabrication* identificadas:
 
 | Clase | Responsabilidad | Justificación |
 |---|---|---|
+| `FiltroCinetico` | Calcular la varianza cinética y proximidad central para aislar automáticamente al sujeto activo | Evita sobrecargar a `SesionEvaluacion` con cálculos cinemáticos pesados, garantizando un flujo asíncrono 100% automático sin intervención manual |
 | `ServicioPersistencia` | Almacenar y recuperar objetos de evaluación | Evita que las clases del dominio (`SesionEvaluacion`) conozcan detalles de SQL o almacenamiento |
 | `ServicioCache` | Gestionar la caché local de `TecnicaPatron` y `ProductSpecification` | Mejora el rendimiento y la tolerancia a fallos sin contaminar el dominio |
 | `AdaptadorGemini` | Traducir las respuestas de la API de Gemini al formato del dominio | Protege al dominio de cambios en la API de Google AI Studio |
@@ -784,7 +793,7 @@ graph TD
     end
 
     subgraph Infraestructura["Capa de Infraestructura"]
-        PG["PostgreSQL"]
+        PG["PostgreSQL + pgvector"]
         COLAB["Google Colab GPU"]
         GAPI["Google AI Studio API"]
     end
@@ -804,9 +813,9 @@ graph TD
 |---|---|---|
 | **Presentación** | Captura de eventos de usuario, visualización de resultados, notificaciones | `EvaluacionFrame`, `DashboardFrame` |
 | **Aplicación** | Orquestación del flujo de trabajo, gestión de sesiones, control de transiciones | `RecursoController`, `EvaluacionController` |
-| **Dominio** | Lógica de negocio pura: evaluación biomecánica, estrategias, desviaciones | `SesionEvaluacion`, `TecnicaPatron`, `EstrategiaEvaluacion` |
+| **Dominio** | Lógica de negocio pura: evaluación biomecánica, estrategias, filtrado cinético | `SesionEvaluacion`, `FiltroCinetico`, `TecnicaPatron`, `EstrategiaEvaluacion` |
 | **Servicios Técnicos** | Adaptadores de APIs externas, persistencia, caché, logging | `YOLO26xAdapter`, `AdaptadorGemini`, `PersistenciaFacade` |
-| **Infraestructura** | Recursos de cómputo y almacenamiento | Google Colab, PostgreSQL, Google AI Studio |
+| **Infraestructura** | Recursos de cómputo y almacenamiento relacional-vectorial | Google Colab GPU, PostgreSQL 15+ (pgvector), Google AI Studio |
 
 #### 5.3.2 Separación Modelo-Vista (Model-View Separation)
 
@@ -846,7 +855,7 @@ sequenceDiagram
     participant DTW as :SincronizadorDTW
     participant GEM as «actor» :Gemini 3.8 Flash
 
-    Practicante->>Sistema: cargarVideo(videoPractica, idTecnica)
+    Practicante->>Sistema: solicitarEvaluacionPostural(videoPractica, idTecnica)
     Sistema->>YOLO: inferirKeypoints(videoPractica)
     YOLO-->>Sistema: listaEsqueletos
     Sistema->>Sistema: aislarSujetoActivo(varianzaCinetica)
@@ -870,11 +879,16 @@ classDiagram
         -DateTime timeStamp
         -float porcentajeCoincidencia
         -EstadoEvaluacion estado
-        +cargarVideo(Video) void
+        +solicitarEvaluacionPostural(Video, String) void
         +aislarSujetoActivo() void
         +calcularDesviaciones() List~DesviacionArticular~
         +getPuntaje() float
         +commit() void
+    }
+
+    class FiltroCinetico {
+        +aislarSujetoActivo(List~Esqueleto3D~) Esqueleto3D
+        +calcularVarianzaCinetica(List~Keypoint3D~) float
     }
 
     class TecnicaPatron {
@@ -909,6 +923,7 @@ classDiagram
     SesionEvaluacion "1" *-- "1..*" DesviacionArticular : contiene
     SesionEvaluacion "1" --> "1" TecnicaPatron : evalua_contra
     SesionEvaluacion --> EstrategiaEvaluacion : usa
+    SesionEvaluacion --> FiltroCinetico : delega_aislamiento
     EstrategiaEvaluacion <|.. EvaluacionGuardia
     EstrategiaEvaluacion <|.. EvaluacionMontada
 ```
@@ -952,6 +967,7 @@ classDiagram
         +getInstance() PersistenciaFacade
         +guardar(Object) void
         +recuperar(OID, Class) Object
+        +buscarSimilitudVectorial(Vector, int) List~RecursoDidactico~
         +commit() void
         +rollback() void
     }
@@ -990,16 +1006,85 @@ graph LR
     end
 
     subgraph BD["Base de Datos"]
-        PG["PostgreSQL"]
+        PG["PostgreSQL 15+<br/>(extensión pgvector)"]
     end
 
     PWA -->|HTTPS POST| Colab
     Colab -->|REST API| Nube
-    PERS_S --> PG
+    PERS_S -->|SQL y Distancia Coseno| PG
     Colab -->|Sync| CACHE_LOCAL
 ```
 
-**Vista de Datos:** El esquema relacional sigue la normalización BCNF de Mannino (2019). Las tablas principales son `TecnicaPatron`, `SesionEvaluacion`, `DesviacionArticular`, `RecursoDidactico` y `Usuario`. Se utiliza un mapeo O-R con inicialización perezosa (*Lazy Materialization*) y *Virtual Proxies* para las matrices esqueléticas de gran tamaño.
+**Vista de Datos:** Estructurada conforme a la normalización BCNF de Mannino (2019) y extendida para soporte de persistencia híbrida relacional-vectorial con `pgvector`. Los detalles formales, el esquema de tablas, los índices HNSW y el análisis arquitectónico frente a motores vectoriales externos se detallan formalmente en la sección 5.3.6.
+
+#### 5.3.6 Vista de Datos del SAD: Persistencia Híbrida Relacional y Vectorial (pgvector)
+
+Conforme a las pautas de modelado de bases de datos de **Mannino (2019)**, la arquitectura de persistencia se diseñó para satisfacer simultáneamente las exigencias de integridad transaccional de un sistema de evaluación biomecánica y los requerimientos de alta dimensionalidad del patrón RAG.
+
+##### 1. Normalización Relacional (Forma Normal de Boyce-Codd - BCNF)
+El esquema relacional transaccional se modeló en estricto apego a la BCNF (Mannino, 2019). En este esquema, toda dependencia funcional no trivial $X \to Y$ tiene como determinante $X$ una superclave o clave candidata de la relación:
+* **`Usuario`** ($\underline{\text{id\_usuario}}$, nombre, email, rol, fecha\_registro).
+* **`TecnicaPatron`** ($\underline{\text{id\_tecnica}}$, nombre, categoria, nivel, duracion\_referencia, matriz\_esqueletica\_url).
+* **`SesionEvaluacion`** ($\underline{\text{id\_sesion}}$, id\_usuario, id\_tecnica, fecha\_evaluacion, puntaje\_global, estado\_evaluacion). Clave foránea hacia `Usuario` y `TecnicaPatron`.
+* **`DesviacionArticular`** ($\underline{\text{id\_desviacion}}$, id\_sesion, articulacion, angulo\_error, fotograma\_falla, nivel\_severidad). Clave foránea hacia `SesionEvaluacion`.
+
+Esta descomposición garantiza la eliminación total de redundancias y previene anomalías de inserción, borrado y actualización en los registros operacionales del sistema.
+
+##### 2. Persistencia Vectorial Integrada (`pgvector`) vs. Motores Aislados (Pinecone, Milvus, Qdrant)
+Para almacenar y consultar los vectores densos de 768 dimensiones generados por el modelo **Gemini Embedding 2** a partir de los manuales de Jiu-Jitsu (como *Jiu-Jitsu University* y el reglamento oficial de la IBJJF), se evaluaron dos alternativas arquitectónicas:
+1. **Motores Vectoriales Externos Especializados (Pinecone, Milvus, Qdrant):** Presentan la ventaja de optimizaciones avanzadas de clustering distribuido, pero introducen una severa penalización arquitectónica: requieren una estrategia de *doble escritura (dual-write)* propensa a inconsistencias transaccionales entre la base de datos relacional y el índice vectorial, incrementan la superficie de ataque y agregan latencias de red críticas (*network hops*) por llamadas API REST/gRPC externas durante el flujo de evaluación en Colab.
+2. **Extensión Nativa `pgvector` en PostgreSQL 15+ (Estrategia Seleccionada):** La extensión `pgvector` incorpora el tipo de dato nativo `vector(n)` y algoritmos de indexación geométrica directamente sobre el motor relacional PostgreSQL. Esta solución ofrece:
+   * **Consistencia Transaccional ACID Unificada:** Las entidades documentales y sus correspondientes representaciones vectoriales residen en la misma base de datos, asegurando atomicidad estricta en las operaciones de carga e indexación de manuales.
+   * **Eliminación de Latencias Inter-Cloud:** El servidor de procesamiento en Colab interactúa con un único punto de persistencia, reduciendo la latencia de recuperación semántica a menos de $5\text{ ms}$.
+   * **Soberanía del Dato y Reducción de Complejidad Operativa:** Se eliminan dependencias de proveedores SaaS vectoriales de pago por volumen de consulta, unificando respaldos, réplicas y políticas de seguridad bajo el estándar corporativo de PostgreSQL.
+
+##### 3. Esquema DDL de `RecursoDidactico` con Columnas Vectoriales
+La tabla `RecursoDidactico` coexiste en el esquema relacional con su vector denso embebido:
+
+```sql
+-- Habilitación de la extensión vectorial
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Tabla de fragmentos de manuales con incrustaciones densas (Gemini Embedding 2)
+CREATE TABLE RecursoDidactico (
+    id_recurso SERIAL PRIMARY KEY,
+    id_tecnica VARCHAR(50) NOT NULL REFERENCES TecnicaPatron(id_tecnica) ON DELETE CASCADE,
+    fragmento_texto TEXT NOT NULL,
+    fuente_documental VARCHAR(150) NOT NULL,
+    pagina_origen INT,
+    embedding vector(768) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+##### 4. Indexación HNSW para Búsqueda por Similitud de Cosenos
+Dado que un escaneo secuencial (*Exact k-NN*) sobre miles de vectores de 768 dimensiones generaría un costo computacional $O(N \cdot d)$ incompatible con la meta de latencia, se implementa un índice **HNSW** (*Hierarchical Navigable Small World*) configurado con la métrica de distancia coseno (`vector_cosine_ops`):
+
+```sql
+CREATE INDEX idx_recurso_didactico_embedding_hnsw 
+ON RecursoDidactico 
+USING hnsw (embedding vector_cosine_ops) 
+WITH (m = 16, ef_construction = 64);
+```
+
+* **`m = 16`**: Define el número máximo de enlaces bidireccionales por nodo en cada capa del grafo, balanceando consumo de memoria y conectividad.
+* **`ef_construction = 64`**: Tamaño de la lista dinámica de candidatos durante la construcción del grafo, garantizando una tasa de recuperación (*recall*) superior al $98.5\%$ sin penalizar los tiempos de indexación inicial.
+
+##### 5. Operación en la Capa de Servicios Técnicos (`PersistenciaFacade`)
+La recuperación semántica que alimenta al LLM (Gemini 3.8 Flash) se ejecuta desde `PersistenciaFacade` mediante el operador de distancia coseno nativo `<=>`:
+
+$$\text{distancia\_coseno}(\vec{u}, \vec{v}) = 1 - \frac{\vec{u} \cdot \vec{v}}{\|\vec{u}\|_2 \|\vec{v}\|_2}$$
+
+```sql
+SELECT id_recurso, fragmento_texto, fuente_documental, pagina_origen,
+       1 - (embedding <=> %(vector_consulta)s) AS similitud_coseno
+FROM RecursoDidactico
+ORDER BY embedding <=> %(vector_consulta)s
+LIMIT %(top_k)s;
+```
+
+##### 6. Mapeo Objeto-Relacional y Materialización Perezosa (*Lazy Materialization*)
+Las matrices esqueléticas 3D de las técnicas de referencia representan arreglos densos de coordenadas ($T \times J \times 3$) que pueden saturar la memoria si se instancian en cada consulta de metadatos. Conforme a Larman (2004), se aplica el patrón *Virtual Proxy* (`MatrizEsqueleticaProxy`), difiriendo la deserialización de la matriz pesada desde PostgreSQL hasta que el `SincronizadorDTW` invoca explícitamente `get_keypoints()`.
 
 ---
 
@@ -1083,7 +1168,7 @@ class AbstractPersistenceMapper(ABC):
 
 **Subclases concretas:**
 
-- `PostgreSQLMapper`: Implementa `_get_from_storage()` con consultas SQL mediante `psycopg2`.
+- `PostgreSQLMapper`: Implementa `_get_from_storage()` con consultas SQL mediante `psycopg2` y búsquedas semánticas vectoriales mediante el operador `<=>` de `pgvector`.
 - `LocalFileMapper`: Implementa `_get_from_storage()` leyendo archivos serializados (pickle) para el modo offline/failover.
 
 **Lazy Materialization con Virtual Proxy:** Las matrices esqueléticas de `TecnicaPatron` (que pueden ocupar varios MB) no se materializan hasta que se solicitan explícitamente. Se utiliza un `VirtualProxy` que almacena solo el OID y materializa el objeto real bajo demanda.

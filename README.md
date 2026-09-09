@@ -13,7 +13,7 @@ Se propone el desarrollo e implementación de un sistema computacional de asiste
 El software detecta las diferencias en la postura corporal respecto al modelo del instructor y genera reportes visuales con indicadores claros y directos sobre la imagen. Adicionalmente, el sistema integra capacidades de procesamiento de lenguaje natural y recuperación de información técnica a partir de manuales y libros oficiales indexados. Esta retroalimentación objetiva y constante está disponible para el practicante a través de una interfaz informática en su dispositivo móvil, facilitando el autoaprendizaje guiado y liberando tiempo para que el instructor concentre su labor pedagógica en correcciones tácticas y estratégicas avanzadas.
 
 ### 1.1.3 Objeto de Investigación
-El objeto de investigación comprende el diseño, desarrollo e implementación de un sistema de visión por computadora y recuperación de información basado en redes neuronales profundas para la estimación de pose humana tridimensional (3D) mediante reconstrucción monocular de coordenadas de profundidad y el modelado de bases de conocimiento técnico mediante Vector Embeddings, diseñado para detectar, cuantificar y señalar visualmente discrepancias biomecánicas en la ejecución de técnicas de artes marciales mediante comparación cinemática en el espacio $\mathbb{R}^3$ frente a un patrón de referencia, operando bajo una arquitectura distribuida local-nube (Edge-Cloud).
+El objeto de investigación comprende el diseño, desarrollo e implementación de un sistema de visión por computadora y recuperación de información basado en redes neuronales profundas para la estimación de pose humana tridimensional (3D) mediante reconstrucción monocular de coordenadas de profundidad y el modelado de bases de conocimiento técnico mediante Vector Embeddings, diseñado para detectar, cuantificar y señalar visualmente discrepancias biomecánicas en la ejecución de técnicas de artes marciales mediante comparación cinemática en el espacio $\mathbb{R}^3$ frente a un patrón de referencia. Para la fase de validación académica (MVP), el procesamiento pesado se ejecuta en entornos de computación en la nube orientados a notebooks (Google Colab Pro) mediante túneles seguros. Sin embargo, la **arquitectura de producción objetivo** está diseñada bajo un modelo **Edge-Cloud** real: un servidor Edge local en el tatami (para el enrutamiento de video y pre-procesamiento) que despacha las cargas de trabajo de IA a un clúster Cloud (AWS/GCP) con GPUs dedicadas, garantizando persistencia, seguridad y escalabilidad de producción.
 
 ### 1.1.4 Alcance
 
@@ -211,7 +211,7 @@ El sistema constituye una plataforma computacional de asistencia técnica y peda
 1. **Gestión de Técnicas Patrón:** Permite al Instructor registrar, etiquetar y homologar los videos del Modelo de Referencia demostrados en el tatami.
 2. **Gestión de Fuentes de Conocimiento:** Permite al Instructor gestionar libros en formato PDF (como *Jiu-Jitsu University*) y registrar recursos externos mediante enlaces a videos oficiales de YouTube, sirviendo como base de conocimiento oficial indexada vectorialmente mediante **Gemini Embedding 2** de Google AI Studio.
 3. **Carga de Video desde Dispositivo Móvil:** Facilita a los Practicantes seleccionar la técnica del día y subir grabaciones de su práctica en pareja (secuencias de hasta 45 segundos y 50 MB) directamente desde su dispositivo móvil.
-4. **Extracción y Selección del Sujeto Activo:** Identifica los puntos clave del cuerpo (*keypoints*) en tres dimensiones (3D) mediante **YOLO26x-Pose** y permite la selección manual del practicante activo sobre la interfaz visual, aislando su estructura corporal para la comparación.
+4. **Aislamiento Automático del Sujeto Activo:** Identifica los puntos clave del cuerpo (*keypoints*) en tres dimensiones (3D) mediante **YOLO26x-Pose** y aplica un algoritmo de filtrado cinético para aislar automáticamente al practicante activo, descartando los demás esqueletos para la comparación postural sin requerir intervención manual.
 5. **Sincronización y Comparación Postural:** Alinea los tiempos de ejecución mediante **DTW** (*Dynamic Time Warping*) y compara la postura del Practicante con la técnica del Instructor, utilizándola como un molde esquelético tridimensional de referencia.
 6. **Diagnóstico Visual Inmediato:** Señala visualmente sobre la imagen la articulación desalineada mediante un círculo rojo, indicando con claridad el punto exacto de falla.
 7. **Asesoría Pedagógica Asistida por IA:** Genera consejos directos, constructivos y formativos mediante el modelo **Gemini 3.8 Flash** (Google AI Studio), traduciendo el análisis visual e indexación semántica a recomendaciones claras de entrenamiento fundamentadas en la doctrina oficial.
@@ -241,14 +241,14 @@ El capítulo se organiza conforme a las directrices de la ingeniería de softwar
 ### 4.2.1 Perspectiva del Producto
 El sistema opera mediante una estructura distribuida local-nube ejecutada íntegramente en lenguaje Python:
 
-1. **Entorno Local (Dispositivo de Usuario y Laptop del Tatami):** Una interfaz web progresiva (PWA) ligera se ejecuta en los teléfonos celulares de los usuarios para la captura de video y consumo de reportes. El backend local orquestador se estructura desde su concepción en dos controladores lógicos especializados bajo el patrón GRASP: `RecursoController` (encargado de la recepción, validación y derivación de manuales PDF hacia la indexación vectorial, enlaces de YouTube para la PWA y videos patrón para la extracción de keypoints) y `EvaluacionController` (responsable de coordinar el flujo asincrónico de auditoría postural entre la visión artificial, la sincronización DTW y la síntesis con Gemini 3.8 Flash). Este backend actúa como una pasarela ligera ejecutada en la computadora portátil del tatami, recibiendo las transmisiones HTTP POST y despachándolas inmediatamente hacia los servicios de procesamiento sin almacenar estados pesados en disco local.
+1. **Servidor Edge Local (Tatami):** Un servidor perimetral (Edge) ejecutado en las instalaciones de la academia, encargado de la recepción segura de los videos desde la PWA, el pre-procesamiento, el enrutamiento y la gestión de la cola de tareas asíncronas hacia la nube.
 2. **Capa de Procesamiento Remoto (Google Colab Pro + APIs Nube):** Un entorno en Google Colab Pro configurado con aceleración por GPU ejecuta el procesamiento pesado mediante Python. Este entorno aloja el modelo de visión artificial YOLO26x-Pose, ejecuta la matriz matemática DTW, administra las consultas semánticas hacia la base de datos vectorial cargada con Gemini Embedding 2 de Google AI Studio y consolida la síntesis pedagógica consultando el modelo Gemini 3.8 Flash.
 
 ```mermaid
 flowchart TD
     A[El Instructor registra Técnica Patrón y Recursos de Estudio] --> B[El Practicante selecciona técnica y sube video desde dispositivo móvil]
     B --> C1[YOLO26x-Pose extrae puntos 3D y detecta esqueletos]
-    C1 --> C2[Usuario selecciona esqueleto activo en UI]
+    C1 --> C2[Aislamiento automático del sujeto activo por varianza cinética]
     C2 --> D[DTW sincroniza el ritmo del practicante con el patrón]
     D --> E[El sistema evalúa coincidencia contra el molde tridimensional]
     E --> F[OpenCV marca círculo rojo en la articulación desalineada]
@@ -261,7 +261,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 ### 4.2.2 Funciones del Producto
 * **Gestión de Catálogo Curricular:** Registro de Técnicas Patrón y asignación de identificadores a las posiciones de control del Jiu-Jitsu.
 * **Indexación Vectorial Semántica:** Carga de manuales en PDF, fragmentación de texto en bloques lógicos, generación de embeddings de alta densidad mediante el modelo Gemini Embedding 2 (Google AI Studio) e indexación en base de datos vectorial para consultas por similitud de cosenos.
-* **Pipeline de Visión Computacional:** Recepción directa de secuencias de video de práctica, estimación esquelética tridimensional y selección manual del sujeto activo mediante interacción del usuario en la interfaz web (click/tap sobre el esqueleto detectado).
+* **Pipeline de Visión Computacional:** Recepción directa de secuencias de video de práctica, estimación esquelética tridimensional y aislamiento automático del sujeto activo mediante filtrado cinético por varianza y proximidad al centro del encuadre (100% automático, preservando el flujo asíncrono).
 * **Análisis Cinemático Espacial:** Sincronización temporal no lineal de trayectorias esqueléticas mediante DTW, aislamiento del fotograma de mayor desviación angular en $\mathbb{R}^3$ y graficación automática de alertas sobre la imagen.
 * **Generación de Retroalimentación Contextualizada (RAG):** Búsqueda de la base de conocimiento emparejada al error articular detectado en $\mathbb{R}^3$, inyección directa del fragmento doctrinal del manual al modelo Gemini 3.8 Flash y formulación de la sugerencia de entrenamiento en lenguaje natural neutralizando alucinaciones.
 
@@ -296,7 +296,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 
 #### 4.3.1.2 Hardware
 * **Unidad de Captura Móvil:** Teléfonos inteligentes comerciales con cámaras capaces de registrar video a una resolución mínima de 720p a 30 fotogramas por segundo.
-* **Servidor Orquestador Local (Tatami Laptop):** Computadora portátil estándar del gimnasio encargada del redireccionamiento directo de flujos de datos.
+* **Servidor Edge Local (Tatami):** Servidor perimetral en las instalaciones del tatami encargado de la recepción segura, pre-procesamiento y gestión de la cola de tareas asíncronas hacia la nube.
 * **Acelerador Gráfico Remoto:** GPU NVIDIA A100 provista de forma asíncrona dentro del entorno de ejecución de Google Colab Pro.
 
 ### 4.3.2 Requisitos Funcionales
@@ -309,12 +309,12 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 | **RF-01** | **Registro de Técnica Patrón** | **Como** Instructor, se requiere registrar el video del Modelo de Referencia de una técnica oficial, **para que** actúe como el molde esquelético tridimensional contra el cual se evaluará la práctica de los alumnos.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón y extrae su matriz de puntos articulares 3D en menos de 30 segundos. |
 | **RF-02** | **Carga de Video desde Dispositivo Móvil** | **Como** Practicante, el sistema debe permitir seleccionar una técnica y subir el video de su práctica en pareja (hasta 45s y 50 MB) vía API REST directa, **para que** se realice la auditoría asincrónica.<br>*Criterio de Aceptación:* La interfaz valida las restricciones de tamaño y duración antes de iniciar la transferencia HTTPS POST, rechazando archivos inválidos de forma controlada. |
 | **RF-03** | **Detección Automática de Puntos Clave 3D** | **El sistema procesa** el video mediante el modelo YOLO26x-Pose en Python para identificar los 17 puntos anatómicos corporales del estándar COCO, estimando la coordenada de profundidad ($Z$) relativa al centroide pélvico para cada articulación. |
-| **RF-04** | **Selección Manual del Sujeto Activo** | **Selección Manual del Sujeto Activo:** El sistema presenta al usuario (Instructor o Practicante) los esqueletos detectados por YOLO26x-Pose sobre el video cargado. El usuario debe seleccionar manualmente cuál de los esqueletos corresponde al sujeto de estudio (ejecutor de la técnica). El sistema descartará los datos de los demás esqueletos no seleccionados para el análisis comparativo.<br>*Criterio de Aceptación:* La interfaz permite hacer click/tap sobre un esqueleto detectado. Si el usuario no selecciona ningún esqueleto o la detección falla, el sistema retornará un código de estado HTTP 422 (Unprocessable Entity) con un mensaje estructurado en la interfaz de la PWA ("No se detectaron sujetos claros o selección inválida"), abortando el procesamiento de forma controlada sin dejar peticiones colgadas ni generar registros inconsistentes. |
+| **RF-04** | **Aislamiento Automático del Sujeto Activo** | **RF-04: Aislamiento Automático del Sujeto Activo:** El sistema procesa el video mediante YOLO26x-Pose y aplica automáticamente un algoritmo de filtrado (basado en varianza cinética y proximidad al centro del encuadre) para aislar e identificar al sujeto activo (el ejecutor de la técnica), descartando los esqueletos del compañero o espectadores. Este proceso es 100% automático y no requiere intervención manual del usuario, preservando el flujo de auditoría asíncrona. |
 | **RF-05** | **Sincronización Temporal No Lineal** | **El sistema aplica** el algoritmo DTW en Python para alinear la velocidad del practicante con la del video patrón, emparejando los hitos biomecánicos críticos con independencia del ritmo o pausas en la ejecución. |
 | **RF-06** | **Detección de Máxima Discrepancia Espacial** | **El sistema aísla** el fotograma específico donde la configuración corporal tridimensional del practicante exhibe la mayor desviación angular en $\mathbb{R}^3$ respecto al molde de referencia del instructor. |
 | **RF-07** | **Señalización Visual del Error** | **El sistema renderiza** sobre el fotograma clave un marcador gráfico circular de color rojo (mediante OpenCV) centrado en la articulación desalineada, proporcionando una alerta visual directa. |
 | **RF-08** | **Generación de Consejos con IA Semántica** | **Como** Practicante, el sistema debe recibir una recomendación en lenguaje natural sobre la causa del desajuste postural y cómo corregirla basándose en el manual indexado, **para que** el usuario disponga del fundamento bibliográfico exacto asociado a la corrección.<br>*Criterio de Aceptación:* El modelo Gemini 3.8 Flash (Google AI Studio) devuelve un texto claro de 2 o 3 líneas contextualizado por las fuentes de conocimiento recuperadas por similitud de cosenos mediante Gemini Embedding 2. |
-| **RF-09** | **Aviso por Oclusión Severa o Encuadre Inválido** | **El sistema interrumpe** de forma controlada el proceso si las articulaciones principales sufren bloqueos visuales continuos, notificando al usuario un mensaje explícito en pantalla para repetir la captura sin registrar datos corruptos. |
+| **RF-09** | **Aviso por Oclusión Severa o Encuadre Inválido** | **RF-09: Aviso por Oclusión Severa o Encuadre Inválido:** El sistema interrumpe el proceso y notifica al usuario para repetir la captura si la confianza promedio (*confidence score*) de los keypoints críticos cae por debajo del 60% en más del 30% de los fotogramas de la secuencia, o si existe oclusión total (pérdida de tracking del esqueleto) durante más de 2.0 segundos consecutivos. |
 | **RF-10** | **Consulta de Historial de Progreso** | **Como** Practicante, el sistema debe proveer un panel histórico de evaluaciones cronológicas, **para que** se pueda auditar la evolución del desempeño técnico a lo largo del tiempo. |
 | **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor, se requiere cargar archivos PDF de manuales oficiales de Jiu-Jitsu, **para que** el sistema fragmente e indexe el texto en una base de datos vectorial mediante el modelo Gemini Embedding 2 provisto por Google AI Studio.<br>*Criterio de Aceptación:* El sistema procesa el documento, calcula los embeddings vectoriales con Gemini Embedding 2 e indexa los bloques lógicos para búsquedas semánticas. |
 | **RF-12** | **Gestión de Recursos Externos (YouTube)** | **Como** Instructor, se requiere asociar enlaces de videos de YouTube vinculados a cada técnica, **para que** los practicantes dispongan de ejemplos complementarios de consulta.<br>*Criterio de Aceptación:* El sistema valida el formato de la URL de YouTube, la guarda en el catálogo relacional y permite su reproducción directa en la PWA. |
@@ -330,7 +330,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 * **RD-01 (Uso de YOLO26x-Pose y Google Colab Pro):** La arquitectura de visión tridimensional debe sustentarse estrictamente en la variante Extra Large (YOLO26x-Pose) ejecutada en Python sobre un backend acelerado por GPU en Colab Pro, garantizando la resolución espacial de profundidad ($Z$).
 * **RD-02 (Integración Obligatoria de Gemini Embedding 2 y Delimitación a PDFs):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por el modelo Gemini Embedding 2 de Google AI Studio con dimensiones densas homogéneas. Dicha vectorización semántica aplica exclusivamente al contenido textual procesado a partir de archivos PDF oficiales, restringiendo el uso de recursos de IA para la generación de texto a fuentes puramente bibliográficas.
 * **RD-03 (Arquitectura Web Multiplataforma):** La interfaz frontal debe ser accesible de forma directa a través de navegadores web móviles sin requerir instalación por medio de tiendas de aplicaciones comerciales.
-* **RD-04 (Restricción de Procesamiento RAG a Documentos Textuales):** El subsistema de Generación Aumentada por Recuperación (RAG) no procesará contenidos multimedia de audio o video procedentes de YouTube o grabaciones de tatami. Las consultas semánticas y la inyección de contexto pedagógico al modelo Gemini 3.8 Flash se abastecen única y directamente de los fragmentos indexados de manuales técnicos en PDF con Gemini Embedding 2, asegurando la reproducibilidad, exactitud bibliográfica y optimización de costos computacionales.
+* **RD-04 (Delimitación del Pipeline de IA vs. Hipermedia):** La generación de embeddings y la indexación en base de datos vectorial para el pipeline RAG opera de forma **exclusiva** sobre el texto digital extraído de manuales y libros técnicos en formato PDF. Los enlaces de videos externos (YouTube) se almacenan en la base de datos relacional exclusivamente como **recursos de hipermedia estática** (hipervínculos URL) para su reproducción embebida en la PWA, quedando expresamente excluidos de cualquier procesamiento, transcripción o vectorización por parte de los modelos de IA.
 
 ### 4.3.5 Atributos del Sistema
 
@@ -387,7 +387,7 @@ _Figura 4._ Diagrama general de casos de uso del sistema según Larman (2004).
 | Código | Nombre del Caso de Uso | Actor Principal | Requisitos Asociados | Descripción Sintética |
 | :---: | :--- | :---: | :---: | :--- |
 | **CU-01** | **Registrar Técnica Patrón** | El Instructor | RF-01, RF-03 | El Instructor graba y transmite el video del Modelo de Referencia. El sistema procesa los puntos corporales espaciales (3D) de la técnica patrón y lo almacena en la base de datos relacional. |
-| **CU-02** | **Cargar Video desde Dispositivo Móvil** | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la maniobra y transmite su grabación (< 45s, < 50 MB) vía API REST. El sistema muestra los keypoints detectados y solicita al usuario confirmar cuál es el ejecutor de la técnica mediante selección visual, sincroniza los tiempos con el algoritmo DTW y valida el encuadre de cuerpo entero. |
+| **CU-02** | **Cargar Video desde Dispositivo Móvil** | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la maniobra y transmite su grabación (< 45s, < 50 MB) vía API REST. El sistema extrae los keypoints 3D, aísla automáticamente al sujeto activo mediante el algoritmo de varianza cinética, sincroniza los tiempos con DTW y valida el encuadre de cuerpo entero. |
 | **CU-03** | **Visualizar Diagnóstico y Consejo de IA** | El Practicante | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema expone en la interfaz móvil la imagen clave anotada con un marcador circular de OpenCV en la articulación desalineada y la recomendación pedagógica adaptada y fundamentada por el modelo Gemini 3.8 Flash (Google AI Studio) en una ventana menor a 10 segundos. |
 | **CU-04** | **Consultar Historial de Progreso** | El Practicante | RF-10 | El Practicante accede a su panel cronológico para auditar los porcentajes de coincidencia postural obtenidos a lo largo de las clases. |
 | **CU-05** | **Gestionar Recursos y Fuentes de Estudio** | El Instructor / El Practicante | RF-11, RF-12 | El Instructor administra manuales en PDF (indexados en la base de datos vectorial mediante Gemini Embedding 2) y enlaces de YouTube. El Practicante los consulta como material oficial de estudio para sus exámenes de grado. |
@@ -400,9 +400,9 @@ El modelo conceptual de dominio organiza las clases lógicas esenciales de la ap
 Dentro de este modelo conceptual se destacan dos decisiones de diseño biomecánico y pedagógico:
 * **Entidad `TecnicaPatron` y su atributo `matrizEsqueleticaURL`:** Incorpora conceptualmente la localización de la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) extraída del video del instructor mediante `YOLOEngine`. Este atributo refleja la persistencia del molde cinemático de referencia del cual el algoritmo DTW extrae las trayectorias matemáticas contra las que se contrastan los videos de los alumnos.
 * **Entidad `FuenteConocimiento` y discriminación por `tipoRecurso`:** Discrimina la naturaleza operativa del contenido suministrado por el Instructor:
-  1. `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings vectoriales mediante Gemini Embedding 2 de Google AI Studio y recuperación semántica de contexto pedagógico).
-  2. `'YOUTUBE'`: Asociado a la reproducción audiovisual directa embebida en la PWA (flujo relacional sin consumo de servicios de IA ni almacenamiento vectorial).
-  3. `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
+  - `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings vectoriales mediante Gemini Embedding 2 y recuperación semántica de contexto pedagógico).
+  - `'YOUTUBE'`: Asociado exclusivamente a la galería de hipermedia estática de la PWA (recurso audiovisual de consulta externa, sin procesamiento de IA).
+  - `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
 
 ```mermaid
 classDiagram
@@ -849,38 +849,15 @@ sequenceDiagram
     Practicante->>Sistema: cargarVideo(videoPractica, idTecnica)
     Sistema->>YOLO: inferirKeypoints(videoPractica)
     YOLO-->>Sistema: listaEsqueletos
-    Sistema-->>Practicante: presentarEsqueletosUI()
-    Practicante->>Sistema: confirmarSujetoActivo(idEsqueleto)
-    Sistema->>DTW: alinearDTW(esqueletoPracticante, esqueletoPatron)
+    Sistema->>Sistema: aislarSujetoActivo(varianzaCinetica)
+    Sistema->>DTW: alinearDTW(esqueletoSujeto, esqueletoPatron)
     DTW-->>Sistema: fotogramaFalla, articulacionCritica
     Sistema->>GEM: generarRetroalimentacion(articulacionCritica, contextoManual)
     GEM-->>Sistema: consejoPedagogico
     Sistema-->>Practicante: presentarDiagnostico(imagenAnotada, consejoPedagogico)
 ```
 
-#### 5.3.4 Contratos de Operación del Sistema
-
-Los contratos especifican los cambios de estado del dominio como resultado de las operaciones del sistema, usando precondiciones y poscondiciones.
-
-**Contrato CO1: registrarTecnica**
-
-| Campo | Descripción |
-|---|---|
-| **Operación** | `registrarTecnica(videoPatron: Video, nombreTecnica: String)` |
-| **Casos de Uso** | CU-01: Registrar Técnica Patrón |
-| **Precondiciones** | El instructor está autenticado. El video tiene duración ≤ 45 segundos y peso ≤ 50 MB. |
-| **Poscondiciones** | Se creó una instancia de `TecnicaPatron` (*tp*). *tp* fue asociada con la `MatrizEsqueletica` extraída por YOLO26x-Pose. Se generaron los embeddings del manual PDF asociado mediante Gemini Embedding 2. *tp* fue almacenada en la base de datos de técnicas patrón. |
-
-**Contrato CO2: cargarVideo**
-
-| Campo | Descripción |
-|---|---|
-| **Operación** | `cargarVideo(videoPractica: Video, idTecnica: String)` |
-| **Casos de Uso** | CU-02: Cargar Video y Evaluar |
-| **Precondiciones** | Existe una `TecnicaPatron` con el `idTecnica` proporcionado. El practicante está autenticado. El video cumple las restricciones de tamaño y duración. |
-| **Poscondiciones** | Se creó una instancia de `SesionEvaluacion` (*se*). Se extrajeron los keypoints 3D del video mediante YOLO26x-Pose. Se confirmó el sujeto activo. Se alinearon las secuencias esqueléticas mediante DTW. Se identificó el fotograma de máxima desviación angular en ℝ³. Se generó la retroalimentación pedagógica mediante Gemini 3.8 Flash. *se* fue asociada con la `TecnicaPatron` correspondiente. |
-
-#### 5.3.5 Diagramas de Clases de Diseño (DCD)
+#### 5.3.4 Diagramas de Clases de Diseño (DCD)
 
 El DCD especifica las clases de software, sus métodos, atributos, tipos, visibilidades y navegabilidades.
 
@@ -894,7 +871,7 @@ classDiagram
         -float porcentajeCoincidencia
         -EstadoEvaluacion estado
         +cargarVideo(Video) void
-        +confirmarSujetoActivo(String) void
+        +aislarSujetoActivo() void
         +calcularDesviaciones() List~DesviacionArticular~
         +getPuntaje() float
         +commit() void
@@ -984,7 +961,7 @@ classDiagram
     IGenerationService <|.. Gemini38FlashAdapter
 ```
 
-#### 5.3.6 Documento de Arquitectura de Software (SAD)
+#### 5.3.5 Documento de Arquitectura de Software (SAD)
 
 El SAD registra las decisiones arquitectónicas clave estructuradas en vistas. Se incluyen las vistas más relevantes:
 
@@ -1026,9 +1003,33 @@ graph LR
 
 ---
 
-### 5.4 Transición del Diseño al Código
+### 5.4 Contratos de Operación del Sistema (Operation Contracts)
 
-#### 5.4.1 Mapeo de DCDs a Código Fuente
+Para garantizar el rigor formal en la especificación de los flujos de trabajo, se definen los contratos de las operaciones principales del sistema, detallando sus precondiciones y poscondiciones formales.
+
+#### Contrato CO1: solicitarEvaluacionPostural
+
+| Campo | Descripción |
+|---|---|
+| **Operación** | `solicitarEvaluacionPostural(videoPractica: Video, idTecnica: String)` |
+| **Casos de Uso** | CU-02: Cargar Video y Evaluar |
+| **Precondiciones** | 1. El practicante está autenticado en la PWA.<br>2. El archivo de video cumple con las restricciones de formato, duración (≤ 45s) y peso (≤ 50 MB).<br>3. Existe una `TecnicaPatron` registrada con el `idTecnica` proporcionado. |
+| **Poscondiciones** | 1. Se ha creado una instancia de `VideoPractica` en el sistema.<br>2. El video ha sido encolado en la cola de procesamiento asíncrono del servidor Edge.<br>3. Se ha notificado al usuario la aceptación de la solicitud con un identificador de seguimiento (Tracking ID). |
+
+#### Contrato CO2: procesarEvaluacionAsincrona
+
+| Campo | Descripción |
+|---|---|
+| **Operación** | `procesarEvaluacionAsincrona(videoPractica: VideoPractica)` |
+| **Casos de Uso** | CU-02: Cargar Video y Evaluar (Flujo interno del sistema) |
+| **Precondiciones** | 1. El `VideoPractica` existe en el sistema y su estado es `PENDIENTE_PROCESAMIENTO`.<br>2. Los servicios de IA (YOLO, Gemini) están disponibles y accesibles. |
+| **Poscondiciones** | 1. El sistema ha extraído los keypoints 3D mediante `YOLOEngine`.<br>2. El sistema ha aislado automáticamente al sujeto activo mediante el algoritmo de varianza cinética.<br>3. Se ha ejecutado la sincronización temporal mediante DTW.<br>4. Se ha identificado el fotograma de máxima desviación angular en $\mathbb{R}^3$.<br>5. Se ha generado la retroalimentación pedagógica contextualizada mediante el pipeline RAG y Gemini 3.8 Flash.<br>6. Se ha creado una instancia de `EvaluacionPostural` con el diagnóstico final.<br>7. El estado del `VideoPractica` ha cambiado a `PROCESADO`. |
+
+---
+
+### 5.5 Transición del Diseño al Código
+
+#### 5.5.1 Mapeo de DCDs a Código Fuente
 
 La traducción de los diagramas de clases de diseño al código fuente sigue un mapeo directo:
 
@@ -1044,7 +1045,7 @@ La traducción de los diagramas de clases de diseño al código fuente sigue un 
 
 **Orden de implementación:** Se codifican primero las clases menos acopladas (interfaces, adaptadores, clases de dominio puras) y luego las más acopladas (controladores, fachadas).
 
-#### 5.4.2 Programación Guiada por Pruebas (TDD)
+#### 5.5.2 Programación Guiada por Pruebas (TDD)
 
 Siguiendo la práctica de *Test-First Programming*, se escriben las pruebas unitarias **antes** del código de producción:
 
@@ -1055,7 +1056,7 @@ Siguiendo la práctica de *Test-First Programming*, se escriben las pruebas unit
 
 **Framework de pruebas:** Se utiliza `pytest` en el entorno de Google Colab para las pruebas unitarias de las clases de dominio y `pytest-cov` para medir la cobertura de código.
 
-#### 5.4.3 Diseño del Framework de Persistencia
+#### 5.5.3 Diseño del Framework de Persistencia
 
 Se diseña un framework de persistencia simplificado siguiendo el patrón *Template Method*:
 

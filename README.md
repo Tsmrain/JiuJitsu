@@ -1023,10 +1023,10 @@ Conforme a las pautas de modelado de bases de datos de **Mannino (2019)**, la ar
 
 ##### 1. Normalización Relacional (Forma Normal de Boyce-Codd - BCNF)
 El esquema relacional transaccional se modeló en estricto apego a la BCNF (Mannino, 2019). En este esquema, toda dependencia funcional no trivial $X \to Y$ tiene como determinante $X$ una superclave o clave candidata de la relación:
-* **`Usuario`** ($\underline{\text{id\_usuario}}$, nombre, email, rol, fecha\_registro).
-* **`TecnicaPatron`** ($\underline{\text{id\_tecnica}}$, nombre, categoria, nivel, duracion\_referencia, matriz\_esqueletica\_url).
-* **`SesionEvaluacion`** ($\underline{\text{id\_sesion}}$, id\_usuario, id\_tecnica, fecha\_evaluacion, puntaje\_global, estado\_evaluacion). Clave foránea hacia `Usuario` y `TecnicaPatron`.
-* **`DesviacionArticular`** ($\underline{\text{id\_desviacion}}$, id\_sesion, articulacion, angulo\_error, fotograma\_falla, nivel\_severidad). Clave foránea hacia `SesionEvaluacion`.
+* **`Usuario`** (<u>**id_usuario**</u>, `nombre`, `email`, `rol`, `fecha_registro`).
+* **`TecnicaPatron`** (<u>**id_tecnica**</u>, `nombre`, `categoria`, `nivel`, `duracion_referencia`, `matriz_esqueletica_url`).
+* **`SesionEvaluacion`** (<u>**id_sesion**</u>, `id_usuario`, `id_tecnica`, `fecha_evaluacion`, `puntaje_global`, `estado_evaluacion`). Clave foránea hacia `Usuario` y `TecnicaPatron`.
+* **`DesviacionArticular`** (<u>**id_desviacion**</u>, `id_sesion`, `articulacion`, `angulo_error`, `fotograma_falla`, `nivel_severidad`). Clave foránea hacia `SesionEvaluacion`.
 
 Esta descomposición garantiza la eliminación total de redundancias y previene anomalías de inserción, borrado y actualización en los registros operacionales del sistema.
 
@@ -1073,7 +1073,7 @@ WITH (m = 16, ef_construction = 64);
 ##### 5. Operación en la Capa de Servicios Técnicos (`PersistenciaFacade`)
 La recuperación semántica que alimenta al LLM (Gemini 3.8 Flash) se ejecuta desde `PersistenciaFacade` mediante el operador de distancia coseno nativo `<=>`:
 
-$$\text{distancia\_coseno}(\vec{u}, \vec{v}) = 1 - \frac{\vec{u} \cdot \vec{v}}{\|\vec{u}\|_2 \|\vec{v}\|_2}$$
+$$\text{distancia}_{\text{coseno}}(\vec{u}, \vec{v}) = 1 - \frac{\vec{u} \cdot \vec{v}}{\|\vec{u}\|_2 \|\vec{v}\|_2}$$
 
 ```sql
 SELECT id_recurso, fragmento_texto, fuente_documental, pagina_origen,

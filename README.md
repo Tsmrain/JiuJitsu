@@ -414,7 +414,7 @@ El modelo conceptual de dominio organiza las clases lógicas esenciales de la ap
 Dentro de este modelo conceptual se destacan dos decisiones de diseño biomecánico y pedagógico:
 * **Entidad `TecnicaPatron` y su atributo `matrizEsqueleticaURL`:** Incorpora conceptualmente la localización de la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) extraída del video del instructor mediante `YOLOEngine`. Este atributo refleja la persistencia del molde cinemático de referencia del cual el algoritmo DTW extrae las trayectorias matemáticas contra las que se contrastan los videos de los alumnos.
 * **Entidad `FuenteConocimiento` y discriminación por `tipoRecurso`:** Discrimina la naturaleza operativa del contenido suministrado por el Instructor:
-  - `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings vectoriales mediante Gemini Embedding 2 y recuperación semántica de contexto pedagógico).
+  - `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings vectoriales de 768 dimensiones mediante Gemini Embedding 2 y recuperación semántica de contexto pedagógico). En la fase de diseño de software y persistencia física (Capítulo V, apartado 5.3.6), esta entidad conceptual se mapea directamente en la clase y tabla orientada a datos `RecursoDidactico`, soportada por la extensión nativa `pgvector` en PostgreSQL.
   - `'YOUTUBE'`: Asociado exclusivamente a la galería de hipermedia estática de la PWA (recurso audiovisual de consulta externa, sin procesamiento de IA).
   - `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
 
@@ -521,6 +521,10 @@ classDiagram
     Practicante "1" *-- "1" HistorialProgreso : posee
 ```
 _Figura 5._ Diagrama de clases del modelo conceptual de dominio según Larman (2004).
+
+> [!NOTE]
+> **Trazabilidad entre Análisis y Diseño (Mapeo de Persistencia Híbrida):**  
+> En el modelo conceptual de dominio (fase de análisis), la entidad `FuenteConocimiento` generaliza los recursos didácticos de apoyo mediante el atributo discriminador `tipoRecurso`. En la fase de diseño de software y arquitectura de datos (Capítulo V, apartado 5.3.6), esta abstracción se materializa de forma diferenciada: cuando `tipoRecurso = 'PDF'`, la entidad conceptual se mapea en la capa de persistencia como la clase y tabla especializada `RecursoDidactico`, estructurada con una columna `embedding vector(768)` e indexada mediante grafos HNSW en PostgreSQL 15+ con la extensión nativa `pgvector` para soportar las consultas de similitud por cosenos del pipeline RAG. Por su parte, los recursos `'YOUTUBE'` y `'VIDEO_PATRON'` se gestionan como atributos relacionales directos de tipo URL (`videoReferenciaURL`, `enlaceOArchivo`), asegurando una arquitectura desacoplada y en estricta conformidad con la normalización BCNF de Mannino (2019).
 
 ---
 
@@ -858,13 +862,13 @@ sequenceDiagram
 sequenceDiagram
     actor Practicante
     participant Sistema as :Sistema
-    participant YOLO as «actor» :YOLO26x-Pose
+    participant YOLO as «actor» :YOLO26x (Pose + Depth)
     participant DTW as :SincronizadorDTW
     participant GEM as «actor» :Gemini 3.8 Flash
 
     Practicante->>Sistema: solicitarEvaluacionPostural(videoPractica, idTecnica)
     Sistema->>YOLO: inferirKeypoints(videoPractica)
-    YOLO-->>Sistema: listaEsqueletos
+    YOLO-->>Sistema: listaEsqueletos3D
     Sistema->>Sistema: aislarSujetoActivo(varianzaCinetica)
     Sistema->>DTW: alinearDTW(esqueletoSujeto, esqueletoPatron)
     DTW-->>Sistema: fotogramaFalla, articulacionCritica

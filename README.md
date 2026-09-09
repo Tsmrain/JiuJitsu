@@ -510,200 +510,599 @@ _Figura 5._ Diagrama de clases del modelo conceptual de dominio según Larman (2
 
 ---
 
-# Capítulo V: Análisis y Diseño
+## Capítulo V: Análisis y Diseño Orientado a Objetos
 
-El presente capítulo especifica la **arquitectura lógica del software** según el Proceso Unificado (Larman, 2004) y el **diseño relacional normalizado de la base de datos** (Mannino, 2019).
+Este capítulo presenta el análisis y diseño del sistema siguiendo la metodología de Craig Larman (*Applying UML and Patterns*) enmarcada en el Proceso Unificado (UP). Se aborda la asignación de responsabilidades mediante los patrones GRASP, la aplicación de patrones de diseño del Gang of Four (GoF), la definición de la arquitectura lógica en capas, la especificación de contratos de operación, las realizaciones de casos de uso y la transición del diseño al código. Todo el diseño se aplica al dominio del sistema de corrección postural de Jiu-Jitsu Brasileño mediante visión artificial con YOLO26x-Pose y recuperación semántica con Gemini.
 
 ---
 
-## 5.1 Arquitectura Lógica en Capas (*Layers Pattern*)
+### 5.1 Realizaciones de Casos de Uso con Patrones GRASP
 
-Organización en tres capas lógicas con desacoplamiento estricto:
+La habilidad fundamental (*desert island skill*) en OOA/D según Larman no es dibujar diagramas UML, sino **asignar responsabilidades** a las clases de software de forma metódica y justificada. A continuación se aplican los 9 patrones GRASP (*General Responsibility Assignment Software Patterns*) a las realizaciones de los casos de uso del sistema.
+
+#### 5.1.1 Information Expert (Experto en Información)
+
+**Principio:** Asignar la responsabilidad a la clase que posee la información necesaria para cumplirla.
+
+| Clase de Software | Responsabilidad Asignada | Justificación |
+|---|---|---|
+| `EvaluacionPostural` | Calcular el porcentaje de coincidencia postural y clasificar la articulación en falla | Posee las coordenadas esqueléticas 3D y los umbrales angulares necesarios para la comparación |
+| `ProductSpecification` (análogo: `TecnicaPatron`) | Conocer la matriz esquelética de referencia | Almacena la secuencia de keypoints 3D del instructor que sirve como molde |
+| `Venta` (análogo: `SesionEvaluacion`) | Conocer el total de desviaciones | Contiene la colección de `DesviacionArticular` cuya suma determina el puntaje |
+
+#### 5.1.2 Creator (Creador)
+
+**Principio:** Asignar a la clase B la responsabilidad de crear una instancia de la clase A si B agrega, contiene, registra o usa cercanamente a A.
+
+| Clase Creadora | Clase Creada | Justificación |
+|---|---|---|
+| `SesionEvaluacion` | `DesviacionArticular` | La sesión agrega y contiene las desviaciones detectadas |
+| `Registro` (análogo: `RecursoController`) | `SesionEvaluacion` | Registra y gestiona el ciclo de vida de cada sesión de evaluación |
+| `TecnicaPatron` | `MatrizEsqueletica` | Contiene y genera la matriz de keypoints de referencia |
+
+#### 5.1.3 Controller (Controlador)
+
+**Principio:** Asignar el manejo de eventos del sistema a controladores de fachada o de casos de uso, no a objetos de la interfaz.
+
+Se definen dos controladores principales siguiendo la variante *Use-Case Session Facade Controller*:
+
+- **`RecursoController`**: Recibe los eventos de carga curricular (CU-01: Registrar Técnica Patrón, CU-05: Gestionar Recursos). Actúa como fachada hacia la capa de dominio para la indexación de manuales PDF y la extracción de keypoints de videos patrón.
+- **`EvaluacionController`**: Recibe los eventos de evaluación postural (CU-02: Cargar Video, CU-03: Visualizar Diagnóstico). Orquesta el flujo asíncrono de inferencia YOLO, sincronización DTW y síntesis con Gemini.
+
+> **Nota de diseño:** Se evita que la interfaz PWA (`ProcesSaleFrame` análogo: `EvaluacionFrame`) contenga lógica de aplicación. La interfaz solo captura eventos y los delega al controlador, siguiendo el principio *Model-View Separation*.
+
+#### 5.1.4 Low Coupling (Bajo Acoplamiento)
+
+**Principio evaluativo:** Mantener bajas las dependencias entre clases para maximizar la reutilización y minimizar el impacto de los cambios.
+
+- Las clases del dominio (`SesionEvaluacion`, `TecnicaPatron`) **no conocen** las clases de la interfaz gráfica ni los detalles de la API de Gemini.
+- La comunicación con servicios externos (YOLO26x-Pose, Gemini Embedding 2, Gemini 3.8 Flash) se realiza exclusivamente a través de interfaces (`IInferenceEngine`, `IEmbeddingService`, `IGenerationService`), protegiendo al dominio de cambios en las APIs.
+- El `ServicioPersistencia` actúa como fachada desacoplada del mecanismo de almacenamiento específico (PostgreSQL, archivos locales, caché).
+
+#### 5.1.5 High Cohesion (Alta Cohesión)
+
+**Principio evaluativo:** Garantizar que las clases tengan responsabilidades enfocadas y relacionadas.
+
+- `YOLOEngine` se encarga **exclusivamente** de la inferencia de keypoints 3D. No realiza sincronización temporal ni generación de texto.
+- `SincronizadorDTW` se encarga **exclusivamente** de la alineación temporal de secuencias esqueléticas. No realiza inferencia ni generación de retroalimentación.
+- `ServicioGeminiFlash` se encarga **exclusivamente** de la síntesis de retroalimentación pedagógica. No realiza inferencia de pose.
+- Si una clase acumula responsabilidades heterogéneas (por ejemplo, inferencia + persistencia + notificación), se refactoriza aplicando *Pure Fabrication*.
+
+#### 5.1.6 Polymorphism (Polimorfismo)
+
+**Principio:** Cuando alternativas relacionadas varían por tipo, asignar la responsabilidad mediante operaciones polimórficas a los tipos para los cuales el comportamiento varía.
+
+Se aplica en dos puntos críticos del diseño:
+
+**a) Motores de Inferencia:** Diferentes configuraciones de YOLO26x-Pose (nano, small, medium, large, xlarge) implementan la misma interfaz `IInferenceEngine` con el método polimórfico `inferirKeypoints(video)`. El sistema selecciona la variante según los recursos disponibles en Google Colab.
+
+**b) Estrategias de Evaluación:** Diferentes técnicas de BJJ (guardia, montada, raspado, sumisión) requieren criterios de evaluación distintos. Cada `EstrategiaEvaluacion` implementa `calcularDesviacion(esqueletoPracticante, esqueletoPatron)` de forma polimórfica.
+
+#### 5.1.7 Pure Fabrication (Fabricación Pura)
+
+**Principio:** Crear clases artificiales de servicio cuando la asignación por dominio compromete la cohesión o el acoplamiento.
+
+Clases de *Pure Fabrication* identificadas:
+
+| Clase | Responsabilidad | Justificación |
+|---|---|---|
+| `ServicioPersistencia` | Almacenar y recuperar objetos de evaluación | Evita que las clases del dominio (`SesionEvaluacion`) conozcan detalles de SQL o almacenamiento |
+| `ServicioCache` | Gestionar la caché local de `TecnicaPatron` y `ProductSpecification` | Mejora el rendimiento y la tolerancia a fallos sin contaminar el dominio |
+| `AdaptadorGemini` | Traducir las respuestas de la API de Gemini al formato del dominio | Protege al dominio de cambios en la API de Google AI Studio |
+| `LoggerCentralizado` | Registrar todas las excepciones y eventos del sistema | Mantiene la cohesión de las clases de dominio evitando que cada una implemente su propio logging |
+
+#### 5.1.8 Indirection (Indirección)
+
+**Principio:** Introducir un intermediario para evitar el acoplamiento directo entre componentes.
+
+- **`AdaptadorYOLO`**: Intermediario entre el `EvaluacionController` y la biblioteca Ultralytics YOLO26x-Pose. Traduce el formato de video de entrada al formato esperado por el modelo y convierte la salida de keypoints al formato del dominio.
+- **`AdaptadorGemini`**: Intermediario entre el `EvaluacionController` y la API REST de Gemini 3.8 Flash. Gestiona la autenticación, el rate limiting y la transformación de prompts.
+- **`ProxyServicioRemoto`**: Proxy que intenta primero el servicio remoto (API de Gemini en la nube) y, en caso de fallo, redirige a una implementación local simplificada (*failover*).
+
+#### 5.1.9 Protected Variations (Variaciones Protegidas)
+
+**Principio:** Crear una interfaz estable alrededor de puntos de inestabilidad o variación para proteger al resto del sistema.
+
+Puntos de variación identificados y protegidos:
+
+| Punto de Variación | Interfaz Estable | Implementaciones |
+|---|---|---|
+| Motor de inferencia de pose | `IInferenceEngine` | `YOLO26xPoseEngine`, `YOLO26sPoseEngine` (fallback) |
+| Servicio de embeddings | `IEmbeddingService` | `GeminiEmbedding2Adapter`, `LocalEmbeddingCache` |
+| Servicio de generación de texto | `IGenerationService` | `Gemini38FlashAdapter`, `LocalTemplateGenerator` |
+| Mecanismo de persistencia | `IPersistenceService` | `PostgreSQLAdapter`, `SQLiteLocalAdapter`, `FileCacheAdapter` |
+| Estrategia de evaluación | `IEstrategiaEvaluacion` | `EvaluacionGuardia`, `EvaluacionMontada`, `EvaluacionRaspado` |
+
+---
+
+### 5.2 Aplicación de Patrones de Diseño GoF
+
+Además de los patrones GRASP, se aplican patrones clásicos del *Gang of Four* (Gamma, Helm, Johnson, Vlissides) para resolver problemas específicos de diseño en las realizaciones de casos de uso.
+
+#### 5.2.1 Adapter (Adaptador)
+
+**Contexto:** El sistema debe interactuar con APIs externas heterogéneas (Ultralytics YOLO26x-Pose, Google Gemini Embedding 2, Google Gemini 3.8 Flash) que tienen interfaces incompatibles entre sí.
+
+**Solución:** Se definen adaptadores que implementan interfaces uniformes del dominio y traducen las llamadas al formato específico de cada API externa.
+
+```
+«interface» IInferenceEngine
+  + inferirKeypoints(video: Video): List<Esqueleto3D>
+
+YOLO26xAdapter
+  - modelo: YOLO
+  + inferirKeypoints(video: Video): List<Esqueleto3D>
+  // Traduce el formato de Video al tensor esperado por YOLO26x-Pose
+  // Convierte la salida de tensores a objetos Esqueleto3D del dominio
+```
+
+#### 5.2.2 Factory / Abstract Factory (Fábrica)
+
+**Contexto:** Se necesitan crear familias de objetos relacionados (adaptadores de inferencia, adaptadores de embeddings, estrategias de evaluación) cuya implementación concreta varía según la configuración del entorno (Colab Pro con GPU vs. fallback local).
+
+**Solución:** Se define una `AbstractFactory` que lee la configuración del sistema y retorna las instancias apropiadas.
+
+```
+«interface» IServicioFactory
+  + getInferenceEngine(): IInferenceEngine
+  + getEmbeddingService(): IEmbeddingService
+  + getGenerationService(): IGenerationService
+
+ServicioFactory (Singleton)
+  - instance: IServicioFactory
+  + getInstance(): IServicioFactory
+  + getInferenceEngine(): IInferenceEngine
+    // Lee la propiedad del sistema "inference.engine.class"
+    // Retorna YOLO26xAdapter o YOLO26sAdapter según configuración
+```
+
+#### 5.2.3 Singleton
+
+**Contexto:** Se requiere acceso global controlado a una única instancia de la fábrica de servicios y del logger centralizado.
+
+**Solución:** Se aplica el patrón Singleton con inicialización perezosa (*lazy initialization*) y control de concurrencia para los hilos de procesamiento en Colab.
+
+```
+ServicioFactory
+  - instance: ServicioFactory
+  + getInstance(): ServicioFactory {
+      if (instance == null) {
+        instance = new ServicioFactory();
+      }
+      return instance;
+    }
+```
+
+#### 5.2.4 Strategy (Estrategia)
+
+**Contexto:** Las técnicas de BJJ (guardia cerrada, montada, raspado de gancho, triángulo, etc.) requieren criterios de evaluación biomecánica distintos. Los umbrales angulares y las articulaciones críticas varían por técnica.
+
+**Solución:** Se define una familia de estrategias de evaluación que implementan la misma interfaz.
+
+```
+«interface» IEstrategiaEvaluacion
+  + calcularDesviacion(esqueletoPracticante: Esqueleto3D, esqueletoPatron: Esqueleto3D): DesviacionArticular
+
+EvaluacionGuardia
+  + calcularDesviacion(...): DesviacionArticular
+  // Evalúa ángulos de cadera, rodilla y tobillo con umbrales específicos
+
+EvaluacionMontada
+  + calcularDesviacion(...): DesviacionArticular
+  // Evalúa presión de cadera, control de tronco y ángulo de rodilla
+```
+
+#### 5.2.5 Composite (Compuesto)
+
+**Contexto:** Una sesión de evaluación puede contener múltiples desviaciones articulares, y cada desviación puede a su vez contener sub-desviaciones por fotograma. Se necesita tratar de manera uniforme una desviación individual y un grupo de desviaciones.
+
+**Solución:** Se aplica el patrón Composite para que tanto `DesviacionArticular` como `GrupoDesviaciones` implementen la misma interfaz `ICalculableDesviacion`.
+
+```
+«interface» ICalculableDesviacion
+  + getPuntaje(): Float
+
+DesviacionArticular
+  + getPuntaje(): Float
+
+GrupoDesviaciones
+  - desviaciones: List<ICalculableDesviacion>
+  + getPuntaje(): Float
+  // Retorna el promedio ponderado de todas las desviaciones hijas
+```
+
+#### 5.2.6 Facade (Fachada)
+
+**Contexto:** El subsistema de persistencia es complejo (mapeo O-R, caché, transacciones, replicación local). Los controladores no deben conocer estos detalles.
+
+**Solución:** Se define una fachada que expone operaciones de alto nivel.
+
+```
+PersistenciaFacade
+  + getInstance(): PersistenciaFacade
+  + guardar(objeto: Object): void
+  + recuperar(oid: OID, clase: Class): Object
+  + commit(): void
+  + rollback(): void
+  // Oculta la complejidad del mapeo O-R, la caché y las transacciones
+```
+
+#### 5.2.7 Observer (Observador / Publish-Subscribe)
+
+**Contexto:** Cuando la evaluación postural detecta una desviación crítica, la interfaz gráfica debe actualizarse automáticamente para mostrar el marcador rojo sobre la articulación afectada. La capa de dominio no debe conocer los detalles de la interfaz.
+
+**Solución:** Los objetos de la interfaz gráfica implementan la interfaz `PropertyListener` y se registran como suscriptores de los eventos del objeto `SesionEvaluacion`.
+
+```
+«interface» PropertyListener
+  + onPropertyEvent(fuente: Object, nombre: String, valor: Object): void
+
+EvaluacionFrame (implementa PropertyListener)
+  + onPropertyEvent(fuente, "sesion.desviacion", desviacion): void
+  // Actualiza el marcador rojo en la interfaz gráfica
+
+SesionEvaluacion
+  - listeners: List<PropertyListener>
+  + addListener(listener: PropertyListener): void
+  + publicarEvento(nombre: String, valor: Object): void
+  // Notifica a todos los suscriptores registrados
+```
+
+---
+
+### 5.3 Arquitectura Lógica y Modelado UML
+
+#### 5.3.1 Arquitectura en Capas (Layers Pattern)
+
+Siguiendo el patrón arquitectónico *Layers* de Larman, el sistema se organiza en capas lógicas con responsabilidades claramente separadas. La colaboración fluye de capas superiores a inferiores; se evita el acoplamiento de capas inferiores a superiores.
 
 ```mermaid
 graph TD
-    subgraph UI["1. Capa de Presentación"]
-        PWA["Cliente Web PWA Mobile"]
+    subgraph Presentacion["Capa de Presentación (UI)"]
+        PWA["PWA Móvil<br/>EvaluacionFrame"]
+        Web["Panel Instructor<br/>DashboardFrame"]
     end
 
-    subgraph Domain["2. Capa de Aplicación y Dominio"]
-        RC["RecursoController (GRASP Controller)"]
-        EC["EvaluacionController (GRASP Controller)"]
-        EP["EvaluacionPostural (Information Expert)"]
+    subgraph Aplicacion["Capa de Aplicación"]
+        RC["RecursoController"]
+        EC["EvaluacionController"]
     end
 
-    subgraph Tech["3. Capa de Servicios Técnicos e Infraestructura"]
-        YOLO["YOLOEngine (YOLO26x-Pose 3D)"]
-        DTW["SincronizadorDTW"]
-        VDB["VectorDBService (Gemini Embedding 2)"]
-        SGF["ServicioGeminiFlash (Gemini 3.8 Flash)"]
-        BD["BaseDatosRelacional (PostgreSQL/SQLite)"]
+    subgraph Dominio["Capa de Dominio"]
+        SE["SesionEvaluacion"]
+        TP["TecnicaPatron"]
+        EP["EstrategiaEvaluacion"]
+        DA["DesviacionArticular"]
     end
 
-    PWA -->|HTTPS POST| RC & EC
-    RC --> VDB & YOLO & BD
-    EC --> EP & YOLO & DTW & VDB & SGF & BD
+    subgraph Servicios["Capa de Servicios Técnicos"]
+        YOLO["YOLO26xAdapter"]
+        GEM["AdaptadorGemini"]
+        PERS["PersistenciaFacade"]
+        CACHE["ServicioCache"]
+        LOG["LoggerCentralizado"]
+    end
+
+    subgraph Infraestructura["Capa de Infraestructura"]
+        PG["PostgreSQL"]
+        COLAB["Google Colab GPU"]
+        GAPI["Google AI Studio API"]
+    end
+
+    PWA --> RC
+    PWA --> EC
+    Web --> RC
+    RC --> Dominio
+    EC --> Dominio
+    Dominio --> Servicios
+    Servicios --> Infraestructura
 ```
-_Figura 6._ Diagrama de arquitectura lógica del sistema y separación de capas (*Layers Pattern*) según Larman (2004).
 
-* **Presentación (UI):** Interfaz PWA liviana en móvil; envía video y recibe el diagnóstico con marcadores.
-* **Dominio/Aplicación:** Contiene las reglas del Jiu-Jitsu y orquesta la auditoría postural mediante controladores GRASP.
-* **Servicios Técnicos:** Encapsula la inferencia 3D con YOLO26x-Pose, el cálculo vectorial de Gemini Embedding 2, la matriz DTW y la síntesis con Gemini 3.8 Flash.
+**Justificación de las capas:**
 
----
+| Capa | Responsabilidad | Clases Principales |
+|---|---|---|
+| **Presentación** | Captura de eventos de usuario, visualización de resultados, notificaciones | `EvaluacionFrame`, `DashboardFrame` |
+| **Aplicación** | Orquestación del flujo de trabajo, gestión de sesiones, control de transiciones | `RecursoController`, `EvaluacionController` |
+| **Dominio** | Lógica de negocio pura: evaluación biomecánica, estrategias, desviaciones | `SesionEvaluacion`, `TecnicaPatron`, `EstrategiaEvaluacion` |
+| **Servicios Técnicos** | Adaptadores de APIs externas, persistencia, caché, logging | `YOLO26xAdapter`, `AdaptadorGemini`, `PersistenciaFacade` |
+| **Infraestructura** | Recursos de cómputo y almacenamiento | Google Colab, PostgreSQL, Google AI Studio |
 
-## 5.2 Matriz de Asignación de Responsabilidades GRASP
+#### 5.3.2 Separación Modelo-Vista (Model-View Separation)
 
-En cumplimiento con la metodología de Larman (2004), la asignación de responsabilidades se resume en la siguiente matriz sintética:
+**Principio:** Los objetos del dominio **no deben tener conocimiento directo** de los objetos de la interfaz gráfica. La interfaz consulta al dominio (pull) o se suscribe a sus eventos (push via Observer), pero el dominio nunca envía mensajes a la UI.
 
-**Tabla 4**  
-*Matriz de asignación de responsabilidades mediante patrones GRASP según Larman (2004)*
+- **Pull (consulta):** `EvaluacionFrame` envía `getDesviacionActual()` al `EvaluacionController`, que delega al dominio.
+- **Push (notificación):** `SesionEvaluacion` publica el evento `"sesion.desviacion"` cuando detecta una desviación crítica. `EvaluacionFrame`, suscrito como `PropertyListener`, actualiza el marcador rojo automáticamente.
 
-| Clase de Software | Patrón GRASP Aplicado | Responsabilidad Asignada | Justificación Técnica |
-| :--- | :--- | :--- | :--- |
-| **`RecursoController`** | **Controller** | Recibir y derivar eventos de carga curricular (**CU-01, CU-05**). | Aísla la interfaz PWA de la lógica de indexación y extracción. |
-| **`EvaluacionController`** | **Controller / Creator** | Orquestar el flujo asincrónico (**CU-02, CU-03**) e instanciar `EvaluacionPostural`. | Agrega y utiliza de cerca los datos de visión, DTW y RAG. |
-| **`EvaluacionPostural`** | **Information Expert** | Calcular porcentaje de coincidencia y clasificar articulación en falla en $\mathbb{R}^3$. | Posee las coordenadas esqueléticas 3D y umbrales angulares. |
-| **`YOLOEngine`** | **Pure Fabrication / Indirection** | Extraer la matriz de keypoints 3D ($X, Y, Z$) desde el video. | Evita acoplar entidades del tatami con la biblioteca Ultralytics. |
-| **`VectorDBService`** | **Pure Fabrication / Indirection** | Gestionar embeddings y similitud de cosenos con Gemini Embedding 2. | Mantiene limpia la entidad `FuenteConocimiento`. |
-| **`ServicioGeminiFlash`** | **Protected Variations** | Generar recomendación fundamentada con Gemini 3.8 Flash. | Encapsula la API remota ante posibles variaciones de contrato. |
+#### 5.3.3 Diagramas de Secuencia del Sistema (SSD)
 
-*Nota.* Asignación metodológica de responsabilidades a clases de software basada en los patrones GRASP de Larman (2004).
+Los SSDs ilustran el comportamiento del sistema como una "caja negra" que responde a eventos de entrada de los actores externos.
 
----
-
-## 5.3 Diagramas de Secuencia del Sistema (Use-Case Realizations)
-
-### 5.3.1 Secuencia: Catalogación Curricular y Recursos (CU-01 y CU-05)
+**SSD: Caso de Uso "Registrar Técnica Patrón" (CU-01)**
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor I as Instructor
-    participant C as RecursoController
-    participant V as VectorDBService (Gemini Embedding 2)
-    participant Y as YOLOEngine (YOLO26x-Pose)
-    participant BD as BaseDatosRelacional
+    actor Instructor
+    participant Sistema as :Sistema
+    participant YOLO as «actor» :YOLO26x-Pose
+    participant GEM as «actor» :Gemini Embedding 2
 
-    alt Ruta PDF (Manual RAG)
-        I->>C: UploadPDF(idTecnica, pdfFile)
-        C->>V: procesarEmbeddings(pdfFile)
-        V-->>C: vectoresOK
-        C->>BD: INSERT RecursoDidactico("PDF")
-    else Ruta YouTube (Enlace PWA)
-        I->>C: SaveYouTubeURL(idTecnica, url)
-        C->>BD: INSERT RecursoDidactico("YOUTUBE")
-    else Ruta Video Patrón (3D)
-        I->>C: UploadPattern(idTecnica, videoFile)
-        C->>Y: extraerKeypoints3D(videoFile)
-        Y-->>C: matrizEsqueletica3D
-        C->>BD: INSERT TecnicaPatron(matriz3D)
-    end
-    C-->>I: Confirmación
+    Instructor->>Sistema: registrarTecnica(videoPatron, nombreTecnica)
+    Sistema->>YOLO: extraerKeypoints3D(videoPatron)
+    YOLO-->>Sistema: matrizEsqueletica3D
+    Sistema->>GEM: generarEmbeddings(manualPDF)
+    GEM-->>Sistema: vectoresEmbedding
+    Sistema-->>Instructor: confirmacionRegistro
 ```
-_Figura 7._ Diagrama de secuencia del sistema para la gestión y catalogación de recursos del instructor (CU-01 y CU-05) según Larman (2004).
 
-### 5.3.2 Secuencia: Auditoría Postural Asincrónica (CU-02 y CU-03)
+**SSD: Caso de Uso "Cargar Video y Evaluar" (CU-02)**
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor P as Practicante
-    participant C as EvaluacionController
-    participant Y as YOLOEngine
-    participant D as SincronizadorDTW
-    participant V as VectorDBService
-    participant G as ServicioGeminiFlash
+    actor Practicante
+    participant Sistema as :Sistema
+    participant YOLO as «actor» :YOLO26x-Pose
+    participant DTW as :SincronizadorDTW
+    participant GEM as «actor» :Gemini 3.8 Flash
 
-    P->>C: solicitarEvaluacion(idPracticante, idTecnica, video)
-    C->>Y: extraerEsqueletos3D(video)
-    Y-->>C: listaEsqueletos
-    C-->>P: presentarEsqueletosUI()
-    P->>C: confirmarSujetoActivo(idEsqueleto)
-    C->>D: alinearDTW(esqueletoSujeto, esqueletoPatron)
-    D-->>C: fotogramaFalla, articulacionCritica
-    C->>V: buscarContexto(articulacionCritica)
-    V-->>C: textoManualPDF
-    C->>G: generarConsejo(textoManual, articulacionCritica)
-    G-->>C: consejoPedagogico
-    C-->>P: presentarDiagnostico(imagenAnotada, consejoPedagogico)
+    Practicante->>Sistema: cargarVideo(videoPractica, idTecnica)
+    Sistema->>YOLO: inferirKeypoints(videoPractica)
+    YOLO-->>Sistema: listaEsqueletos
+    Sistema-->>Practicante: presentarEsqueletosUI()
+    Practicante->>Sistema: confirmarSujetoActivo(idEsqueleto)
+    Sistema->>DTW: alinearDTW(esqueletoPracticante, esqueletoPatron)
+    DTW-->>Sistema: fotogramaFalla, articulacionCritica
+    Sistema->>GEM: generarRetroalimentacion(articulacionCritica, contextoManual)
+    GEM-->>Sistema: consejoPedagogico
+    Sistema-->>Practicante: presentarDiagnostico(imagenAnotada, consejoPedagogico)
 ```
-_Figura 8._ Diagrama de secuencia del sistema para la auditoría postural asincrónica (CU-02 y CU-03) según Larman (2004).
 
----
+#### 5.3.4 Contratos de Operación del Sistema
 
-## 5.4 Diseño Relacional y Normalización (Metodología de Mannino)
+Los contratos especifican los cambios de estado del dominio como resultado de las operaciones del sistema, usando precondiciones y poscondiciones.
 
-### 5.4.1 Esquema Lógico Relacional
-Estructura en notación formal:
+**Contrato CO1: registrarTecnica**
 
-* **`Usuarios`** ($\underline{\text{idUsuario}}$, nombreCompleto, correoElectronico, telefonoWhatsApp, fechaRegistro, tipoUsuario)
-* **`Instructores`** ($\underline{\text{idUsuario}}^*$, gradoCinturon, licenciaInstructor)
-  * *FK:* $\text{idUsuario} \rightarrow \text{Usuarios}(\text{idUsuario})$
-* **`Practicantes`** ($\underline{\text{idUsuario}}^*$, gradoCinturon, pesoKg, estadoMembresia)
-  * *FK:* $\text{idUsuario} \rightarrow \text{Usuarios}(\text{idUsuario})$
-* **`TecnicasPatron`** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, matrizEsqueleticaURL, fechaPublicacion)
-  * *FK:* $\text{idInstructor} \rightarrow \text{Instructores}(\text{idUsuario})$
-* **`RecursosDidacticos`** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga)
-  * *FK:* $\text{idTecnicaPatron} \rightarrow \text{TecnicasPatron}(\text{idTecnicaPatron})$
-* **`VideosPractica`** ($\underline{\text{idVideoPractica}}$, $\text{idPracticante}^*$, $\text{idTecnicaPatron}^*$, duracionSegundos, archivoURL, fechaGrabacion)
-  * *FK:* $\text{idPracticante} \rightarrow \text{Practicantes}(\text{idUsuario})$, $\text{idTecnicaPatron} \rightarrow \text{TecnicasPatron}(\text{idTecnicaPatron})$
-* **`EvaluacionesPosturales`** ($\underline{\text{idEvaluacion}}$, $\text{idVideoPractica}^*$, porcentajeCoincidencia, articulacionFalla, tiempoProcesamientoSeg, estadoDiagnostico)
-  * *FK:* $\text{idVideoPractica} \rightarrow \text{VideosPractica}(\text{idVideoPractica})$ `[UNIQUE]`
+| Campo | Descripción |
+|---|---|
+| **Operación** | `registrarTecnica(videoPatron: Video, nombreTecnica: String)` |
+| **Casos de Uso** | CU-01: Registrar Técnica Patrón |
+| **Precondiciones** | El instructor está autenticado. El video tiene duración ≤ 45 segundos y peso ≤ 50 MB. |
+| **Poscondiciones** | Se creó una instancia de `TecnicaPatron` (*tp*). *tp* fue asociada con la `MatrizEsqueletica` extraída por YOLO26x-Pose. Se generaron los embeddings del manual PDF asociado mediante Gemini Embedding 2. *tp* fue almacenada en la base de datos de técnicas patrón. |
 
-### 5.4.2 Diagrama UML de Datos Lógicos
+**Contrato CO2: cargarVideo**
+
+| Campo | Descripción |
+|---|---|
+| **Operación** | `cargarVideo(videoPractica: Video, idTecnica: String)` |
+| **Casos de Uso** | CU-02: Cargar Video y Evaluar |
+| **Precondiciones** | Existe una `TecnicaPatron` con el `idTecnica` proporcionado. El practicante está autenticado. El video cumple las restricciones de tamaño y duración. |
+| **Poscondiciones** | Se creó una instancia de `SesionEvaluacion` (*se*). Se extrajeron los keypoints 3D del video mediante YOLO26x-Pose. Se confirmó el sujeto activo. Se alinearon las secuencias esqueléticas mediante DTW. Se identificó el fotograma de máxima desviación angular en ℝ³. Se generó la retroalimentación pedagógica mediante Gemini 3.8 Flash. *se* fue asociada con la `TecnicaPatron` correspondiente. |
+
+#### 5.3.5 Diagramas de Clases de Diseño (DCD)
+
+El DCD especifica las clases de software, sus métodos, atributos, tipos, visibilidades y navegabilidades.
+
+**DCD: Capa de Dominio**
 
 ```mermaid
 classDiagram
-    direction TB
-    class Usuario {
-        +int idUsuario <<PK>>
-        +string nombreCompleto
-        +string correoElectronico
-        +string tipoUsuario
+    class SesionEvaluacion {
+        -OID oid
+        -DateTime timeStamp
+        -float porcentajeCoincidencia
+        -EstadoEvaluacion estado
+        +cargarVideo(Video) void
+        +confirmarSujetoActivo(String) void
+        +calcularDesviaciones() List~DesviacionArticular~
+        +getPuntaje() float
+        +commit() void
     }
-    class Instructor { +int idUsuario <<PK,FK>> }
-    class Practicante { +int idUsuario <<PK,FK>> }
+
     class TecnicaPatron {
-        +int idTecnicaPatron <<PK>>
-        +int idInstructor <<FK>>
-        +string matrizEsqueleticaURL
-    }
-    class RecursoDidactico {
-        +int idRecurso <<PK>>
-        +int idTecnicaPatron <<FK>>
-        +string tipoRecurso
-    }
-    class VideoPractica {
-        +int idVideoPractica <<PK>>
-        +int idPracticante <<FK>>
-        +int idTecnicaPatron <<FK>>
-    }
-    class EvaluacionPostural {
-        +int idEvaluacion <<PK>>
-        +int idVideoPractica <<FK,Unique>>
-        +decimal porcentajeCoincidencia
-        +string articulacionFalla
+        -OID oid
+        -String nombre
+        -String categoria
+        -MatrizEsqueletica matriz
+        +getMatrizEsqueletica() MatrizEsqueletica
+        +getEmbeddings() List~Vector~
     }
 
-    Usuario <|-- Instructor
-    Usuario <|-- Practicante
-    Instructor "1" -- "0..*" TecnicaPatron
-    TecnicaPatron "1" -- "0..*" RecursoDidactico
-    Practicante "1" -- "0..*" VideoPractica
-    TecnicaPatron "1" -- "0..*" VideoPractica
-    VideoPractica "1" -- "1" EvaluacionPostural
+    class DesviacionArticular {
+        -String articulacion
+        -float anguloError
+        -String descripcion
+        +getPuntaje() float
+    }
+
+    class EstrategiaEvaluacion {
+        <<interface>>
+        +calcularDesviacion(Esqueleto3D, Esqueleto3D) DesviacionArticular
+    }
+
+    class EvaluacionGuardia {
+        +calcularDesviacion(Esqueleto3D, Esqueleto3D) DesviacionArticular
+    }
+
+    class EvaluacionMontada {
+        +calcularDesviacion(Esqueleto3D, Esqueleto3D) DesviacionArticular
+    }
+
+    SesionEvaluacion "1" *-- "1..*" DesviacionArticular : contiene
+    SesionEvaluacion "1" --> "1" TecnicaPatron : evalua_contra
+    SesionEvaluacion --> EstrategiaEvaluacion : usa
+    EstrategiaEvaluacion <|.. EvaluacionGuardia
+    EstrategiaEvaluacion <|.. EvaluacionMontada
 ```
-_Figura 9._ Diagrama UML del modelo lógico de datos relacionales y clases de diseño según Mannino (2019).
 
-### 5.4.3 Auditoría Sintética de Normalización (1FN, 2FN, 3FN)
+**DCD: Capa de Servicios Técnicos**
 
-Conforme a Mannino (2019):
+```mermaid
+classDiagram
+    class IInferenceEngine {
+        <<interface>>
+        +inferirKeypoints(Video) List~Esqueleto3D~
+    }
 
-1. **Primera Forma Normal (1FN):** Atributos atómicos. Las matrices de keypoints 3D ($X, Y, Z$) se almacenan fuera de la base relacional como binarios/archivos referenciados por URL (`matrizEsqueleticaURL`), previniendo campos multivaluados.
-2. **Segunda Forma Normal (2FN):** Todas las claves primarias son atómicas (un solo atributo). Se erradica por definición cualquier dependencia parcial de claves compuestas.
-3. **Tercera Forma Normal (3FN):** Ausencia de dependencias transitivas.
-   * *Prueba en `RecursosDidacticos`:* Se omitió la relación directa con `idInstructor`. La dependencia transitiva $\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$ se resuelve por navegación relacional, garantizando 3FN / BCNF.
-   * *Prueba en `EvaluacionesPosturales`:* Dependencia funcional directa:
-     $$\text{idEvaluacion} \rightarrow \{\text{idVideoPractica}, \text{porcentajeCoincidencia}, \text{articulacionFalla}, \text{tiempoProcesamientoSeg}\}$$
-     Todos los atributos dependen de forma única, directa y completa de la clave primaria.
+    class YOLO26xAdapter {
+        -modelo: YOLO
+        +inferirKeypoints(Video) List~Esqueleto3D~
+    }
+
+    class IEmbeddingService {
+        <<interface>>
+        +generarEmbeddings(Documento) List~Vector~
+    }
+
+    class GeminiEmbeddingAdapter {
+        -apiKey: String
+        +generarEmbeddings(Documento) List~Vector~
+    }
+
+    class IGenerationService {
+        <<interface>>
+        +generarRetroalimentacion(Contexto) String
+    }
+
+    class Gemini38FlashAdapter {
+        -apiKey: String
+        +generarRetroalimentacion(Contexto) String
+    }
+
+    class PersistenciaFacade {
+        -instance: PersistenciaFacade
+        +getInstance() PersistenciaFacade
+        +guardar(Object) void
+        +recuperar(OID, Class) Object
+        +commit() void
+        +rollback() void
+    }
+
+    IInferenceEngine <|.. YOLO26xAdapter
+    IEmbeddingService <|.. GeminiEmbeddingAdapter
+    IGenerationService <|.. Gemini38FlashAdapter
+```
+
+#### 5.3.6 Documento de Arquitectura de Software (SAD)
+
+El SAD registra las decisiones arquitectónicas clave estructuradas en vistas. Se incluyen las vistas más relevantes:
+
+**Vista Lógica:** Organización en capas (Presentación → Aplicación → Dominio → Servicios Técnicos → Infraestructura) con acoplamiento descendente. Ver sección 5.3.1.
+
+**Vista de Procesos:** El procesamiento de inferencia YOLO26x-Pose se ejecuta en un hilo separado en Google Colab con GPU. La sincronización DTW se ejecuta en paralelo con la generación de embeddings. La generación de retroalimentación con Gemini 3.8 Flash se ejecuta de forma asíncrona tras la finalización de la inferencia.
+
+**Vista de Despliegue:**
+
+```mermaid
+graph LR
+    subgraph Local["Dispositivo Local (PWA)"]
+        PWA["PWA Móvil"]
+        CACHE_LOCAL["Caché Local<br/>Técnicas Patrón"]
+    end
+
+    subgraph Colab["Google Colab Pro (GPU A100)"]
+        YOLO_S["YOLO26x-Pose<br/>Inference Engine"]
+        DTW_S["Sincronizador DTW"]
+        PERS_S["PersistenciaFacade"]
+    end
+
+    subgraph Nube["Google AI Studio (API)"]
+        GEM_EMB["Gemini Embedding 2"]
+        GEM_GEN["Gemini 3.8 Flash"]
+    end
+
+    subgraph BD["Base de Datos"]
+        PG["PostgreSQL"]
+    end
+
+    PWA -->|HTTPS POST| Colab
+    Colab -->|REST API| Nube
+    PERS_S --> PG
+    Colab -->|Sync| CACHE_LOCAL
+```
+
+**Vista de Datos:** El esquema relacional sigue la normalización BCNF de Mannino (2019). Las tablas principales son `TecnicaPatron`, `SesionEvaluacion`, `DesviacionArticular`, `RecursoDidactico` y `Usuario`. Se utiliza un mapeo O-R con inicialización perezosa (*Lazy Materialization*) y *Virtual Proxies* para las matrices esqueléticas de gran tamaño.
+
+---
+
+### 5.4 Transición del Diseño al Código
+
+#### 5.4.1 Mapeo de DCDs a Código Fuente
+
+La traducción de los diagramas de clases de diseño al código fuente sigue un mapeo directo:
+
+| Elemento DCD | Código Fuente (Python) |
+|---|---|
+| Clase | `class SesionEvaluacion:` |
+| Atributo privado | `self._oid: OID` |
+| Método público | `def calcular_desviaciones(self) -> List[DesviacionArticular]:` |
+| Interfaz | `class IInferenceEngine(ABC):` con `@abstractmethod` |
+| Asociación 1-M | Atributo de referencia: `self._tecnica_patron: TecnicaPatron` |
+| Asociación 1-\* | Colección: `self._desviaciones: List[DesviacionArticular]` |
+| Singleton | Patrón con `__instance` y `@classmethod get_instance()` |
+
+**Orden de implementación:** Se codifican primero las clases menos acopladas (interfaces, adaptadores, clases de dominio puras) y luego las más acopladas (controladores, fachadas).
+
+#### 5.4.2 Programación Guiada por Pruebas (TDD)
+
+Siguiendo la práctica de *Test-First Programming*, se escriben las pruebas unitarias **antes** del código de producción:
+
+1. **Escribir la prueba:** `test_calcular_desviacion_cadera_guardia_cerrada()` que verifica que un ángulo de cadera de 120° (cuando el patrón indica 90°) genera una `DesviacionArticular` con `anguloError = 30.0`.
+2. **Ejecutar la prueba:** La prueba falla porque la clase `EvaluacionGuardia` aún no existe.
+3. **Escribir el código mínimo:** Implementar `EvaluacionGuardia.calcular_desviacion()` con la lógica de comparación angular.
+4. **Refactorizar:** Extraer la lógica común a `EstrategiaEvaluacion` como clase abstracta.
+
+**Framework de pruebas:** Se utiliza `pytest` en el entorno de Google Colab para las pruebas unitarias de las clases de dominio y `pytest-cov` para medir la cobertura de código.
+
+#### 5.4.3 Diseño del Framework de Persistencia
+
+Se diseña un framework de persistencia simplificado siguiendo el patrón *Template Method*:
+
+```python
+class AbstractPersistenceMapper(ABC):
+    """Clase abstracta del framework de persistencia."""
+
+    def __init__(self, cache: ServicioCache):
+        self._cache = cache
+
+    def get(self, oid: OID, clase: type) -> object:
+        """Template Method: recupera un objeto por su OID."""
+        obj = self._cache.get(oid)
+        if obj is None:
+            obj = self._get_from_storage(oid, clase)  # Hook method
+            self._cache.put(oid, obj)
+        return obj
+
+    @abstractmethod
+    def _get_from_storage(self, oid: OID, clase: type) -> object:
+        """Hook method: implementado por cada subclase."""
+        pass
+```
+
+**Subclases concretas:**
+
+- `PostgreSQLMapper`: Implementa `_get_from_storage()` con consultas SQL mediante `psycopg2`.
+- `LocalFileMapper`: Implementa `_get_from_storage()` leyendo archivos serializados (pickle) para el modo offline/failover.
+
+**Lazy Materialization con Virtual Proxy:** Las matrices esqueléticas de `TecnicaPatron` (que pueden ocupar varios MB) no se materializan hasta que se solicitan explícitamente. Se utiliza un `VirtualProxy` que almacena solo el OID y materializa el objeto real bajo demanda.
+
+```python
+class MatrizEsqueleticaProxy:
+    """Virtual Proxy para materialización perezosa de matrices esqueléticas."""
+
+    def __init__(self, oid: OID):
+        self._oid = oid
+        self._real_subject: MatrizEsqueletica = None
+
+    def get_keypoints(self) -> List[Keypoint3D]:
+        if self._real_subject is None:
+            self._real_subject = PersistenciaFacade.get_instance().get(
+                self._oid, MatrizEsqueletica
+            )
+        return self._real_subject.get_keypoints()
+```
+
+---
+
+> **Nota final del capítulo:** Todo el diseño presentado en este capítulo sigue la filosofía de Larman de que los modelos y diagramas son **artefactos opcionales** cuyo valor reside en la comunicación y el razonamiento, no en la documentación por sí misma. La habilidad fundamental sigue siendo la **asignación metódica de responsabilidades** mediante los patrones GRASP y GoF, aplicada de forma iterativa y adaptativa en cada sprint del proyecto.

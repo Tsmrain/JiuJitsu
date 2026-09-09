@@ -1,4 +1,4 @@
-A partir del desglose oficial y las pautas institucionales de la Universidad Privada de Santa Cruz de la Sierra (UPSA), se ha estructurado de forma íntegra el borrador maestro de la tesis. Se ha unificado formalmente la terminología del proyecto: el análisis es tridimensional espacial en $\mathbb{R}^3$ mediante Ultralytics YOLO26x-Pose, las comparaciones biomecánicas se procesan de forma asíncrona mediante Dynamic Time Warping (DTW) y la base de conocimiento pedagógico (libros en PDF) se gestiona utilizando Vector Embeddings (`text-embedding-3-small`) almacenados en una base de datos vectorial para dar contexto a la API de Google Gemini. El marco de trabajo de ingeniería de software sigue de manera estricta el Proceso Unificado de Craig Larman y los fundamentos de diseño de bases de datos de Michael Mannino.
+A partir del desglose oficial y las pautas institucionales de la Universidad Privada de Santa Cruz de la Sierra (UPSA), se ha estructurado de forma íntegra el borrador maestro de la tesis. Se ha unificado formalmente la terminología del proyecto: el análisis es tridimensional espacial en $\mathbb{R}^3$ mediante Ultralytics YOLO26x-Pose, las comparaciones biomecánicas se procesan de forma asíncrona mediante Dynamic Time Warping (DTW) y la base de conocimiento pedagógico (libros en PDF) se gestiona utilizando Vector Embeddings provistos por OpenAI almacenados en una base de datos vectorial para dar contexto a los servicios de Google Gemini. El marco de trabajo de ingeniería de software sigue de manera estricta el Proceso Unificado (Larman, 2004) y los fundamentos de diseño de bases de datos (Mannino, 2019).
 
 El documento se expone de forma directa y exhaustiva, redactado con un vocabulario de ingeniería formal, claro, accesible y libre de cualquier elemento informal.
 
@@ -25,13 +25,13 @@ El objeto de investigación comprende el diseño, desarrollo e implementación d
 
 * **Delimitación temporal:** La investigación se desarrollará durante el periodo académico correspondiente a la elaboración, implementación y defensa del proyecto de grado en la UPSA.
 * **Delimitación espacial:** La recolección del corpus de video y la prueba piloto experimental se llevarán a cabo en las instalaciones de la academia Corpo e Mente (Knock Out Gym, Santa Cruz de la Sierra, Bolivia).
-* **Delimitación temática y técnica:** El sistema operará con un enfoque agnóstico de comparación técnica: procesará cualquier técnica de artes marciales siempre que se disponga de un video de referencia del instructor y un video de ejecución del practicante. La estimación postural se enfocará en la extracción de puntos clave articulares (*keypoints*) en tres dimensiones (3D), obteniendo las coordenadas de posición (X, Y, Z) a partir de grabaciones de video convencionales de una sola cámara (visión monocular) mediante el modelo YOLO26x-Pose. El sistema analizará las variaciones angulares en el espacio tridimensional a lo largo del tiempo, eliminando la dependencia estricta de un ángulo de grabación perpendicular de 90 grados. La contextualización de las recomendaciones automáticas de texto se limitará a manuales e instrucciones en formato PDF previamente vectorizados mediante el modelo `text-embedding-3-small`. Se excluyen del alcance el reconocimiento automático o clasificación de técnicas no catalogadas, el escaneo volumétrico por malla poligonal densa y la medición de variables biomecánicas de fuerza, potencia o fatiga física.
+* **Delimitación temática y técnica:** El sistema operará con un enfoque agnóstico de comparación técnica: procesará cualquier técnica de artes marciales siempre que se disponga de un video de referencia del instructor y un video de ejecución del practicante. La estimación postural se enfocará en la extracción de puntos clave articulares (*keypoints*) en tres dimensiones (3D), obteniendo las coordenadas de posición (X, Y, Z) a partir de grabaciones de video convencionales de una sola cámara (visión monocular) mediante el modelo YOLO26x-Pose. El sistema analizará las variaciones angulares en el espacio tridimensional a lo largo del tiempo, eliminando la dependencia estricta de un ángulo de grabación perpendicular de 90 grados. La contextualización de las recomendaciones automáticas de texto se limitará a manuales e instrucciones en formato PDF previamente vectorizados mediante modelos de embeddings de OpenAI. Se excluyen del alcance el reconocimiento automático o clasificación de técnicas no catalogadas, el escaneo volumétrico por malla poligonal densa y la medición de variables biomecánicas de fuerza, potencia o fatiga física.
 
 ### 1.1.5 Justificación
 
 * **Justificación teórica:** El proyecto contribuye al área de la visión artificial y el procesamiento de lenguaje natural aplicados a las ciencias del deporte y la biomecánica motriz. Valida la eficacia de algoritmos de estimación de pose tridimensional monocular combinados con técnicas de Generación Aumentada por Recuperación (RAG) en bases de datos vectoriales dentro de disciplinas de contacto con interacción cercana, proporcionando evidencia empírica en un contexto de investigación deportiva local.
 * **Justificación práctica:** Proporciona a la academia Corpo e Mente una solución de software accesible que optimiza los tiempos de supervisión del cuerpo docente, mitiga la consolidación de hábitos técnicos perjudiciales y brinda a los practicantes un medio de autoevaluación objetivo y sistemático.
-* **Justificación metodológica:** La investigación adopta un proceso riguroso de ingeniería de software caracterizado por un diseño modular orientado a objetos impulsado por el Proceso Unificado de Craig Larman y las pautas de modelado de bases de datos de Michael Mannino. La implementación de pruebas automáticas garantiza la validez matemática en los cálculos de geometría articular, la indexación semántica de textos y la sincronización algorítmica de trayectorias espaciales.
+* **Justificación metodológica:** La investigación adopta un proceso riguroso de ingeniería de software caracterizado por un diseño modular orientado a objetos impulsado por el Proceso Unificado (Larman, 2004) y las pautas de modelado de bases de datos (Mannino, 2019). La implementación de pruebas automáticas garantiza la validez matemática en los cálculos de geometría articular, la indexación semántica de textos y la sincronización algorítmica de trayectorias espaciales.
 
 ## 1.2 Objetivos
 
@@ -41,14 +41,14 @@ Desarrollar un sistema de visión artificial y recuperación semántica de infor
 ### 1.2.2 Objetivos Específicos
 
 1. **Analizar** los requerimientos funcionales, no funcionales y pedagógicos del proceso de enseñanza-aprendizaje técnico, estableciendo un protocolo de captura de video monocular y un corpus de documentación técnica escrita para Jiu-Jitsu.
-2. **Diseñar** la arquitectura de software, el esquema relacional de base de datos bajo los fundamentos de Mannino y los modelos de datos vectoriales que permitan la integración desacoplada entre la captura de video, el procesamiento esquelético tridimensional, el almacenamiento de embeddings de texto y la entrega de reportes.
-3. **Implementar** los módulos computacionales en Python para la estimación de pose humana en tres dimensiones (3D) con YOLO26x-Pose, el alineamiento temporal con DTW, la vectorización de manuales con `text-embedding-3-small` y la generación de recomendaciones pedagógicas contextualizadas a través de Google Gemini.
+2. **Diseñar** la arquitectura de software, el esquema relacional de base de datos bajo los fundamentos de Mannino (2019) y los modelos de datos vectoriales que permitan la integración desacoplada entre la captura de video, el procesamiento esquelético tridimensional, el almacenamiento de embeddings de texto y la entrega de reportes.
+3. **Implementar** los módulos computacionales en Python para la estimación de pose humana en tres dimensiones (3D) con YOLO26x-Pose, el alineamiento temporal con DTW, la vectorización de manuales mediante servicios de OpenAI y la generación de recomendaciones pedagógicas contextualizadas a través de Google Gemini.
 4. **Validar** la precisión y exactitud diagnóstica del sistema mediante pruebas experimentales de concordancia frente al criterio evaluativo de instructores certificados, evaluando la usabilidad y la adopción de la herramienta por parte de los practicantes en la academia piloto.
 
 ## 1.3 Metodología
 La investigación se clasifica como un estudio aplicado y de desarrollo tecnológico, fundamentado en un diseño metodológico mixto: cuantitativo para la determinación de métricas de precisión articular, distancias de embeddings y rendimiento computacional; y cualitativo para la evaluación de la experiencia de usuario en el entorno de entrenamiento.
 
-El proceso de construcción del sistema adopta el Proceso Unificado (PU) propuesto por Craig Larman, estructurándose en cuatro fases iterativas e incrementales:
+El proceso de construcción del sistema adopta el Proceso Unificado propuesto por Larman (2004), estructurándose en cuatro fases iterativas e incrementales:
 
 1. **Inicio (Inception):** Definición del modelo de negocio, delimitación del alcance del sistema, identificación preliminar de los casos de uso principales y evaluación de la viabilidad técnica de la estimación postural 3D monocular y la arquitectura RAG.
 2. **Elaboración (Elaboration):** Especificación profunda de requisitos bajo la norma IEEE 830, diseño de la arquitectura base del sistema, modelado de dominio conceptual y mitigación de los riesgos arquitectónicos más severos (tales como la latencia de inferencia en la nube y la integridad en la selección del sujeto activo).
@@ -73,6 +73,7 @@ graph TD
     A -->|Pago de Honorarios/Comisión| C[Instructor Titular Corpo e Mente]
     C -->|Instrucción Técnica y Evaluación| B
 ```
+_Figura 1._ Estructura organizativa de la academia y flujo de delegación operativa.
 
 ## 2.3 Descripción de los Servicios y Productos de la Empresa
 El servicio núcleo de Corpo e Mente consiste en la formación técnico-deportiva en Jiu-Jitsu Brasileño, estructurada en tres categorías principales:
@@ -122,6 +123,9 @@ Para la extracción automatizada del esqueleto anatómico tridimensional de los 
 
 ### 3.1.1 Matriz Comparativa de Modelos Core de Visión
 
+**Tabla 1**  
+*Matriz comparativa de arquitecturas de estimación de pose humana*
+
 | Criterio Técnico | MediaPipe Pose | OpenPose (Baseline) | Ultralytics YOLO26x-Pose |
 |---|---|---|---|
 | Enfoque de Red | Top-down (Monorregión con profundidad aproximada) | Bottom-up plano 2D (Campos de Afinidad de Partes) | Single-Shot Extra Large con regresión directa de profundidad ($Z$) |
@@ -129,6 +133,8 @@ Para la extracción automatizada del esqueleto anatómico tridimensional de los 
 | Manejo de Oclusión en 3D | Deficiente ante contacto corporal (colapso de profundidad) | Sin soporte tridimensional nativo de una sola cámara | Estimación espacial mediante algoritmo STAL y restricciones óseas |
 | Post-procesamiento | No requiere etapas adicionales | Requiere Supresión de No Máximos y enlace de grafos | Arquitectura NMS-Free nativa de cero latencia post-red |
 | Formatos de Exportación | Propietario (.tflite) | Complejo (C++ nativo y Caffe) | Versatilidad total (.pt, ONNX, TensorRT) |
+
+*Nota.* Comparación técnica de especificaciones de modelos de estimación de pose humana.
 
 ### 3.1.2 Justificación de la Elección de YOLO26x-Pose en Jiu-Jitsu
 Se determinó la selección de la arquitectura YOLO26x-Pose a partir de tres ventajas estructurales críticas para el dominio del Jiu-Jitsu Brasileño:
@@ -170,11 +176,11 @@ El algoritmo DTW funciona de manera equivalente a emparejar dos interpretaciones
 ## 3.4 Vector Embeddings y Arquitectura de Recuperación Semántica (RAG)
 Para que el sistema trascienda la entrega de métricas numéricas frías y ofrezca una asesoría formativa comprensible, la arquitectura en Python integra técnicas de modelado semántico de texto orientadas al Jiu-Jitsu.
 
-### 3.4.1 Definición de Word Embeddings y text-embedding-3-small
-Los *word embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionó el modelo `text-embedding-3-small`, el cual transforma descripciones de maniobras y fundamentos teóricos en vectores fijos de 1536 dimensiones. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
+### 3.4.1 Definición de Word Embeddings y Modelos de OpenAI
+Los *word embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionaron los modelos de embeddings provistos por OpenAI, los cuales transforman descripciones de maniobras y fundamentos teóricos en vectores fijos de alta dimensionalidad. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
 
 ### 3.4.2 Base de Datos Vectorial y Similitud por Cosenos
-La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de 1536 dimensiones. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
+La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de alta dimensionalidad. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
 
 $$\text{Similitud}_{\text{coseno}}(\vec{A}, \vec{B}) = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
 
@@ -189,8 +195,9 @@ graph LR
     B -->|Recupera Bloque PDF| C[Construcción del Prompt Contextualizado]
     C -->|API Google Gemini| D[Instrucción Pedagógica Clarificada]
 ```
+_Figura 2._ Flujo del patrón arquitectónico de Generación Aumentada por Recuperación (RAG).
 
-1. **Segmentación e Indexación (Chunking):** Los manuales técnicos en PDF (como *Jiu-Jitsu University*) cargados por el instructor son divididos en bloques lógicos de texto comprimidos y procesados por `text-embedding-3-small` para poblar la base de datos vectorial de forma persistente.
+1. **Segmentación e Indexación (Chunking):** Los manuales técnicos en PDF (como *Jiu-Jitsu University*) cargados por el instructor son divididos en bloques lógicos de texto comprimidos y procesados mediante modelos de embeddings de OpenAI para poblar la base de datos vectorial de forma persistente.
 2. **Recuperación Contextual:** Al identificarse la articulación desalineada en el espacio $\mathbb{R}^3$, el sistema consulta la base vectorial y recupera los párrafos exactos del manual que describen la mecánica correcta para esa posición específica de Jiu-Jitsu.
 3. **Generación de la Instrucción:** El software concatena los bloques de texto recuperados del manual con las métricas de la falla y los inyecta en una plantilla de prompt estructurada hacia la API de Google Gemini. El modelo de lenguaje procesa esta información y genera una recomendación directa y formal en lenguaje natural (por ejemplo: *"Se evidencia una apertura del codo que compromete su defensa; el manual prescribe mantener la articulación pegada a las costillas para denegar el espacio de control al oponente"*).
 
@@ -229,11 +236,11 @@ El sistema constituye una plataforma computacional de asistencia técnica y peda
 * **Similitud de Postura:** Nivel de coincidencia entre la posición tridimensional del cuerpo del Practicante y el Modelo de Referencia del Instructor en una fase técnica equivalente.
 * **DTW (*Dynamic Time Warping*):** Método que empareja movimientos que ocurren a diferente velocidad, permitiendo comparar la técnica aunque el Practicante se mueva más despacio o haga pausas.
 * **YOLO26x-Pose:** Modelo de visión artificial que detecta cuerpos y extrae los puntos articulares calculando su profundidad relativa para la reconstrucción en el espacio tridimensional (3D).
-* **text-embedding-3-small:** Modelo de embedding vectorial que transforma texto técnico en vectores de 1536 dimensiones para habilitar búsquedas semánticas por similitud de cosenos.
+* **Embeddings de OpenAI:** Modelos vectoriales que transforman texto técnico en representaciones numéricas densas para habilitar búsquedas semánticas por similitud de cosenos.
 * **PWA (*Progressive Web App*):** Aplicación web que funciona en el navegador del celular con la apariencia y agilidad de una app instalada.
 
 ### 4.1.4 Visión General del Documento
-El capítulo se organiza conforme a las directrices de la ingeniería de software y el estándar IEEE 830: La Sección 4.2 detalla la perspectiva del producto, funciones esenciales, características de los usuarios y restricciones del entorno; la Sección 4.3 formaliza los requisitos específicos de rendimiento, interfaces de hardware y software junto con los atributos del sistema; la Sección 4.4 identifica los casos de uso principales estructurados según Larman; y la Sección 4.5 presenta el diagrama de dominio conceptual del negocio.
+El capítulo se organiza conforme a las directrices de la ingeniería de software y el estándar IEEE 830: La Sección 4.2 detalla la perspectiva del producto, funciones esenciales, características de los usuarios y restricciones del entorno; la Sección 4.3 formaliza los requisitos específicos de rendimiento, interfaces de hardware y software junto con los atributos del sistema; la Sección 4.4 identifica los casos de uso principales estructurados según Larman (2004); y la Sección 4.5 presenta el diagrama de dominio conceptual del negocio.
 
 ## 4.2 Descripción General
 
@@ -241,7 +248,7 @@ El capítulo se organiza conforme a las directrices de la ingeniería de softwar
 El sistema opera mediante una estructura distribuida local-nube ejecutada íntegramente en lenguaje Python:
 
 1. **Entorno Local (Dispositivo de Usuario y Laptop del Tatami):** Una interfaz web progresiva (PWA) ligera se ejecuta en los teléfonos celulares de los usuarios para la captura de video y consumo de reportes. El backend local orquestador se ejecuta en una computadora portátil estándar configurada con FastAPI en Python, la cual actúa como pasarela ligera encargada de recibir las transmisiones HTTP POST y despacharlas inmediatamente hacia los servicios avanzados en la nube, eliminando el almacenamiento local intermedio en carpetas de disco virtual.
-2. **Capa de Procesamiento Remoto (Google Colab Pro + APIs Nube):** Un entorno en Google Colab Pro configurado con aceleración por GPU ejecuta el procesamiento pesado mediante Python. Este entorno aloja el modelo de visión artificial YOLO26x-Pose, ejecuta la matriz matemática DTW, administra las consultas semánticas hacia la base de datos vectorial cargada con embeddings de `text-embedding-3-small` y consolida la síntesis pedagógica consultando la API de Google Gemini.
+2. **Capa de Procesamiento Remoto (Google Colab Pro + APIs Nube):** Un entorno en Google Colab Pro configurado con aceleración por GPU ejecuta el procesamiento pesado mediante Python. Este entorno aloja el modelo de visión artificial YOLO26x-Pose, ejecuta la matriz matemática DTW, administra las consultas semánticas hacia la base de datos vectorial cargada con embeddings de OpenAI y consolida la síntesis pedagógica consultando la API de Google Gemini.
 
 ```mermaid
 flowchart TD
@@ -255,6 +262,7 @@ flowchart TD
     F --> H[Reporte visual y recomendación entregados en < 5-10s]
     G --> H
 ```
+_Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistema.
 
 ### 4.2.2 Funciones del Producto
 * **Gestión de Catálogo Curricular:** Registro de Técnicas Patrón y asignación de identificadores a las posiciones de control del Jiu-Jitsu.
@@ -275,7 +283,7 @@ flowchart TD
 
 ### 4.2.5 Suposiciones y Dependencias
 * **Encuadre del Plano General:** Se asume que los practicantes colocarán el dispositivo móvil en un trípode o soporte a una distancia recomendada de entre 2.5 y 3.5 metros, asegurando la visibilidad del cuerpo entero de ambos atletas durante la secuencia.
-* **Disponibilidad de Canales de API:** La operación del software depende de la disponibilidad en línea de las API de OpenAI (`text-embedding-3-small`) y de Google Gemini.
+* **Disponibilidad de Canales de API:** La operación del software depende de la disponibilidad en línea de las API de OpenAI y de Google Gemini.
 * **Conectividad de Red:** Se asume que el gimnasio Knock Out Gym dispone de una conexión a internet comercial inalámbrica con un ancho de banda de subida mínimo de 10 Mbps para soportar las transmisiones HTTP POST asíncronas.
 
 ### 4.2.6 Requisitos Futuros
@@ -298,6 +306,9 @@ flowchart TD
 
 ### 4.3.2 Requisitos Funcionales
 
+**Tabla 2**  
+*Especificación de requisitos funcionales del sistema (IEEE 830)*
+
 | Código | Requisito Funcional | Historia de Usuario y Criterio de Aceptación |
 | :---: | :--- | :--- |
 | **RF-01** | **Registro de Técnica Patrón** | **Como** Instructor, se requiere registrar el video del Modelo de Referencia de una técnica oficial, **para que** actúe como el molde esquelético tridimensional contra el cual se evaluará la práctica de los alumnos.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón y extrae su matriz de puntos articulares 3D en menos de 30 segundos. |
@@ -310,8 +321,10 @@ flowchart TD
 | **RF-08** | **Generación de Consejos con IA Semántica** | **Como** Practicante, el sistema debe recibir una recomendación en lenguaje natural sobre la causa del desajuste postural y cómo corregirla basándose en el manual indexado, **para que** se facilite la comprensión motriz.<br>*Criterio de Aceptación:* La API de Google Gemini devuelve un texto claro de 2 o 3 líneas contextualizado por las fuentes de conocimiento recuperadas por similitud de cosenos. |
 | **RF-09** | **Aviso por Oclusión Severa o Encuadre Inválido** | **El sistema interrumpe** de forma controlada el proceso si las articulaciones principales sufren bloqueos visuales continuos, notificando al usuario un mensaje explícito en pantalla para repetir la captura sin registrar datos corruptos. |
 | **RF-10** | **Consulta de Historial de Progreso** | **Como** Practicante, el sistema debe proveer un panel histórico de evaluaciones cronológicas, **para que** se pueda auditar la evolución del desempeño técnico a lo largo del tiempo. |
-| **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor, se requiere cargar archivos PDF de manuales oficiales de Jiu-Jitsu, **para que** el sistema fragmente e indexe el texto en una base de datos vectorial mediante `text-embedding-3-small`.<br>*Criterio de Aceptación:* El sistema procesa el documento, calcula los embeddings de 1536 dimensiones e indexa los bloques lógicos para búsquedas semánticas. |
+| **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor, se requiere cargar archivos PDF de manuales oficiales de Jiu-Jitsu, **para que** el sistema fragmente e indexe el texto en una base de datos vectorial mediante los modelos de embedding de OpenAI.<br>*Criterio de Aceptación:* El sistema procesa el documento, calcula los embeddings vectoriales e indexa los bloques lógicos para búsquedas semánticas. |
 | **RF-12** | **Gestión de Recursos Externos (YouTube)** | **Como** Instructor, se requiere asociar enlaces de videos de YouTube vinculados a cada técnica, **para que** los practicantes dispongan de ejemplos complementarios de consulta.<br>*Criterio de Aceptación:* El sistema valida el formato de la URL de YouTube, la guarda en el catálogo relacional y permite su reproducción directa en la PWA. |
+
+*Nota.* Requisitos funcionales estructurados conforme al estándar IEEE 830.
 
 ### 4.3.3 Requisitos de Rendimiento
 * **RP-01 (Ventana de Latencia de Inferencia):** El tiempo transcurrido desde el despacho HTTP POST del video hasta el retorno del diagnóstico JSON y la imagen OpenCV anotada se mantendrá en un rango de 5.0 a 10.0 segundos.
@@ -320,7 +333,7 @@ flowchart TD
 
 ### 4.3.4 Restricciones de Diseño
 * **RD-01 (Uso de YOLO26x-Pose y Google Colab Pro):** La arquitectura de visión tridimensional debe sustentarse estrictamente en la variante Extra Large (YOLO26x-Pose) ejecutada en Python sobre un backend acelerado por GPU en Colab Pro, garantizando la resolución espacial de profundidad ($Z$).
-* **RD-02 (Integración Obligatoria de text-embedding-3-small):** La base de conocimiento debe estructurarse mediante embeddings generados por el modelo de OpenAI con dimensiones vectoriales fijas de 1536 dimensiones.
+* **RD-02 (Integración Obligatoria de Embeddings de OpenAI):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por OpenAI con dimensiones densas homogéneas.
 * **RD-03 (Arquitectura Web Multiplataforma):** La interfaz frontal debe ser accesible de forma directa a través de navegadores web móviles sin requerir instalación por medio de tiendas de aplicaciones comerciales.
 
 ### 4.3.5 Atributos del Sistema
@@ -370,6 +383,10 @@ graph LR
     CU03 -.-> IA
     CU05 -.-> IA
 ```
+_Figura 4._ Diagrama general de casos de uso del sistema según Larman (2004).
+
+**Tabla 3**  
+*Matriz de casos de uso principales del sistema según Larman (2004)*
 
 | Código | Nombre del Caso de Uso | Actor Principal | Requisitos Asociados | Descripción Sintética |
 | :---: | :--- | :---: | :---: | :--- |
@@ -379,8 +396,10 @@ graph LR
 | **CU-04** | **Consultar Historial de Progreso** | El Practicante | RF-10 | El Practicante accede a su panel cronológico para auditar los porcentajes de coincidencia postural obtenidos a lo largo de las clases. |
 | **CU-05** | **Gestionar Recursos y Fuentes de Estudio** | El Instructor / El Practicante | RF-11, RF-12 | El Instructor administra manuales en PDF (indexados en la base de datos vectorial) y enlaces de YouTube. El Practicante los consulta como material oficial de estudio para sus exámenes de grado. |
 
+*Nota.* Trazabilidad entre casos de uso, actores y requisitos funcionales.
+
 ## 4.5 Diagrama de Dominio
-El modelo conceptual de dominio organiza las clases lógicas esenciales de la aplicación. Se omiten tipos de datos primitivos de implementación física y se enfoca estrictamente en reflejar las relaciones del negocio deportivo y de inteligencia artificial según Larman.
+El modelo conceptual de dominio organiza las clases lógicas esenciales de la aplicación. Se omiten tipos de datos primitivos de implementación física y se enfoca estrictamente en reflejar las relaciones del negocio deportivo y de inteligencia artificial según Larman (2004).
 
 ```mermaid
 classDiagram
@@ -483,144 +502,141 @@ classDiagram
     EvaluacionPostural "0..*" --o "1" HistorialProgreso : acumula-en
     Practicante "1" *-- "1" HistorialProgreso : posee
 ```
+_Figura 5._ Diagrama de clases del modelo conceptual de dominio según Larman (2004).
 
 ---
 
 # Capítulo V: Análisis y Diseño
 
-El presente capítulo expone la transición del modelo de requisitos hacia la arquitectura lógica y el diseño de la base de datos del sistema, aplicando de forma estricta los patrones de asignación de responsabilidades GRASP y GoF postulados por Craig Larman, y las metodologías de modelado relacional y dependencias funcionales de Michael Mannino.
+El presente capítulo expone la transición del modelo de requisitos hacia la arquitectura lógica y el diseño de la base de datos del sistema, aplicando de forma rigurosa los patrones de asignación de responsabilidades generales del software (GRASP) postulados por Larman (2004) y los principios de diseño lógico y normalización de bases de datos relacionales de Mannino (2019).
 
 ## 5.1 Arquitectura del Sistema e Inclusión del Patrón de Diseño GRASP
-Para estructurar los componentes en lenguaje Python, el diseño de software adopta una arquitectura modular desacoplada basada en capas, asignando responsabilidades específicas a las clases mediante los patrones GRASP (*General Responsibility Assignment Software Patterns*):
+Para estructurar los componentes del sistema, el diseño lógico adopta una arquitectura modular basada en capas y patrones GRASP (*General Responsibility Assignment Software Patterns*), garantizando una adecuada separación de responsabilidades y facilitando la extensibilidad (Larman, 2004):
 
-1. **Patrón Controlador (Controller):** Se implementa mediante clases controladoras expuestas en FastAPI (p. ej., `EvaluacionController`). Esta clase recibe las solicitudes HTTP POST de video de práctica directas desde la interfaz móvil y coordina la ejecución de las operaciones lógicas, evitando acoplar la capa web con los modelos matemáticos de visión computacional.
-2. **Patrón Experto en Información (Information Expert):** La clase `EvaluacionPostural` se diseña como la experta en calcular el porcentaje final de coincidencia cinemática, dado que posee acceso directo a las matrices de coordenadas articulares procesadas por el algoritmo DTW.
-3. **Patrón Creador (Creator):** La clase `EvaluacionController` asume la responsabilidad de instanciar los objetos de `EvaluacionPostural`, ya que registra, encapsula y almacena cronológicamente dichas evaluaciones dentro del ciclo de vida de la sesión del practicante.
-4. **Bajo Acoplamiento y Alta Cohesión:** El motor de estimación esquelética tridimensional (`YOLO26xPoseEngine`) se encuentra completamente aislado de los mecanismos de persistencia relacional. Se comunica exclusivamente mediante estructuras de datos JSON puras basadas en coordenadas espaciales (X, Y, Z), permitiendo sustituir o actualizar el modelo de inteligencia artificial sin alterar las interfaces de usuario o el backend local de la laptop corporativa.
+1. **Patrón Controlador (Controller):** Asignado a la clase lógica `EvaluacionController`. Este objeto asume la responsabilidad de recibir los eventos del sistema originados por los usuarios en la interfaz cliente y coordinar el flujo de ejecución entre el motor de visión computacional, el algoritmo de alineación temporal y los servicios de inteligencia artificial, impidiendo el acoplamiento directo entre la capa de presentación y la lógica analítica.
+2. **Patrón Experto en Información (Information Expert):** Asignado a la entidad `EvaluacionPostural`. Esta clase concentra el conocimiento sobre los puntos clave anatómicos, las desviaciones espaciales calculadas y los umbrales de tolerancia biomecánica, siendo la responsable de computar el porcentaje global de concordancia postural y tipificar la articulación con mayor desvío cinemático.
+3. **Patrón Creador (Creator):** Asignado a la clase `EvaluacionController`. Dado que el controlador gestiona el caso de uso completo de auditoría y agrega los resultados intermedios producidos por los motores de cálculo, posee la responsabilidad legítima de instanciar los objetos de tipo `EvaluacionPostural`.
+4. **Bajo Acoplamiento y Alta Cohesión (Low Coupling / High Cohesion):** Los servicios de inteligencia artificial (`YOLOEngine`, `RecuperadorSemantico` y `ServicioGoogleGemini`) se comunican mediante interfaces abstractas y estructuras de datos normalizadas. El subsistema analítico opera de forma independiente de la capa de persistencia relacional, permitiendo actualizar o sustituir los proveedores de servicios de IA sin perturbar el dominio del software.
 
 ## 5.2 Diseño de Casos de Uso Críticos (Diagramas de Secuencia del Proceso Unificado)
-En correspondencia con las directrices de Larman para la fase de Elaboración y Construcción del Proceso Unificado, se modela el Diagrama de Secuencia del Sistema (DSS) para el flujo operativo núcleo del software: la carga de secuencias cinemáticas y la generación de la auditoría asincrónica.
+Conforme a la metodología del Proceso Unificado expuesta por Larman (2004), el Diagrama de Secuencia del Sistema (DSS) describe la interacción temporal y el intercambio de mensajes entre los actores externos, el objeto controlador del sistema y los servicios lógicos de procesamiento durante el caso de uso central: la auditoría postural asincrónica.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor P as Practicante (PWA)
-    participant C as EvaluacionController (FastAPI)
-    participant V as YOLO26xPoseEngine (Python)
-    participant D as SincronizadorDTW (Python)
-    participant R as RecuperadorVectorial (DB)
-    participant G as GoogleGeminiAPI (Nube)
+    actor P as Practicante
+    participant C as EvaluacionController
+    participant V as YOLOEngine
+    participant D as SincronizadorDTW
+    participant R as BaseVectorialOpenAI
+    participant G as ServicioGoogleGemini
 
-    P->>C: postVideoPractica(idPracticante, idTecnica, videoArchivo)
-    Note over C: Valida restricciones: peso < 50MB y duracion < 45s
-    C->>V: procesarEsqueleto3D(videoArchivo)
-    V-->>C: esqueletosDetectados3D(X, Y, Z)
-    C-->>P: presentarEsqueletosParaSeleccion(esqueletosDetectados)
-    P->>C: seleccionarEsqueletoActivo(idEsqueleto)
-    Note over C: Descarta esqueletos secundarios para garantizar datos limpios (Ground Truth)
-    C->>D: alinearSecuencias(esqueletoSeleccionado, esqueletoPatron)
-    D-->>C: fotogramaMaximaDiscrepancia, indicadorArticulación
-    C->>R: buscarContextoSemantico(indicadorArticulación, idTecnica)
-    R-->>C: bloqueTextoManualPDF (Similitud Cosenos text-embedding-3-small)
-    C->>G: generarConsejoPedagogico(bloqueTextoManualPDF, fotogramaMaximaDiscrepancia)
-    G-->>C: textoConsejoFormateado
-    Note over C: Renderiza marca OpenCV circular roja sobre la articulación con fallo
-    C-->>P: retornoDiagnosticoJSON(fotogramaAnotadoURL, textoConsejoFormateado)
+    P->>C: solicitarEvaluacion(idPracticante, idTecnica, videoPractica)
+    C->>V: extraerEsqueletos3D(videoPractica)
+    V-->>C: listaEsqueletosDetectados(coordenadas3D)
+    C-->>P: presentarEsqueletosDetectados(listaEsqueletos)
+    P->>C: confirmarSujetoActivo(idEsqueleto)
+    C->>D: alinearSecuencias(esqueletoSujeto, esqueletoPatron)
+    D-->>C: fotogramaMayorDesviacion, articulacionCritica
+    C->>R: consultarContextoSemantico(articulacionCritica, idTecnica)
+    R-->>C: fragmentoManualPedagogico
+    C->>G: solicitarRecomendacion(fragmentoManualPedagogico, articulacionCritica)
+    G-->>C: textoRecomendacionPedagogica
+    C-->>P: presentarDiagnostico(fotogramaAnotado, textoRecomendacionPedagogica)
 ```
+_Figura 6._ Diagrama de secuencia del sistema para la auditoría postural asincrónica según Larman (2004).
 
 ## 5.3 Diseño de la Base de Datos Relacional (Metodología de Mannino)
-El modelado de datos persistentes adopta la metodología de Michael Mannino, aplicando reglas de integridad referencial estrictas, tipos de datos óptimos para entornos relacionales estándar y el proceso formal de normalización para mitigar anomalías de inserción, actualización y borrado.
+El diseño de los datos persistentes se fundamenta en la metodología de Mannino (2019), la cual establece la transformación rigurosa del modelo conceptual hacia un esquema lógico relacional antes de cualquier consideración de implementación física. En esta etapa se definen las relaciones, claves primarias, claves foráneas, reglas de integridad referencial y cardinalidades lógicas que sustentan las operaciones del sistema.
 
-### 5.3.1 Esquema de Relación y Declaración de Tablas (SQL DDL)
-A continuación se detallan las estructuras de las tablas principales que componen el backend relacional del sistema:
+### 5.3.1 Esquema Lógico Relacional y Diagrama UML de Datos
+Siguiendo la notación formal de esquemas relacionales formulada por Mannino (2019), donde la clave primaria se destaca subrayada y las claves foráneas mediante un asterisco de referencia, se definen las siguientes entidades lógicas:
 
-```sql
--- Creación de la Tabla Base de Usuarios (Soporta herencia conceptual)
-CREATE TABLE Usuarios (
-    idUsuario INT NOT NULL AUTO_INCREMENT,
-    nombreCompleto VARCHAR(150) NOT NULL,
-    correoElectronico VARCHAR(100) NOT NULL UNIQUE,
-    telefonoWhatsApp VARCHAR(20) NOT NULL,
-    fechaRegistro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    tipoUsuario ENUM('INSTRUCTOR', 'PRACTICANTE') NOT NULL,
-    CONSTRAINT pk_usuarios PRIMARY KEY (idUsuario)
-) ENGINE=InnoDB;
+* **Usuarios** ($\underline{\text{idUsuario}}$, nombreCompleto, correoElectronico, telefonoWhatsApp, fechaRegistro, tipoUsuario)
+* **Instructores** ($\underline{\text{idUsuario}}^*$, gradoCinturon, licenciaInstructor)  
+  *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
+* **Practicantes** ($\underline{\text{idUsuario}}^*$, gradoCinturon, pesoKg, estadoMembresia)  
+  *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
+* **TecnicasPatron** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, fechaPublicacion)  
+  *Integridad referencial:* $\text{idInstructor}^*$ referencia a $\text{Instructores}(\text{idUsuario})$.
+* **VideosPractica** ($\underline{\text{idVideoPractica}}$, $\text{idPracticante}^*$, $\text{idTecnicaPatron}^*$, duracionSegundos, archivoURL, fechaGrabacion)  
+  *Integridad referencial:* $\text{idPracticante}^*$ referencia a $\text{Practicantes}(\text{idUsuario})$; $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$.
+* **EvaluacionesPosturales** ($\underline{\text{idEvaluacion}}$, $\text{idVideoPractica}^*$, porcentajeCoincidencia, articulacionFalla, tiempoProcesamientoSeg, estadoDiagnostico)  
+  *Integridad referencial:* $\text{idVideoPractica}^*$ referencia a $\text{VideosPractica}(\text{idVideoPractica})$ con restricción de unicidad (relación 1:1).
 
--- Creación de la Tabla de Instructores
-CREATE TABLE Instructores (
-    idUsuario INT NOT NULL,
-    gradoCinturon VARCHAR(30) NOT NULL,
-    licenciaInstructor VARCHAR(50) NOT NULL UNIQUE,
-    CONSTRAINT pk_instructores PRIMARY KEY (idUsuario),
-    CONSTRAINT fk_instructores_usuarios FOREIGN KEY (idUsuario) 
-        REFERENCES Usuarios(idUsuario) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+```mermaid
+classDiagram
+    direction TB
 
--- Creación de la Tabla de Practicantes
-CREATE TABLE Practicantes (
-    idUsuario INT NOT NULL,
-    gradoCinturon VARCHAR(30) NOT NULL,
-    pesoKg DECIMAL(5,2) NOT NULL,
-    estadoMembresia VARCHAR(20) NOT NULL,
-    CONSTRAINT pk_practicantes PRIMARY KEY (idUsuario),
-    CONSTRAINT fk_practicantes_usuarios FOREIGN KEY (idUsuario) 
-        REFERENCES Usuarios(idUsuario) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+    class Usuario {
+        +int idUsuario <<PK>>
+        +string nombreCompleto
+        +string correoElectronico
+        +string telefonoWhatsApp
+        +date fechaRegistro
+        +string tipoUsuario
+    }
 
--- Creación de la Tabla de Técnicas Patrón (Modelos de Referencia 3D)
-CREATE TABLE TecnicasPatron (
-    idTecnicaPatron INT NOT NULL AUTO_INCREMENT,
-    idInstructor INT NOT NULL,
-    nombreTecnica VARCHAR(100) NOT NULL,
-    categoriaTecnica VARCHAR(50) NOT NULL,
-    posicionOrigen VARCHAR(50) NOT NULL,
-    videoReferenciaURL VARCHAR(255) NOT NULL,
-    fechaPublicacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_tecnicas_patron PRIMARY KEY (idTecnicaPatron),
-    CONSTRAINT fk_tecnicas_patron_instructores FOREIGN KEY (idInstructor)
-        REFERENCES Instructores(idUsuario) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+    class Instructor {
+        +int idUsuario <<PK, FK>>
+        +string gradoCinturon
+        +string licenciaInstructor
+    }
 
--- Creación de la Tabla de Videos de Práctica Cargados por Alumnos
-CREATE TABLE VideosPractica (
-    idVideoPractica INT NOT NULL AUTO_INCREMENT,
-    idPracticante INT NOT NULL,
-    idTecnicaPatron INT NOT NULL,
-    duracionSegundos DECIMAL(4,2) NOT NULL,
-    pesoMB DECIMAL(5,2) NOT NULL,
-    archivoURL VARCHAR(255) NOT NULL,
-    fechaGrabacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_videos_practica PRIMARY KEY (idVideoPractica),
-    CONSTRAINT fk_videos_practica_practicantes FOREIGN KEY (idPracticante)
-        REFERENCES Practicantes(idUsuario) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_videos_practica_tecnicas FOREIGN KEY (idTecnicaPatron)
-        REFERENCES TecnicasPatron(idTecnicaPatron) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+    class Practicante {
+        +int idUsuario <<PK, FK>>
+        +string gradoCinturon
+        +decimal pesoKg
+        +string estadoMembresia
+    }
 
--- Creación de la Tabla de Evaluaciones Posturales (Resultados del Pipeline)
-CREATE TABLE EvaluacionesPosturales (
-    idEvaluacion INT NOT NULL AUTO_INCREMENT,
-    idVideoPractica INT NOT NULL UNIQUE,
-    porcentajeCoincidencia DECIMAL(5,2) NOT NULL,
-    articulacionFalla VARCHAR(50) NOT NULL,
-    tiempoProcesamientoSeg DECIMAL(4,2) NOT NULL,
-    estadoDiagnostico VARCHAR(20) NOT NULL,
-    CONSTRAINT pk_evaluaciones_posturales PRIMARY KEY (idEvaluacion),
-    CONSTRAINT fk_evaluaciones_videos FOREIGN KEY (idVideoPractica)
-        REFERENCES VideosPractica(idVideoPractica) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+    class TecnicaPatron {
+        +int idTecnicaPatron <<PK>>
+        +int idInstructor <<FK>>
+        +string nombreTecnica
+        +string categoriaTecnica
+        +string posicionOrigen
+        +string videoReferenciaURL
+        +date fechaPublicacion
+    }
+
+    class VideoPractica {
+        +int idVideoPractica <<PK>>
+        +int idPracticante <<FK>>
+        +int idTecnicaPatron <<FK>>
+        +decimal duracionSegundos
+        +string archivoURL
+        +date fechaGrabacion
+    }
+
+    class EvaluacionPostural {
+        +int idEvaluacion <<PK>>
+        +int idVideoPractica <<FK, Unique>>
+        +decimal porcentajeCoincidencia
+        +string articulacionFalla
+        +decimal tiempoProcesamientoSeg
+        +string estadoDiagnostico
+    }
+
+    Usuario <|-- Instructor : especializa
+    Usuario <|-- Practicante : especializa
+    Instructor "1" -- "0..*" TecnicaPatron : homologa
+    Practicante "1" -- "0..*" VideoPractica : remite
+    TecnicaPatron "1" -- "0..*" VideoPractica : modela
+    VideoPractica "1" -- "1" EvaluacionPostural : genera
 ```
+_Figura 7._ Diagrama UML del modelo lógico de datos relacionales según Mannino (2019).
 
 ### 5.3.2 Verificación de Dependencias Funcionales y Reglas de Normalización
-Conforme a los criterios de calidad de Mannino, se ejecuta la auditoría de normalización matemática sobre la tabla crítica del sistema, `EvaluacionesPosturales`, para garantizar que el esquema relacional se encuentre en Tercera Forma Normal (3FN):
+Conforme a los criterios formales de calidad expuestos por Mannino (2019), se audita el esquema lógico sobre la entidad central `EvaluacionesPosturales` para demostrar que satisface la Tercera Forma Normal (3FN), garantizando la ausencia de redundancias lógicas y anomalías de actualización:
 
-1. **Evaluación de Primera Forma Normal (1FN):** Todos los atributos declarados en las entidades poseen valores puramente atómicos. No existen arreglos, listas anidadas ni grupos repetitivos de coordenadas dentro de las celdas relacionales; las matrices complejas de puntos 3D se procesan en la capa de memoria intermedia de Python (`numpy`) y solo las métricas consolidadas se persisten en SQL.
-2. **Evaluación de Segunda Forma Normal (2FN):** La tabla posee una clave primaria simple (`idEvaluacion`). Al no existir una clave primaria compuesta, se elimina por definición cualquier posibilidad de dependencia funcional parcial; todos los atributos no clave dependen en su totalidad de la clave primaria completa.
-3. **Evaluación de Tercera Forma Normal (3FN):** Se analizan las dependencias funcionales directas de la entidad:
+1. **Primera Forma Normal (1FN):** Todos los atributos del esquema representan valores atómicos e indivisibles. No existen atributos multivaluados, listas anidadas ni grupos repetitivos dentro de las tuplas. Las matrices intermedias generadas por la estimación esquelética y el alineamiento temporal se gestionan exclusivamente en memoria volátil de procesamiento, persistiendo en el modelo relacional únicamente las métricas consolidadas del diagnóstico.
+2. **Segunda Forma Normal (2FN):** Toda relación que cumple con la 1FN y cuya clave primaria es simple (compuesta por un único atributo) se encuentra automáticamente en 2FN (Mannino, 2019). Dado que la clave primaria de la entidad es el identificador simple `idEvaluacion`, no existe posibilidad lógica de dependencia funcional parcial respecto a una clave primaria compuesta.
+3. **Tercera Forma Normal (3FN):** Se verifica que ningún atributo no clave presente dependencia funcional transitiva respecto a la clave primaria. El conjunto de dependencias funcionales directas de la entidad se formaliza de la siguiente manera:
    * $\text{idEvaluacion} \rightarrow \text{idVideoPractica}$
    * $\text{idEvaluacion} \rightarrow \text{porcentajeCoincidencia}$
    * $\text{idEvaluacion} \rightarrow \text{articulacionFalla}$
    * $\text{idEvaluacion} \rightarrow \text{tiempoProcesamientoSeg}$
    * $\text{idEvaluacion} \rightarrow \text{estadoDiagnostico}$
 
-   No existen dependencias de carácter transitivo donde un atributo no clave determine el valor de otro atributo no clave. El campo `articulacionFalla` depende únicamente de la clave primaria del diagnóstico. Al cumplir con estas condiciones, el diseño relacional de la base de datos queda formalmente validado en 3FN, blindando la consistencia física del sistema ante operaciones concurrentes de auditoría técnica en la academia.
+   Cada determinante en este conjunto es una superclave de la relación, y ningún atributo no primo determina a otro atributo no primo. En consecuencia, el esquema relacional cumple de manera rigurosa con la Tercera Forma Normal (3FN), asegurando la integridad semántica de los datos y la robustez lógica del sistema ante consultas concurrentes de auditoría técnica en la academia.

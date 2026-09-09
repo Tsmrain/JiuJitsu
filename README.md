@@ -19,7 +19,7 @@ El objeto de investigación comprende el diseño, desarrollo e implementación d
 
 * **Delimitación temporal:** La investigación se desarrollará durante el periodo académico correspondiente a la elaboración, implementación y defensa del proyecto de grado en la UPSA.
 * **Delimitación espacial:** La recolección del corpus de video y la prueba piloto experimental se llevarán a cabo en las instalaciones de la academia Corpo e Mente (Knock Out Gym, Santa Cruz de la Sierra, Bolivia).
-* **Delimitación temática y técnica:** El sistema operará con un enfoque agnóstico de comparación técnica: procesará cualquier técnica de artes marciales siempre que se disponga de un video de referencia del instructor y un video de ejecución del practicante. La estimación postural se enfocará en la extracción de puntos clave articulares (*keypoints*) en tres dimensiones (3D), obteniendo las coordenadas de posición (X, Y, Z) a partir de grabaciones de video convencionales de una sola cámara (visión monocular) mediante el modelo YOLO26x-Pose. El sistema analizará las variaciones angulares en el espacio tridimensional a lo largo del tiempo, eliminando la dependencia estricta de un ángulo de grabación perpendicular de 90 grados. La contextualización de las recomendaciones automáticas de texto se limitará a manuales e instrucciones en formato PDF previamente vectorizados mediante modelos de embeddings de OpenAI. Se excluyen del alcance el reconocimiento automático o clasificación de técnicas no catalogadas, el escaneo volumétrico por malla poligonal densa y la medición de variables biomecánicas de fuerza, potencia o fatiga física.
+* **Delimitación temática y técnica:** El sistema operará con un enfoque agnóstico de comparación técnica: procesará cualquier técnica de artes marciales siempre que se disponga de un video de referencia del instructor y un video de ejecución del practicante. La estimación postural se enfocará en la extracción de puntos clave articulares (*keypoints*) en tres dimensiones (3D), obteniendo las coordenadas de posición (X, Y, Z) a partir de grabaciones de video convencionales de una sola cámara (visión monocular) mediante el modelo YOLO26x-Pose. El sistema analizará las variaciones angulares en el espacio tridimensional a lo largo del tiempo, eliminando la dependencia estricta de un ángulo de grabación perpendicular de 90 grados. La contextualización de las recomendaciones automáticas de texto se limitará a manuales e instrucciones en formato PDF previamente vectorizados mediante el modelo Gemini Embedding 2 provisto por Google AI Studio, mientras que la generación de retroalimentación en lenguaje natural se procesará mediante Gemini 3.8 Flash para neutralizar alucinaciones. Se excluyen del alcance el reconocimiento automático o clasificación de técnicas no catalogadas, el escaneo volumétrico por malla poligonal densa y la medición de variables biomecánicas de fuerza, potencia o fatiga física.
 
 ### 1.1.5 Justificación
 
@@ -36,7 +36,7 @@ Desarrollar un sistema de visión artificial y recuperación semántica de infor
 
 1. **Analizar** los requerimientos funcionales, no funcionales y pedagógicos del proceso de enseñanza-aprendizaje técnico, estableciendo un protocolo de captura de video monocular y un corpus de documentación técnica escrita para Jiu-Jitsu.
 2. **Diseñar** la arquitectura de software, el esquema relacional de base de datos bajo los fundamentos de Mannino (2019) y los modelos de datos vectoriales que permitan la integración desacoplada entre la captura de video, el procesamiento esquelético tridimensional, el almacenamiento de embeddings de texto y la entrega de reportes.
-3. **Implementar** los módulos computacionales en Python para la estimación de pose humana en tres dimensiones (3D) con YOLO26x-Pose, el alineamiento temporal con DTW, la vectorización de manuales mediante servicios de OpenAI y la generación de recomendaciones pedagógicas contextualizadas a través de Google Gemini.
+3. **Implementar** la arquitectura y modelado computacional para la estimación de pose humana en tres dimensiones (3D) con YOLO26x-Pose, el alineamiento temporal con DTW, la vectorización de manuales mediante el modelo Gemini Embedding 2 de Google AI Studio y la síntesis pedagógica contextualizada a través de Gemini 3.8 Flash.
 4. **Validar** la precisión y exactitud diagnóstica del sistema mediante pruebas experimentales de concordancia frente al criterio evaluativo de instructores certificados, evaluando la usabilidad y la adopción de la herramienta por parte de los practicantes en la academia piloto.
 
 ## 1.3 Metodología
@@ -168,34 +168,33 @@ $$D(i, j) = \text{dist}(\theta_{\text{inst}}(i), \theta_{\text{prac}}(j)) + \min
 El algoritmo DTW funciona de manera equivalente a emparejar dos interpretaciones musicales ejecutadas a ritmos diferentes. Aunque el practicante realice pausas, titubeos o ejecute la técnica con mayor lentitud que el instructor, el sistema alinea los hitos cinemáticos idénticos (como el punto culminante de una elevación pélvica). Esto permite aislar con exactitud el fotograma de máxima discrepancia espacial para efectuar la anotación visual mediante OpenCV.
 
 ## 3.4 Vector Embeddings y Arquitectura de Recuperación Semántica (RAG)
-Para que el sistema trascienda la entrega de métricas numéricas frías y ofrezca una asesoría formativa comprensible, la arquitectura en Python integra técnicas de modelado semántico de texto orientadas al Jiu-Jitsu.
+Para que el sistema trascienda la entrega de métricas numéricas frías y ofrezca una asesoría formativa comprensible, la arquitectura integra técnicas de modelado semántico de texto orientadas al Jiu-Jitsu sustentadas en el ecosistema técnico puro de Google Gemini.
 
-### 3.4.1 Definición de Word Embeddings y Modelos de OpenAI
-Los *word embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionaron los modelos de embeddings provistos por OpenAI, los cuales transforman descripciones de maniobras y fundamentos teóricos en vectores fijos de alta dimensionalidad. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
+### 3.4.1 Definición de Embeddings Vectoriales y Modelo Gemini Embedding 2 de Google AI Studio
+Los *embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionó el modelo **Gemini Embedding 2**, provisto por **Google AI Studio**, el cual transforma descripciones de maniobras, principios de palanca y fundamentos teóricos en vectores numéricos de alta precisión semántica. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
 
 ### 3.4.2 Base de Datos Vectorial y Similitud por Cosenos
-La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de alta dimensionalidad. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
+La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de alta dimensionalidad generados por Gemini Embedding 2. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
 
 $$\text{Similitud}_{\text{coseno}}(\vec{A}, \vec{B}) = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
 
 El sistema extrae el fragmento documental que presente la máxima correspondencia semántica (valor más próximo a 1), asegurando una recuperación precisa de la información doctrinal sin depender de coincidencias de palabras exactas.
 
-### 3.4.3 Estructuración de la Generación Aumentada por Recuperación (RAG)
+### 3.4.3 Estructuración de la Generación Aumentada por Recuperación (RAG) con Gemini 3.8 Flash
 El flujo semántico del software se consolida mediante el patrón de diseño RAG (*Retrieval-Augmented Generation*), el cual actúa como un puente de traducción entre los datos cinemáticos duros y la pedagogía humana. El proceso se articula a través de tres etapas secuenciales:
 
 ```mermaid
 graph LR
-    A[Falla Articular 3D] -->|Consulta Semántica| B[Búsqueda en Base Vectorial]
-    B -->|Recupera Bloque PDF| C[Construcción del Prompt Contextualizado]
-    C -->|API Google Gemini| D[Instrucción Pedagógica Clarificada]
+    A["Discrepancia Articular en R3"] -->|Consulta Semántica| B["Búsqueda en Base Vectorial (Gemini Embedding 2)"]
+    B -->|Similitud Cosenos| C["Fragmento Doctrinal de Manual PDF"]
+    C -->|Inyección de Grounding Context| D["Gemini 3.8 Flash (Google AI Studio)"]
+    D --> E["Recomendación Pedagógica Fundamentada"]
 ```
 _Figura 2._ Flujo del patrón arquitectónico de Generación Aumentada por Recuperación (RAG).
 
-1. **Segmentación e Indexación (Chunking):** Los manuales técnicos en PDF (como *Jiu-Jitsu University*) cargados por el instructor son divididos en bloques lógicos de texto comprimidos y procesados mediante modelos de embeddings de OpenAI para poblar la base de datos vectorial de forma persistente.
-2. **Recuperación Contextual:** Al identificarse la articulación desalineada en el espacio $\mathbb{R}^3$, el sistema consulta la base vectorial y recupera los párrafos exactos del manual que describen la mecánica correcta para esa posición específica de Jiu-Jitsu.
-3. **Generación de la Instrucción:** El software concatena los bloques de texto recuperados del manual con las métricas de la falla y los inyecta en una plantilla de prompt estructurada hacia la API de Google Gemini. El modelo de lenguaje procesa esta información y genera una recomendación directa y formal en lenguaje natural (por ejemplo: *"Se evidencia una apertura del codo que compromete su defensa; el manual prescribe mantener la articulación pegada a las costillas para denegar el espacio de control al oponente"*).
-
-Esta arquitectura neutraliza las alucinaciones de la inteligencia artificial generativa y garantiza que toda retroalimentación entregada al alumno esté estrictamente alineada con la doctrina técnica oficial registrada en el sistema.
+1. **Segmentación e Indexación (Chunking):** Los manuales técnicos oficiales en PDF (como *Jiu-Jitsu University*) cargados por el instructor son divididos en bloques lógicos y procesados mediante el modelo **Gemini Embedding 2** de Google AI Studio para poblar la base de datos vectorial de forma persistente.
+2. **Recuperación Contextual:** Al aislarse la articulación desalineada en el espacio $\mathbb{R}^3$, las discrepancias geométricas gatillan una búsqueda vectorial por similitud de cosenos, recuperando los párrafos exactos del manual que describen la mecánica correcta para esa posición específica de Jiu-Jitsu.
+3. **Generación Fundamentada (Grounding):** La síntesis de recomendaciones textuales para los practicantes la ejecuta el modelo **Gemini 3.8 Flash**. El software concatena los bloques de texto recuperados del manual con las métricas de la falla cinemática y los inyecta en una plantilla de prompt estructurada hacia Gemini 3.8 Flash. El modelo de lenguaje procesa esta información con contexto directo (*grounding*), neutralizando alucinaciones y generando una recomendación formal, directa y doctrinalmente válida (por ejemplo: *"Se evidencia una apertura del codo que compromete su defensa; el manual prescribe mantener la articulación pegada a las costillas para denegar el espacio de control al oponente"*).
 
 ---
 
@@ -210,12 +209,12 @@ El propósito del presente documento es especificar formal, exhaustiva y pedagó
 El sistema constituye una plataforma computacional de asistencia técnica y pedagógica basada en visión artificial y modelos de inteligencia artificial, cuyo alcance operativo comprende:
 
 1. **Gestión de Técnicas Patrón:** Permite al Instructor registrar, etiquetar y homologar los videos del Modelo de Referencia demostrados en el tatami.
-2. **Gestión de Fuentes de Conocimiento:** Permite al Instructor gestionar libros en formato PDF (como *Jiu-Jitsu University*) y registrar recursos externos mediante enlaces a videos oficiales de YouTube, sirviendo como base de conocimiento oficial indexada vectorialmente.
+2. **Gestión de Fuentes de Conocimiento:** Permite al Instructor gestionar libros en formato PDF (como *Jiu-Jitsu University*) y registrar recursos externos mediante enlaces a videos oficiales de YouTube, sirviendo como base de conocimiento oficial indexada vectorialmente mediante **Gemini Embedding 2** de Google AI Studio.
 3. **Carga de Video desde Dispositivo Móvil:** Facilita a los Practicantes seleccionar la técnica del día y subir grabaciones de su práctica en pareja (secuencias de hasta 45 segundos y 50 MB) directamente desde su dispositivo móvil.
 4. **Extracción y Selección del Sujeto Activo:** Identifica los puntos clave del cuerpo (*keypoints*) en tres dimensiones (3D) mediante **YOLO26x-Pose** y permite la selección manual del practicante activo sobre la interfaz visual, aislando su estructura corporal para la comparación.
 5. **Sincronización y Comparación Postural:** Alinea los tiempos de ejecución mediante **DTW** (*Dynamic Time Warping*) y compara la postura del Practicante con la técnica del Instructor, utilizándola como un molde esquelético tridimensional de referencia.
 6. **Diagnóstico Visual Inmediato:** Señala visualmente sobre la imagen la articulación desalineada mediante un círculo rojo, indicando con claridad el punto exacto de falla.
-7. **Asesoría Pedagógica Asistida por IA:** Genera consejos directos, constructivos y formativos mediante la **API de Google Gemini**, traduciendo el análisis visual e indexación vectorial a recomendaciones claras de entrenamiento.
+7. **Asesoría Pedagógica Asistida por IA:** Genera consejos directos, constructivos y formativos mediante el modelo **Gemini 3.8 Flash** (Google AI Studio), traduciendo el análisis visual e indexación semántica a recomendaciones claras de entrenamiento fundamentadas en la doctrina oficial.
 8. **Monitoreo Histórico:** Permite al Practicante revisar su progreso y evolución técnica a lo largo de las clases.
 
 **Límites y Exclusiones Explícitas del Sistema:**
@@ -230,7 +229,8 @@ El sistema constituye una plataforma computacional de asistencia técnica y peda
 * **Similitud de Postura:** Nivel de coincidencia entre la posición tridimensional del cuerpo del Practicante y el Modelo de Referencia del Instructor en una fase técnica equivalente.
 * **DTW (*Dynamic Time Warping*):** Método que empareja movimientos que ocurren a diferente velocidad, permitiendo comparar la técnica aunque el Practicante se mueva más despacio o haga pausas.
 * **YOLO26x-Pose:** Modelo de visión artificial que detecta cuerpos y extrae los puntos articulares calculando su profundidad relativa para la reconstrucción en el espacio tridimensional (3D).
-* **Embeddings de OpenAI:** Modelos vectoriales que transforman texto técnico en representaciones numéricas densas para habilitar búsquedas semánticas por similitud de cosenos.
+* **Gemini Embedding 2:** Modelo de embeddings vectoriales de vanguardia provisto por Google AI Studio, diseñado para transformar texto técnico en representaciones numéricas densas para búsquedas semánticas por similitud de cosenos.
+* **Gemini 3.8 Flash:** Modelo de lenguaje multimodal de alta velocidad y fidelidad conceptual provisto por Google AI Studio, optimizado para la formulación de sugerencias pedagógicas fundamentadas en contexto (*grounding*) con nula tasa de alucinación.
 * **PWA (*Progressive Web App*):** Aplicación web que funciona en el navegador del celular con la apariencia y agilidad de una app instalada.
 
 ### 4.1.4 Visión General del Documento
@@ -241,8 +241,8 @@ El capítulo se organiza conforme a las directrices de la ingeniería de softwar
 ### 4.2.1 Perspectiva del Producto
 El sistema opera mediante una estructura distribuida local-nube ejecutada íntegramente en lenguaje Python:
 
-1. **Entorno Local (Dispositivo de Usuario y Laptop del Tatami):** Una interfaz web progresiva (PWA) ligera se ejecuta en los teléfonos celulares de los usuarios para la captura de video y consumo de reportes. El backend local orquestador se estructura desde su concepción en dos controladores lógicos especializados bajo el patrón GRASP: `RecursoController` (encargado de la recepción, validación y derivación de manuales PDF hacia la indexación vectorial, enlaces de YouTube para la PWA y videos patrón para la extracción de keypoints) y `EvaluacionController` (responsable de coordinar el flujo asincrónico de auditoría postural entre la visión artificial, la sincronización DTW y la síntesis con Google Gemini). Este backend actúa como una pasarela ligera ejecutada en la computadora portátil del tatami, recibiendo las transmisiones HTTP POST y despachándolas inmediatamente hacia los servicios de procesamiento sin almacenar estados pesados en disco local.
-2. **Capa de Procesamiento Remoto (Google Colab Pro + APIs Nube):** Un entorno en Google Colab Pro configurado con aceleración por GPU ejecuta el procesamiento pesado mediante Python. Este entorno aloja el modelo de visión artificial YOLO26x-Pose, ejecuta la matriz matemática DTW, administra las consultas semánticas hacia la base de datos vectorial cargada con embeddings de OpenAI y consolida la síntesis pedagógica consultando la API de Google Gemini.
+1. **Entorno Local (Dispositivo de Usuario y Laptop del Tatami):** Una interfaz web progresiva (PWA) ligera se ejecuta en los teléfonos celulares de los usuarios para la captura de video y consumo de reportes. El backend local orquestador se estructura desde su concepción en dos controladores lógicos especializados bajo el patrón GRASP: `RecursoController` (encargado de la recepción, validación y derivación de manuales PDF hacia la indexación vectorial, enlaces de YouTube para la PWA y videos patrón para la extracción de keypoints) y `EvaluacionController` (responsable de coordinar el flujo asincrónico de auditoría postural entre la visión artificial, la sincronización DTW y la síntesis con Gemini 3.8 Flash). Este backend actúa como una pasarela ligera ejecutada en la computadora portátil del tatami, recibiendo las transmisiones HTTP POST y despachándolas inmediatamente hacia los servicios de procesamiento sin almacenar estados pesados en disco local.
+2. **Capa de Procesamiento Remoto (Google Colab Pro + APIs Nube):** Un entorno en Google Colab Pro configurado con aceleración por GPU ejecuta el procesamiento pesado mediante Python. Este entorno aloja el modelo de visión artificial YOLO26x-Pose, ejecuta la matriz matemática DTW, administra las consultas semánticas hacia la base de datos vectorial cargada con Gemini Embedding 2 de Google AI Studio y consolida la síntesis pedagógica consultando el modelo Gemini 3.8 Flash.
 
 ```mermaid
 flowchart TD
@@ -252,7 +252,7 @@ flowchart TD
     C2 --> D[DTW sincroniza el ritmo del practicante con el patrón]
     D --> E[El sistema evalúa coincidencia contra el molde tridimensional]
     E --> F[OpenCV marca círculo rojo en la articulación desalineada]
-    E --> G[Google Gemini formula recomendación pedagógica clara]
+    E --> G[Gemini 3.8 Flash formula recomendación pedagógica fundamentada]
     F --> H[Reporte visual y recomendación entregados en < 5-10s]
     G --> H
 ```
@@ -260,10 +260,10 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 
 ### 4.2.2 Funciones del Producto
 * **Gestión de Catálogo Curricular:** Registro de Técnicas Patrón y asignación de identificadores a las posiciones de control del Jiu-Jitsu.
-* **Indexación Vectorial Semántica:** Carga de manuales en PDF, fragmentación de texto en bloques lógicos, generación de embeddings de 1536 dimensiones e indexación en base de datos vectorial para consultas por similitud de cosenos.
+* **Indexación Vectorial Semántica:** Carga de manuales en PDF, fragmentación de texto en bloques lógicos, generación de embeddings de alta densidad mediante el modelo Gemini Embedding 2 (Google AI Studio) e indexación en base de datos vectorial para consultas por similitud de cosenos.
 * **Pipeline de Visión Computacional:** Recepción directa de secuencias de video de práctica, estimación esquelética tridimensional y selección manual del sujeto activo mediante interacción del usuario en la interfaz web (click/tap sobre el esqueleto detectado).
 * **Análisis Cinemático Espacial:** Sincronización temporal no lineal de trayectorias esqueléticas mediante DTW, aislamiento del fotograma de mayor desviación angular en $\mathbb{R}^3$ y graficación automática de alertas sobre la imagen.
-* **Generación de Retroalimentación Contextualizada (RAG):** Búsqueda de la base de conocimiento emparejada al error articular detectado, construcción de prompt estructurado y despacho hacia Google Gemini para generar la recomendación de entrenamiento en lenguaje natural.
+* **Generación de Retroalimentación Contextualizada (RAG):** Búsqueda de la base de conocimiento emparejada al error articular detectado en $\mathbb{R}^3$, inyección directa del fragmento doctrinal del manual al modelo Gemini 3.8 Flash y formulación de la sugerencia de entrenamiento en lenguaje natural neutralizando alucinaciones.
 
 ### 4.2.3 Características de los Usuarios
 * **Instructor (Perfil Técnico-Docente):** Posee autonomía total sobre el contenido del sistema. Demuestra las técnicas oficiales y gestiona las fuentes de conocimiento (PDFs y enlaces). Su interacción digital requiere operaciones directas y ágiles que no interrumpan la dinámica presencial de la clase.
@@ -274,11 +274,11 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 * **Restricción de Ejecución en Dispositivos Móviles:** Queda prohibida la inferencia o procesamiento de modelos de IA locales dentro del navegador del teléfono inteligente del usuario, delegando toda la carga matemática al backend.
 * **Límites de Carga Multimedia:** Los archivos de video de práctica transmitidos por los alumnos tendrán una duración máxima estricta de 45 segundos y un peso tope de 50 MB.
 * **Latencia Operativa Crítica:** El tiempo total de procesamiento en la nube, incluyendo la inferencia esquelética, la alineación DTW, la búsqueda vectorial y la respuesta del LLM, no deberá superar la ventana de 5 a 10 segundos para clips estandarizados.
-* **Restricción de Alcance de Vectorización (Exclusividad de Texto PDF):** La generación de embeddings y la indexación en base de datos vectorial para el pipeline RAG opera de forma exclusiva sobre el texto digital extraído de manuales y libros técnicos en formato PDF. Los enlaces de video externo (YouTube) y los videos de práctica o patrón quedan expresamente excluidos de vectorizaciones multimodales o transcripciones automatizadas, manteniendo la alta eficiencia del sistema, acotando los tiempos de respuesta y previniendo costos innecesarios por consumo de API en la generación de texto pedagógico.
+* **Restricción de Alcance de Vectorización (Exclusividad de Texto PDF):** La generación de embeddings y la indexación en base de datos vectorial para el pipeline RAG opera de forma exclusiva sobre el texto digital extraído de manuales y libros técnicos en formato PDF con Gemini Embedding 2. Los enlaces de video externo (YouTube) y los videos de práctica o patrón quedan expresamente excluidos de vectorizaciones multimodales o transcripciones automatizadas, manteniendo la alta eficiencia del sistema, acotando los tiempos de respuesta y previniendo costos innecesarios por consumo de API en la generación de texto pedagógico.
 
 ### 4.2.5 Suposiciones y Dependencias
 * **Encuadre del Plano General:** Se asume que los practicantes colocarán el dispositivo móvil en un trípode o soporte a una distancia recomendada de entre 2.5 y 3.5 metros, asegurando la visibilidad del cuerpo entero de ambos atletas durante la secuencia.
-* **Disponibilidad de Canales de API:** La operación del software depende de la disponibilidad en línea de las API de OpenAI y de Google Gemini.
+* **Disponibilidad de Canales de API:** La operación del software depende de la disponibilidad en línea de los servicios de Google AI Studio (Gemini Embedding 2 y Gemini 3.8 Flash).
 * **Conectividad de Red:** Se asume que el gimnasio Knock Out Gym dispone de una conexión a internet comercial inalámbrica con un ancho de banda de subida mínimo de 10 Mbps para soportar las transmisiones HTTP POST asíncronas.
 
 ### 4.2.6 Requisitos Futuros
@@ -292,7 +292,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 #### 4.3.1.1 Software
 * **Cliente Web PWA:** Interfaz móvil responsiva desarrollada en JavaScript/HTML5, compatible con navegadores Safari (iOS) y Google Chrome (Android).
 * **Servicios Backend (FastAPI en Python):** Orquestador local y microservicio remoto ejecutados sobre Python 3.10+, exponiendo endpoints REST estructurados bajo protocolo seguro HTTPS.
-* **Base de Datos Vectorial:** Repositorio en la nube para el indexado y almacenamiento persistente de los vectores densos de las descripciones técnicas.
+* **Base de Datos Vectorial:** Repositorio en la nube para el indexado y almacenamiento persistente de los vectores densos calculados con Gemini Embedding 2.
 
 #### 4.3.1.2 Hardware
 * **Unidad de Captura Móvil:** Teléfonos inteligentes comerciales con cámaras capaces de registrar video a una resolución mínima de 720p a 30 fotogramas por segundo.
@@ -313,10 +313,10 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 | **RF-05** | **Sincronización Temporal No Lineal** | **El sistema aplica** el algoritmo DTW en Python para alinear la velocidad del practicante con la del video patrón, emparejando los hitos biomecánicos críticos con independencia del ritmo o pausas en la ejecución. |
 | **RF-06** | **Detección de Máxima Discrepancia Espacial** | **El sistema aísla** el fotograma específico donde la configuración corporal tridimensional del practicante exhibe la mayor desviación angular en $\mathbb{R}^3$ respecto al molde de referencia del instructor. |
 | **RF-07** | **Señalización Visual del Error** | **El sistema renderiza** sobre el fotograma clave un marcador gráfico circular de color rojo (mediante OpenCV) centrado en la articulación desalineada, proporcionando una alerta visual directa. |
-| **RF-08** | **Generación de Consejos con IA Semántica** | **Como** Practicante, el sistema debe recibir una recomendación en lenguaje natural sobre la causa del desajuste postural y cómo corregirla basándose en el manual indexado, **para que** el usuario disponga del fundamento bibliográfico exacto asociado a la corrección.<br>*Criterio de Aceptación:* La API de Google Gemini devuelve un texto claro de 2 o 3 líneas contextualizado por las fuentes de conocimiento recuperadas por similitud de cosenos. |
+| **RF-08** | **Generación de Consejos con IA Semántica** | **Como** Practicante, el sistema debe recibir una recomendación en lenguaje natural sobre la causa del desajuste postural y cómo corregirla basándose en el manual indexado, **para que** el usuario disponga del fundamento bibliográfico exacto asociado a la corrección.<br>*Criterio de Aceptación:* El modelo Gemini 3.8 Flash (Google AI Studio) devuelve un texto claro de 2 o 3 líneas contextualizado por las fuentes de conocimiento recuperadas por similitud de cosenos mediante Gemini Embedding 2. |
 | **RF-09** | **Aviso por Oclusión Severa o Encuadre Inválido** | **El sistema interrumpe** de forma controlada el proceso si las articulaciones principales sufren bloqueos visuales continuos, notificando al usuario un mensaje explícito en pantalla para repetir la captura sin registrar datos corruptos. |
 | **RF-10** | **Consulta de Historial de Progreso** | **Como** Practicante, el sistema debe proveer un panel histórico de evaluaciones cronológicas, **para que** se pueda auditar la evolución del desempeño técnico a lo largo del tiempo. |
-| **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor, se requiere cargar archivos PDF de manuales oficiales de Jiu-Jitsu, **para que** el sistema fragmente e indexe el texto en una base de datos vectorial mediante los modelos de embedding de OpenAI.<br>*Criterio de Aceptación:* El sistema procesa el documento, calcula los embeddings vectoriales e indexa los bloques lógicos para búsquedas semánticas. |
+| **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor, se requiere cargar archivos PDF de manuales oficiales de Jiu-Jitsu, **para que** el sistema fragmente e indexe el texto en una base de datos vectorial mediante el modelo Gemini Embedding 2 provisto por Google AI Studio.<br>*Criterio de Aceptación:* El sistema procesa el documento, calcula los embeddings vectoriales con Gemini Embedding 2 e indexa los bloques lógicos para búsquedas semánticas. |
 | **RF-12** | **Gestión de Recursos Externos (YouTube)** | **Como** Instructor, se requiere asociar enlaces de videos de YouTube vinculados a cada técnica, **para que** los practicantes dispongan de ejemplos complementarios de consulta.<br>*Criterio de Aceptación:* El sistema valida el formato de la URL de YouTube, la guarda en el catálogo relacional y permite su reproducción directa en la PWA. |
 
 *Nota.* Requisitos funcionales estructurados conforme al estándar IEEE 830.
@@ -328,9 +328,9 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 
 ### 4.3.4 Restricciones de Diseño
 * **RD-01 (Uso de YOLO26x-Pose y Google Colab Pro):** La arquitectura de visión tridimensional debe sustentarse estrictamente en la variante Extra Large (YOLO26x-Pose) ejecutada en Python sobre un backend acelerado por GPU en Colab Pro, garantizando la resolución espacial de profundidad ($Z$).
-* **RD-02 (Integración Obligatoria de Embeddings de OpenAI y Delimitación a PDFs):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por OpenAI con dimensiones densas homogéneas. Dicha vectorización semántica aplica exclusivamente al contenido textual procesado a partir de archivos PDF oficiales, restringiendo el uso de recursos de IA para la generación de texto a fuentes puramente bibliográficas.
+* **RD-02 (Integración Obligatoria de Gemini Embedding 2 y Delimitación a PDFs):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por el modelo Gemini Embedding 2 de Google AI Studio con dimensiones densas homogéneas. Dicha vectorización semántica aplica exclusivamente al contenido textual procesado a partir de archivos PDF oficiales, restringiendo el uso de recursos de IA para la generación de texto a fuentes puramente bibliográficas.
 * **RD-03 (Arquitectura Web Multiplataforma):** La interfaz frontal debe ser accesible de forma directa a través de navegadores web móviles sin requerir instalación por medio de tiendas de aplicaciones comerciales.
-* **RD-04 (Restricción de Procesamiento RAG a Documentos Textuales):** El subsistema de Generación Aumentada por Recuperación (RAG) no procesará contenidos multimedia de audio o video procedentes de YouTube o grabaciones de tatami. Las consultas semánticas y la inyección de contexto pedagógico al modelo Google Gemini se abastecen única y directamente de los fragmentos indexados de manuales técnicos en PDF, asegurando la reproducibilidad, exactitud bibliográfica y optimización de costos computacionales.
+* **RD-04 (Restricción de Procesamiento RAG a Documentos Textuales):** El subsistema de Generación Aumentada por Recuperación (RAG) no procesará contenidos multimedia de audio o video procedentes de YouTube o grabaciones de tatami. Las consultas semánticas y la inyección de contexto pedagógico al modelo Gemini 3.8 Flash se abastecen única y directamente de los fragmentos indexados de manuales técnicos en PDF con Gemini Embedding 2, asegurando la reproducibilidad, exactitud bibliográfica y optimización de costos computacionales.
 
 ### 4.3.5 Atributos del Sistema
 
@@ -388,9 +388,9 @@ _Figura 4._ Diagrama general de casos de uso del sistema según Larman (2004).
 | :---: | :--- | :---: | :---: | :--- |
 | **CU-01** | **Registrar Técnica Patrón** | El Instructor | RF-01, RF-03 | El Instructor graba y transmite el video del Modelo de Referencia. El sistema procesa los puntos corporales espaciales (3D) de la técnica patrón y lo almacena en la base de datos relacional. |
 | **CU-02** | **Cargar Video desde Dispositivo Móvil** | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la maniobra y transmite su grabación (< 45s, < 50 MB) vía API REST. El sistema muestra los keypoints detectados y solicita al usuario confirmar cuál es el ejecutor de la técnica mediante selección visual, sincroniza los tiempos con el algoritmo DTW y valida el encuadre de cuerpo entero. |
-| **CU-03** | **Visualizar Diagnóstico y Consejo de IA** | El Practicante | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema expone en la interfaz móvil la imagen clave anotada con un marcador circular de OpenCV en la articulación desalineada y la recomendación pedagógica adaptada por Google Gemini en una ventana menor a 10 segundos. |
+| **CU-03** | **Visualizar Diagnóstico y Consejo de IA** | El Practicante | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema expone en la interfaz móvil la imagen clave anotada con un marcador circular de OpenCV en la articulación desalineada y la recomendación pedagógica adaptada y fundamentada por el modelo Gemini 3.8 Flash (Google AI Studio) en una ventana menor a 10 segundos. |
 | **CU-04** | **Consultar Historial de Progreso** | El Practicante | RF-10 | El Practicante accede a su panel cronológico para auditar los porcentajes de coincidencia postural obtenidos a lo largo de las clases. |
-| **CU-05** | **Gestionar Recursos y Fuentes de Estudio** | El Instructor / El Practicante | RF-11, RF-12 | El Instructor administra manuales en PDF (indexados en la base de datos vectorial) y enlaces de YouTube. El Practicante los consulta como material oficial de estudio para sus exámenes de grado. |
+| **CU-05** | **Gestionar Recursos y Fuentes de Estudio** | El Instructor / El Practicante | RF-11, RF-12 | El Instructor administra manuales en PDF (indexados en la base de datos vectorial mediante Gemini Embedding 2) y enlaces de YouTube. El Practicante los consulta como material oficial de estudio para sus exámenes de grado. |
 
 *Nota.* Trazabilidad entre casos de uso, actores y requisitos funcionales.
 
@@ -400,7 +400,7 @@ El modelo conceptual de dominio organiza las clases lógicas esenciales de la ap
 Dentro de este modelo conceptual se destacan dos decisiones de diseño biomecánico y pedagógico:
 * **Entidad `TecnicaPatron` y su atributo `matrizEsqueleticaURL`:** Incorpora conceptualmente la localización de la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) extraída del video del instructor mediante `YOLOEngine`. Este atributo refleja la persistencia del molde cinemático de referencia del cual el algoritmo DTW extrae las trayectorias matemáticas contra las que se contrastan los videos de los alumnos.
 * **Entidad `FuenteConocimiento` y discriminación por `tipoRecurso`:** Discrimina la naturaleza operativa del contenido suministrado por el Instructor:
-  1. `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto).
+  1. `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings vectoriales mediante Gemini Embedding 2 de Google AI Studio y recuperación semántica de contexto pedagógico).
   2. `'YOUTUBE'`: Asociado a la reproducción audiovisual directa embebida en la PWA (flujo relacional sin consumo de servicios de IA ni almacenamiento vectorial).
   3. `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
 
@@ -518,20 +518,20 @@ El presente capítulo expone la transición del modelo de requisitos hacia la ar
 Para estructurar los componentes del sistema, el diseño lógico adopta una arquitectura modular basada en capas y patrones GRASP (*General Responsibility Assignment Software Patterns*), garantizando una adecuada separación de responsabilidades y facilitando la extensibilidad (Larman, 2004):
 
 1. **Patrón Controlador (Controller):** Se formalizan dos controladores lógicos especializados:
-   * `RecursoController`: Gestiona las operaciones de ingestión y catalogación curricular ejecutadas por el Instructor (CU-01 y CU-05). Discrimina las tres rutas de entrada del sistema: envía documentos PDF al servicio `VectorDBService` para cálculo de embeddings e indexación semántica; persiste directamente los enlaces multimedia externos de YouTube en el repositorio relacional (sin procesamiento de IA); y remite grabaciones de referencia a `YOLOEngine` para extraer la matriz de puntos clave articulares tridimensionales.
-   * `EvaluacionController`: Orquesta el caso de uso central de auditoría postural asincrónica (CU-02 y CU-03), coordinando el flujo de datos entre la inferencia esquelética, la sincronización temporal con DTW, la consulta semántica contextualizada y la generación de recomendaciones pedagógicas mediante Google Gemini.
-2. **Patrón Experto en Información (Information Expert):** Asignado a la entidad `EvaluacionPostural`. Esta clase concentra el conocimiento sobre los puntos clave anatómicos, las desviaciones espaciales calculadas y los umbrales de tolerancia biomecánica, siendo la responsable de computar el porcentaje global de concordancia postural y tipificar la articulación con mayor desvío cinemático.
+   * `RecursoController`: Gestiona las operaciones de ingestión y catalogación curricular ejecutadas por el Instructor (CU-01 y CU-05). Discrimina las tres rutas de entrada del sistema: envía documentos PDF al servicio `VectorDBService` para cálculo de embeddings vectoriales mediante el modelo Gemini Embedding 2 (Google AI Studio) e indexación semántica; persiste directamente los enlaces multimedia externos de YouTube en el repositorio relacional (sin procesamiento de IA); y remite grabaciones de referencia a `YOLOEngine` (YOLO26x-Pose) para extraer la matriz de puntos clave articulares tridimensionales en el espacio $\mathbb{R}^3$.
+   * `EvaluacionController`: Orquesta el caso de uso central de auditoría postural asincrónica (CU-02 y CU-03), coordinando el flujo de datos entre la inferencia esquelética tridimensional con YOLO26x-Pose, la sincronización temporal con Dynamic Time Warping (DTW), la consulta semántica por similitud de cosenos y la síntesis de recomendaciones pedagógicas fundamentadas mediante el modelo Gemini 3.8 Flash provisto por Google AI Studio.
+2. **Patrón Experto en Información (Information Expert):** Asignado a la entidad `EvaluacionPostural`. Esta clase concentra el conocimiento sobre los puntos clave anatómicos, las desviaciones espaciales calculadas en $\mathbb{R}^3$ y los umbrales de tolerancia biomecánica, siendo la responsable de computar el porcentaje global de concordancia postural y tipificar la articulación con mayor desvío cinemático.
 3. **Patrón Creador (Creator):** Asignado a la clase `EvaluacionController`. Dado que el controlador gestiona el caso de uso completo de auditoría y agrega los resultados intermedios producidos por los motores de cálculo, posee la responsabilidad legítima de instanciar los objetos de tipo `EvaluacionPostural`.
-4. **Bajo Acoplamiento y Alta Cohesión (Low Coupling / High Cohesion):** Los servicios de inteligencia artificial (`YOLOEngine`, `VectorDBService` y `ServicioGoogleGemini`) se comunican mediante interfaces abstractas y estructuras de datos normalizadas. El subsistema analítico opera de forma independiente de la capa de persistencia relacional, permitiendo actualizar o sustituir los proveedores de servicios de IA sin perturbar el dominio del software.
+4. **Bajo Acoplamiento y Alta Cohesión (Low Coupling / High Cohesion):** Los servicios de inteligencia artificial (`YOLOEngine`, `VectorDBService` que encapsula Gemini Embedding 2, y `ServicioGeminiFlash` que encapsula Gemini 3.8 Flash) se comunican mediante interfaces abstractas y estructuras de datos normalizadas. El subsistema analítico opera de forma independiente de la capa de persistencia relacional, garantizando el aislamiento del dominio frente a los servicios cognitivos de Google AI Studio y permitiendo optimizar o sustituir componentes de visión o de lenguaje sin perturbar el modelo de negocio.
 
 ## 5.2 Diseño de Casos de Uso Críticos (Diagramas de Secuencia del Proceso Unificado)
 Conforme a la metodología del Proceso Unificado expuesta por Larman (2004), los Diagramas de Secuencia del Sistema (DSS) describen la interacción temporal y el intercambio de mensajes entre los actores externos, los objetos controladores del sistema y los servicios lógicos de procesamiento.
 
 ### 5.2.1 Diagrama de Secuencia: Gestión y Catalogación de Recursos por el Instructor (CU-01 y CU-05)
 Para garantizar la máxima eficiencia operativa y evitar costos computacionales innecesarios, el sistema diferencia estrictamente el flujo de procesamiento de los tres tipos de recursos que ingresa el Instructor:
-* **Ruta PDF (Manuales y Libros Técnicos):** El Instructor despacha el archivo mediante `UploadPDF()`. El controlador deriva el contenido hacia `VectorDBService` para su fragmentación y vectorización semántica mediante embeddings de OpenAI, persistiendo los metadatos en la base de datos relacional para dar soporte al pipeline RAG.
+* **Ruta PDF (Manuales y Libros Técnicos):** El Instructor despacha el archivo mediante `UploadPDF()`. El controlador deriva el contenido hacia `VectorDBService` para su fragmentación y vectorización semántica mediante el modelo Gemini Embedding 2 de Google AI Studio, persistiendo los metadatos en la base de datos relacional para dar soporte al pipeline RAG.
 * **Ruta YouTube (Material Audiovisual Complementario):** El Instructor registra la URL mediante `SaveYouTubeURL()`. El sistema persiste de forma inmediata el registro en la entidad `RecursoDidactico` de la base de datos relacional. **Nota de diseño:** Este flujo no involucra modelos de IA ni almacenamiento vectorial, sirviendo exclusivamente como recurso embebido para la PWA móvil del practicante.
-* **Ruta Video Patrón (Molde Biomecánico de Referencia):** El Instructor transmite el video mediante `UploadReferenceVideo()`. El controlador lo remite a `YOLOEngine` para extraer la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) y la almacena asociada a la entidad `TecnicaPatron`.
+* **Ruta Video Patrón (Molde Biomecánico de Referencia):** El Instructor transmite el video mediante `UploadReferenceVideo()`. El controlador lo remite a `YOLOEngine` para extraer la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) mediante YOLO26x-Pose y la almacena asociada a la entidad `TecnicaPatron`, consolidando el molde cinemático de comparación.
 
 ```mermaid
 sequenceDiagram
@@ -564,7 +564,7 @@ sequenceDiagram
 _Figura 6._ Diagrama de secuencia del sistema para la gestión y catalogación de recursos del instructor (CU-01 y CU-05) según Larman (2004).
 
 ### 5.2.2 Diagrama de Secuencia: Auditoría Postural Asincrónica (CU-02 y CU-03)
-El flujo de evaluación asincrónica modela la recepción del video de práctica, la selección interactiva del sujeto activo por parte del usuario y la posterior coordinación cinemática y semántica para entregar el diagnóstico:
+El flujo de evaluación asincrónica modela la recepción del video de práctica, la selección interactiva del sujeto activo por parte del usuario y la posterior coordinación cinemática y semántica para entregar el diagnóstico. Las discrepancias geométricas halladas en el espacio $\mathbb{R}^3$ tras el alineamiento temporal asíncrono con Dynamic Time Warping (DTW) gatillan una búsqueda vectorial por similitud de cosenos en la base de datos indexada con Gemini Embedding 2, extrayendo el fragmento del manual en PDF que se inyecta como contexto directo al modelo Gemini 3.8 Flash para neutralizar alucinaciones y generar una retroalimentación técnica fundamentada:
 
 ```mermaid
 sequenceDiagram
@@ -573,8 +573,8 @@ sequenceDiagram
     participant C as EvaluacionController
     participant V as YOLOEngine
     participant D as SincronizadorDTW
-    participant R as BaseVectorialOpenAI
-    participant G as ServicioGoogleGemini
+    participant R as BaseVectorialGemini
+    participant G as ServicioGeminiFlash
 
     P->>C: solicitarEvaluacion(idPracticante, idTecnica, videoPractica)
     C->>V: extraerEsqueletos3D(videoPractica)
@@ -584,8 +584,10 @@ sequenceDiagram
     C->>D: alinearSecuencias(esqueletoSujeto, esqueletoPatron)
     D-->>C: fotogramaMayorDesviacion, articulacionCritica
     C->>R: consultarContextoSemantico(articulacionCritica, idTecnica)
+    Note over C,R: Búsqueda vectorial por similitud de cosenos sobre embeddings de Gemini Embedding 2
     R-->>C: fragmentoManualPedagogico
     C->>G: solicitarRecomendacion(fragmentoManualPedagogico, articulacionCritica)
+    Note over C,G: Síntesis fundamentada con Gemini 3.8 Flash (Google AI Studio)
     G-->>C: textoRecomendacionPedagogica
     C-->>P: presentarDiagnostico(fotogramaAnotado, textoRecomendacionPedagogica)
 ```
@@ -607,9 +609,9 @@ Siguiendo la notación formal de esquemas relacionales formulada por Mannino (20
 * **RecursosDidacticos** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga)  
   *Integridad referencial:* $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$. La vinculación con el instructor docente se resuelve por navegación relacional natural mediante la técnica homologada ($\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$), suprimiendo la clave externa redundante para erradicar cualquier dependencia funcional transitiva y blindar el cumplimiento estricto de la Tercera Forma Normal (3FN).  
   *Semántica del atributo `tipoRecurso`:* Define la lógica de negocio y el subsistema de destino:
-  - `'PDF'`: Asociado estrictamente a la lógica de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto pedagógico).
+  - `'PDF'`: Asociado estrictamente a la lógica de RAG (extracción textual, cálculo de embeddings vectoriales con Gemini Embedding 2 de Google AI Studio y recuperación semántica de contexto pedagógico).
   - `'YOUTUBE'`: Asociado a la lógica de reproducción embebida en la PWA para consulta audiovisual de los alumnos (no pasa por modelos de IA ni almacenamiento vectorial).
-  - `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` y su matriz de coordenadas esqueléticas tridimensionales generada por `YOLOEngine` como molde cinemático de referencia.
+  - `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` y su matriz de coordenadas esqueléticas tridimensionales generada por `YOLOEngine` (YOLO26x-Pose) como molde cinemático de referencia para DTW.
 * **VideosPractica** ($\underline{\text{idVideoPractica}}$, $\text{idPracticante}^*$, $\text{idTecnicaPatron}^*$, duracionSegundos, archivoURL, fechaGrabacion)  
   *Integridad referencial:* $\text{idPracticante}^*$ referencia a $\text{Practicantes}(\text{idUsuario})$; $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$.
 * **EvaluacionesPosturales** ($\underline{\text{idEvaluacion}}$, $\text{idVideoPractica}^*$, porcentajeCoincidencia, articulacionFalla, tiempoProcesamientoSeg, estadoDiagnostico)  

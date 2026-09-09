@@ -51,7 +51,7 @@ La investigación se clasifica como un estudio aplicado y de desarrollo tecnoló
 El proceso de construcción del sistema adopta el Proceso Unificado (PU) propuesto por Craig Larman, estructurándose en cuatro fases iterativas e incrementales:
 
 1. **Inicio (Inception):** Definición del modelo de negocio, delimitación del alcance del sistema, identificación preliminar de los casos de uso principales y evaluación de la viabilidad técnica de la estimación postural 3D monocular y la arquitectura RAG.
-2. **Elaboración (Elaboration):** Especificación profunda de requisitos bajo la norma IEEE 830, diseño de la arquitectura base del sistema, modelado de dominio conceptual y mitigación de los riesgos arquitectónicos más severos (tales como la latencia de inferencia en la nube y la precisión de la separación del practicante activo).
+2. **Elaboración (Elaboration):** Especificación profunda de requisitos bajo la norma IEEE 830, diseño de la arquitectura base del sistema, modelado de dominio conceptual y mitigación de los riesgos arquitectónicos más severos (tales como la latencia de inferencia en la nube y la integridad en la selección del sujeto activo).
 3. **Construcción (Construction):** Desarrollo modular del software en lenguaje Python. En esta fase se codifican los pipelines de visión computacional, los módulos de embeddings vectoriales y la lógica relacional de almacenamiento. Los incrementos se guían por el diseño guiado por pruebas (TDD).
 4. **Transición (Transition):** Despliegue piloto del sistema en las instalaciones de Corpo e Mente, migración de los datos de las técnicas patrón y realización de pruebas de aceptación de usuario con los practicantes activos.
 
@@ -157,22 +157,7 @@ $$\theta(t) = \arccos\left( \frac{(x_A - x_B)(x_C - x_B) + (y_A - y_B)(y_C - y_B
 
 Esta formulación trigonométrica dota al sistema de invarianza geométrica frente a traslaciones en el plano y variaciones de escala visual. Al procesar vectores espaciales, el ángulo $\theta(t)$ mantiene su validez matemática independientemente de si el practicante ejecuta el movimiento cerca o lejos de la cámara, o si se encuentra rotado respecto al eje óptico, permitiendo una comparación directa y justa contra la Técnica Patrón del instructor.
 
-## 3.3 Algoritmo de Aislamiento y Priorización del Ejecutor (Target Isolation)
-Dada la interacción física y el contacto estrecho obligatorio entre dos cuerpos dentro del tatami (el practicante que ejecuta la técnica y el compañero de apoyo que actúa como receptor pasivo), el sistema requiere un mecanismo automatizado para aislar las coordenadas del sujeto de estudio. Se evaluaron dos estrategias de ingeniería de software en el backend:
-
-* **Alternativa A (Clasificación por área de Bounding Box):** Asigna el rol de ejecutor a la silueta que ocupe mayor volumen de píxeles en el encuadre. Se desestimó debido a su comportamiento errático en fases de suelo, donde el receptor suele quedar posicionado por encima del ejecutor, provocando la pérdida del objetivo.
-* **Alternativa B (Filtro de Varianza Cinemática Acumulada):** Opción seleccionada para el desarrollo. Detecta al sujeto activo midiendo la energía cinemática temporal de los esqueletos en el espacio.
-
-### 3.3.1 Formalismo Matemático del Aislamiento Cinemático
-En los protocolos de repetición técnica de Jiu-Jitsu (particularmente en escapes, pasajes y defensas), el compañero receptor adopta una postura estática de contención isométrica pasiva, simulando ser un soporte o un dummy humano. Por el contrario, el practicante bajo evaluación despliega aceleraciones espaciales significativas. El sistema calcula la varianza temporal de las coordenadas del centroide $(\bar{x}, \bar{y}, \bar{z})$ de cada individuo identificado en el encuadre durante una ventana de inicialización de $N$ fotogramas ($N = 30$):
-
-$$\sigma^2_{x} = \frac{1}{N}\sum_{t=1}^{N}(x_t - \bar{x})^2, \quad \sigma^2_{y} = \frac{1}{N}\sum_{t=1}^{N}(y_t - \bar{y})^2, \quad \sigma^2_{z} = \frac{1}{N}\sum_{t=1}^{N}(z_t - \bar{z})^2$$
-
-$$V_{\text{total}} = \sigma^2_{x} + \sigma^2_{y} + \sigma^2_{z}$$
-
-El algoritmo asigna de forma definitiva el rol de "Ejecutor Objetivo" al identificador de seguimiento que registre el valor máximo de $V_{\text{total}}$ en la serie temporal inicial. Los datos cinemáticos del compañero secundario son descartados en los cálculos posteriores, evitando perturbaciones o ruidos matemáticos en la medición del desajuste técnico.
-
-## 3.4 Sincronización Temporal de Movimientos Heterogéneos
+## 3.3 Sincronización Temporal de Movimientos Heterogéneos
 La velocidad de ejecución motriz difiere sistemáticamente entre un instructor experimentado y un practicante en fase de aprendizaje. Para resolver este desfase cronológico y asegurar una evaluación equitativa se analizaron dos aproximaciones matemáticas:
 
 1. **Resampleo Lineal Dinámico:** Fuerza una correspondencia fotograma a fotograma mediante interpolación algebraica simple. Se descartó debido a que asume erróneamente que los seres humanos se mueven a una velocidad constante, destruyendo la física real del movimiento deportivo.
@@ -182,20 +167,20 @@ $$D(i, j) = \text{dist}(\theta_{\text{inst}}(i), \theta_{\text{prac}}(j)) + \min
 
 El algoritmo DTW funciona de manera equivalente a emparejar dos interpretaciones musicales ejecutadas a ritmos diferentes. Aunque el practicante realice pausas, titubeos o ejecute la técnica con mayor lentitud que el instructor, el sistema alinea los hitos cinemáticos idénticos (como el punto culminante de una elevación pélvica). Esto permite aislar con exactitud el fotograma de máxima discrepancia espacial para efectuar la anotación visual mediante OpenCV.
 
-## 3.5 Vector Embeddings y Arquitectura de Recuperación Semántica (RAG)
+## 3.4 Vector Embeddings y Arquitectura de Recuperación Semántica (RAG)
 Para que el sistema trascienda la entrega de métricas numéricas frías y ofrezca una asesoría formativa comprensible, la arquitectura en Python integra técnicas de modelado semántico de texto orientadas al Jiu-Jitsu.
 
-### 3.5.1 Definición de Word Embeddings y text-embedding-3-small
+### 3.4.1 Definición de Word Embeddings y text-embedding-3-small
 Los *word embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionó el modelo `text-embedding-3-small`, el cual transforma descripciones de maniobras y fundamentos teóricos en vectores fijos de 1536 dimensiones. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
 
-### 3.5.2 Base de Datos Vectorial y Similitud por Cosenos
+### 3.4.2 Base de Datos Vectorial y Similitud por Cosenos
 La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de 1536 dimensiones. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
 
 $$\text{Similitud}_{\text{coseno}}(\vec{A}, \vec{B}) = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
 
 El sistema extrae el fragmento documental que presente la máxima correspondencia semántica (valor más próximo a 1), asegurando una recuperación precisa de la información doctrinal sin depender de coincidencias de palabras exactas.
 
-### 3.5.3 Estructuración de la Generación Aumentada por Recuperación (RAG)
+### 3.4.3 Estructuración de la Generación Aumentada por Recuperación (RAG)
 El flujo semántico del software se consolida mediante el patrón de diseño RAG (*Retrieval-Augmented Generation*), el cual actúa como un puente de traducción entre los datos cinemáticos duros y la pedagogía humana. El proceso se articula a través de tres etapas secuenciales:
 
 ```mermaid
@@ -226,7 +211,7 @@ El sistema constituye una plataforma computacional de asistencia técnica y peda
 1. **Gestión de Técnicas Patrón:** Permite al Instructor registrar, etiquetar y homologar los videos del Modelo de Referencia demostrados en el tatami.
 2. **Gestión de Fuentes de Conocimiento:** Permite al Instructor gestionar libros en formato PDF (como *Jiu-Jitsu University*) y registrar recursos externos mediante enlaces a videos oficiales de YouTube, sirviendo como base de conocimiento oficial indexada vectorialmente.
 3. **Carga de Video desde Dispositivo Móvil:** Facilita a los Practicantes seleccionar la técnica del día y subir grabaciones de su práctica en pareja (secuencias de hasta 45 segundos y 50 MB) directamente desde su dispositivo móvil.
-4. **Extracción y Aislamiento Corporal Automatizado:** Identifica los puntos clave del cuerpo (*keypoints*) en tres dimensiones (3D) mediante **YOLO26x-Pose** y separa de forma automática al Practicante activo de su compañero de apoyo estático.
+4. **Extracción y Selección del Sujeto Activo:** Identifica los puntos clave del cuerpo (*keypoints*) en tres dimensiones (3D) mediante **YOLO26x-Pose** y permite la selección manual del practicante activo sobre la interfaz visual, aislando su estructura corporal para la comparación.
 5. **Sincronización y Comparación Postural:** Alinea los tiempos de ejecución mediante **DTW** (*Dynamic Time Warping*) y compara la postura del Practicante con la técnica del Instructor, utilizándola como un molde esquelético tridimensional de referencia.
 6. **Diagnóstico Visual Inmediato:** Señala visualmente sobre la imagen la articulación desalineada mediante un círculo rojo, indicando con claridad el punto exacto de falla.
 7. **Asesoría Pedagógica Asistida por IA:** Genera consejos directos, constructivos y formativos mediante la **API de Google Gemini**, traduciendo el análisis visual e indexación vectorial a recomendaciones claras de entrenamiento.
@@ -261,8 +246,9 @@ El sistema opera mediante una estructura distribuida local-nube ejecutada ínteg
 ```mermaid
 flowchart TD
     A[El Instructor registra Técnica Patrón y Recursos de Estudio] --> B[El Practicante selecciona técnica y sube video desde dispositivo móvil]
-    B --> C[YOLO26x-Pose extrae puntos 3D y aísla al practicante activo]
-    C --> D[DTW sincroniza el ritmo del practicante con el patrón]
+    B --> C1[YOLO26x-Pose extrae puntos 3D y detecta esqueletos]
+    C1 --> C2[Usuario selecciona esqueleto activo en UI]
+    C2 --> D[DTW sincroniza el ritmo del practicante con el patrón]
     D --> E[El sistema evalúa coincidencia contra el molde tridimensional]
     E --> F[OpenCV marca círculo rojo en la articulación desalineada]
     E --> G[Google Gemini formula recomendación pedagógica clara]
@@ -273,7 +259,7 @@ flowchart TD
 ### 4.2.2 Funciones del Producto
 * **Gestión de Catálogo Curricular:** Registro de Técnicas Patrón y asignación de identificadores a las posiciones de control del Jiu-Jitsu.
 * **Indexación Vectorial Semántica:** Carga de manuales en PDF, fragmentación de texto en bloques lógicos, generación de embeddings de 1536 dimensiones e indexación en base de datos vectorial para consultas por similitud de cosenos.
-* **Pipeline de Visión Computacional:** Recepción directa de secuencias de video de práctica, estimación esquelética tridimensional, aislamiento cinemático del sujeto activo y enmascaramiento del compañero estático.
+* **Pipeline de Visión Computacional:** Recepción directa de secuencias de video de práctica, estimación esquelética tridimensional y selección manual del sujeto activo mediante interacción del usuario en la interfaz web (click/tap sobre el esqueleto detectado).
 * **Análisis Cinemático Espacial:** Sincronización temporal no lineal de trayectorias esqueléticas mediante DTW, aislamiento del fotograma de mayor desviación angular en $\mathbb{R}^3$ y graficación automática de alertas sobre la imagen.
 * **Generación de Retroalimentación Contextualizada (RAG):** Búsqueda de la base de conocimiento emparejada al error articular detectado, construcción de prompt estructurado y despacho hacia Google Gemini para generar la recomendación de entrenamiento en lenguaje natural.
 
@@ -317,7 +303,7 @@ flowchart TD
 | **RF-01** | **Registro de Técnica Patrón** | **Como** Instructor, se requiere registrar el video del Modelo de Referencia de una técnica oficial, **para que** actúe como el molde esquelético tridimensional contra el cual se evaluará la práctica de los alumnos.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón y extrae su matriz de puntos articulares 3D en menos de 30 segundos. |
 | **RF-02** | **Carga de Video desde Dispositivo Móvil** | **Como** Practicante, el sistema debe permitir seleccionar una técnica y subir el video de su práctica en pareja (hasta 45s y 50 MB) vía API REST directa, **para que** se realice la auditoría asincrónica.<br>*Criterio de Aceptación:* La interfaz valida las restricciones de tamaño y duración antes de iniciar la transferencia HTTPS POST, rechazando archivos inválidos de forma controlada. |
 | **RF-03** | **Detección Automática de Puntos Clave 3D** | **El sistema procesa** el video mediante el modelo YOLO26x-Pose en Python para identificar los 17 puntos anatómicos corporales del estándar COCO, estimando la coordenada de profundidad ($Z$) relativa al centroide pélvico para cada articulación. |
-| **RF-04** | **Aislamiento del Practicante Activo** | **El sistema discrimina** automáticamente al practicante en ejecución frente al compañero que ejerce el rol de soporte estático mediante el análisis de varianza cinemática tridimensional ($V_{\text{total}}$), enmascarando los datos del sujeto secundario. |
+| **RF-04** | **Selección Manual del Sujeto Activo** | **Selección Manual del Sujeto Activo:** El sistema presenta al usuario (Instructor o Practicante) los esqueletos detectados por YOLO26x-Pose sobre el video cargado. El usuario debe seleccionar manualmente cuál de los esqueletos corresponde al sujeto de estudio (ejecutor de la técnica). El sistema descartará los datos de los demás esqueletos no seleccionados para el análisis comparativo.<br>*Criterio de Aceptación:* La interfaz permite hacer click/tap sobre un esqueleto detectado. Si el usuario no selecciona ningún esqueleto o la detección falla, el sistema muestra un mensaje de error claro: "No se detectaron sujetos claros o selección inválida", abortando el procesamiento sin generar datos falsos. |
 | **RF-05** | **Sincronización Temporal No Lineal** | **El sistema aplica** el algoritmo DTW en Python para alinear la velocidad del practicante con la del video patrón, emparejando los hitos biomecánicos críticos con independencia del ritmo o pausas en la ejecución. |
 | **RF-06** | **Detección de Máxima Discrepancia Espacial** | **El sistema aísla** el fotograma específico donde la configuración corporal tridimensional del practicante exhibe la mayor desviación angular en $\mathbb{R}^3$ respecto al molde de referencia del instructor. |
 | **RF-07** | **Señalización Visual del Error** | **El sistema renderiza** sobre el fotograma clave un marcador gráfico circular de color rojo (mediante OpenCV) centrado en la articulación desalineada, proporcionando una alerta visual directa. |
@@ -388,7 +374,7 @@ graph LR
 | Código | Nombre del Caso de Uso | Actor Principal | Requisitos Asociados | Descripción Sintética |
 | :---: | :--- | :---: | :---: | :--- |
 | **CU-01** | **Registrar Técnica Patrón** | El Instructor | RF-01, RF-03 | El Instructor graba y transmite el video del Modelo de Referencia. El sistema procesa los puntos corporales espaciales (3D) de la técnica patrón y lo almacena en la base de datos relacional. |
-| **CU-02** | **Cargar Video desde Dispositivo Móvil** | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la maniobra y transmite su grabación (< 45s, < 50 MB) vía API REST. El sistema filtra al compañero estático, sincroniza los tiempos con el algoritmo DTW y valida el encuadre de cuerpo entero. |
+| **CU-02** | **Cargar Video desde Dispositivo Móvil** | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la maniobra y transmite su grabación (< 45s, < 50 MB) vía API REST. El sistema muestra los keypoints detectados y solicita al usuario confirmar cuál es el ejecutor de la técnica mediante selección visual, sincroniza los tiempos con el algoritmo DTW y valida el encuadre de cuerpo entero. |
 | **CU-03** | **Visualizar Diagnóstico y Consejo de IA** | El Practicante | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema expone en la interfaz móvil la imagen clave anotada con un marcador circular de OpenCV en la articulación desalineada y la recomendación pedagógica adaptada por Google Gemini en una ventana menor a 10 segundos. |
 | **CU-04** | **Consultar Historial de Progreso** | El Practicante | RF-10 | El Practicante accede a su panel cronológico para auditar los porcentajes de coincidencia postural obtenidos a lo largo de las clases. |
 | **CU-05** | **Gestionar Recursos y Fuentes de Estudio** | El Instructor / El Practicante | RF-11, RF-12 | El Instructor administra manuales en PDF (indexados en la base de datos vectorial) y enlaces de YouTube. El Practicante los consulta como material oficial de estudio para sus exámenes de grado. |
@@ -528,9 +514,11 @@ sequenceDiagram
     P->>C: postVideoPractica(idPracticante, idTecnica, videoArchivo)
     Note over C: Valida restricciones: peso < 50MB y duracion < 45s
     C->>V: procesarEsqueleto3D(videoArchivo)
-    V-->>C: matrizKeypoints3D(X, Y, Z, Vtotal)
-    Note over C: Filtra ejecutor activo mediante varianza cinemática
-    C->>D: alinearSecuencias(matrizKeypoints3D, esqueletoPatron)
+    V-->>C: esqueletosDetectados3D(X, Y, Z)
+    C-->>P: presentarEsqueletosParaSeleccion(esqueletosDetectados)
+    P->>C: seleccionarEsqueletoActivo(idEsqueleto)
+    Note over C: Descarta esqueletos secundarios para garantizar datos limpios (Ground Truth)
+    C->>D: alinearSecuencias(esqueletoSeleccionado, esqueletoPatron)
     D-->>C: fotogramaMaximaDiscrepancia, indicadorArticulación
     C->>R: buscarContextoSemantico(indicadorArticulación, idTecnica)
     R-->>C: bloqueTextoManualPDF (Similitud Cosenos text-embedding-3-small)

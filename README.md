@@ -280,6 +280,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 * **Restricción de Ejecución en Dispositivos Móviles:** Queda prohibida la inferencia o procesamiento de modelos de IA locales dentro del navegador del teléfono inteligente del usuario, delegando toda la carga matemática al backend.
 * **Límites de Carga Multimedia:** Los archivos de video de práctica transmitidos por los alumnos tendrán una duración máxima estricta de 45 segundos y un peso tope de 50 MB.
 * **Latencia Operativa Crítica:** El tiempo total de procesamiento en la nube, incluyendo la inferencia esquelética, la alineación DTW, la búsqueda vectorial y la respuesta del LLM, no deberá superar la ventana de 5 a 10 segundos para clips estandarizados.
+* **Restricción de Alcance de Vectorización (Exclusividad de Texto PDF):** La generación de embeddings y la indexación en base de datos vectorial para el pipeline RAG opera de forma exclusiva sobre el texto digital extraído de manuales y libros técnicos en formato PDF. Los enlaces de video externo (YouTube) y los videos de práctica o patrón quedan expresamente excluidos de vectorizaciones multimodales o transcripciones automatizadas, manteniendo la alta eficiencia del sistema, acotando los tiempos de respuesta y previniendo costos innecesarios por consumo de API en la generación de texto pedagógico.
 
 ### 4.2.5 Suposiciones y Dependencias
 * **Encuadre del Plano General:** Se asume que los practicantes colocarán el dispositivo móvil en un trípode o soporte a una distancia recomendada de entre 2.5 y 3.5 metros, asegurando la visibilidad del cuerpo entero de ambos atletas durante la secuencia.
@@ -333,8 +334,9 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 
 ### 4.3.4 Restricciones de Diseño
 * **RD-01 (Uso de YOLO26x-Pose y Google Colab Pro):** La arquitectura de visión tridimensional debe sustentarse estrictamente en la variante Extra Large (YOLO26x-Pose) ejecutada en Python sobre un backend acelerado por GPU en Colab Pro, garantizando la resolución espacial de profundidad ($Z$).
-* **RD-02 (Integración Obligatoria de Embeddings de OpenAI):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por OpenAI con dimensiones densas homogéneas.
+* **RD-02 (Integración Obligatoria de Embeddings de OpenAI y Delimitación a PDFs):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por OpenAI con dimensiones densas homogéneas. Dicha vectorización semántica aplica exclusivamente al contenido textual procesado a partir de archivos PDF oficiales, restringiendo el uso de recursos de IA para la generación de texto a fuentes puramente bibliográficas.
 * **RD-03 (Arquitectura Web Multiplataforma):** La interfaz frontal debe ser accesible de forma directa a través de navegadores web móviles sin requerir instalación por medio de tiendas de aplicaciones comerciales.
+* **RD-04 (Restricción de Procesamiento RAG a Documentos Textuales):** El subsistema de Generación Aumentada por Recuperación (RAG) no procesará contenidos multimedia de audio o video procedentes de YouTube o grabaciones de tatami. Las consultas semánticas y la inyección de contexto pedagógico al modelo Google Gemini se abastecen única y directamente de los fragmentos indexados de manuales técnicos en PDF, asegurando la reproducibilidad, exactitud bibliográfica y optimización de costos computacionales.
 
 ### 4.3.5 Atributos del Sistema
 
@@ -401,6 +403,11 @@ _Figura 4._ Diagrama general de casos de uso del sistema según Larman (2004).
 ## 4.5 Diagrama de Dominio
 El modelo conceptual de dominio organiza las clases lógicas esenciales de la aplicación. Se omiten tipos de datos primitivos de implementación física y se enfoca estrictamente en reflejar las relaciones del negocio deportivo y de inteligencia artificial según Larman (2004).
 
+Dentro de este modelo, la entidad `FuenteConocimiento` discrimina mediante el atributo `tipoRecurso` la naturaleza operativa del contenido suministrado por el Instructor:
+1. `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto).
+2. `'YOUTUBE'`: Asociado a la reproducción audiovisual directa embebida en la PWA (flujo relacional sin consumo de servicios de IA ni almacenamiento vectorial).
+3. `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
+
 ```mermaid
 classDiagram
     class AcademiaBJJ {
@@ -436,13 +443,15 @@ classDiagram
         categoriaTecnica
         posicionOrigen
         videoReferenciaURL
+        matrizEsqueleticaURL
         fechaPublicacion
     }
 
     class FuenteConocimiento {
         idFuente
+        idTecnicaPatron
         titulo
-        tipoFuente
+        tipoRecurso
         enlaceOArchivo
         fechaCarga
     }
@@ -513,13 +522,54 @@ El presente capítulo expone la transición del modelo de requisitos hacia la ar
 ## 5.1 Arquitectura del Sistema e Inclusión del Patrón de Diseño GRASP
 Para estructurar los componentes del sistema, el diseño lógico adopta una arquitectura modular basada en capas y patrones GRASP (*General Responsibility Assignment Software Patterns*), garantizando una adecuada separación de responsabilidades y facilitando la extensibilidad (Larman, 2004):
 
-1. **Patrón Controlador (Controller):** Asignado a la clase lógica `EvaluacionController`. Este objeto asume la responsabilidad de recibir los eventos del sistema originados por los usuarios en la interfaz cliente y coordinar el flujo de ejecución entre el motor de visión computacional, el algoritmo de alineación temporal y los servicios de inteligencia artificial, impidiendo el acoplamiento directo entre la capa de presentación y la lógica analítica.
+1. **Patrón Controlador (Controller):** Se formalizan dos controladores lógicos especializados:
+   * `RecursoController`: Gestiona las operaciones de ingestión y catalogación curricular ejecutadas por el Instructor (CU-01 y CU-05). Discrimina las tres rutas de entrada del sistema: envía documentos PDF al servicio `VectorDBService` para cálculo de embeddings e indexación semántica; persiste directamente los enlaces multimedia externos de YouTube en el repositorio relacional (sin procesamiento de IA); y remite grabaciones de referencia a `YOLOEngine` para extraer la matriz de puntos clave articulares tridimensionales.
+   * `EvaluacionController`: Orquesta el caso de uso central de auditoría postural asincrónica (CU-02 y CU-03), coordinando el flujo de datos entre la inferencia esquelética, la sincronización temporal con DTW, la consulta semántica contextualizada y la generación de recomendaciones pedagógicas mediante Google Gemini.
 2. **Patrón Experto en Información (Information Expert):** Asignado a la entidad `EvaluacionPostural`. Esta clase concentra el conocimiento sobre los puntos clave anatómicos, las desviaciones espaciales calculadas y los umbrales de tolerancia biomecánica, siendo la responsable de computar el porcentaje global de concordancia postural y tipificar la articulación con mayor desvío cinemático.
 3. **Patrón Creador (Creator):** Asignado a la clase `EvaluacionController`. Dado que el controlador gestiona el caso de uso completo de auditoría y agrega los resultados intermedios producidos por los motores de cálculo, posee la responsabilidad legítima de instanciar los objetos de tipo `EvaluacionPostural`.
-4. **Bajo Acoplamiento y Alta Cohesión (Low Coupling / High Cohesion):** Los servicios de inteligencia artificial (`YOLOEngine`, `RecuperadorSemantico` y `ServicioGoogleGemini`) se comunican mediante interfaces abstractas y estructuras de datos normalizadas. El subsistema analítico opera de forma independiente de la capa de persistencia relacional, permitiendo actualizar o sustituir los proveedores de servicios de IA sin perturbar el dominio del software.
+4. **Bajo Acoplamiento y Alta Cohesión (Low Coupling / High Cohesion):** Los servicios de inteligencia artificial (`YOLOEngine`, `VectorDBService` y `ServicioGoogleGemini`) se comunican mediante interfaces abstractas y estructuras de datos normalizadas. El subsistema analítico opera de forma independiente de la capa de persistencia relacional, permitiendo actualizar o sustituir los proveedores de servicios de IA sin perturbar el dominio del software.
 
 ## 5.2 Diseño de Casos de Uso Críticos (Diagramas de Secuencia del Proceso Unificado)
-Conforme a la metodología del Proceso Unificado expuesta por Larman (2004), el Diagrama de Secuencia del Sistema (DSS) describe la interacción temporal y el intercambio de mensajes entre los actores externos, el objeto controlador del sistema y los servicios lógicos de procesamiento durante el caso de uso central: la auditoría postural asincrónica.
+Conforme a la metodología del Proceso Unificado expuesta por Larman (2004), los Diagramas de Secuencia del Sistema (DSS) describen la interacción temporal y el intercambio de mensajes entre los actores externos, los objetos controladores del sistema y los servicios lógicos de procesamiento.
+
+### 5.2.1 Diagrama de Secuencia: Gestión y Catalogación de Recursos por el Instructor (CU-01 y CU-05)
+Para garantizar la máxima eficiencia operativa y evitar costos computacionales innecesarios, el sistema diferencia estrictamente el flujo de procesamiento de los tres tipos de recursos que ingresa el Instructor:
+* **Ruta PDF (Manuales y Libros Técnicos):** El Instructor despacha el archivo mediante `UploadPDF()`. El controlador deriva el contenido hacia `VectorDBService` para su fragmentación y vectorización semántica mediante embeddings de OpenAI, persistiendo los metadatos en la base de datos relacional para dar soporte al pipeline RAG.
+* **Ruta YouTube (Material Audiovisual Complementario):** El Instructor registra la URL mediante `SaveYouTubeURL()`. El sistema persiste de forma inmediata el registro en la entidad `RecursoDidactico` de la base de datos relacional. **Nota de diseño:** Este flujo no involucra modelos de IA ni almacenamiento vectorial, sirviendo exclusivamente como recurso embebido para la PWA móvil del practicante.
+* **Ruta Video Patrón (Molde Biomecánico de Referencia):** El Instructor transmite el video mediante `UploadReferenceVideo()`. El controlador lo remite a `YOLOEngine` para extraer la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) y la almacena asociada a la entidad `TecnicaPatron`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor I as Instructor
+    participant C as RecursoController
+    participant Y as YOLOEngine
+    participant V as VectorDBService
+    participant BD as BaseDatosRelacional
+
+    alt Ruta 1: Manual Técnico en Formato PDF (Pipeline RAG de IA)
+        I->>C: UploadPDF(idTecnica, archivoPDF)
+        C->>V: procesarEmbeddingsTexto(archivoPDF)
+        V-->>C: vectoresSemanticosIndexados
+        C->>BD: persistirRecursoDidactico(idTecnica, "PDF", rutaPDF)
+        C-->>I: notificarIndexacionExitosa()
+    else Ruta 2: Enlace Multimedia YouTube (Sin IA ni VectorDB)
+        I->>C: SaveYouTubeURL(idTecnica, urlYouTube)
+        Note over C,BD: Almacenamiento relacional directo para reproducción PWA (sin cómputo de IA)
+        C->>BD: persistirRecursoDidactico(idTecnica, "YOUTUBE", urlYouTube)
+        C-->>I: notificarEnlaceRegistrado()
+    else Ruta 3: Video Patrón de Referencia (Visión Computacional 3D)
+        I->>C: UploadReferenceVideo(idInstructor, datosTecnica, videoArchivo)
+        C->>Y: extraerKeypoints3D(videoArchivo)
+        Y-->>C: matrizEsqueletica3D(X, Y, Z)
+        C->>BD: persistirTecnicaPatron(datosTecnica, matrizEsqueletica3D)
+        C-->>I: notificarTecnicaPatronPublicada()
+    end
+```
+_Figura 6._ Diagrama de secuencia del sistema para la gestión y catalogación de recursos del instructor (CU-01 y CU-05) según Larman (2004).
+
+### 5.2.2 Diagrama de Secuencia: Auditoría Postural Asincrónica (CU-02 y CU-03)
+El flujo de evaluación asincrónica modela la recepción del video de práctica, la selección interactiva del sujeto activo por parte del usuario y la posterior coordinación cinemática y semántica para entregar el diagnóstico:
 
 ```mermaid
 sequenceDiagram
@@ -544,7 +594,7 @@ sequenceDiagram
     G-->>C: textoRecomendacionPedagogica
     C-->>P: presentarDiagnostico(fotogramaAnotado, textoRecomendacionPedagogica)
 ```
-_Figura 6._ Diagrama de secuencia del sistema para la auditoría postural asincrónica según Larman (2004).
+_Figura 7._ Diagrama de secuencia del sistema para la auditoría postural asincrónica (CU-02 y CU-03) según Larman (2004).
 
 ## 5.3 Diseño de la Base de Datos Relacional (Metodología de Mannino)
 El diseño de los datos persistentes se fundamenta en la metodología de Mannino (2019), la cual establece la transformación rigurosa del modelo conceptual hacia un esquema lógico relacional antes de cualquier consideración de implementación física. En esta etapa se definen las relaciones, claves primarias, claves foráneas, reglas de integridad referencial y cardinalidades lógicas que sustentan las operaciones del sistema.
@@ -557,8 +607,14 @@ Siguiendo la notación formal de esquemas relacionales formulada por Mannino (20
   *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
 * **Practicantes** ($\underline{\text{idUsuario}}^*$, gradoCinturon, pesoKg, estadoMembresia)  
   *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
-* **TecnicasPatron** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, fechaPublicacion)  
+* **TecnicasPatron** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, matrizEsqueleticaURL, fechaPublicacion)  
   *Integridad referencial:* $\text{idInstructor}^*$ referencia a $\text{Instructores}(\text{idUsuario})$.
+* **RecursosDidacticos** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, $\text{idInstructor}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga)  
+  *Integridad referencial:* $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$; $\text{idInstructor}^*$ referencia a $\text{Instructores}(\text{idUsuario})$.  
+  *Semántica del atributo `tipoRecurso`:* Define la lógica de negocio y el subsistema de destino:
+  - `'PDF'`: Asociado estrictamente a la lógica de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto pedagógico).
+  - `'YOUTUBE'`: Asociado a la lógica de reproducción embebida en la PWA para consulta audiovisual de los alumnos (no pasa por modelos de IA ni almacenamiento vectorial).
+  - `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` y su matriz de coordenadas esqueléticas tridimensionales generada por `YOLOEngine` como molde cinemático de referencia.
 * **VideosPractica** ($\underline{\text{idVideoPractica}}$, $\text{idPracticante}^*$, $\text{idTecnicaPatron}^*$, duracionSegundos, archivoURL, fechaGrabacion)  
   *Integridad referencial:* $\text{idPracticante}^*$ referencia a $\text{Practicantes}(\text{idUsuario})$; $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$.
 * **EvaluacionesPosturales** ($\underline{\text{idEvaluacion}}$, $\text{idVideoPractica}^*$, porcentajeCoincidencia, articulacionFalla, tiempoProcesamientoSeg, estadoDiagnostico)  
@@ -597,7 +653,18 @@ classDiagram
         +string categoriaTecnica
         +string posicionOrigen
         +string videoReferenciaURL
+        +string matrizEsqueleticaURL
         +date fechaPublicacion
+    }
+
+    class RecursoDidactico {
+        +int idRecurso <<PK>>
+        +int idTecnicaPatron <<FK>>
+        +int idInstructor <<FK>>
+        +string titulo
+        +string tipoRecurso
+        +string localizadorRecurso
+        +date fechaCarga
     }
 
     class VideoPractica {
@@ -621,22 +688,34 @@ classDiagram
     Usuario <|-- Instructor : especializa
     Usuario <|-- Practicante : especializa
     Instructor "1" -- "0..*" TecnicaPatron : homologa
+    Instructor "1" -- "0..*" RecursoDidactico : sube
+    TecnicaPatron "1" -- "0..*" RecursoDidactico : complementa-con
     Practicante "1" -- "0..*" VideoPractica : remite
     TecnicaPatron "1" -- "0..*" VideoPractica : modela
     VideoPractica "1" -- "1" EvaluacionPostural : genera
 ```
-_Figura 7._ Diagrama UML del modelo lógico de datos relacionales según Mannino (2019).
+_Figura 8._ Diagrama UML del modelo lógico de datos relacionales y clases de diseño según Mannino (2019).
 
 ### 5.3.2 Verificación de Dependencias Funcionales y Reglas de Normalización
-Conforme a los criterios formales de calidad expuestos por Mannino (2019), se audita el esquema lógico sobre la entidad central `EvaluacionesPosturales` para demostrar que satisface la Tercera Forma Normal (3FN), garantizando la ausencia de redundancias lógicas y anomalías de actualización:
+Conforme a los criterios formales de calidad expuestos por Mannino (2019), se audita el esquema lógico sobre las entidades principales para demostrar que satisfacen la Tercera Forma Normal (3FN), garantizando la ausencia de redundancias lógicas y anomalías de actualización:
 
 1. **Primera Forma Normal (1FN):** Todos los atributos del esquema representan valores atómicos e indivisibles. No existen atributos multivaluados, listas anidadas ni grupos repetitivos dentro de las tuplas. Las matrices intermedias generadas por la estimación esquelética y el alineamiento temporal se gestionan exclusivamente en memoria volátil de procesamiento, persistiendo en el modelo relacional únicamente las métricas consolidadas del diagnóstico.
-2. **Segunda Forma Normal (2FN):** Toda relación que cumple con la 1FN y cuya clave primaria es simple (compuesta por un único atributo) se encuentra automáticamente en 2FN (Mannino, 2019). Dado que la clave primaria de la entidad es el identificador simple `idEvaluacion`, no existe posibilidad lógica de dependencia funcional parcial respecto a una clave primaria compuesta.
-3. **Tercera Forma Normal (3FN):** Se verifica que ningún atributo no clave presente dependencia funcional transitiva respecto a la clave primaria. El conjunto de dependencias funcionales directas de la entidad se formaliza de la siguiente manera:
+2. **Segunda Forma Normal (2FN):** Toda relación que cumple con la 1FN y cuya clave primaria es simple (compuesta por un único atributo) se encuentra automáticamente en 2FN (Mannino, 2019). Tanto `EvaluacionesPosturales` (clave `idEvaluacion`) como `RecursosDidacticos` (clave `idRecurso`) cuentan con claves primarias simples, eliminando por definición cualquier posibilidad de dependencia funcional parcial.
+3. **Tercera Forma Normal (3FN):** Se verifica que ningún atributo no clave presente dependencia funcional transitiva respecto a la clave primaria. 
+   
+   Para la entidad `EvaluacionesPosturales`:
    * $\text{idEvaluacion} \rightarrow \text{idVideoPractica}$
    * $\text{idEvaluacion} \rightarrow \text{porcentajeCoincidencia}$
    * $\text{idEvaluacion} \rightarrow \text{articulacionFalla}$
    * $\text{idEvaluacion} \rightarrow \text{tiempoProcesamientoSeg}$
    * $\text{idEvaluacion} \rightarrow \text{estadoDiagnostico}$
 
-   Cada determinante en este conjunto es una superclave de la relación, y ningún atributo no primo determina a otro atributo no primo. En consecuencia, el esquema relacional cumple de manera rigurosa con la Tercera Forma Normal (3FN), asegurando la integridad semántica de los datos y la robustez lógica del sistema ante consultas concurrentes de auditoría técnica en la academia.
+   Para la entidad `RecursosDidacticos`:
+   * $\text{idRecurso} \rightarrow \text{idTecnicaPatron}$
+   * $\text{idRecurso} \rightarrow \text{idInstructor}$
+   * $\text{idRecurso} \rightarrow \text{titulo}$
+   * $\text{idRecurso} \rightarrow \text{tipoRecurso}$
+   * $\text{idRecurso} \rightarrow \text{localizadorRecurso}$
+   * $\text{idRecurso} \rightarrow \text{fechaCarga}$
+
+   Cada determinante en estos conjuntos es una superclave de la relación, y ningún atributo no primo determina a otro atributo no primo. En consecuencia, el esquema relacional cumple de manera rigurosa con la Tercera Forma Normal (3FN), asegurando la integridad semántica de los datos y la robustez lógica del sistema ante consultas concurrentes de auditoría técnica en la academia.

@@ -15,17 +15,17 @@ Se propone el desarrollo e implementación de un sistema computacional de asiste
 
 ### 1.1.3 Objeto de Investigación
 
-El objeto de investigación comprende el diseño, desarrollo e implementación de un sistema de visión por computadora basado en redes neuronales profundas para la estimación de pose humana bidimensional (2D), diseñado para detectar, cuantificar y señalar visualmente discrepancias biomecánicas en la ejecución de técnicas de artes marciales mediante comparación cinemática directa frente a un patrón de referencia, operando bajo una arquitectura distribuida (edge-cloud).
+El objeto de investigación comprende el diseño, desarrollo e implementación de un sistema de visión por computadora basado en redes neuronales profundas para la estimación de pose humana tridimensional (3D) mediante reconstrucción monocular de coordenadas de profundidad, diseñado para detectar, cuantificar y señalar visualmente discrepancias biomecánicas en la ejecución de técnicas de artes marciales mediante comparación cinemática directa frente a un patrón de referencia, operando bajo una arquitectura distribuida (edge-cloud).
 
 ### 1.1.4 Alcance y Delimitación
 
 * **Delimitación temporal:** La investigación se desarrollará durante el periodo académico correspondiente a la elaboración, implementación y defensa del proyecto de grado.
 * **Delimitación espacial:** La recolección del corpus de video y la prueba piloto experimental se llevarán a cabo en las instalaciones de la academia Corpo e Mente (Knock Out Gym, Santa Cruz de la Sierra, Bolivia).
-* **Delimitación temática y técnica:** El sistema operará con un enfoque agnóstico de comparación técnica: procesará cualquier técnica de artes marciales siempre que se disponga de un video de referencia del instructor y un video de ejecución del practicante bajo un protocolo de grabación estandarizado (Plano General Lateral Estricto a 90 grados respecto al eje de movimiento y a una distancia fija de 3.0 metros). La estimación postural se enfocará estrictamente en la extracción de puntos clave articulares (*keypoints*) en dos dimensiones (2D) y el análisis de variaciones angulares relativas a lo largo del tiempo. El sistema constituye una herramienta complementaria de autoevaluación y auditoría técnica, sin pretender sustituir el juicio pedagógico del instructor. Se excluyen del alcance el reconocimiento automático o clasificación de técnicas no catalogadas, la reconstrucción volumétrica tridimensional (3D) y la medición de variables biomecánicas de fuerza, potencia o fatiga física.
+* **Delimitación temática y técnica:** El sistema operará con un enfoque agnóstico de comparación técnica: procesará cualquier técnica de artes marciales siempre que se disponga de un video de referencia del instructor y un video de ejecución del practicante. La estimación postural se enfocará en la extracción de puntos clave articulares (keypoints) en tres dimensiones (3D), obteniendo las coordenadas de posición (X, Y, Z) a partir de grabaciones de video convencionales de una sola cámara (visión monocular). El sistema analizará las variaciones angulares en el espacio tridimensional a lo largo del tiempo, eliminando la dependencia estricta de un ángulo de grabación perpendicular. El sistema constituye una herramienta complementaria de autoevaluación y auditoría técnica, sin pretender sustituir el juicio pedagógico del instructor. Se excluyen del alcance el reconocimiento automático o clasificación de técnicas no catalogadas, el escaneo volumétrico por malla poligonal densa y la medición de variables biomecánicas de fuerza, potencia o fatiga física.
 
 ### 1.1.5 Justificación de la Investigación
 
-* **Justificación teórica:** El proyecto contribuye al área de la visión artificial aplicada a las ciencias del deporte y la biomecánica motriz, validando la eficacia de algoritmos de estimación de pose bidimensional y comparación temporal de series cinemáticas en deportes de contacto con interacción cercana, proporcionando evidencia empírica en un contexto de investigación deportiva local.
+* **Justificación teórica:** El proyecto contribuye al área de la visión artificial aplicada a las ciencias del deporte y la biomecánica motriz, validando la eficacia de algoritmos de estimación de pose tridimensional monocular y comparación temporal de series cinemáticas en deportes de contacto con interacción cercana, proporcionando evidencia empírica en un contexto de investigación deportiva local.
 * **Justificación práctica:** Proporciona a la academia Corpo e Mente una solución de software escalable y accesible que optimiza los tiempos de supervisión del cuerpo docente, mitiga la consolidación de hábitos técnicos perjudiciales y brinda a los practicantes un medio de autoevaluación objetivo y sistemático.
 * **Justificación metodológica:** La investigación adopta un proceso riguroso de ingeniería de software caracterizado por un diseño modular orientado a objetos y ciclos de desarrollo iterativos e incrementales. La implementación de prácticas de aseguramiento de calidad y desarrollo guiado por pruebas (*Test-Driven Development*, TDD) garantiza la validez matemática en los cálculos de geometría articular y la sincronización algorítmica de trayectorias previas a su integración en el producto final.
 
@@ -41,7 +41,7 @@ Desarrollar un sistema de visión artificial para la detección y comparación o
 
 1. **Analizar** los requerimientos funcionales, no funcionales y pedagógicos del proceso de enseñanza-aprendizaje técnico, estableciendo un protocolo de captura de video que defina las condiciones óptimas de ángulo, distancia e iluminación para minimizar el impacto de las oclusiones corporales.
 2. **Diseñar** la arquitectura de software y los modelos de datos que permitan la integración desacoplada entre la captura y preprocesamiento de video, el motor de inferencia en la nube y la entrega de reportes visuales interactivos.
-3. **Implementar** los módulos computacionales de estimación de pose humana en dos dimensiones (2D), extracción secuencial de coordenadas articulares y comparación algorítmica de curvas de desviación angular respecto al video patrón del instructor.
+3. **Implementar** los módulos computacionales de estimación de pose humana en tres dimensiones (3D), extracción secuencial de coordenadas articulares espaciales y comparación algorítmica de curvas de desviación angular respecto al video patrón del instructor.
 4. **Validar** la precisión y exactitud diagnóstica del sistema mediante pruebas experimentales de concordancia frente al criterio evaluativo de instructores certificados, evaluando adicionalmente la usabilidad y adopción de la herramienta por parte de los practicantes en la academia piloto.
 
 ---
@@ -134,45 +134,50 @@ La dinámica interna de la clase revela la necesidad urgente de apoyo tecnológi
 
 ## 3.1 Ingeniería de Selección de Modelos de Estimación de Pose (HPE)
 
-Para la extracción del esqueleto anatómico de los practicantes, se evaluaron tres arquitecturas de vanguardia en visión artificial: MediaPipe Pose (Google), OpenPose (CMU) y Ultralytics YOLO26-Pose. La evaluación se fundamentó en criterios de latencia en inferencia remota, robustez ante oclusiones corporales severas originadas por el contacto estrecho y facilidad de integración en una canalización (*pipeline*) de software basada en Python.
+Para la extracción del esqueleto anatómico de los practicantes, se evaluaron tres arquitecturas de vanguardia en visión artificial: MediaPipe Pose (Google), OpenPose (CMU) y Ultralytics YOLOv11-Pose. La evaluación se fundamentó en criterios de latencia en inferencia remota, capacidad de reconstrucción monocular de profundidad (3D), robustez ante oclusiones corporales severas originadas por el contacto estrecho y facilidad de integración en una canalización (*pipeline*) de software basada en Python.
 
 ### 3.1.1 Matriz Comparativa de Modelos Core de Visión
 
-| Criterio Técnico | MediaPipe Pose | OpenPose (Baseline) | Ultralytics YOLO26-Pose |
+| Criterio Técnico | MediaPipe Pose | OpenPose (Baseline) | Ultralytics YOLOv11-Pose |
 | :--- | :--- | :--- | :--- |
-| **Enfoque de Red** | Top-down (Monorregión) | Bottom-up (Campos de Afinidad Part Affinity Fields) | Single-Shot Retainers (End-to-End) |
-| **Inferencia en CPU** | Alta eficiencia (Mobile) | Inviable ($< 3$ FPS) | Optimizada (Hasta 43% más rápida) |
-| **Manejo de Oclusión** | Deficiente en contacto (pérdida de *keypoints*) | Alto costo computacional | Excelente (Alineación por STAL y pérdida progresiva) |
-| **Post-procesamiento** | No requiere | Requiere NMS pesado y enlace algebraico | NMS-Free nativo (Cero latencia post-red) |
-| **Formato de Exportación** | Propietario (`.tflite`) | Complejo (C++ nativo / Caffe) | Altamente versátil (`.pt`, `ONNX`, `TensorRT`) |
+| **Enfoque de Red** | Top-down (Monorregión con profundidad relativa aproximada) | Bottom-up plano 2D (Campos de Afinidad Part Affinity Fields) | Single-Shot con regresión directa de coordenadas relativas de profundidad ($Z$) respecto al centroide de la pelvis (raíz del esqueleto) |
+| **Inferencia en CPU/GPU** | Alta eficiencia en CPU móvil | Inviable en tiempo diferido ágil ($< 3$ FPS en CPU) | Optimizada en GPU Colab Pro (Inferencia ultrarrápida $< 15$ ms) |
+| **Manejo de Oclusión en 3D** | Deficiente ante contacto corporal estrecho (colapso de profundidad) | Sin soporte 3D monocular nativo; alto costo de postprocesamiento | Estimación de la articulación en el espacio $(X, Y, Z)$ mediante restricciones anatómicas preentrenadas (longitudes óseas fijas), disminuyendo el impacto visual del contacto físico estrecho |
+| **Post-procesamiento** | No requiere | Requiere NMS pesado y enlace algebraico de grafos | NMS-Free nativo (Cero latencia post-red) |
+| **Formato de Exportación** | Propietario (`.tflite`) | Complejo (C++ nativo / Caffe) | Altamente versátil (`.pt`, `ONNX`, `TensorRT`, `OpenVINO`) |
 
-### 3.1.2 Justificación de la Elección de YOLO26-Pose
+### 3.1.2 Justificación de la Elección de YOLOv11-Pose
 
-Se determinó la selección de YOLO26-Pose a partir de dos ventajas arquitecturales determinantes para el dominio de estudio:
+Se determinó la selección de YOLOv11-Pose a partir de ventajas arquitecturales determinantes para el dominio de estudio:
 
-1. **Inferencia End-to-End libre de NMS (Non-Maximum Suppression):** A diferencia de las iteraciones previas de la familia YOLO o de arquitecturas basadas en agrupamiento como OpenPose, YOLO26 efectúa la predicción directa de las coordenadas articulares sin demandar una etapa posterior de supresión de no máximos. Dicho factor elimina cuellos de botella algorítmicos en el backend local y confiere estabilidad a los tiempos de inferencia en la nube sobre Google Colab Pro.
-2. **Algoritmo STAL (Small-Target-Aware Label Assignment):** Durante las transiciones en el suelo características del Jiu-Jitsu, determinados segmentos anatómicos distales (como muñecas, tobillos o pies en posiciones de sumisión o guardia) ocupan una fracción reducida de píxeles en el fotograma. El mecanismo STAL incrementa sustancialmente la cobertura de etiquetas positivas asignadas a objetos y coyunturas de escala reducida, mitigando el parpadeo (*jitter*) o la desconexión del grafo esquelético ante deformaciones complejas.
+1. **Reconstrucción Monocular Tridimensional y Regresión de Profundidad ($Z$):** A diferencia de modelos limitados a coordenadas cartesianas planas, YOLOv11-Pose incorpora mecanismos de predicción espacial que estiman la coordenada de profundidad ($Z$) relativa al centroide pélvico a partir de una única cámara convencional, facultando el análisis cinemático en el espacio euclidiano $\mathbb{R}^3$.
+2. **Inferencia End-to-End libre de NMS (Non-Maximum Suppression):** El modelo efectúa la predicción directa de las coordenadas tridimensionales sin demandar una etapa posterior de supresión de no máximos, eliminando cuellos de botella algorítmicos y asegurando tiempos de procesamiento reducidos en Google Colab Pro.
+3. **Robustez ante Oclusiones Severas mediante Restricciones Biomecánicas:** Durante las transiciones en el tatami, el contacto estrecho suele ocultar extremidades completas. Al calcular el vector en el espacio $(X, Y, Z)$, el sistema deduce la ubicación de articulaciones ocluidas apoyándose en la coherencia geométrica de longitudes óseas fijas aprendidas durante el entrenamiento, disminuyendo el impacto visual del contacto físico estrecho del Jiu-Jitsu.
 
 
 ---
 
-## 3.2 Extracción de Características y Cinemática Vectorial Bidimensional (2D)
+## 3.2 Extracción de Características y Cinemática Vectorial Tridimensional (3D)
 
-Tras la detección de los 17 puntos articulares del estándar COCO por parte de YOLO26-Pose, se estructura un plano bidimensional (2D) para el análisis biomecánico de las trayectorias.
+Tras la detección de los puntos clave articulares y la estimación de sus coordenadas espaciales mediante YOLOv11-Pose, se estructura un espacio vectorial tridimensional para el análisis biomecánico de las trayectorias.
 
-### 3.2.1 Formalismo Matemático para el Análisis Angular
+### 3.2.1 Formalismo Matemático para el Análisis Angular Espacial (3D)
 
-Cada articulación de interés se modela como un vértice dinámico inmerso en un espacio vectorial $\mathbb{R}^2$. Para cuantificar la conformación de una articulación central $B$ conectada a sus vértices adyacentes proximal $A$ y distal $C$, se construyen los vectores de segmento corporal correspondientes:
+Cada articulación de interés se modela como un vértice dinámico inmerso en un espacio vectorial tridimensional $\mathbb{R}^{3}$. Para cuantificar la conformación de una articulación central B conectada a sus vértices adyacentes proximal A y distal C, se extraen las coordenadas espaciales (x, y, z) de cada punto clave y se construyen los vectores de segmento corporal correspondientes:
 
-$$\vec{u} = \vec{BA} = (x_A - x_B, \, y_A - y_B)$$
+$$\vec{u} = \vec{BA} = (x_A - x_B, \, y_A - y_B, \, z_A - z_B)$$
 
-$$\vec{v} = \vec{BC} = (x_C - x_B, \, y_C - y_B)$$
+$$\vec{v} = \vec{BC} = (x_C - x_B, \, y_C - y_B, \, z_C - z_B)$$
 
-La magnitud del ángulo interarticular $\theta(t)$ en el instante de tiempo o fotograma $t$ se obtiene a través del producto escalar euclidiano y la función arco coseno:
+La magnitud del ángulo interarticular tridimensional $\theta(t)$ en el fotograma $t$ se obtiene a través del producto escalar en el espacio y el cálculo de sus normas vectoriales:
 
-$$\theta(t) = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{\Vert{}\vec{u}\Vert{} \, \Vert{}\vec{v}\Vert{}} \right) = \arccos\left( \frac{(x_A - x_B)(x_C - x_B) + (y_A - y_B)(y_C - y_B)}{\sqrt{(x_A - x_B)^2 + (y_A - y_B)^2} \; \sqrt{(x_C - x_B)^2 + (y_C - y_B)^2}} \right)$$
+$$\theta(t) = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{\Vert{}\vec{u}\Vert{} \, \Vert{}\vec{v}\Vert{}} \right)$$
 
-**Justificación de invarianza y protocolo de grabación:** La formulación vectorial asegura invarianza matemática frente a traslaciones en el plano y variaciones de escala geométrica. Para que esta formulación en 2D sea rigurosa y no sufra distorsiones de perspectiva angular, el sistema establece un protocolo de captura estandarizado: el video debe ser grabado desde un **Plano General Lateral Estricto** (ángulo perpendicular de 90 grados respecto al eje longitudinal de movimiento) y a una **distancia fija de 3.0 metros**. Bajo estas condiciones, divergencias en la posición de los practicantes respecto a la cámara no alteran la estimación angular, facultando una comparación directa y robusta entre el Modelo de Referencia del instructor y la ejecución del practicante. El sistema utiliza la técnica del instructor como una **plantilla de recorte** (o molde de referencia): compara la postura del practicante con este Modelo de Referencia para identificar con precisión qué articulaciones no coinciden con la alineación técnica esperada.
+Desarrollando los componentes para su implementación algorítmica en Python, la ecuación se define como:
+
+$$\theta(t) = \arccos\left( \frac{(x_A - x_B)(x_C - x_B) + (y_A - y_B)(y_C - y_B) + (z_A - z_B)(z_C - z_B)}{\sqrt{(x_A - x_B)^2 + (y_A - y_B)^2 + (z_A - z_B)^2} \; \sqrt{(x_C - x_B)^2 + (y_C - y_B)^2 + (z_C - z_B)^2}} \right)$$
+
+**Justificación de la viabilidad espacial:** Esta formulación matemática otorga al sistema una ventaja crítica sobre los modelos planos: la invarianza frente a la rotación y la perspectiva de la cámara. Al calcular el ángulo en tres dimensiones, el valor de $\theta(t)$ será idéntico si la técnica se graba de frente, de lado o en diagonal. Esto elimina la necesidad de un protocolo de grabación rígido de 90 grados y flexibiliza el uso del sistema en el entorno dinámico del tatami.
 
 
 ---
@@ -186,11 +191,11 @@ Dada la co-presencia inevitable de dos cuerpos en interacción física dentro de
 
 ### 3.3.1 Formalismo Matemático del Aislamiento Cinemático
 
-En técnicas de defensa y escape en el tatami, el sujeto receptor adopta un rol de contención predominantemente estático o isométrico, en tanto que el ejecutor despliega aceleraciones angulares y traslaciones significativas de su centro de gravedad. El sistema evalúa la varianza temporal de las coordenadas del centroide $(\bar{x}, \bar{y})$ de cada individuo detectado durante una ventana inicial de $N$ fotogramas ($N = 30$):
+En técnicas de defensa y escape en el tatami, el sujeto receptor adopta un rol de contención predominantemente estático o isométrico, en tanto que el ejecutor despliega aceleraciones angulares y traslaciones significativas de su centro de gravedad. El sistema evalúa la varianza temporal de las coordenadas tridimensionales del centroide $(\bar{x}, \bar{y}, \bar{z})$ de cada individuo detectado durante una ventana inicial de $N$ fotogramas ($N = 30$):
 
-$$\sigma^2_{x} = \frac{1}{N}\sum_{t=1}^{N}(x_t - \bar{x})^2, \quad \sigma^2_{y} = \frac{1}{N}\sum_{t=1}^{N}(y_t - \bar{y})^2$$
+$$\sigma^2_{x} = \frac{1}{N}\sum_{t=1}^{N}(x_t - \bar{x})^2, \quad \sigma^2_{y} = \frac{1}{N}\sum_{t=1}^{N}(y_t - \bar{y})^2, \quad \sigma^2_{z} = \frac{1}{N}\sum_{t=1}^{N}(z_t - \bar{z})^2$$
 
-$$V_{\text{total}} = \sigma^2_{x} + \sigma^2_{y}$$
+$$V_{\text{total}} = \sigma^2_{x} + \sigma^2_{y} + \sigma^2_{z}$$
 
 El algoritmo asocia la etiqueta de *Ejecutor Objetivo* al identificador de seguimiento (*tracking ID*) que presenta el valor máximo de $V_{\text{total}}$ en la serie analizada. Las trayectorias del sujeto secundario son enmascaradas en las matrices subsiguientes, previniendo perturbaciones en la cuantificación del error biomecánico.
 
@@ -234,7 +239,7 @@ sequenceDiagram
 
     App->>Edge: Carga de Video desde Dispositivo Móvil (HTTP POST)
     Edge->>Colab: Despacho Directo vía API REST / Webhook
-    Note over Colab: Inferencia YOLO26-Pose + DTW + OpenCV + Gemini (< 5-10s)
+    Note over Colab: Inferencia YOLOv11-Pose + DTW + OpenCV + Gemini (< 5-10s)
     Colab-->>Edge: Retorno Directo de Fotograma Anotado y Diagnóstico JSON
     Edge-->>App: Notificación y Despliegue Inmediato de Auditoría
     Colab-)Drive: Depósito Asíncrono de Respaldo y Métricas (Segundo Plano)
@@ -262,26 +267,26 @@ El sistema constituye una plataforma computacional de asistencia técnica y peda
 1. **Gestión de Técnicas Patrón:** Permite al Instructor registrar, etiquetar y homologar los videos del **Modelo de Referencia** demostrados en el tatami.
 2. **Gestión de Materiales de Estudio:** Permite al Instructor gestionar fuentes de conocimiento en formato PDF (como *Jiu-Jitsu University*) y registrar recursos externos mediante enlaces a videos oficiales de YouTube, sirviendo como base de conocimiento para la IA y material de consulta para los practicantes.
 3. **Carga de Video desde Dispositivo Móvil:** Facilita a los Practicantes seleccionar la técnica del día y subir grabaciones de su práctica en pareja (secuencias de hasta 45 segundos y 50 MB) directamente desde su dispositivo móvil.
-4. **Extracción y Aislamiento Corporal Automatizado:** Identifica los puntos clave del cuerpo (*keypoints*) mediante **YOLO26-Pose** y separa de forma automática al Practicante activo de su compañero de apoyo estático.
-5. **Sincronización y Comparación Postural:** Alinea los tiempos de ejecución mediante **DTW** (*Dynamic Time Warping*) y compara la postura del Practicante con la técnica del Instructor, utilizándola como una **plantilla de recorte** (o molde de referencia).
+4. **Extracción y Aislamiento Corporal Automatizado:** Identifica los puntos clave del cuerpo (*keypoints*) en tres dimensiones (3D) mediante **YOLOv11-Pose** y separa de forma automática al Practicante activo de su compañero de apoyo estático.
+5. **Sincronización y Comparación Postural:** Alinea los tiempos de ejecución mediante **DTW** (*Dynamic Time Warping*) y compara la postura del Practicante con la técnica del Instructor, utilizándola como un **molde esquelético tridimensional de referencia**.
 6. **Diagnóstico Visual Inmediato:** Señala visualmente sobre la imagen la articulación desalineada mediante un círculo rojo, indicando con claridad el punto exacto de falla.
 7. **Asesoría Pedagógica Asistida por IA:** Genera consejos directos, constructivos y formativos mediante la **API de Google Gemini**, traduciendo el análisis visual a recomendaciones claras de entrenamiento.
 8. **Monitoreo Histórico:** Permite al Practicante revisar su progreso y evolución técnica a lo largo de las clases.
 
 **Límites y Exclusiones Explícitas del Sistema:**
-* **Naturaleza de Auditoría Asincrónica (no en tiempo real):** El sistema opera bajo un modelo de procesamiento en tiempo diferido; el practicante graba su repetición técnica, la envía al servidor y consulta el reporte diagnóstica con posterioridad, descartando cualquier expectativa de visualización o procesamiento simultáneo en vivo sobre el tatami.
-* **Protocolo de Grabación Obligatorio:** La validez geométrica del análisis 2D requiere que las grabaciones se realicen estrictamente desde un **Plano General Lateral Estricto** (ángulo perpendicular de 90 grados respecto al eje de movimiento) y a una distancia fija estandarizada de 3.0 metros.
+* **Naturaleza de Auditoría Asincrónica (no en tiempo real):** El sistema opera bajo un modelo de procesamiento en tiempo diferido; el practicante graba su repetición técnica, la envía al servidor y consulta el reporte diagnóstico con posterioridad, descartando cualquier expectativa de visualización o procesamiento simultáneo en vivo sobre el tatami.
+* **Protocolo de Grabación Flexibilizado:** El sistema reduce las restricciones de captura gracias al análisis tridimensional (3D). Se elimina la exigencia de un ángulo lateral estricto a 90 grados, permitiendo grabaciones desde perspectivas diagonales o frontales, siempre que se mantenga un Plano General que asegure la visibilidad de cuerpo entero del practicante y su compañero a una distancia recomendada de entre 2.5 y 3.5 metros.
 * **Deslinde Médico y Fisioterapéutico:** El sistema no emite diagnósticos traumatológicos, médicos ni de rehabilitación física.
-* **Exclusión de Combate Libre (Spárring):** El sistema se delimita a repeticiones técnicas estructuradas en plano lateral fijo; no procesa combates caóticos en plano general ni múltiples parejas simultáneas.
+* **Exclusión de Combate Libre (Spárring):** El sistema se delimita a repeticiones técnicas estructuradas en plano general; no procesa combates caóticos ni múltiples parejas simultáneas en el encuadre.
 * **Selección Guiada:** El sistema no clasifica técnicas de forma automática; el practicante elige la técnica desde el catálogo curricular para asegurar la máxima precisión.
 * **Preservación del Rol Docente:** El software no sustituye el criterio, la autoridad pedagógica ni la supervisión de seguridad del Instructor en el tatami.
 
 ### 4.1.3 Definiciones, Acrónimos y Abreviaturas
 * **BJJ (*Brazilian Jiu-Jitsu*):** Jiu-Jitsu Brasileño. Arte marcial y deporte de combate enfocado en el control corporal en el suelo, agarres y sumisiones mecánicas.
-* **Puntos Clave del Cuerpo (*Keypoints*):** Coordenadas en dos dimensiones que señalan las articulaciones principales del cuerpo (hombros, codos, muñecas, caderas, rodillas y tobillos).
-* **Similitud de Postura / Coincidencia de Posición:** Nivel de coincidencia entre la posición del cuerpo del Practicante y el Modelo de Referencia del Instructor en una fase técnica equivalente.
+* **Puntos Clave del Cuerpo (*Keypoints*):** Coordenadas en tres dimensiones $(X, Y, Z)$ que señalan las articulaciones principales del cuerpo (hombros, codos, muñecas, caderas, rodillas y tobillos).
+* **Similitud de Postura / Coincidencia de Posición:** Nivel de coincidencia entre la posición tridimensional del cuerpo del Practicante y el Modelo de Referencia del Instructor en una fase técnica equivalente.
 * **DTW (*Dynamic Time Warping* / Sincronizador de Movimiento):** Método que empareja movimientos que ocurren a diferente velocidad (análogo a dos versiones de una misma canción interpretada a distinta cadencia), permitiendo comparar la técnica aunque el Practicante se mueva más despacio o haga pausas.
-* **YOLO26-Pose:** Modelo de visión artificial que detecta cuerpos y extrae los puntos articulares de forma rápida y precisa en el plano bidimensional (2D).
+* **YOLOv11-Pose:** Modelo de visión artificial que detecta cuerpos y extrae los puntos articulares calculando su profundidad relativa para la reconstrucción en el espacio tridimensional (3D).
 * **Google Gemini API:** Servicio de inteligencia artificial de Google que analiza los desajustes técnicos y redacta recomendaciones pedagógicas en lenguaje claro.
 * **Google Colab Pro:** Servidor en la nube con tarjetas gráficas (GPU) encargado del procesamiento pesado del video.
 * **PWA (*Progressive Web App*):** Aplicación web que funciona en el navegador del celular con la apariencia y agilidad de una app instalada, sin necesidad de descargas de tiendas virtuales.
@@ -303,7 +308,7 @@ El capítulo se organiza conforme a las mejores prácticas de la ingeniería de 
 El sistema opera mediante una estructura distribuida en dos partes:
 
 1. **Capa Frontal en el Tatami (PWA Móvil):** Funciona en los dispositivos móviles del Instructor y de los Practicantes. Permite consultar el catálogo técnico, realizar la carga de videos de práctica y revisar los diagnósticos visuales y las recomendaciones pedagógicas en tiempo diferido.
-2. **Capa de Procesamiento en la Nube (Google Colab Pro + FastAPI + Gemini API):** Servicio centralizado que recibe los videos mediante comunicación directa por API REST o Webhooks, extrae las posiciones corporales con YOLO26, sincroniza los tiempos con DTW, analiza la coincidencia postural y consulta la API de Google Gemini para redactar las recomendaciones de mejora.
+2. **Capa de Procesamiento en la Nube (Google Colab Pro + FastAPI + Gemini API):** Servicio centralizado que recibe los videos mediante comunicación directa por API REST o Webhooks, extrae las posiciones corporales espaciales con YOLOv11-Pose, sincroniza los tiempos con DTW, analiza la coincidencia postural en 3D y consulta la API de Google Gemini para redactar las recomendaciones de mejora.
 
 Este diseño permite un funcionamiento económico y evita instalar equipos costosos en el gimnasio (*Knock Out Gym*).
 
@@ -316,9 +321,9 @@ El funcionamiento del sistema se resume en los siguientes pasos:
 ```mermaid
 flowchart TD
     A[El Instructor registra Técnica Patrón y Recursos de Estudio] --> B[El Practicante selecciona técnica y sube video desde dispositivo móvil]
-    B --> C[YOLO26 detecta puntos corporales y aísla al practicante activo]
+    B --> C[YOLOv11-Pose extrae puntos 3D y aísla al practicante activo]
     C --> D[DTW sincroniza el ritmo del practicante con el patrón]
-    D --> E[El sistema evalúa coincidencia postural contra la plantilla de recorte]
+    D --> E[El sistema evalúa coincidencia contra el molde tridimensional]
     E --> F[OpenCV marca círculo rojo en la articulación desalineada]
     E --> G[Google Gemini formula recomendación pedagógica clara]
     F --> H[Reporte visual y recomendación entregados en < 5-10s]
@@ -329,9 +334,9 @@ flowchart TD
 1. **Gestión de Técnicas Patrón:** Registro del video del Modelo de Referencia por parte del Instructor.
 2. **Gestión de Materiales de Estudio:** Subida de fuentes de conocimiento en PDF y registro de enlaces a videos oficiales de YouTube por parte del Instructor.
 3. **Carga de Video desde Dispositivo Móvil:** Subida ágil desde el dispositivo móvil con validación de duración (hasta 45 segundos) y tamaño (hasta 50 MB).
-4. **Aislamiento del Practicante Activo:** Separación automática del compañero que actúa como soporte estático pasivo.
+4. **Aislamiento del Practicante Activo:** Separación automática del compañero que actúa como soporte estático pasivo evaluando la varianza cinemática tridimensional.
 5. **Sincronización Temporal (DTW):** Comparación justa de movimientos ejecutados a distintas velocidades.
-6. **Evaluación de Coincidencia Postural:** Comparación con la Técnica Patrón del Instructor usada como plantilla de recorte.
+6. **Evaluación de Coincidencia Postural:** Comparación con la Técnica Patrón del Instructor usada como molde esquelético tridimensional de referencia.
 7. **Anotación Visual:** Marcado de un círculo rojo en el fotograma clave sobre la articulación con desajuste técnico.
 8. **Generación de Consejos con IA (Gemini):** Entrega de una recomendación en lenguaje directo, constructivo y fácil de aplicar en la práctica.
 
@@ -362,9 +367,9 @@ El sistema reconoce dos perfiles de usuario en el tatami:
 * **Condiciones de Conectividad:** El sistema debe ser tolerante a la latencia variable y micro-cortes frecuentes en las redes celulares comerciales y Wi-Fi de gimnasios locales.
 
 ### 4.2.5 Suposiciones y Dependencias
-* **Protocolo de Captura en Tatami:** Se establece de forma obligatoria que los practicantes colocarán el dispositivo móvil en un trípode o soporte a una **distancia fija de 3.0 metros**, registrando la escena en un **Plano General Lateral Estricto** (ángulo perpendicular de 90 grados respecto al eje del movimiento), garantizando la visibilidad de cuerpo entero y la validez matemática de las proyecciones en 2D.
+* **Protocolo de Captura en Tatami:** Los practicantes colocarán el dispositivo móvil en un trípode o soporte a una distancia recomendada de entre **2.5 y 3.5 metros**, registrando la escena en un **Plano General** que asegure la visibilidad de cuerpo entero del practicante y su compañero, permitiendo grabaciones diagonales, frontales o laterales gracias a la invarianza espacial del cálculo angular tridimensional (3D).
 * **Condiciones Ambientales:** Se asume una iluminación regular de gimnasio (luz artificial uniforme) y uso de vestimenta de entrenamiento contrastante con el tatami.
-* **Dependencias de Servicios Externos:** El sistema depende operativamente de la disponibilidad del servicio Google Colab Pro para la inferencia de YOLO26 y de la API de Google Gemini para la síntesis pedagógica textual.
+* **Dependencias de Servicios Externos:** El sistema depende operativamente de la disponibilidad del servicio Google Colab Pro para la inferencia de YOLOv11-Pose y de la API de Google Gemini para la síntesis pedagógica textual.
 
 ### 4.2.6 Requisitos Futuros
 * **Reconocimiento Autónomo de Técnicas:** Incorporación de modelos de clasificación de video que identifiquen la técnica ejecutada sin necesidad de selección manual previa en el catálogo.
@@ -379,7 +384,7 @@ El sistema reconoce dos perfiles de usuario en el tatami:
 
 #### 4.3.1.1 Interfaces de Software
 * **Cliente Web Progresivo (PWA):** Desarrollada como interfaz web ligera y responsiva para navegadores móviles (Google Chrome, Safari), optimizada para pantallas táctiles y con validación previa de archivos en el cliente.
-* **Microservicio de Visión y Cómputo (FastAPI en Google Colab Pro):** Servicio backend que expone endpoints de API REST directa y Webhooks para recibir los videos, ejecutar la inferencia esquelética de YOLO26-Pose, calcular la sincronización temporal mediante DTW y renderizar las marcas visuales de desalineación en OpenCV, respondiendo en una ventana de 5 a 10 segundos y eliminando la dependencia crítica de sincronizaciones lentas en disco virtual.
+* **Microservicio de Visión y Cómputo (FastAPI en Google Colab Pro):** Servicio backend que expone endpoints de API REST directa y Webhooks para recibir los videos, ejecutar la inferencia esquelética tridimensional de YOLOv11-Pose, calcular la sincronización temporal mediante DTW y renderizar las marcas visuales de desalineación en OpenCV, respondiendo en una ventana de 5 a 10 segundos y eliminando la dependencia crítica de sincronizaciones lentas en disco virtual.
 * **API de Google Gemini:** Integración directa mediante SDK oficial para el envío de métricas de discrepancia postural y recepción de recomendaciones pedagógicas en lenguaje natural.
 * **Almacenamiento Persistente en la Nube (Google Drive Storage):** Repositorio secundario en la nube para el archivado histórico y asincrónico de secuencias de video, diagnósticos y reportes, operando de forma desacoplada del flujo de procesamiento crítico de la API REST.
 
@@ -402,13 +407,13 @@ El sistema reconoce dos perfiles de usuario en el tatami:
 | :---: | :--- | :--- |
 | **RF-01** | **Registro de Técnica Patrón (Modelo de Referencia)** | **Como** Instructor,<br>**se requiere** registrar y homologar el video de la Técnica Patrón oficial (ej. *'Escape de Montada mediante Puente y Giro'*),<br>**para que** sirva como Modelo de Referencia (plantilla) contra el cual se evaluará la ejecución técnica de los practicantes.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón, asociar los metadatos de categoría y posición de origen en menos de 30 segundos, extrayendo y almacenando el esqueleto de referencia en el servidor remoto. |
 | **RF-02** | **Carga de Video desde Dispositivo Móvil** | **Como** Practicante,<br>**el sistema debe** permitir seleccionar desde el teléfono móvil la técnica demostrada en la sesión y subir la grabación de su práctica en pareja (con una duración máxima de hasta 45 segundos),<br>**para que** el sistema realice la evaluación postural.<br>*Criterio de Aceptación:* La interfaz valida que el archivo no supere 50 MB de tamaño ni 45 segundos de duración, transmitiendo la secuencia directamente hacia el backend vía API REST o Webhook y rechazando de forma controlada archivos que excedan dichos límites antes de saturar el enlace de red. |
-| **RF-03** | **Detección Automática de Puntos Clave** | **El sistema procesa** cada fotograma del video mediante YOLO26-Pose para identificar con precisión los 17 puntos anatómicos corporales del estándar COCO (hombros, codos, muñecas, caderas, rodillas y tobillos), preservando el seguimiento continuo ante cruces y oclusiones dinámicas en el tatami. |
+| **RF-03** | **Detección Automática de Puntos Clave** | **El sistema procesa** cada fotograma del video mediante YOLOv11-Pose para identificar con precisión los 17 puntos anatómicos corporales del estándar COCO (hombros, codos, muñecas, caderas, rodillas y tobillos), extrayendo una matriz de coordenadas tridimensionales $(X, Y, Z)$ por cada articulación detectada y preservando el seguimiento continuo ante cruces y oclusiones dinámicas en el tatami mediante restricciones anatómicas preentrenadas. |
 | **RF-04** | **Aislamiento del Practicante Activo** | **El sistema discrimina** automáticamente al practicante en ejecución frente al compañero que ejerce el rol de soporte estático mediante el análisis de varianza cinemática temporal, enmascarando las coordenadas del sujeto secundario para garantizar la precisión del análisis. |
 | **RF-05** | **Sincronización Temporal (DTW)** | **El sistema aplica** el algoritmo DTW (*Dynamic Time Warping*) para alinear la velocidad del practicante con la del video patrón, asegurando una correspondencia postural justa e independiente del ritmo o fluidez de ejecución. |
-| **RF-06** | **Detección del Momento de Máxima Discrepancia** | **El sistema aísla** de forma automática el fotograma temporal donde la configuración corporal del practicante presenta el mayor desvío espacial respecto a la plantilla de referencia del instructor. |
+| **RF-06** | **Detección del Momento de Máxima Discrepancia** | **El sistema aísla** de forma automática el fotograma temporal donde la configuración corporal del practicante presenta el mayor desvío angular tridimensional respecto al molde esquelético de referencia del instructor. |
 | **RF-07** | **Señalización Visual del Error** | **El sistema renderiza** sobre el fotograma clave un marcador gráfico circular de color rojo (mediante OpenCV) centrado en la articulación desalineada, brindando un indicador visual objetivo e inmediato. |
 | **RF-08** | **Generación de Consejos con Inteligencia Artificial** | **Como** Practicante,<br>**el sistema debe** recibir una recomendación clara, formal y fácil de entender sobre la causa del desajuste postural y cómo corregirla,<br>**para que** se facilite la comprensión motriz sin depender de interpretaciones matemáticas complejas.<br>*Criterio de Aceptación:* La API de Google Gemini genera una explicación de 2 a 3 líneas con orientación práctica (ej. *"Se detecta una apertura excesiva del codo derecho durante el giro; mantenga la articulación próxima a las costillas para preservar el control mecánico"*). |
-| **RF-09** | **Aviso por Bloqueo Visual o Mala Grabación** | **El sistema interrumpe** de forma controlada el proceso ante oclusiones corporales continuas que excedan el límite de validez o ante encuadres incompletos, notificando al usuario mediante un mensaje claro en pantalla (ej. *"No se visualizan con claridad los segmentos inferiores. Repita la captura ajustando el ángulo lateral de la cámara"*), evitando registrar datos erróneos en el historial. |
+| **RF-09** | **Aviso por Bloqueo Visual o Mala Grabación** | **El sistema interrumpe** de forma controlada el proceso ante oclusiones corporales continuas que excedan el límite de validez o ante encuadres incompletos, notificando al usuario mediante un mensaje claro en pantalla (ej. *"No se puede estimar la profundidad de los segmentos corporales debido a una oclusión severa. Asegúrese de que la cámara tenga una línea de visión directa a las articulaciones principales durante el inicio del movimiento"*), evitando registrar datos erróneos en el historial. |
 | **RF-10** | **Consulta de Historial de Progreso** | **Como** Practicante,<br>**el sistema debe** permitir acceder a un panel histórico de evaluaciones técnicas,<br>**para que** se pueda auditar la evolución cronológica del desempeño y la reducción sostenida de discrepancias posturales.<br>*Criterio de Aceptación:* El panel presenta la lista cronológica de evaluaciones realizadas con sus fechas y niveles de coincidencia alcanzados. |
 | **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor,<br>**se requiere** subir y gestionar archivos PDF de libros y manuales de Jiu-Jitsu (como *Jiu-Jitsu University*),<br>**para que** el sistema procese e indexe estas fuentes de conocimiento oficial y las suministre como contexto técnico al formular las recomendaciones para los practicantes.<br>*Criterio de Aceptación:* El sistema permite cargar y administrar archivos PDF, indexa su contenido técnico y lo vincula a las técnicas correspondientes como base de conocimiento oficial para la inteligencia artificial. |
 | **RF-12** | **Gestión de Recursos Externos (YouTube)** | **Como** Instructor,<br>**se requiere** gestionar y asociar enlaces de videos externos de YouTube vinculados a cada técnica,<br>**para que** los practicantes dispongan de recursos audiovisuales de consulta al prepararse para sus evaluaciones de cinturón.<br>*Criterio de Aceptación:* El sistema valida el formato de la URL de YouTube, la asocia a la Técnica Patrón y permite su reproducción directa desde la interfaz de usuario. |
@@ -426,7 +431,7 @@ El sistema reconoce dos perfiles de usuario en el tatami:
 ---
 
 ### 4.3.4 Restricciones de Diseño
-* **RD-01 (Uso de YOLO26-Pose y Google Colab Pro):** La arquitectura de visión debe sustentarse en YOLO26-Pose por su naturaleza NMS-Free y su algoritmo STAL, ejecutándose en Colab Pro para maximizar velocidad y minimizar costos fijos.
+* **RD-01 (Uso de YOLOv11-Pose y Google Colab Pro):** La arquitectura de visión debe sustentarse en YOLOv11-Pose por su soporte a regresión de profundidad espacial 3D, su naturaleza NMS-Free y su arquitectura optimizada, ejecutándose en Colab Pro para maximizar velocidad y minimizar costos fijos.
 * **RD-02 (Integración Obligatoria de Google Gemini):** La generación de retroalimentación en lenguaje natural debe articularse a través de la API de Gemini mediante plantillas de prompts contextualizadas al Jiu-Jitsu.
 * **RD-03 (Acceso Multiplataforma sin Barreras):** El sistema debe ser 100% accesible vía web desde navegadores iOS (Safari) y Android (Chrome), sin forzar al usuario a instalar aplicaciones de tiendas comerciales.
 
@@ -449,7 +454,7 @@ El sistema reconoce dos perfiles de usuario en el tatami:
 ### 4.4.1 Actores del Sistema
 1. **El Instructor:** Usuario docente responsable de registrar las Técnicas Patrón oficiales (Modelos de Referencia), gestionar fuentes de conocimiento en PDF (como *Jiu-Jitsu University*), administrar recursos externos de YouTube y supervisar la progresión técnica en el tatami.
 2. **El Practicante:** Usuario en formación que selecciona técnicas, graba y sube videos de práctica desde su teléfono celular, revisa los diagnósticos visuales, lee las recomendaciones de la IA y consulta los materiales de estudio.
-3. **Servicios en la Nube:** Componente computacional externo que recibe el video vía API REST directa, ejecuta la inferencia esquelética con YOLO26, sincroniza las secuencias temporales mediante DTW, evalúa la coincidencia postural y sintetiza las recomendaciones mediante Google Gemini.
+3. **Servicios en la Nube:** Componente computacional externo que recibe el video vía API REST directa, ejecuta la inferencia esquelética tridimensional con YOLOv11-Pose, sincroniza las secuencias temporales mediante DTW, evalúa la coincidencia postural en el espacio y sintetiza las recomendaciones mediante Google Gemini.
 
 ### 4.4.2 Diagrama de Casos de Uso
 A continuación se presenta el diagrama formal de casos de uso que modela las interacciones entre los actores humanos y el sistema:
@@ -497,8 +502,8 @@ graph LR
 
 | Código | Nombre del Caso de Uso | Actor Principal | Requisitos Asociados | Descripción Sintética |
 | :---: | :--- | :---: | :---: | :--- |
-| **CU-01** | Registrar Técnica Patrón (Modelo de Referencia) | El Instructor | RF-01, RF-03 | El Instructor graba y sube el video del Modelo de Referencia. El sistema procesa los puntos corporales de la técnica patrón y lo guarda en el catálogo oficial. |
-| **CU-02** | Cargar Video desde Dispositivo Móvil | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la técnica y sube su grabación (< 45 s, < 50 MB) vía API REST directa. El sistema filtra al compañero de apoyo, sincroniza los tiempos con DTW y verifica que la toma cumpla el protocolo lateral estricto. |
+| **CU-01** | Registrar Técnica Patrón (Modelo de Referencia) | El Instructor | RF-01, RF-03 | El Instructor graba y sube el video del Modelo de Referencia. El sistema procesa los puntos corporales espaciales (3D) de la técnica patrón y lo guarda en el catálogo oficial. |
+| **CU-02** | Cargar Video desde Dispositivo Móvil | El Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El Practicante selecciona la técnica y sube su grabación (< 45 s, < 50 MB) vía API REST directa. El sistema filtra al compañero de apoyo, sincroniza los tiempos con DTW y verifica que la toma cumpla con el encuadre de cuerpo entero en plano general a distancia recomendada (2.5 a 3.5 m). |
 | **CU-03** | Visualizar Diagnóstico y Consejo de IA | El Practicante | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema muestra la imagen clave con un marcador circular rojo en la articulación desalineada y la recomendación pedagógica generada por Google Gemini en una ventana de 5 a 10 segundos. |
 | **CU-04** | Consultar Historial de Progreso | El Practicante | RF-10 | El Practicante revisa sus evaluaciones anteriores y el porcentaje de coincidencia técnica obtenido a lo largo de las sesiones. |
 | **CU-05** | Gestionar Recursos y Fuentes de Estudio | El Instructor / El Practicante | RF-11, RF-12 | El Instructor administra fuentes de conocimiento en PDF y recursos externos de YouTube. El Practicante los consulta como material de estudio para sus exámenes de grado. |
@@ -625,10 +630,10 @@ classDiagram
 * **Usuario:** Clase general que contiene los datos básicos comunes (nombre, correo, WhatsApp) compartidos por el Instructor y los Practicantes.
 * **Instructor:** Especialización de Usuario que representa al Instructor Titular. Posee permisos exclusivos para registrar y homologar Técnicas Patrón (Modelos de Referencia), así como para administrar fuentes de conocimiento en PDF y recursos externos de YouTube.
 * **Practicante:** Especialización de Usuario que representa al practicante en formación. Graba y sube videos de práctica desde su teléfono celular, revisa sus evaluaciones y consulta los materiales de estudio disponibles.
-* **TecnicaMaestra:** Modela la Técnica Patrón oficial (Modelo de Referencia) demostrada por el Instructor. Incluye el nombre de la técnica (ej. *'Escape de Montada'*), su categoría, la posición inicial y el video patrón con sus puntos articulares de referencia.
+* **TecnicaMaestra:** Modela la Técnica Patrón oficial (Modelo de Referencia) demostrada por el Instructor. Incluye el nombre de la técnica (ej. *'Escape de Montada'*), su categoría, la posición inicial y el video patrón con sus puntos articulares espaciales (3D) de referencia.
 * **MaterialEstudio:** Modela las fuentes de conocimiento en formato PDF (RF-11, como *Jiu-Jitsu University*) y los recursos externos de YouTube (RF-12) administrados por el Instructor. Sirve como base de conocimiento para contextualizar los consejos de la inteligencia artificial y como material de consulta para los practicantes.
-* **VideoPractica:** Registro en video grabado por el Practicante junto a su compañero desde el dispositivo móvil, bajo el protocolo lateral estricto (90°, 3.0 m), con una duración máxima de hasta 45 segundos y un peso inferior a 50 MB.
-* **EvaluacionPostural:** Resultado del análisis realizado en la nube. Guarda el nivel de coincidencia con la plantilla de referencia del Instructor, la articulación desalineada y el estado del procesamiento.
+* **VideoPractica:** Registro en video grabado por el Practicante junto a su compañero desde el dispositivo móvil, bajo encuadre de plano general a distancia recomendada (2.5 a 3.5 m) apto para reconstrucción 3D monocular, con una duración máxima de hasta 45 segundos y un peso inferior a 50 MB.
+* **EvaluacionPostural:** Resultado del análisis realizado en la nube. Guarda el nivel de coincidencia con el molde esquelético tridimensional de referencia del Instructor, la articulación desalineada en el espacio y el estado del procesamiento.
 * **FotogramaAnotado:** Imagen estática JPG en el momento de mayor desajuste técnico, con un círculo rojo dibujado sobre la articulación que requiere corrección.
 * **ConsejoGemini:** Recomendación pedagógica generada por la inteligencia artificial de Google, expresada en lenguaje claro y motivacional para el Practicante.
 * **HistorialProgreso:** Registro acumulado que reúne las evaluaciones del Practicante a lo largo de las sesiones, permitiéndole observar su avance y la reducción progresiva de errores.

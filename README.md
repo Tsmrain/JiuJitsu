@@ -247,7 +247,7 @@ El capítulo se organiza conforme a las directrices de la ingeniería de softwar
 ### 4.2.1 Perspectiva del Producto
 El sistema opera mediante una estructura distribuida local-nube ejecutada íntegramente en lenguaje Python:
 
-1. **Entorno Local (Dispositivo de Usuario y Laptop del Tatami):** Una interfaz web progresiva (PWA) ligera se ejecuta en los teléfonos celulares de los usuarios para la captura de video y consumo de reportes. El backend local orquestador se ejecuta en una computadora portátil estándar configurada con FastAPI en Python, la cual actúa como pasarela ligera encargada de recibir las transmisiones HTTP POST y despacharlas inmediatamente hacia los servicios avanzados en la nube, eliminando el almacenamiento local intermedio en carpetas de disco virtual.
+1. **Entorno Local (Dispositivo de Usuario y Laptop del Tatami):** Una interfaz web progresiva (PWA) ligera se ejecuta en los teléfonos celulares de los usuarios para la captura de video y consumo de reportes. El backend local orquestador se estructura desde su concepción en dos controladores lógicos especializados bajo el patrón GRASP: `RecursoController` (encargado de la recepción, validación y derivación de manuales PDF hacia la indexación vectorial, enlaces de YouTube para la PWA y videos patrón para la extracción de keypoints) y `EvaluacionController` (responsable de coordinar el flujo asincrónico de auditoría postural entre la visión artificial, la sincronización DTW y la síntesis con Google Gemini). Este backend actúa como una pasarela ligera ejecutada en la computadora portátil del tatami, recibiendo las transmisiones HTTP POST y despachándolas inmediatamente hacia los servicios de procesamiento sin almacenar estados pesados en disco local.
 2. **Capa de Procesamiento Remoto (Google Colab Pro + APIs Nube):** Un entorno en Google Colab Pro configurado con aceleración por GPU ejecuta el procesamiento pesado mediante Python. Este entorno aloja el modelo de visión artificial YOLO26x-Pose, ejecuta la matriz matemática DTW, administra las consultas semánticas hacia la base de datos vectorial cargada con embeddings de OpenAI y consolida la síntesis pedagógica consultando la API de Google Gemini.
 
 ```mermaid
@@ -315,11 +315,11 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 | **RF-01** | **Registro de Técnica Patrón** | **Como** Instructor, se requiere registrar el video del Modelo de Referencia de una técnica oficial, **para que** actúe como el molde esquelético tridimensional contra el cual se evaluará la práctica de los alumnos.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón y extrae su matriz de puntos articulares 3D en menos de 30 segundos. |
 | **RF-02** | **Carga de Video desde Dispositivo Móvil** | **Como** Practicante, el sistema debe permitir seleccionar una técnica y subir el video de su práctica en pareja (hasta 45s y 50 MB) vía API REST directa, **para que** se realice la auditoría asincrónica.<br>*Criterio de Aceptación:* La interfaz valida las restricciones de tamaño y duración antes de iniciar la transferencia HTTPS POST, rechazando archivos inválidos de forma controlada. |
 | **RF-03** | **Detección Automática de Puntos Clave 3D** | **El sistema procesa** el video mediante el modelo YOLO26x-Pose en Python para identificar los 17 puntos anatómicos corporales del estándar COCO, estimando la coordenada de profundidad ($Z$) relativa al centroide pélvico para cada articulación. |
-| **RF-04** | **Selección Manual del Sujeto Activo** | **Selección Manual del Sujeto Activo:** El sistema presenta al usuario (Instructor o Practicante) los esqueletos detectados por YOLO26x-Pose sobre el video cargado. El usuario debe seleccionar manualmente cuál de los esqueletos corresponde al sujeto de estudio (ejecutor de la técnica). El sistema descartará los datos de los demás esqueletos no seleccionados para el análisis comparativo.<br>*Criterio de Aceptación:* La interfaz permite hacer click/tap sobre un esqueleto detectado. Si el usuario no selecciona ningún esqueleto o la detección falla, el sistema muestra un mensaje de error claro: "No se detectaron sujetos claros o selección inválida", abortando el procesamiento sin generar datos falsos. |
+| **RF-04** | **Selección Manual del Sujeto Activo** | **Selección Manual del Sujeto Activo:** El sistema presenta al usuario (Instructor o Practicante) los esqueletos detectados por YOLO26x-Pose sobre el video cargado. El usuario debe seleccionar manualmente cuál de los esqueletos corresponde al sujeto de estudio (ejecutor de la técnica). El sistema descartará los datos de los demás esqueletos no seleccionados para el análisis comparativo.<br>*Criterio de Aceptación:* La interfaz permite hacer click/tap sobre un esqueleto detectado. Si el usuario no selecciona ningún esqueleto o la detección falla, el sistema retornará un código de estado HTTP 422 (Unprocessable Entity) con un mensaje estructurado en la interfaz de la PWA ("No se detectaron sujetos claros o selección inválida"), abortando el procesamiento de forma controlada sin dejar peticiones colgadas ni generar registros inconsistentes. |
 | **RF-05** | **Sincronización Temporal No Lineal** | **El sistema aplica** el algoritmo DTW en Python para alinear la velocidad del practicante con la del video patrón, emparejando los hitos biomecánicos críticos con independencia del ritmo o pausas en la ejecución. |
 | **RF-06** | **Detección de Máxima Discrepancia Espacial** | **El sistema aísla** el fotograma específico donde la configuración corporal tridimensional del practicante exhibe la mayor desviación angular en $\mathbb{R}^3$ respecto al molde de referencia del instructor. |
 | **RF-07** | **Señalización Visual del Error** | **El sistema renderiza** sobre el fotograma clave un marcador gráfico circular de color rojo (mediante OpenCV) centrado en la articulación desalineada, proporcionando una alerta visual directa. |
-| **RF-08** | **Generación de Consejos con IA Semántica** | **Como** Practicante, el sistema debe recibir una recomendación en lenguaje natural sobre la causa del desajuste postural y cómo corregirla basándose en el manual indexado, **para que** se facilite la comprensión motriz.<br>*Criterio de Aceptación:* La API de Google Gemini devuelve un texto claro de 2 o 3 líneas contextualizado por las fuentes de conocimiento recuperadas por similitud de cosenos. |
+| **RF-08** | **Generación de Consejos con IA Semántica** | **Como** Practicante, el sistema debe recibir una recomendación en lenguaje natural sobre la causa del desajuste postural y cómo corregirla basándose en el manual indexado, **para que** el usuario disponga del fundamento bibliográfico exacto asociado a la corrección.<br>*Criterio de Aceptación:* La API de Google Gemini devuelve un texto claro de 2 o 3 líneas contextualizado por las fuentes de conocimiento recuperadas por similitud de cosenos. |
 | **RF-09** | **Aviso por Oclusión Severa o Encuadre Inválido** | **El sistema interrumpe** de forma controlada el proceso si las articulaciones principales sufren bloqueos visuales continuos, notificando al usuario un mensaje explícito en pantalla para repetir la captura sin registrar datos corruptos. |
 | **RF-10** | **Consulta de Historial de Progreso** | **Como** Practicante, el sistema debe proveer un panel histórico de evaluaciones cronológicas, **para que** se pueda auditar la evolución del desempeño técnico a lo largo del tiempo. |
 | **RF-11** | **Gestión de Fuentes de Conocimiento (PDFs)** | **Como** Instructor, se requiere cargar archivos PDF de manuales oficiales de Jiu-Jitsu, **para que** el sistema fragmente e indexe el texto en una base de datos vectorial mediante los modelos de embedding de OpenAI.<br>*Criterio de Aceptación:* El sistema procesa el documento, calcula los embeddings vectoriales e indexa los bloques lógicos para búsquedas semánticas. |
@@ -403,10 +403,12 @@ _Figura 4._ Diagrama general de casos de uso del sistema según Larman (2004).
 ## 4.5 Diagrama de Dominio
 El modelo conceptual de dominio organiza las clases lógicas esenciales de la aplicación. Se omiten tipos de datos primitivos de implementación física y se enfoca estrictamente en reflejar las relaciones del negocio deportivo y de inteligencia artificial según Larman (2004).
 
-Dentro de este modelo, la entidad `FuenteConocimiento` discrimina mediante el atributo `tipoRecurso` la naturaleza operativa del contenido suministrado por el Instructor:
-1. `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto).
-2. `'YOUTUBE'`: Asociado a la reproducción audiovisual directa embebida en la PWA (flujo relacional sin consumo de servicios de IA ni almacenamiento vectorial).
-3. `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
+Dentro de este modelo conceptual se destacan dos decisiones de diseño biomecánico y pedagógico:
+* **Entidad `TecnicaPatron` y su atributo `matrizEsqueleticaURL`:** Incorpora conceptualmente la localización de la matriz de puntos clave esqueléticos tridimensionales ($X, Y, Z$) extraída del video del instructor mediante `YOLOEngine`. Este atributo refleja la persistencia del molde cinemático de referencia del cual el algoritmo DTW extrae las trayectorias matemáticas contra las que se contrastan los videos de los alumnos.
+* **Entidad `FuenteConocimiento` y discriminación por `tipoRecurso`:** Discrimina la naturaleza operativa del contenido suministrado por el Instructor:
+  1. `'PDF'`: Asociado al pipeline de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto).
+  2. `'YOUTUBE'`: Asociado a la reproducción audiovisual directa embebida en la PWA (flujo relacional sin consumo de servicios de IA ni almacenamiento vectorial).
+  3. `'VIDEO_PATRON'`: Asociado a la entidad `TecnicaPatron` para la extracción de puntos clave articulares tridimensionales en `YOLOEngine` y conformación del molde biomecánico de referencia.
 
 ```mermaid
 classDiagram
@@ -499,7 +501,6 @@ classDiagram
     Usuario <|-- Practicante : es-un
 
     Instructor "1" -- "1..*" TecnicaPatron : homologa
-    Instructor "1" -- "0..*" FuenteConocimiento : crea-y-sube
     TecnicaPatron "1" -- "0..*" FuenteConocimiento : complementa-con
     Practicante "1" -- "0..*" VideoPractica : graba-y-sube
     TecnicaPatron "1" -- "0..*" VideoPractica : sirve-de-modelo-para
@@ -609,8 +610,8 @@ Siguiendo la notación formal de esquemas relacionales formulada por Mannino (20
   *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
 * **TecnicasPatron** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, matrizEsqueleticaURL, fechaPublicacion)  
   *Integridad referencial:* $\text{idInstructor}^*$ referencia a $\text{Instructores}(\text{idUsuario})$.
-* **RecursosDidacticos** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, $\text{idInstructor}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga)  
-  *Integridad referencial:* $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$; $\text{idInstructor}^*$ referencia a $\text{Instructores}(\text{idUsuario})$.  
+* **RecursosDidacticos** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga)  
+  *Integridad referencial:* $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$. La vinculación con el instructor docente se resuelve por navegación relacional natural mediante la técnica homologada ($\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$), suprimiendo la clave externa redundante para erradicar cualquier dependencia funcional transitiva y blindar el cumplimiento estricto de la Tercera Forma Normal (3FN).  
   *Semántica del atributo `tipoRecurso`:* Define la lógica de negocio y el subsistema de destino:
   - `'PDF'`: Asociado estrictamente a la lógica de RAG (extracción textual, cálculo de embeddings con OpenAI y recuperación semántica de contexto pedagógico).
   - `'YOUTUBE'`: Asociado a la lógica de reproducción embebida en la PWA para consulta audiovisual de los alumnos (no pasa por modelos de IA ni almacenamiento vectorial).
@@ -660,7 +661,6 @@ classDiagram
     class RecursoDidactico {
         +int idRecurso <<PK>>
         +int idTecnicaPatron <<FK>>
-        +int idInstructor <<FK>>
         +string titulo
         +string tipoRecurso
         +string localizadorRecurso
@@ -688,7 +688,6 @@ classDiagram
     Usuario <|-- Instructor : especializa
     Usuario <|-- Practicante : especializa
     Instructor "1" -- "0..*" TecnicaPatron : homologa
-    Instructor "1" -- "0..*" RecursoDidactico : sube
     TecnicaPatron "1" -- "0..*" RecursoDidactico : complementa-con
     Practicante "1" -- "0..*" VideoPractica : remite
     TecnicaPatron "1" -- "0..*" VideoPractica : modela
@@ -712,10 +711,9 @@ Conforme a los criterios formales de calidad expuestos por Mannino (2019), se au
 
    Para la entidad `RecursosDidacticos`:
    * $\text{idRecurso} \rightarrow \text{idTecnicaPatron}$
-   * $\text{idRecurso} \rightarrow \text{idInstructor}$
    * $\text{idRecurso} \rightarrow \text{titulo}$
    * $\text{idRecurso} \rightarrow \text{tipoRecurso}$
    * $\text{idRecurso} \rightarrow \text{localizadorRecurso}$
    * $\text{idRecurso} \rightarrow \text{fechaCarga}$
 
-   Cada determinante en estos conjuntos es una superclave de la relación, y ningún atributo no primo determina a otro atributo no primo. En consecuencia, el esquema relacional cumple de manera rigurosa con la Tercera Forma Normal (3FN), asegurando la integridad semántica de los datos y la robustez lógica del sistema ante consultas concurrentes de auditoría técnica en la academia.
+   La eliminación del atributo redundante `idInstructor` en `RecursosDidacticos` suprime la dependencia transitiva $\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$, asegurando que todo atributo no primo dependa exclusivamente de la clave primaria `idRecurso`. Cada determinante en estos conjuntos es una superclave de la relación, y ningún atributo no primo determina a otro atributo no primo. En consecuencia, el esquema relacional cumple de manera rigurosa con la Tercera Forma Normal (3FN), asegurando la integridad semántica de los datos y la robustez lógica del sistema ante consultas concurrentes de auditoría técnica en la academia.

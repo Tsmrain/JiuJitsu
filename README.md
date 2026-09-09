@@ -137,6 +137,13 @@ Se determinó la selección de la arquitectura YOLO26x-Pose a partir de tres ven
 2. **Mecanismo de Asignación STAL (Small-Target-Aware Label Assignment):** En las transiciones de suelo del Jiu-Jitsu (como la guardia abierta o el control lateral), determinados segmentos distales como las muñecas y los tobillos ocupan una fracción de píxeles extremadamente reducida. El algoritmo STAL eleva la tasa de acierto y la cobertura de etiquetas positivas para elementos de escala menor, mitigando el parpadeo de las articulaciones en el espacio.
 3. **Inferencia Libre de Supresión de No Máximos (NMS-Free):** Al remover la dependencia de algoritmos geométricos posteriores para limpiar predicciones duplicadas, el modelo predice directamente las matrices esqueléticas. Esto estabiliza los tiempos de cómputo en el backend remoto y asegura el cumplimiento de las ventanas de rendimiento exigidas por el sistema.
 
+### 3.1.3 Pipeline Híbrido de Fusión de Datos: YOLO26x-Pose y YOLO26x-depth
+Para erradicar la imprecisión en el cálculo de la coordenada de profundidad ($Z$) intrínseca de los modelos monoculares de pose aislados (los cuales aproximan el eje $Z$ respecto al centroide pélvico mediante estimaciones relativas), la arquitectura implementa un pipeline de fusión de datos basado en dos cabezas de inferencia especializadas de la suite Ultralytics YOLO26.
+
+Mientras la variante YOLO26x-Pose ejecuta la extracción anatómica de los 17 puntos clave articulares del estándar COCO en el plano bidimensional ($X, Y$), el backend instancia de forma coordinada el modelo YOLO26x-depth. Este último genera una matriz densa flotante de mapeo per-píxel que asigna la distancia métrica absoluta en metros reales desde el lente óptico de la cámara hasta la superficie reflejada.
+
+El algoritmo de control intersecta ambas salidas en tiempo de ejecución: extrae el valor flotante de profundidad métrica ($Z$) del mapa de profundidad en las coordenadas espaciales exactas ($x, y$) donde se localiza cada articulación detectada. Esta fusión transforma los puntos clave en verdaderos vectores de posición inmersos en el espacio euclidiano $\mathbb{R}^3$, dotando a los cálculos trigonométricos interarticulares de invarianza geométrica absoluta frente a escalas y traslaciones sin requerir sensores activos de hardware (como LiDAR o sistemas multicámara).
+
 ## 3.2 Extracción de Características y Cinemática Vectorial Tridimensional (3D)
 Una vez que el modelo YOLO26x-Pose devuelve las coordenadas espaciales de los 17 puntos clave del estándar COCO, la canalización en Python construye un espacio formal para evaluar el desempeño biomecánico de las maniobras de combate.
 
@@ -315,7 +322,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 | :---: | :--- | :--- |
 | **RF-01** | **Registro de Técnica Patrón** | **Como** Instructor, se requiere registrar el video del Modelo de Referencia de una técnica oficial, **para que** actúe como el molde esquelético tridimensional contra el cual se evaluará la práctica de los alumnos.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón y extrae su matriz de puntos articulares 3D en menos de 30 segundos. |
 | **RF-02** | **Carga de Video desde Dispositivo Móvil** | **Como** Practicante, el sistema debe permitir seleccionar una técnica y subir el video de su práctica en pareja (hasta 45s y 50 MB) vía API REST directa, **para que** se realice la auditoría asincrónica.<br>*Criterio de Aceptación:* La interfaz valida las restricciones de tamaño y duración antes de iniciar la transferencia HTTPS POST, rechazando archivos inválidos de forma controlada. |
-| **RF-03** | **Detección Automática de Puntos Clave 3D** | **El sistema procesa** el video mediante el modelo YOLO26x-Pose en Python para identificar los 17 puntos anatómicos corporales del estándar COCO, estimando la coordenada de profundidad ($Z$) relativa al centroide pélvico para cada articulación. |
+| **RF-03** | **Fusión de Puntos Clave y Profundidad 3D** | El sistema procesa el video de forma paralela mediante dos modelos especializados de la suite Ultralytics YOLO26: 1. YOLO26x-Pose identifica las coordenadas bidimensionales (X, Y) de los 17 puntos anatómicos corporales del estándar COCO. 2. YOLO26x-depth calcula de forma sincrónica una matriz densa de profundidad métrica flotante con la distancia absoluta en metros reales de cada píxel respecto a la cámara. El pipeline intersecta geométricamente ambas salidas, asignando el valor de profundidad métrica real al eje Z de cada articulación detectada, estructurando el esqueleto tridimensional final en el espacio $\mathbb{R}^3$. |
 | **RF-04** | **Aislamiento Automático del Sujeto Activo** | **RF-04: Aislamiento Automático del Sujeto Activo:** El sistema procesa el video mediante YOLO26x-Pose y aplica automáticamente un algoritmo de filtrado (basado en varianza cinética y proximidad al centro del encuadre) para aislar e identificar al sujeto activo (el ejecutor de la técnica), descartando los esqueletos del compañero o espectadores. Este proceso es 100% automático y no requiere intervención manual del usuario, preservando el flujo de auditoría asíncrona. |
 | **RF-05** | **Sincronización Temporal No Lineal** | **El sistema aplica** el algoritmo DTW en Python para alinear la velocidad del practicante con la del video patrón, emparejando los hitos biomecánicos críticos con independencia del ritmo o pausas en la ejecución. |
 | **RF-06** | **Detección de Máxima Discrepancia Espacial** | **El sistema aísla** el fotograma específico donde la configuración corporal tridimensional del practicante exhibe la mayor desviación angular en $\mathbb{R}^3$ respecto al molde de referencia del instructor. |
@@ -334,7 +341,7 @@ _Figura 3._ Arquitectura y canalización de procesamiento distribuido del sistem
 * **RP-03 (Arranque de Interfaz):** La PWA móvil cargará completamente su estructura de navegación en un tiempo menor a 2.0 segundos bajo conexiones 4G estándar.
 
 ### 4.3.4 Restricciones de Diseño
-* **RD-01 (Uso de YOLO26x-Pose y Google Colab Pro):** La arquitectura de visión tridimensional debe sustentarse estrictamente en la variante Extra Large (YOLO26x-Pose) ejecutada en Python sobre un backend acelerado por GPU en Colab Pro, garantizando la resolución espacial de profundidad ($Z$).
+* **RD-01 (Uso de YOLO26x-Pose, YOLO26x-depth y Google Colab Pro):** La arquitectura de visión tridimensional debe sustentarse estrictamente en la suite Ultralytics YOLO26 (combinación coordinada de YOLO26x-Pose y YOLO26x-depth) ejecutada en Python sobre un backend acelerado por GPU en Colab Pro, garantizando la resolución espacial y métrica de profundidad ($Z$).
 * **RD-02 (Integración Obligatoria de Gemini Embedding 2 y Delimitación a PDFs):** La base de conocimiento debe estructurarse mediante embeddings vectoriales provistos por el modelo Gemini Embedding 2 de Google AI Studio con dimensiones densas homogéneas. Dicha vectorización semántica aplica exclusivamente al contenido textual procesado a partir de archivos PDF oficiales, restringiendo el uso de recursos de IA para la generación de texto a fuentes puramente bibliográficas.
 * **RD-03 (Arquitectura Web Multiplataforma):** La interfaz frontal debe ser accesible de forma directa a través de navegadores web móviles sin requerir instalación por medio de tiendas de aplicaciones comerciales.
 * **RD-04 (Delimitación del Pipeline de IA vs. Hipermedia):** La generación de embeddings y la indexación en base de datos vectorial para el pipeline RAG opera de forma **exclusiva** sobre el texto digital extraído de manuales y libros técnicos en formato PDF. Los enlaces de videos externos (YouTube) se almacenan en la base de datos relacional exclusivamente como **recursos de hipermedia estática** (hipervínculos URL) para su reproducción embebida en la PWA, quedando expresamente excluidos de cualquier procesamiento, transcripción o vectorización por parte de los modelos de IA.
@@ -938,8 +945,11 @@ classDiagram
     }
 
     class YOLO26xAdapter {
-        -modelo: YOLO
+        -poseModel: YOLO
+        -depthModel: YOLO
         +inferirKeypoints(Video) List~Esqueleto3D~
+        -generarMapaProfundidad(Video) Matrix
+        -fusionarCoordenadasMetricas(List~Esqueleto2D~, Matrix) List~Esqueleto3D~
     }
 
     class IEmbeddingService {
@@ -983,7 +993,7 @@ El SAD registra las decisiones arquitectónicas clave estructuradas en vistas. S
 
 **Vista Lógica:** Organización en capas (Presentación → Aplicación → Dominio → Servicios Técnicos → Infraestructura) con acoplamiento descendente. Ver sección 5.3.1.
 
-**Vista de Procesos:** El procesamiento de inferencia YOLO26x-Pose se ejecuta en un hilo separado en Google Colab con GPU. La sincronización DTW se ejecuta en paralelo con la generación de embeddings. La generación de retroalimentación con Gemini 3.8 Flash se ejecuta de forma asíncrona tras la finalización de la inferencia.
+**Vista de Procesos:** El procesamiento de inferencia (fusión coordinada de YOLO26x-Pose y YOLO26x-depth) se ejecuta en un hilo separado en Google Colab con GPU. La sincronización DTW se ejecuta en paralelo con la generación de embeddings. La generación de retroalimentación con Gemini 3.8 Flash se ejecuta de forma asíncrona tras la finalización de la inferencia.
 
 **Vista de Despliegue:**
 
@@ -995,7 +1005,7 @@ graph LR
     end
 
     subgraph Colab["Google Colab Pro (GPU A100)"]
-        YOLO_S["YOLO26x-Pose<br/>Inference Engine"]
+        YOLO_S["YOLO26x (Pose + Depth)<br/>Inference Engine"]
         DTW_S["Sincronizador DTW"]
         PERS_S["PersistenciaFacade"]
     end
@@ -1107,8 +1117,8 @@ Para garantizar el rigor formal en la especificación de los flujos de trabajo, 
 |---|---|
 | **Operación** | `procesarEvaluacionAsincrona(videoPractica: VideoPractica)` |
 | **Casos de Uso** | CU-02: Cargar Video y Evaluar (Flujo interno del sistema) |
-| **Precondiciones** | 1. El `VideoPractica` existe en el sistema y su estado es `PENDIENTE_PROCESAMIENTO`.<br>2. Los servicios de IA (YOLO, Gemini) están disponibles y accesibles. |
-| **Poscondiciones** | 1. El sistema ha extraído los keypoints 3D mediante `YOLOEngine`.<br>2. El sistema ha aislado automáticamente al sujeto activo mediante el algoritmo de varianza cinética.<br>3. Se ha ejecutado la sincronización temporal mediante DTW.<br>4. Se ha identificado el fotograma de máxima desviación angular en $\mathbb{R}^3$.<br>5. Se ha generado la retroalimentación pedagógica contextualizada mediante el pipeline RAG y Gemini 3.8 Flash.<br>6. Se ha creado una instancia de `EvaluacionPostural` con el diagnóstico final.<br>7. El estado del `VideoPractica` ha cambiado a `PROCESADO`. |
+| **Precondiciones** | 1. El `VideoPractica` existe en el sistema y su estado es `PENDIENTE_PROCESAMIENTO`.<br>2. Los servicios de IA (YOLO26x-Pose, YOLO26x-depth y Gemini) están disponibles y accesibles. |
+| **Poscondiciones** | 1. El sistema ha extraído los keypoints bidimensionales (X, Y) del video mediante `YOLO26x-Pose`.<br>2. El sistema ha generado la matriz de profundidad métrica per-píxel mediante `YOLO26x-depth`.<br>3. El sistema ha intersectado geométricamente ambas matrices para consolidar las coordenadas métricas reales en el eje ($Z$) de cada articulación, estructurando los objetos `Esqueleto3D`.<br>4. El sistema ha aislado automáticamente al sujeto activo mediante el algoritmo de varianza cinética delegando en `FiltroCinetico`.<br>5. Se ha ejecutado la sincronización temporal mediante `SincronizadorDTW`.<br>6. Se ha identificado el fotograma de máxima desviación angular en $\mathbb{R}^3$.<br>7. Se ha generado la retroalimentación pedagógica contextualizada mediante el pipeline RAG y Gemini 3.8 Flash, consultando PostgreSQL con `pgvector`.<br>8. Se ha creado una instancia de `EvaluacionPostural` con el diagnóstico final y el estado del `VideoPractica` ha cambiado a `PROCESADO`. |
 
 ---
 

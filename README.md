@@ -115,64 +115,101 @@ La dinámica interna de la clase revela la necesidad de apoyo tecnológico debid
 
 ---
 
-# Capítulo III: Vector Embeddings Aplicado a Inteligencia Artificial Generativa
+# Capítulo III: Marco Teórico e Ingeniería de Selección
 
-## 3.1 Conceptos y Definiciones
+## 3.1 Ingeniería de Selección de Modelos de Estimación de Pose (HPE)
+Para la extracción automatizada del esqueleto anatómico tridimensional de los practicantes, se evaluaron las tres arquitecturas de vanguardia más representativas en el área de la visión artificial: MediaPipe Pose, OpenPose y Ultralytics YOLO26x-Pose. La evaluación se fundamentó en criterios de latencia de procesamiento, capacidad de regresión monocular de profundidad en el espacio tridimensional $\mathbb{R}^3$, robustez ante oclusiones corporales severas y viabilidad de integración en una canalización de software basada en Python.
 
-### 3.1.1 Word Embeddings
-Los *word embeddings* o incrustaciones de palabras son representaciones matemáticas de texto en forma de vectores de números reales inmersos en un espacio continuo de alta dimensionalidad. A diferencia de las codificaciones tradicionales basadas en índices discretos (como One-Hot Encoding), los embeddings asignan vectores densos a las palabras de modo que aquellas con significados similares u ocurrencias en contextos lingüísticos compartidos se posicionen a una distancia geométrica reducida dentro del espacio vectorial. Este modelo se fundamenta en la hipótesis distributiva de la lingüística, la cual establece que las palabras que aparecen en contextos similares tienden a poseer significados relacionados.
+### 3.1.1 Matriz Comparativa de Modelos Core de Visión
 
-### 3.1.2 Base de Datos Vectoriales
-Una base de datos vectorial es un sistema de gestión de almacenamiento especializado, diseñado para indexar, consultar y administrar vectores de alta dimensionalidad con alta eficiencia. Mientras que las bases de datos relacionales tradicionales optimizan las búsquedas mediante comparaciones exactas de valores en filas y columnas, las bases de datos vectoriales emplean algoritmos de búsqueda del vecino más cercano aproximado (Annoy, HNSW o IVF) para localizar vectores basándose en métricas de distancia geométrica. Estos sistemas constituyen el motor de persistencia crítico en aplicaciones de inteligencia artificial avanzada, permitiendo implementar sistemas de recuperación semántica rápida de información sobre corpus documentales masivos.
+| Criterio Técnico | MediaPipe Pose | OpenPose (Baseline) | Ultralytics YOLO26x-Pose |
+|---|---|---|---|
+| Enfoque de Red | Top-down (Monorregión con profundidad aproximada) | Bottom-up plano 2D (Campos de Afinidad de Partes) | Single-Shot Extra Large con regresión directa de profundidad ($Z$) |
+| Inferencia en Hardware | Alta eficiencia en CPU móvil | Inviable en procesamiento diferido ágil en CPU | Diseñada para ejecución pesada sobre GPU en la nube |
+| Manejo de Oclusión en 3D | Deficiente ante contacto corporal (colapso de profundidad) | Sin soporte tridimensional nativo de una sola cámara | Estimación espacial mediante algoritmo STAL y restricciones óseas |
+| Post-procesamiento | No requiere etapas adicionales | Requiere Supresión de No Máximos y enlace de grafos | Arquitectura NMS-Free nativa de cero latencia post-red |
+| Formatos de Exportación | Propietario (.tflite) | Complejo (C++ nativo y Caffe) | Versatilidad total (.pt, ONNX, TensorRT) |
 
-### 3.1.3 Inteligencia Artificial Generativa de Texto
-La inteligencia artificial generativa de texto comprende arquitecturas de redes neuronales profundas basadas en el diseño de Transformers, entrenadas con grandes volúmenes de datos lingüísticos para predecir e incorporar secuencias de texto lógicas, coherentes y fluidas. Estos modelos de lenguaje a gran escala (LLM) no operan mediante bases de datos de texto rígidas, sino que calculan distribuciones de probabilidad sobre tokens lingüísticos para construir respuestas de forma dinámica. Para evitar el fenómeno de alucinación informativa y asegurar la precisión en dominios técnicos específicos (como la biomecánica del Jiu-Jitsu), estos modelos se acoplan con sistemas de recuperación de información externos mediante el patrón arquitectónico RAG (*Retrieval-Augmented Generation*).
+### 3.1.2 Justificación de la Elección de YOLO26x-Pose en Jiu-Jitsu
+Se determinó la selección de la arquitectura YOLO26x-Pose a partir de tres ventajas estructurales críticas para el dominio del Jiu-Jitsu Brasileño:
 
-## 3.2 Estado del Arte
+1. **Regresión Monocular Tridimensional y Coordenada de Profundidad ($Z$):** A diferencia de las iteraciones convencionales que limitan su salida a coordenadas planas (X, Y), la variante Extra Large YOLO26x incorpora capas de convolución profundas optimizadas para proyectar la tercera dimensión espacial ($Z$) relativa al centroide pélvico del atleta. Esto faculta el cálculo cinemático en el espacio euclidiano $\mathbb{R}^3$ desde cualquier cámara convencional, eliminando las restricciones de angulación de captura en el gimnasio.
+2. **Mecanismo de Asignación STAL (Small-Target-Aware Label Assignment):** En las transiciones de suelo del Jiu-Jitsu (como la guardia abierta o el control lateral), determinados segmentos distales como las muñecas y los tobillos ocupan una fracción de píxeles extremadamente reducida. El algoritmo STAL eleva la tasa de acierto y la cobertura de etiquetas positivas para elementos de escala menor, mitigando el parpadeo de las articulaciones en el espacio.
+3. **Inferencia Libre de Supresión de No Máximos (NMS-Free):** Al remover la dependencia de algoritmos geométricos posteriores para limpiar predicciones duplicadas, el modelo predice directamente las matrices esqueléticas. Esto estabiliza los tiempos de cómputo en el backend remoto y asegura el cumplimiento de las ventanas de rendimiento exigidas por el sistema.
 
-### 3.2.1 Modelos Espaciales Vectoriales
-La evolución de los modelos espaciales vectoriales se inició con el Modelo de Espacio Vectorial (VSM) tradicional aplicado a la recuperación de información (TF-IDF), donde los documentos se representaban como vectores cuya dimensión equivalía al tamaño total del vocabulario. El hito tecnológico moderno ocurrió con el surgimiento de representaciones de baja dimensionalidad y alta densidad conceptual. Las investigaciones viraron de vectores estáticos a modelos basados en atención y codificadores bidireccionales *deep learning*, los cuales generan incrustaciones contextuales dinámicas donde una misma palabra posee vectores distintos según las oraciones adyacentes que la rodean.
+## 3.2 Extracción de Características y Cinemática Vectorial Tridimensional (3D)
+Una vez que el modelo YOLO26x-Pose devuelve las coordenadas espaciales de los 17 puntos clave del estándar COCO, la canalización en Python construye un espacio formal para evaluar el desempeño biomecánico de las maniobras de combate.
 
-### 3.2.2 Embedding con Entrenamiento Previo
-Los modelos de embedding con entrenamiento previo (*pretrained embeddings*) constituyen la base de la transferencia de conocimiento en el procesamiento de lenguaje natural. Al ser entrenados en infraestructuras masivas con corpus del tamaño de la red internet global, estos modelos asimilan las estructuras sintácticas y semánticas generales del lenguaje humano. Los embeddings preentrenados de última generación se distribuyen como servicios de API comerciales u optimizados de código abierto, ofreciendo dimensiones vectoriales fijas (que varían típicamente entre 384 y 3072 dimensiones) optimizadas con capacidades avanzadas de compresión y alineamiento conceptual para tareas de búsqueda semántica multilingüe.
+### 3.2.1 Formalismo Matemático para el Análisis Angular Espacial
+Cada articulación analizada se modela como un vértice dinámico inmerso en el espacio vectorial tridimensional $\mathbb{R}^3$. Para cuantificar la apertura o cierre de una articulación central $B$ (por ejemplo, el codo o la rodilla) vinculada a sus vértices adyacentes proximal $A$ y distal $C$, se calculan los vectores de segmento corporal correspondientes:
 
-## 3.3 Modelos y Teorías Relevantes
+$$\vec{u} = \vec{BA} = (x_A - x_B, \, y_A - y_B, \, z_A - z_B)$$
 
-### 3.3.1 Similitud por Cosenos
-Para cuantificar el nivel de correspondencia semántica entre dos vectores dentro de la base de datos vectorial, la métrica fundamental de evaluación matemática es la similitud por cosenos. Dados dos vectores no nulos $\vec{A}$ y $\vec{B}$ inmersos en un espacio vectorial $\mathbb{R}^n$, la similitud por cosenos representa el coseno del ángulo formado entre ambos vectores y se obtiene calculando el producto escalar euclidiano dividido por el producto de sus normas:
+$$\vec{v} = \vec{BC} = (x_C - x_B, \, y_C - y_B, \, z_C - z_B)$$
 
-$$\text{Similitud}_{\text{coseno}}(\vec{A}, \vec{B}) = \cos(\phi) = \frac{\vec{A} \cdot \vec{B}}{\Vert{}\vec{A}\Vert{} \, \Vert{}\vec{B}\Vert{}} = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
+La magnitud del ángulo interarticular tridimensional $\theta(t)$ en cualquier fotograma o instante temporal $t$ se obtiene mediante el cálculo del producto escalar espacial y la división de sus respectivas normas vectoriales:
 
-La métrica devuelve un valor acotado en el intervalo $[-1, 1]$. En el contexto de la recuperación textual para el Jiu-Jitsu, un valor próximo a $1$ denota una colinealidad total orientada en el espacio, indicando que el fragmento de texto extraído posee una máxima correspondencia semántica con la consulta formulada por el practicante, independientemente de que no compartan las mismas palabras exactas.
+$$\theta(t) = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{\Vert{}\vec{u}\Vert{} \, \Vert{}\vec{v}\Vert{}} \right)$$
 
-### 3.3.2 Vector Embeddings en Párrafos
-Para procesar documentos extensos (como el manual *Jiu-Jitsu University* de Saulo Ribeiro), la vectorización atomizada de palabras individuales resulta insuficiente para capturar la lógica de una maniobra. El sistema adopta la técnica de incrustaciones de fragmentos de texto (*text chunk embeddings*). Los documentos se segmentan en bloques continuos de texto de longitud fija (p. ej., 512 tokens) con un margen de solapamiento (*overlap*) del 10% para preservar la continuidad semántica del texto. Cada bloque se procesa como una unidad semántica independiente y se proyecta al espacio vectorial denso, garantizando que las descripciones de movimientos coordinados guarden coherencia conceptual dentro del espacio de búsqueda de la base de datos vectorial.
+Desarrollando analíticamente los componentes para la programación del algoritmo de control, la ecuación se define de la siguiente manera:
 
-## 3.4 Tecnologías y Herramientas Relevantes
+$$\theta(t) = \arccos\left( \frac{(x_A - x_B)(x_C - x_B) + (y_A - y_B)(y_C - y_B) + (z_A - z_B)(z_C - z_B)}{\sqrt{(x_A - x_B)^2 + (y_A - y_B)^2 + (z_A - z_B)^2} \; \sqrt{(x_C - x_B)^2 + (y_C - y_B)^2 + (z_C - z_B)^2}} \right)$$
 
-### 3.4.1 Word2Vec
-Desarrollado por Google, Word2Vec constituyó una de las tecnologías pioneras en la creación de embeddings estáticos de palabras empleando redes neuronales de dos capas. Implementa dos arquitecturas de entrenamiento esenciales: Bolsa de Palabras Continua (CBOW), que predice la palabra objetivo basándose en su contexto circundante, y Skip-gram, que utiliza una palabra específica para anticipar los términos adyacentes. Aunque eficiente, carece de invarianza contextual, asignando un único vector estático a un término independientemente de su uso sintáctico.
+Esta formulación trigonométrica dota al sistema de invarianza geométrica frente a traslaciones en el plano y variaciones de escala visual. Al procesar vectores espaciales, el ángulo $\theta(t)$ mantiene su validez matemática independientemente de si el practicante ejecuta el movimiento cerca o lejos de la cámara, o si se encuentra rotado respecto al eje óptico, permitiendo una comparación directa y justa contra la Técnica Patrón del instructor.
 
-### 3.4.2 GloVe
-GloVe (*Global Vectors for Word Representation*), desarrollado por la Universidad de Stanford, es un algoritmo de aprendizaje no supervisado que genera representaciones vectoriales combinando las ventajas de la factorización de matrices locales y el análisis de contexto global. El modelo se entrena sobre las estadísticas globales de coocurrencia de palabras de un corpus completo, optimizando una función de pérdida que mapea directamente la relación logarítmica de las probabilidades de coocurrencia a distancias vectoriales en el espacio.
+## 3.3 Algoritmo de Aislamiento y Priorización del Ejecutor (Target Isolation)
+Dada la interacción física y el contacto estrecho obligatorio entre dos cuerpos dentro del tatami (el practicante que ejecuta la técnica y el compañero de apoyo que actúa como receptor pasivo), el sistema requiere un mecanismo automatizado para aislar las coordenadas del sujeto de estudio. Se evaluaron dos estrategias de ingeniería de software en el backend:
 
-### 3.4.3 Text-embedding-3-small
-Tecnología seleccionada para el desarrollo de la presente tesis. Es un modelo avanzado de embeddings vectoriales provisto por OpenAI, optimizado para tareas de recuperación de información semántica de alta eficiencia. Genera vectores de características con una dimensionalidad nativa de 1536 dimensiones, ofreciendo una alta tasa de compresión y un rendimiento superior en pruebas de emparejamiento conceptual multilingüe. Su arquitectura admite el truncamiento dinámico de dimensiones sin pérdida crítica de fidelidad geométrica, permitiendo interactuar con servicios en la nube de forma ágil y de bajo coste informático.
+* **Alternativa A (Clasificación por área de Bounding Box):** Asigna el rol de ejecutor a la silueta que ocupe mayor volumen de píxeles en el encuadre. Se desestimó debido a su comportamiento errático en fases de suelo, donde el receptor suele quedar posicionado por encima del ejecutor, provocando la pérdida del objetivo.
+* **Alternativa B (Filtro de Varianza Cinemática Acumulada):** Opción seleccionada para el desarrollo. Detecta al sujeto activo midiendo la energía cinemática temporal de los esqueletos en el espacio.
 
-## 3.5 Valor Agregado
-La incorporación de Vector Embeddings aporta al sistema un valor agregado sustancial en el ámbito pedagógico de las artes marciales:
+### 3.3.1 Formalismo Matemático del Aislamiento Cinemático
+En los protocolos de repetición técnica de Jiu-Jitsu (particularmente en escapes, pasajes y defensas), el compañero receptor adopta una postura estática de contención isométrica pasiva, simulando ser un soporte o un dummy humano. Por el contrario, el practicante bajo evaluación despliega aceleraciones espaciales significativas. El sistema calcula la varianza temporal de las coordenadas del centroide $(\bar{x}, \bar{y}, \bar{z})$ de cada individuo identificado en el encuadre durante una ventana de inicialización de $N$ fotogramas ($N = 30$):
 
-* **Contextualización Basada en Evidencia:** Al integrar manuales oficiales indexados vectorialmente, el sistema no depende exclusivamente de las capacidades de redacción generales del LLM, asegurando que cada consejo de entrenamiento esté respaldado directamente por la doctrina técnica del instructor o de libros de texto certificados de la disciplina.
-* **Traducción Semántica del Error:** Convierte las métricas numéricas puras de desalineación en el espacio $\mathbb{R}^3$ (obtenidas por YOLO26x-Pose) en descripciones conceptuales humanas, enlazando la articulación con fallo con el párrafo exacto del manual que explica la postura correcta.
+$$\sigma^2_{x} = \frac{1}{N}\sum_{t=1}^{N}(x_t - \bar{x})^2, \quad \sigma^2_{y} = \frac{1}{N}\sum_{t=1}^{N}(y_t - \bar{y})^2, \quad \sigma^2_{z} = \frac{1}{N}\sum_{t=1}^{N}(z_t - \bar{z})^2$$
 
-## 3.6 Limitaciones
-El uso de modelos de embedding presenta limitaciones técnicas que deben ser mitigadas en el diseño del software:
+$$V_{\text{total}} = \sigma^2_{x} + \sigma^2_{y} + \sigma^2_{z}$$
 
-* **Dependencia del Proceso de Segmentación (Chunking):** Si la fragmentación del manual en PDF corta una oración explicativa a la mitad de forma incorrecta, se destruye el contexto del vector generado, provocando que la búsqueda semántica recupere bloques de texto incompletos.
-* **Pérdida de Detalles Secuenciales Finos:** Los embeddings de texto comprimen la información de un párrafo completo en una matriz de números flotantes. Si bien capturan la temática global de la técnica, pueden omitir precisiones quirúrgicas sobre la presión de los dedos o la distribución exacta del peso corporal si el texto base no es hiper-descriptivo.
+El algoritmo asigna de forma definitiva el rol de "Ejecutor Objetivo" al identificador de seguimiento que registre el valor máximo de $V_{\text{total}}$ en la serie temporal inicial. Los datos cinemáticos del compañero secundario son descartados en los cálculos posteriores, evitando perturbaciones o ruidos matemáticos en la medición del desajuste técnico.
 
-## 3.7 Justificación Teórica
-La integración de `text-embedding-3-small` se justifica teóricamente por la necesidad de resolver el problema de la brecha semántica entre los datos cinemáticos duros y la pedagogía deportiva humana. Un algoritmo de visión por computadora tradicional se limita a informar desviaciones en grados decimales (por ejemplo: "Desviación del codo: 24.3 grados"). Sin embargo, un practicante de Jiu-Jitsu no puede asimilar esa métrica de forma inmediata en medio del entrenamiento. La base de datos vectorial actúa como un puente de traducción conceptual: empareja la coordenada de falla tridimensional en la estructura relacional con los embeddings explicativos del manual técnico, permitiendo que la inteligencia artificial formule una instrucción basada en lenguaje natural que acelere la comprensión cognitiva y la corrección motriz efectiva del atleta.
+## 3.4 Sincronización Temporal de Movimientos Heterogéneos
+La velocidad de ejecución motriz difiere sistemáticamente entre un instructor experimentado y un practicante en fase de aprendizaje. Para resolver este desfase cronológico y asegurar una evaluación equitativa se analizaron dos aproximaciones matemáticas:
+
+1. **Resampleo Lineal Dinámico:** Fuerza una correspondencia fotograma a fotograma mediante interpolación algebraica simple. Se descartó debido a que asume erróneamente que los seres humanos se mueven a una velocidad constante, destruyendo la física real del movimiento deportivo.
+2. **Alineación Temporal Dinámica (Dynamic Time Warping - DTW):** Estrategia seleccionada. El algoritmo opera calculando una ruta de costo mínimo sobre una matriz de distancias locales de orden $M \times K$, donde $M$ representa la cantidad de fotogramas del Modelo de Referencia del instructor y $K$ la secuencia del practicante, minimizando recursivamente la distancia acumulada:
+
+$$D(i, j) = \text{dist}(\theta_{\text{inst}}(i), \theta_{\text{prac}}(j)) + \min \left[ D(i-1, j), D(i, j-1), D(i-1, j-1) \right]$$
+
+El algoritmo DTW funciona de manera equivalente a emparejar dos interpretaciones musicales ejecutadas a ritmos diferentes. Aunque el practicante realice pausas, titubeos o ejecute la técnica con mayor lentitud que el instructor, el sistema alinea los hitos cinemáticos idénticos (como el punto culminante de una elevación pélvica). Esto permite aislar con exactitud el fotograma de máxima discrepancia espacial para efectuar la anotación visual mediante OpenCV.
+
+## 3.5 Vector Embeddings y Arquitectura de Recuperación Semántica (RAG)
+Para que el sistema trascienda la entrega de métricas numéricas frías y ofrezca una asesoría formativa comprensible, la arquitectura en Python integra técnicas de modelado semántico de texto orientadas al Jiu-Jitsu.
+
+### 3.5.1 Definición de Word Embeddings y text-embedding-3-small
+Los *word embeddings* o incrustaciones de texto representan conceptos lingüísticos complejos en forma de vectores matemáticos densos dentro de un espacio continuo de alta dimensionalidad. Para este proyecto se seleccionó el modelo `text-embedding-3-small`, el cual transforma descripciones de maniobras y fundamentos teóricos en vectores fijos de 1536 dimensiones. Este modelo matemático posiciona a menor distancia espacial aquellos bloques de texto que comparten afinidad conceptual o principios de control mecánico (por ejemplo, los términos "mantener la cadera baja" y "distribuir el centro de gravedad" se ubicarán en coordenadas próximas dentro del espacio vectorial).
+
+### 3.5.2 Base de Datos Vectorial y Similitud por Cosenos
+La base de datos vectorial funciona como el motor de persistencia encargado de almacenar e indexar estos vectores de 1536 dimensiones. Cuando la etapa de visión computacional detecta una falla biomecánica específica (por ejemplo, una desalineación en el codo durante un escape), el sistema convierte este identificador físico en una consulta semántica. Para localizar de forma inmediata el fundamento pedagógico aplicable dentro de la base de datos se emplea la métrica de similitud por cosenos, la cual evalúa la colinealidad de los vectores densos:
+
+$$\text{Similitud}_{\text{coseno}}(\vec{A}, \vec{B}) = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
+
+El sistema extrae el fragmento documental que presente la máxima correspondencia semántica (valor más próximo a 1), asegurando una recuperación precisa de la información doctrinal sin depender de coincidencias de palabras exactas.
+
+### 3.5.3 Estructuración de la Generación Aumentada por Recuperación (RAG)
+El flujo semántico del software se consolida mediante el patrón de diseño RAG (*Retrieval-Augmented Generation*), el cual actúa como un puente de traducción entre los datos cinemáticos duros y la pedagogía humana. El proceso se articula a través de tres etapas secuenciales:
+
+```mermaid
+graph LR
+    A[Falla Articular 3D] -->|Consulta Semántica| B[Búsqueda en Base Vectorial]
+    B -->|Recupera Bloque PDF| C[Construcción del Prompt Contextualizado]
+    C -->|API Google Gemini| D[Instrucción Pedagógica Clarificada]
+```
+
+1. **Segmentación e Indexación (Chunking):** Los manuales técnicos en PDF (como *Jiu-Jitsu University*) cargados por el instructor son divididos en bloques lógicos de texto comprimidos y procesados por `text-embedding-3-small` para poblar la base de datos vectorial de forma persistente.
+2. **Recuperación Contextual:** Al identificarse la articulación desalineada en el espacio $\mathbb{R}^3$, el sistema consulta la base vectorial y recupera los párrafos exactos del manual que describen la mecánica correcta para esa posición específica de Jiu-Jitsu.
+3. **Generación de la Instrucción:** El software concatena los bloques de texto recuperados del manual con las métricas de la falla y los inyecta en una plantilla de prompt estructurada hacia la API de Google Gemini. El modelo de lenguaje procesa esta información y genera una recomendación directa y formal en lenguaje natural (por ejemplo: *"Se evidencia una apertura del codo que compromete su defensa; el manual prescribe mantener la articulación pegada a las costillas para denegar el espacio de control al oponente"*).
+
+Esta arquitectura neutraliza las alucinaciones de la inteligencia artificial generativa y garantiza que toda retroalimentación entregada al alumno esté estrictamente alineada con la doctrina técnica oficial registrada en el sistema.
 
 ---
 

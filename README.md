@@ -48,13 +48,14 @@ Desarrollar un sistema de visión artificial para la detección y comparación o
 
 ## 1.3 Metodología
 
-La investigación se clasifica como un estudio aplicado y de desarrollo tecnológico, fundamentado en un diseño metodológico mixto: cuantitativo para la determinación de métricas de precisión articular, desviación angular y rendimiento computacional; y cualitativo para la evaluación de la experiencia de usuario y utilidad pedagógica en el entorno real de entrenamiento.
+La investigación se clasificó como un estudio aplicado y de desarrollo tecnológico, fundamentado en un diseño metodológico mixto: cuantitativo para la determinación de métricas de precisión articular, desviación angular y rendimiento computacional; y cualitativo para la evaluación de la experiencia de usuario y utilidad pedagógica en el entorno real de entrenamiento.
 
-El proceso de construcción del sistema se articula a través de las siguientes dimensiones de ingeniería:
+El proceso de construcción del sistema se articuló a través de las siguientes dimensiones de ingeniería:
 
-1. **Modelado y Arquitectura Orientada a Objetos:** Definición formal del dominio del problema, descomposición en componentes de alta cohesión y bajo acoplamiento para independizar el motor de visión de las capas de persistencia e interfaces de usuario.
-2. **Ciclo de Desarrollo Iterativo e Incremental:** Planificación de sprints de trabajo que permitan evolucionar la solución de forma controlada, integrando retroalimentación empírica continua proveniente de las pruebas de video en el tatami.
-3. **Desarrollo Guiado por Pruebas (TDD):** Implementación de una batería de pruebas unitarias y de integración previa a la codificación de la lógica algorítmica, blindando la consistencia matemática de los cálculos trigonométricos, la correspondencia temporal de keypoints y la correcta anotación gráfica de fotogramas.
+1. **Modelado y Arquitectura Orientada a Objetos:** Se definió formalmente el dominio del problema, descomponiendo la estructura en componentes de alta cohesión y bajo acoplamiento para independizar el motor de visión de las capas de persistencia e interfaces de usuario.
+2. **Ciclo de Desarrollo Iterativo e Incremental:** Se planificaron ciclos de desarrollo para evolucionar la solución de forma controlada, integrando retroalimentación empírica continua proveniente de las pruebas de video en el tatami.
+3. **Desarrollo Guiado por Pruebas (TDD):** Se implementó una batería de pruebas unitarias y de integración previa a la codificación de la lógica algorítmica, blindando la consistencia matemática de los cálculos trigonométricos, la correspondencia temporal de keypoints y la correcta anotación gráfica de fotogramas.
+
 
 
 ---
@@ -283,11 +284,12 @@ El sistema constituye una plataforma computacional de asistencia técnica y peda
 * **IEEE 830:** Estándar internacional para la redacción estructurada de especificaciones de requisitos de software.
 
 ### 4.1.4 Visión General del Documento
-El capítulo se organiza conforme a las mejores prácticas de la ingeniería de software:
-* La **Sección 4.2 (Descripción General)** detalla la arquitectura global, funciones maestras, perfiles de usuario humanizados (*Personas*), restricciones y dependencias.
-* La **Sección 4.3 (Requisitos Específicos)** formaliza las interfaces externas, requisitos funcionales descritos como Historias de Usuario, requisitos de rendimiento, restricciones de diseño y atributos de calidad con cláusula legal de deslinde.
-* La **Sección 4.4 (Identificación de Casos de Uso)** ilustra la dinámica operativa mediante diagramas Mermaid y matrices de casos de uso.
+El capítulo se organiza conforme a las mejores prácticas de la ingeniería de software y el estándar IEEE 830:
+* La **Sección 4.2 (Descripción General)** detalla la arquitectura global, funciones maestras, perfiles de usuario (arquetipos funcionales), restricciones y dependencias.
+* La **Sección 4.3 (Requisitos Específicos)** formaliza las interfaces externas, requisitos funcionales descritos mediante especificaciones formales, requisitos de rendimiento, restricciones de diseño y atributos de calidad con cláusula legal de deslinde.
+* La **Sección 4.4 (Identificación de Casos de Uso)** ilustra la dinámica operativa mediante diagramas Mermaid y matrices de casos de uso estructuradas según el Proceso Unificado.
 * La **Sección 4.5 (Diagrama de Dominio)** expone el modelo conceptual de clases, entidades de datos y sus relaciones estructurales.
+
 
 ---
 
@@ -302,48 +304,49 @@ El sistema se implanta bajo un esquema desacoplado y distribuido **Cloud-Edge**,
 Esta arquitectura protege la economía de la academia (aprovechando tarifas planas en Colab Pro de ~$10 USD/mes) e independiza a la plataforma de los sistemas administrativos locales del gimnasio anfitrión (*Knock Out Gym*).
 
 ### 4.2.2 Funciones del Producto
-El flujo de valor técnico y pedagógico del sistema se sintetiza en siete funciones centrales:
+El flujo funcional y pedagógico del sistema se sintetiza en siete procesos estructurados:
+
+**Figura 4.1**  
+*Flujo Funcional del Sistema de Asistencia Postural.*
 
 ```mermaid
 flowchart TD
-    A[Profesor graba Técnica Maestra] --> B[Alumno selecciona técnica y sube clip de práctica]
-    B --> C[YOLO26 detecta puntos corporales y aísla al alumno activo]
-    C --> D[DTW sincroniza el ritmo del alumno con el maestro]
-    D --> E[Sistema evalúa la coincidencia de postura y detecta desvíos]
+    A[Instructor registra Técnica Maestra] --> B[Practicante selecciona técnica y carga clip de práctica]
+    B --> C[YOLO26 detecta puntos corporales y aísla al practicante activo]
+    C --> D[DTW sincroniza el ritmo del practicante con el patrón]
+    D --> E[Sistema evalúa coincidencia de postura y detecta desajustes]
     E --> F[OpenCV marca círculo rojo en la articulación desalineada]
-    E --> G[Google Gemini redacta consejo correctivo en lenguaje natural]
-    F --> H[Reporte visual y consejo entregados al alumno en < 5s]
+    E --> G[Google Gemini formula recomendación pedagógica formal]
+    F --> H[Reporte visual y recomendación entregados en < 5s]
     G --> H
 ```
+*Nota.* Flujo secuencial de procesamiento asíncrono para auditoría técnica en tatami.
 
 1. **Administración de Técnicas Maestras:** Registro del video patrón canónico por parte del instructor titular.
-2. **Ingesta de Video de Práctica:** Carga ágil desde el celular con filtros automáticos de duración (< 6s) y peso (< 5 MB).
+2. **Ingesta de Video de Práctica:** Carga ágil desde el dispositivo móvil con filtros automáticos de duración (< 6s) y peso (< 5 MB).
 3. **Aislamiento del Practicante Activo:** Descarte automático del compañero pasivo que actúa como soporte estático en la maniobra.
-4. **Sincronización de Velocidad (DTW):** Comparación justa de posturas equivalentes sin importar desfases cronológicos.
-5. **Evaluación de Coincidencia de Postura:** Verificación del grado en que las extremidades del alumno encajan en la plantilla del profesor.
-6. **Anotación Visual (Semáforo Postural):** Renderizado de un fotograma clave con marcadores gráficos directos (círculo rojo sobre la falla).
-7. **Consejería Pedagógica Asistida por IA (Gemini):** Entrega de un diagnóstico redactado con calidez, claridad y enfoque constructivo.
+4. **Sincronización Temporal (DTW):** Comparación analítica de posturas equivalentes con independencia de la velocidad o cadencia de ejecución.
+5. **Evaluación de Coincidencia Postural:** Verificación del grado en que la configuración corporal del practicante coincide con el patrón de referencia.
+6. **Anotación Visual (Semáforo Postural):** Renderizado de un fotograma clave con marcadores gráficos directos (círculo rojo sobre la articulación desajustada).
+7. **Generación de Recomendación Pedagógica (Gemini):** Entrega de un informe textual formulado con rigor didáctico, claridad y enfoque formativo.
 
 ---
 
-### 4.2.3 Características de los Usuarios (Personas)
-Para asegurar que el software responda a necesidades humanas reales y no a abstracciones frías, se definen dos arquetipos de usuario:
+### 4.2.3 Perfiles de Usuario (Arquetipos Funcionales)
+Para caracterizar con precisión los requerimientos operacionales y formativos del sistema conforme a la normativa académica, se formalizan dos arquetipos funcionales representativos de la interacción en la academia:
 
-#### Perfil de Usuario 1: Profesor Carlos (Head Coach / Instructor Titular)
-* **Edad:** 35 años.
-* **Ocupación / Rol:** Instructor Principal de BJJ en *Corpo e Mente* (Cinturón Negro 1º Dan).
-* **Contexto Operativo:** Dirige diariamente clases de 15 a 20 practicantes en el tatami de Knock Out Gym. Diseña la planificación pedagógica mensual y es el responsable de la seguridad física y progresión técnica del grupo.
-* **Dolor / Frustración Principal:** *“No puedo dividirme en ocho partes para corregir a todas las parejas a la vez. Cuando termino de corregir una montada a dos alumnos, me giro y veo que otra pareja en la otra esquina lleva 5 minutos practicando con el brazo cruzado al revés, fijando un vicio motor peligroso”*.
-* **Motivación con el Sistema:** Grabar su técnica de referencia en 10 segundos al inicio de la clase para que sus alumnos puedan autoevaluarse contra su estándar oficial mientras él atiende dudas estratégicas complejas.
-* **Competencia Digital:** Media; usuario habitual de smartphones, WhatsApp y aplicaciones comerciales. Requiere interfaces limpias que no entorpezcan su dinámica presencial en el tatami.
+#### Perfil A: Instructor Certificado (Head Coach / Instructor Titular)
+* **Rol y Responsabilidades:** Máxima autoridad técnica y pedagógica en el tatami. Es responsable de la planificación curricular mensual, la instrucción técnica presencial, la evaluación de grados y la supervisión de la integridad física de grupos de 15 a 20 practicantes simultáneos.
+* **Contexto Operativo:** Imparte clases en las que múltiples parejas ejecutan maniobras en paralelo. Afronta la limitación física inherente de no poder supervisar simultáneamente a la totalidad del alumnado, lo que propicia la consolidación inadvertida de patrones de movimiento erróneos durante las fases de práctica sin retroalimentación directa.
+* **Competencia Digital:** Nivel intermedio; usuario habitual de dispositivos móviles y plataformas de mensajería comercial. Demanda interfaces ágiles que requieran un tiempo mínimo de interacción para no interferir con la dinámica docente presencial.
+* **Necesidades Pedagógicas:** Disponer de un mecanismo para registrar de manera expedita el video patrón canónico de cada técnica oficial, estableciendo una referencia objetiva para que el alumnado audite sus ejecuciones de forma autónoma en el tatami.
 
-#### Perfil de Usuario 2: Alumno Mateo (Practicante Intermedio / Estudiante Universitario)
-* **Edad:** 20 años.
-* **Ocupación / Rol:** Estudiante de Ingeniería Comercial; practicante de Jiu-Jitsu (Cinturón Azul).
-* **Contexto Operativo:** Entrena de noche tras salir de la universidad. Por épocas de exámenes interrumpe sus entrenamientos durante 1 o 2 meses, perdiendo fluidez y memoria postural fina.
-* **Dolor / Frustración Principal:** *“Cuando intento hacer la técnica del día, siento que la palanca no entra o que mi compañero se escapa fácil. Sé que algo estoy haciendo mal, pero no sé si es mi cadera, mi pie o mi codo. Tengo que quedarme sentado esperando a que el profesor se desocupe para preguntarle, perdiendo tiempo valioso de práctica”*.
-* **Motivación con el Sistema:** Poder pedirle a su compañero que lo grabe con su celular 5 segundos, subir el video y recibir al instante una imagen con un círculo rojo en su codo y un mensaje claro que le diga: *"Mateo, abre menos el codo y pégalo a tu costilla para mantener la presión"*.
-* **Competencia Digital:** Alta (nativo digital); espera inmediatez, interfaz atractiva, bajo consumo de megas y retroalimentación comprensible sin tecnicismos confusos.
+#### Perfil B: Practicante en Formación (Alumno / Estudiante)
+* **Rol y Responsabilidades:** Usuario activo en el aprendizaje y perfeccionamiento técnico de Jiu-Jitsu Brasileño (niveles principiante a intermedio). Responsable de realizar las repeticiones técnicas asignadas junto a su compañero de entrenamiento.
+* **Contexto Operativo:** Asiste a sesiones grupales de entrenamiento con frecuencias variables o tras periodos de inactividad temporal. Requiere verificar de manera objetiva si la alineación corporal y los apoyos adoptados corresponden a la instrucción impartida, minimizando tiempos muertos de espera en el tatami.
+* **Competencia Digital:** Nivel avanzado (nativo digital); habituado a interfaces web responsivas y entornos móviles. Requiere tiempos de respuesta reducidos, bajo consumo de datos y reportes visuales de fácil interpretación.
+* **Necesidades de Retroalimentación:** Visualización gráfica directa de la zona corporal desajustada mediante marcadores visuales e instrucciones textuales precisas en lenguaje pedagógico claro, orientadas a la corrección inmediata de la postura.
+
 
 ---
 
@@ -385,20 +388,26 @@ Para asegurar que el software responda a necesidades humanas reales y no a abstr
 
 ---
 
-### 4.3.2 Requisitos Funcionales (Historias de Usuario del Tatami)
+### 4.3.2 Requisitos Funcionales
+
+**Tabla 4.1**  
+*Matriz de Requisitos Funcionales del Sistema*
 
 | Código | Requisito Funcional | Historia de Usuario y Criterio de Aceptación |
 | :---: | :--- | :--- |
-| **RF-01** | **Registro de Técnica Maestra** | **Como** Profesor Carlos (Head Coach),<br>**quiero** grabar y registrar el video patrón oficial de la técnica del día (ej. *'Escape de Montada mediante Puente y Giro'*),<br>**para que** quede almacenado como el estándar canónico contra el cual mis alumnos se evaluarán.<br>*Criterio de Aceptación:* El sistema permite subir el video patrón, asignarle nombre y categoría en menos de 30 segundos, extrayendo y almacenando el esqueleto de referencia en la nube. |
-| **RF-02** | **Selección y Carga de Video de Práctica** | **Como** Alumno Mateo,<br>**quiero** seleccionar desde mi celular la técnica enseñada en clase y subir la grabación de 4 a 6 segundos de mi práctica con mi compañero,<br>**para que** el sistema analice mi movimiento.<br>*Criterio de Aceptación:* La interfaz valida que el video no supere 5 MB ni 6 segundos, rechazando archivos pesados antes de iniciar la transferencia de datos. |
-| **RF-03** | **Detección Automática de Puntos Clave** | **El sistema deberá** procesar cada fotograma del video mediante YOLO26-Pose para identificar con precisión los 17 puntos anatómicos corporales del estándar COCO (hombros, codos, muñecas, caderas, rodillas y tobillos), manteniendo la detección continua incluso ante cruces o agarres estrechos. |
-| **RF-04** | **Aislamiento del Practicante Activo (Filtro de la Estatua)** | **El sistema deberá** distinguir automáticamente al alumno que ejecuta la técnica frente al compañero que sirve de apoyo pasivo mediante análisis de varianza cinemática de movimiento, enmascarando el esqueleto del compañero para no falsear el diagnóstico. |
-| **RF-05** | **Sincronización Temporal de Movimientos (DTW)** | **El sistema deberá** aplicar el algoritmo DTW (*Dynamic Time Warping*) para alinear la velocidad del alumno con la del profesor, permitiendo comparar la técnica de forma justa y precisa sin penalizar al estudiante si ejecutó la maniobra con un ritmo más pausado. |
-| **RF-06** | **Detección del Momento de Mayor Desajuste Postural** | **El sistema deberá** aislar de forma automática el fotograma específico donde la postura del cuerpo del alumno presente la mayor discrepancia espacial frente a la plantilla del profesor modelo. |
-| **RF-07** | **Señalización Visual del Error (Semáforo Postural)** | **El sistema deberá** renderizar sobre el fotograma clave un círculo gráfico de color rojo (mediante OpenCV) centrado exactamente sobre la articulación o zona corporal mal posicionada, proporcionando un indicador visual instantáneo e intuitivo. |
-| **RF-08** | **Generación de Consejo Pedagógico con Google Gemini** | **Como** Alumno Mateo,<br>**quiero** recibir una explicación en texto claro y comprensible sobre mi error y el consejo exacto para corregirlo,<br>**para que** entienda de inmediato qué hacer sin tener que descifrar números ni gráficas complejas.<br>*Criterio de Aceptación:* La API de Gemini formula un mensaje de 2 o 3 líneas con tono de entrenador deportivo (ej. *"Mateo, tu codo derecho quedó muy abierto durante el giro; mantenlo pegado a tu costilla para evitar que tu compañero te atrape el brazo"*). |
-| **RF-09** | **Notificación Amigable ante Grabación Defectuosa** | **El sistema deberá** detectar situaciones de oclusión severa prolongada o salidas de cuadro, interrumpiendo el cálculo de forma controlada y notificando al alumno con un mensaje cordial en pantalla (ej. *"No pudimos ver con claridad la posición de tus piernas. Por favor, realiza otra toma grabando un poco más de costado"*), sin contaminar su historial técnico con datos incorrectos. |
-| **RF-10** | **Consulta de Historial y Evolución Técnica** | **Como** Alumno Mateo,<br>**quiero** consultar un panel con mis evaluaciones pasadas,<br>**para** comprobar cómo ha mejorado mi postura y cómo ha disminuido la frecuencia de círculos rojos a lo largo de las semanas. |
+| **RF-01** | **Registro de Técnica Maestra** | **Como** Instructor Certificado,<br>**se requiere** registrar y homologar el video patrón canónico de la técnica oficial (ej. *'Escape de Montada mediante Puente y Giro'*),<br>**para que** quede catalogado como el estándar de referencia contra el cual se evaluará la ejecución técnica de los practicantes.<br>*Criterio de Aceptación:* El sistema permite cargar el video patrón, asociar los metadatos de categoría y posición de origen en menos de 30 segundos, extrayendo y almacenando el esqueleto de referencia en el servidor remoto. |
+| **RF-02** | **Selección y Carga de Video de Práctica** | **Como** Practicante en Formación,<br>**se requiere** seleccionar desde el dispositivo móvil la técnica demostrada en la sesión y cargar la grabación de su práctica en pareja (duración de 4 a 6 segundos),<br>**para que** el sistema efectúe la auditoría de postura.<br>*Criterio de Aceptación:* La interfaz valida que el archivo no supere 5 MB de tamaño ni 6 segundos de duración, interrumpiendo la transferencia antes de saturar el enlace si se exceden dichos parámetros. |
+| **RF-03** | **Detección Automática de Puntos Clave** | **El sistema procesa** cada fotograma del video mediante YOLO26-Pose para identificar con precisión los 17 puntos anatómicos corporales del estándar COCO (hombros, codos, muñecas, caderas, rodillas y tobillos), preservando el seguimiento continuo ante cruces y oclusiones dinámicas en el tatami. |
+| **RF-04** | **Aislamiento del Practicante Activo** | **El sistema discrimina** automáticamente al practicante en ejecución frente al compañero que ejerce el rol de soporte estático mediante el análisis de varianza cinemática temporal, enmascarando las coordenadas del sujeto secundario para garantizar la precisión del análisis. |
+| **RF-05** | **Sincronización Temporal no Lineal (DTW)** | **El sistema aplica** el algoritmo DTW (*Dynamic Time Warping*) para alinear la velocidad del practicante con la del video patrón, asegurando una correspondencia postural justa e independiente del ritmo o fluidez de ejecución. |
+| **RF-06** | **Detección del Momento de Máxima Discrepancia** | **El sistema aísla** de forma automática el fotograma temporal donde la configuración corporal del practicante presenta el mayor desvío espacial respecto al modelo de referencia oficial. |
+| **RF-07** | **Señalización Visual del Error (Semáforo Postural)** | **El sistema renderiza** sobre el fotograma clave un marcador gráfico circular de color rojo (mediante OpenCV) centrado en la coyuntura anatómica desalineada, brindando un indicador visual objetivo e inmediato. |
+| **RF-08** | **Generación de Retroalimentación Pedagógica Asistida por IA** | **Como** Practicante en Formación,<br>**se requiere** recibir una explicación textual formal, clara y constructiva sobre la causa del desajuste postural y la recomendación correctiva pertinente,<br>**para que** se facilite la comprensión motriz sin depender de interpretaciones matemáticas complejas.<br>*Criterio de Aceptación:* La API de Google Gemini genera una explicación de 2 a 3 líneas con tono pedagógico formal (ej. *"Se detecta una apertura excesiva del codo derecho durante el giro; mantenga la articulación próxima a la parrilla costal para preservar el control mecánico"*). |
+| **RF-09** | **Notificación Preventiva ante Oclusión Prolongada** | **El sistema interrumpe** de forma controlada el proceso ante oclusiones corporales continuas que excedan el límite de validez o ante encuadres incompletos, notificando al usuario mediante un mensaje formal en pantalla (ej. *"No se visualizan con claridad los segmentos inferiores. Repita la captura ajustando el ángulo lateral de la cámara"*), evitando registrar datos espurios en el historial. |
+| **RF-10** | **Consulta de Historial y Evolución Técnica** | **Como** Practicante en Formación,<br>**se requiere** acceder a un panel histórico de evaluaciones técnicas,<br>**para** auditar la evolución cronológica del desempeño y la reducción sostenida de discrepancias posturales. |
+
+*Nota.* Requisitos funcionales elaborados según el estándar IEEE 830 y los lineamientos del Proceso Unificado.
+
 
 ---
 
@@ -417,38 +426,41 @@ Para asegurar que el software responda a necesidades humanas reales y no a abstr
 ---
 
 ### 4.3.5 Atributos del Sistema y Deslinde de Responsabilidad Legal
-* **AS-01 (Seguridad y Confidencialidad):** Los videos y reportes técnicos de cada practicante están protegidos bajo identificadores seguros de sesión, asegurando que solo el alumno y su instructor titular tengan acceso a sus registros.
-* **AS-02 (Ergonomía Térmica y de Batería):** La interfaz web operará en modo ultra-liviano, prohibiendo cómputo pesado en segundo plano en el teléfono para evitar el calentamiento del dispositivo y el agotamiento prematuro de su batería en el tatami.
-* **AS-03 (Cláusula Expresa de Responsabilidad Civil y Deslinde Médico):**
+* **AS-01 (Seguridad y Confidencialidad):** Los videos y reportes técnicos de cada practicante están protegidos bajo identificadores seguros de sesión, asegurando que solo el practicante y el instructor titular tengan acceso a sus registros.
+* **AS-02 (Ergonomía Térmica y de Batería):** La interfaz web operará en modo liviano, restringiendo el cómputo pesado en segundo plano en el dispositivo móvil para evitar sobrecalentamiento y consumo acelerado de batería en el tatami.
+* **AS-03 (Cláusula de Deslinde de Responsabilidad Civil, Médica y Deportiva):**
 
-> ⚠️ **CLÁUSULA DE DESLINDE DE RESPONSABILIDAD CIVIL, MÉDICA Y DEPORTIVA:**  
-> *El presente software constituye una herramienta computacional de carácter estrictamente pedagógico, formativo y de asistencia técnica visual al entrenamiento deportivo. En ninguna circunstancia la información, imágenes o textos generados por el sistema (incluyendo los análisis de visión artificial y los consejos generados por la API de Google Gemini) constituyen diagnósticos médicos, dictámenes traumatológicos, evaluaciones fisioterapéuticas, prescripciones de rehabilitación física ni certificaciones de aptitud para el esfuerzo atlético.*  
+> **CLÁUSULA DE DESLINDE DE RESPONSABILIDAD CIVIL, MÉDICA Y DEPORTIVA**  
+> *El presente software constituye una herramienta computacional de carácter estrictamente pedagógico, formativo y de asistencia técnica visual al entrenamiento deportivo. En ninguna circunstancia la información, imágenes o textos generados por el sistema (incluyendo los análisis de visión artificial y los mensajes formativos generados a través de la API de Google Gemini) constituyen diagnósticos médicos, dictámenes traumatológicos, evaluaciones fisioterapéuticas, prescripciones de rehabilitación física ni certificaciones de aptitud médica para el esfuerzo atlético.*  
 >  
-> *El Jiu-Jitsu Brasileño es un deporte de contacto que conlleva riesgos inherentes de lesión física accidental. La práctica de cualquier maniobra, palanca articular, derribo o estrangulación debe realizarse siempre bajo la atenta supervisión presencial de instructores profesionales certificados. Los creadores del software, los investigadores del proyecto y la institución académica quedan exentos de toda responsabilidad civil, médica, penal o patrimonial frente a accidentes, daños o lesiones que pudieran suscitarse durante o con posterioridad a la ejecución de las actividades deportivas asistidas por este sistema.*
+> *El Jiu-Jitsu Brasileño es una disciplina de combate cuerpo a cuerpo que conlleva riesgos inherentes de lesión física accidental. La práctica de cualquier maniobra, palanca articular, derribo o estrangulación debe realizarse siempre bajo la supervisión presencial y atenta de instructores profesionales certificados. Los autores del proyecto de grado, el cuerpo docente y la Universidad Privada de Santa Cruz de la Sierra (UPSA) quedan exentos de toda responsabilidad civil, médica, penal o patrimonial frente a accidentes, daños o lesiones que pudieran suscitarse durante o con posterioridad a la ejecución de las actividades deportivas asistidas por este sistema.*
 
 ---
 
 ## 4.4 Identificación de los Casos de Uso
 
 ### 4.4.1 Actores del Sistema
-1. **Profesor (Head Coach - Carlos):** Usuario docente experto con potestad curricular. Registra las técnicas maestras oficiales y fiscaliza la progresión global de la academia.
-2. **Alumno (Practicante - Mateo):** Usuario final que entrena en el tatami. Selecciona técnicas, graba y carga videos de práctica, visualiza las anotaciones de error y consulta consejos pedagógicos.
-3. **Motor de IA Remoto (Google Colab Pro + Gemini):** Actor computacional externo que extrae el esqueleto anatómico, alinea temporalmente los videos, evalúa la coincidencia postural y redacta la retroalimentación textual.
+1. **Instructor (Head Coach):** Usuario docente responsable de registrar las técnicas maestras oficiales, catalogar variantes curriculares y supervisar la progresión técnica del alumnado.
+2. **Practicante (Alumno):** Usuario evaluado en el tatami que selecciona técnicas, graba y carga videos de práctica, visualiza los diagnósticos visuales y consulta las recomendaciones formativas.
+3. **Motor de IA Remoto (Google Colab Pro + Gemini):** Actor computacional externo que ejecuta la inferencia esquelética, sincroniza temporalmente las secuencias mediante DTW, evalúa la coincidencia postural y sintetiza la retroalimentación textual.
 
 ### 4.4.2 Diagrama de Casos de Uso
 A continuación se presenta el diagrama formal de casos de uso que modela las interacciones entre los actores humanos y el sistema:
 
+**Figura 4.2**  
+*Diagrama de Casos de Uso del Sistema de Asistencia Postural.*
+
 ```mermaid
 graph LR
     subgraph Actores_Humanos["Actores Humanos"]
-        Profesor(("Profesor Carlos<br>(Head Coach)"))
-        Alumno(("Alumno Mateo<br>(Practicante)"))
+        Instructor(("Instructor<br>(Profesor Titular)"))
+        Practicante(("Practicante<br>(Alumno)"))
     end
 
     subgraph Sistema["Sistema de Asistencia Postural BJJ"]
         CU01["CU-01: Registrar Técnica Maestra de Referencia"]
         CU02["CU-02: Cargar Video de Práctica"]
-        CU03["CU-03: Visualizar Diagnóstico y Consejo Gemini"]
+        CU03["CU-03: Visualizar Diagnóstico y Recomendación Gemini"]
         CU04["CU-04: Consultar Historial de Progreso"]
     end
 
@@ -456,25 +468,32 @@ graph LR
         IA(("Motor IA Remoto<br>(YOLO26 + DTW + Gemini)"))
     end
 
-    Profesor --> CU01
+    Instructor --> CU01
     CU01 -.->|Envía video patrón| IA
 
-    Alumno --> CU02
+    Practicante --> CU02
     CU02 -.->|Despacha video| IA
 
-    IA -.->|Genera fotograma y consejo| CU03
-    Alumno --> CU03
-    Alumno --> CU04
+    IA -.->|Genera fotograma y recomendación| CU03
+    Practicante --> CU03
+    Practicante --> CU04
 ```
+*Nota.* Casos de uso estructurados según las pautas del Proceso Unificado (Larman).
 
 ### 4.4.3 Matriz de Trazabilidad de Casos de Uso
 
+**Tabla 4.2**  
+*Matriz de Trazabilidad de Casos de Uso*
+
 | Código | Nombre del Caso de Uso | Actor Principal | Requisitos Asociados | Descripción Sintética |
 | :---: | :--- | :---: | :---: | :--- |
-| **CU-01** | Registrar Técnica Maestra de Referencia | Profesor Carlos | RF-01, RF-03 | El profesor graba y sube el video de referencia canónica. El sistema procesa el esqueleto maestro con YOLO26 y lo almacena en el catálogo. |
-| **CU-02** | Cargar Video de Práctica | Alumno Mateo | RF-02, RF-03, RF-04, RF-05, RF-09 | El alumno selecciona la técnica y sube su clip (<6s). El sistema filtra al compañero estático, sincroniza con DTW y verifica que no haya oclusiones severas. |
-| **CU-03** | Visualizar Diagnóstico y Consejo Gemini | Alumno Mateo | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema despliega el fotograma clave con círculo rojo en la zona defectuosa junto al consejo pedagógico redactado por Google Gemini en < 5 segundos. |
-| **CU-04** | Consultar Historial de Progreso | Alumno Mateo | RF-10 | El alumno visualiza la reducción progresiva de sus fallas posturales y el porcentaje de coincidencia técnica alcanzado a lo largo del tiempo. |
+| **CU-01** | Registrar Técnica Maestra de Referencia | Instructor | RF-01, RF-03 | El instructor graba y carga el video de referencia canónica. El sistema procesa el esqueleto maestro con YOLO26 y lo almacena en el catálogo. |
+| **CU-02** | Cargar Video de Práctica | Practicante | RF-02, RF-03, RF-04, RF-05, RF-09 | El practicante selecciona la técnica y carga su clip (<6s). El sistema filtra al compañero estático, sincroniza con DTW y verifica la integridad de la toma. |
+| **CU-03** | Visualizar Diagnóstico y Recomendación Gemini | Practicante | RF-06, RF-07, RF-08, RP-01, RP-02 | El sistema despliega el fotograma clave con círculo indicador en la zona defectuosa junto a la recomendación pedagógica emitida por Google Gemini en < 5 segundos. |
+| **CU-04** | Consultar Historial de Progreso | Practicante | RF-10 | El practicante visualiza la evolución cronológica de sus ejecuciones y el porcentaje de coincidencia técnica alcanzado a lo largo de las sesiones. |
+
+*Nota.* Trazabilidad entre actores, casos de uso e historias funcionales del sistema.
+
 
 ---
 
@@ -482,6 +501,9 @@ graph LR
 
 ### 4.5.1 Diagrama de Clases Conceptual del Dominio
 El modelo conceptual organiza las entidades esenciales del negocio, prescindiendo de detalles de bajo nivel y centrándose en el flujo pedagógico y deportivo:
+
+**Figura 4.3**  
+*Modelo de Dominio Conceptual del Sistema.*
 
 ```mermaid
 classDiagram
@@ -574,16 +596,17 @@ classDiagram
     EvaluacionPostural "0..*" --o "1" HistorialProgreso : acumula-en
     Alumno "1" *-- "1" HistorialProgreso : posee
 ```
+*Nota.* Modelo conceptual desarrollado según los lineamientos de Craig Larman, libre de tipos de datos de implementación.
 
 ### 4.5.2 Descripción de Entidades y Relaciones
 
 * **AcademiaBJJ:** Entidad organizativa raíz que contextualiza la institución deportiva (*Corpo e Mente*). Nuclea a la totalidad de los miembros y resguarda la información bajo un esquema seguro.
 * **Usuario:** Clase abstracta de generalización que encapsula los atributos comunes de identidad (nombre, correo, WhatsApp) compartidos por el cuerpo docente y el alumnado.
-* **Profesor:** Especialización de Usuario que representa al Head Coach (Carlos). Posee la exclusividad para registrar, catalogar y homologar las Técnicas Maestras del currículo oficial.
-* **Alumno:** Especialización de Usuario que representa al practicante del tatami (Mateo). Graba y carga videos de sus ensayos técnicos y consulta los reportes emitidos por el sistema.
-* **TecnicaMaestra:** Modela la ejecución canónica oficial demostrada por el profesor. Contiene el nombre de la técnica (ej. *'Escape de Montada'*), su categoría (defensa, pasaje, sumisión), la posición inicial de combate y el video de referencia con sus puntos anatómicos pre-calculados.
-* **VideoPractica:** Registro multimedia capturado por el alumno junto a su compañero desde el celular, sometido a los controles de tamaño (< 5 MB) y duración (< 6 segundos).
+* **Profesor:** Especialización de Usuario que representa al Instructor Titular (Head Coach). Posee la exclusividad para registrar, catalogar y homologar las Técnicas Maestras del currículo oficial.
+* **Alumno:** Especialización de Usuario que representa al Practicante del tatami. Graba y carga videos de sus ensayos técnicos y consulta los reportes emitidos por el sistema.
+* **TecnicaMaestra:** Modela la ejecución canónica oficial demostrada por el instructor. Contiene el nombre de la técnica (ej. *'Escape de Montada'*), su categoría (defensa, pasaje, sumisión), la posición inicial de combate y el video de referencia con sus puntos anatómicos pre-calculados.
+* **VideoPractica:** Registro multimedia capturado por el practicante junto a su compañero desde el celular, sometido a los controles de tamaño (< 5 MB) y duración (< 6 segundos).
 * **EvaluacionPostural:** Entidad de resultado analítico generada en la nube. Consolida el porcentaje de coincidencia postural alcanzado respecto al molde del profesor, la zona del cuerpo donde ocurrió la máxima desviación y el estado del cómputo. Si ocurre una oclusión continua severa, la evaluación registra el incidente sin generar fotogramas erróneos.
 * **FotogramaAnotado:** Imagen estática JPG comprimida (< 100 KB) correspondiente al momento cumbre del desajuste técnico, incorporando el círculo gráfico de color rojo sobre la coyuntura anatómica desalineada.
-* **ConsejoGemini:** Mensaje pedagógico sintetizado por la inteligencia artificial generativa de Google. Convierte las mediciones espaciales en una recomendación empática, cálida y comprensible para el practicante de Jiu-Jitsu.
-* **HistorialProgreso:** Registro histórico longitudinal que acumula las evaluaciones del alumno a lo largo del tiempo, permitiéndole verificar su curva de evolución y el descenso progresivo en la frecuencia de desajustes posturales.
+* **ConsejoGemini:** Mensaje pedagógico sintetizado por la inteligencia artificial generativa de Google. Convierte las mediciones espaciales en una recomendación formal, precisa y comprensible para el practicante de Jiu-Jitsu.
+* **HistorialProgreso:** Registro histórico longitudinal que acumula las evaluaciones del practicante a lo largo del tiempo, permitiéndole verificar su curva de evolución y el descenso progresivo en la frecuencia de desajustes posturales.

@@ -12,9 +12,6 @@ En la academia piloto Corpo e Mente (ubicada en las instalaciones de Knock Out G
 
 Se propone el desarrollo e implementación de un sistema computacional de asistencia al entrenamiento basado en visión artificial, concebido para comparar la ejecución técnica de los alumnos con un video de referencia provisto por el instructor. El sistema procesará secuencias de video capturadas en el tatami en tiempo diferido, detectará las discrepancias biomecánicas clave y generará reportes visuales con indicadores diagnósticos directos sobre los fotogramas del video del alumno. Esta retroalimentación objetiva y persistente estará disponible para el practicante a través de dispositivos móviles o terminales de consulta en la academia, empoderando el autoaprendizaje guiado y liberando tiempo docente para que el instructor concentre su labor pedagógica en correcciones tácticas y estratégicas avanzadas.
 
-> 💡 **Analogía para el Lector No-Técnico (El Espejo Inteligente):**  
-> Imagina tener un espejo en el tatami que no solo refleja tu movimiento, sino que superpone de forma transparente el cuerpo del profesor ejecutando la técnica perfecta. Si tu brazo o tu pierna no coinciden con la silueta del maestro, el espejo resalta de inmediato en rojo la parte desalineada para que sepas con exactitud qué corregir antes de que el error se convierta en una mala costumbre motriz.
-
 
 ### 1.1.3 Objeto de Investigación
 
@@ -59,9 +56,6 @@ El proceso de construcción del sistema se articula a través de las siguientes 
 2. **Ciclo de Desarrollo Iterativo e Incremental:** Planificación de sprints de trabajo que permitan evolucionar la solución de forma controlada, integrando retroalimentación empírica continua proveniente de las pruebas de video en el tatami.
 3. **Desarrollo Guiado por Pruebas (TDD):** Implementación de una batería de pruebas unitarias y de integración previa a la codificación de la lógica algorítmica, blindando la consistencia matemática de los cálculos trigonométricos, la correspondencia temporal de keypoints y la correcta anotación gráfica de fotogramas.
 
-> 💡 **Analogía para el Lector No-Técnico (El Arquitecto y las Maquetas):**  
-> Antes de construir un edificio entero y esperar a que no se caiga ante el primer temblor, el arquitecto diseña y somete maquetas a pruebas de esfuerzo estructural. En nuestro sistema, antes de programar la aplicación completa, diseñamos pruebas automáticas (TDD) que verifican que cada medición postural sea exacta y confiable bajo cualquier condición de entrenamiento.
-
 
 ---
 
@@ -76,9 +70,6 @@ Bajo este esquema operativo:
 * **Corpo e Mente** aporta el capital intelectual, el programa pedagógico estructurado y el capital humano especializado (instructores) para la instrucción técnica en el tatami.
 
 Esta simbiosis permite a Corpo e Mente enfocarse exclusivamente en la excelencia técnica, mientras delega la carga administrativa y financiera al socio estratégico.
-
-> 💡 **Resumen Ejecutivo del Modelo de Negocio:**  
-> *Knock Out Gym pone el gimnasio, cobra y gestiona instalaciones; Corpo e Mente aporta los profesores certificados y la enseñanza técnica.*
 
 
 ## 2.2 Descripción Organizacional de la Empresa
@@ -135,9 +126,6 @@ La dinámica interna de la clase revela la necesidad urgente de apoyo tecnológi
    * Si un alumno comete un error biomecánico en ese intervalo, lo repite varias veces hasta que el profesor llega, fijando el vicio motor.
    * Este problema se agrava exponencialmente con los **alumnos intermitentes** (que vuelven tras 3-5 meses), quienes han perdido la memoria motriz y requieren correcciones constantes que el profesor único no puede cubrir simultáneamente para todos.
 
-> 💡 **Analogía para el Lector No-Técnico (El Profesor de Baile en Grupo):**  
-> Imagina una clase de baile con 15 parejas en la pista y un solo profesor. Mientras el maestro está concentrado corrigiendo la postura de una pareja en una esquina, las otras 7 parejas siguen bailando. Si una de ellas está dando el paso equivocado, lo repetirá 20 veces sin darse cuenta. Nuestro sistema funciona como un asistente que acompaña a cada pareja para que nadie practique a ciegas mientras espera el turno del profesor.
-
 
 ---
 
@@ -164,10 +152,6 @@ Se determinó la selección de YOLO26-Pose a partir de dos ventajas arquitectura
 1. **Inferencia End-to-End libre de NMS (Non-Maximum Suppression):** A diferencia de las iteraciones previas de la familia YOLO o de arquitecturas basadas en agrupamiento como OpenPose, YOLO26 efectúa la predicción directa de las coordenadas articulares sin demandar una etapa posterior de supresión de no máximos. Dicho factor elimina cuellos de botella algorítmicos en el backend local y confiere estabilidad a los tiempos de inferencia en la nube sobre Google Colab Pro.
 2. **Algoritmo STAL (Small-Target-Aware Label Assignment):** Durante las transiciones en el suelo características del Jiu-Jitsu, determinados segmentos anatómicos distales (como muñecas, tobillos o pies en posiciones de sumisión o guardia) ocupan una fracción reducida de píxeles en el fotograma. El mecanismo STAL incrementa sustancialmente la cobertura de etiquetas positivas asignadas a objetos y coyunturas de escala reducida, mitigando el parpadeo (*jitter*) o la desconexión del grafo esquelético ante deformaciones complejas.
 
-> 💡 **Analogía para el Lector No-Técnico (La Lupa de Enfoque y la Aduana Express):**  
-> * **La Lupa de Enfoque (STAL):** En el suelo del tatami, las manos y los pies suelen quedar apretados o parcialmente tapados entre los cuerpos. Mientras otros sistemas solo ven manchas borrosas, YOLO26 activa una "lupa inteligente" que detecta con precisión las extremidades pequeñas aunque estén entrelazadas en el agarre.  
-> * **La Aduana Express (NMS-Free):** Otros sistemas hacen que la información pase por una segunda fila de revisión lenta para descartar esqueletos duplicados. YOLO26 acierta a la primera y sin filas de espera, entregando las coordenadas corporales de forma inmediata.
-
 
 ---
 
@@ -189,9 +173,6 @@ $$\theta(t) = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{\Vert{}\vec{u}\Vert{} \
 
 **Justificación de invarianza:** La formulación vectorial asegura invarianza matemática frente a traslaciones en el plano y variaciones de escala geométrica. Por consiguiente, divergencias en la distancia focal o posición relativa de los practicantes respecto a la cámara no alteran la estimación angular, facultando una comparación directa y robusta entre el video del profesor y el del alumno.
 
-> 💡 **Analogía para el Lector No-Técnico (La Plantilla de Recorte y el Molde Corporal):**  
-> Imagina que la postura del profesor es una plantilla de cartón o un molde de silueta perfecta. El sistema toma la silueta del alumno y verifica si su cuerpo "encaja" exactamente en el molde del maestro. Si un brazo o una pierna sobresale o queda fuera del molde, el sistema detecta de inmediato el desajuste postural. Además, el molde se encoge o se agranda automáticamente según la contextura del alumno: no importa si el practicante es alto, bajo o niño, lo que se evalúa es si la postura corporal coincide proporcionalmente, sin importar la distancia a la cámara.
-
 
 ---
 
@@ -212,9 +193,6 @@ $$V_{\text{total}} = \sigma^2_{x} + \sigma^2_{y}$$
 
 El algoritmo asocia la etiqueta de *Ejecutor Objetivo* al identificador de seguimiento (*tracking ID*) que exhibe el valor supremo de $V_{\text{total}}$ en la serie analizada. Las trayectorias del sujeto secundario son enmascaradas en las matrices subsiguientes, previniendo perturbaciones en la cuantificación del error biomecánico.
 
-> 💡 **Analogía para el Lector No-Técnico (El Juego de las Estatuas):**  
-> En Jiu-Jitsu siempre hay dos personas en contacto: quien realiza la técnica y el compañero que sirve de apoyo pasivo. Para que la cámara no se confunda entre ambos cuerpos, el sistema aplica la regla del juego de las "estatuas": el compañero que recibe el movimiento se mantiene relativamente quieto como una estatua, mientras que el alumno que aplica la técnica despliega toda la energía y movimiento activo. El sistema ignora a la estatua y analiza exclusivamente a quien se está moviendo.
-
 
 ---
 
@@ -231,12 +209,9 @@ graph LR
 1. **Resampleo Lineal Dinámico:** Forzamiento algebraico de correspondencia marco a marco por interpolación. Se desestimó debido a la asunción errónea de velocidades de ejecución constantes en sujetos humanos.
 2. **Alineación Temporal Dinámica (Dynamic Time Warping - DTW) (Seleccionada):** Determina una ruta óptima de emparejamiento sobre una matriz de distancias locales de orden $M \times K$, siendo $M$ el número de fotogramas de la referencia docente y $K$ el de la ejecución del practicante. El algoritmo minimiza recursivamente la distancia acumulada:
 
-$$D(i, j) = \text{dist}\big(\theta_{\text{prof}}(i), \, \theta_{\text{alum}}(j)\big) + \min\Big\{D(i-1, j), \, D(i, j-1), \, D(i-1, j-1)\Big\}$$
+$$D(i, j) = \text{dist}(\theta_{\text{prof}}(i), \theta_{\text{alum}}(j)) + \min \left[ D(i-1, j), D(i, j-1), D(i-1, j-1) \right]$$
 
 **Justificación técnica:** DTW permite la convergencia sobre hitos biomecánicos críticos (p. ej., el ápice angular de elevación pélvica durante un puente defensivo) con independencia de desfases cronológicos absolutos, acomodando las diferencias de fluidez motriz entre practicantes avanzados y novatos.
-
-> 💡 **Analogía para el Lector No-Técnico (La Canción a Distinta Velocidad):**  
-> Imagina a dos personas cantando la misma canción: un cantante experimentado con ritmo fluido y un principiante que canta más lento y hace pausas para recordar la letra. Si los comparamos segundo a segundo, parecerá que cantan cosas distintas. El algoritmo DTW sincroniza la melodía: alinea cada estrofa y nota musical (cada postura corporal clave) en el orden correcto, comparando si el alumno adoptó la postura adecuada en cada fase sin castigarlo por haberlo hecho más despacio que el maestro.
 
 
 ---
@@ -267,9 +242,6 @@ sequenceDiagram
 
 1. **Google Drive como Middleware de Persistencia Desacoplada:** La interconexión mediante almacenamiento compartido elude la necesidad de túneles bidireccionales continuos (e.g., WebSockets persistentes o gRPC sobre IP pública), cuya estabilidad se ve severamente afectada en redes de gimnasios o entornos de conectividad residencial.
 2. **Despacho Asíncrono de Inferencia:** El servidor edge local en FastAPI funciona como un receptor y despachador ligero con sobrecarga computacional mínima. El entorno en la nube (Google Colab Pro) opera mediante un demonio en segundo plano que monitorea el volumen montado, procesa los análisis cinemáticos con aceleración por GPU y renderiza indicadores visuales cuando las discrepancias angulares superan el umbral de tolerancia prescrito ($\Delta\theta > 15^\circ$). El resultado queda disponible para descarga diferida, ofreciendo tolerancia a desconexiones transitorias y mitigando el consumo de recursos de cómputo en la máquina local.
-
-> 💡 **Analogía para el Lector No-Técnico (El Buzón de Paquetería Express):**  
-> En lugar de exigir que el teléfono del alumno tenga la potencia de una computadora de la NASA o que el gimnasio cuente con internet de fibra óptica ultraveloz, el sistema funciona como un buzón express: el teléfono graba un video corto y lo deposita en un buzón seguro en la nube. Allí, una fábrica de procesamiento con supercomputadoras (Google Colab con GPU A100) analiza la postura en 3 o 4 segundos y devuelve el resultado comprimido directamente al celular. De esta forma, el teléfono no se recalienta ni agota su batería en pleno entrenamiento.
 
 ---
 
@@ -514,77 +486,77 @@ El modelo conceptual organiza las entidades esenciales del negocio, prescindiend
 ```mermaid
 classDiagram
     class AcademiaBJJ {
-        idAcademia: Integer
-        nombre: String
-        sede: String
-        ciudad: String
+        idAcademia
+        nombre
+        sede
+        ciudad
     }
 
     class Usuario {
         <<abstract>>
-        idUsuario: Integer
-        nombreCompleto: String
-        correoElectronico: String
-        telefonoWhatsApp: String
-        fechaRegistro: Date
+        idUsuario
+        nombreCompleto
+        correoElectronico
+        telefonoWhatsApp
+        fechaRegistro
     }
 
     class Profesor {
-        gradoCinturon: String
-        licenciaInstructor: String
+        gradoCinturon
+        licenciaInstructor
     }
 
     class Alumno {
-        gradoCinturon: String
-        pesoKg: Float
-        estadoMembresia: String
+        gradoCinturon
+        pesoKg
+        estadoMembresia
     }
 
     class TecnicaMaestra {
-        idTecnicaMaestra: Integer
-        nombreTecnica: String
-        categoriaTecnica: String
-        posicionOrigen: String
-        videoReferenciaURL: String
-        fechaPublicacion: Date
+        idTecnicaMaestra
+        nombreTecnica
+        categoriaTecnica
+        posicionOrigen
+        videoReferenciaURL
+        fechaPublicacion
     }
 
     class VideoPractica {
-        idVideoPractica: Integer
-        duracionSegundos: Float
-        pesoMB: Float
-        archivoURL: String
-        fechaGrabacion: DateTime
+        idVideoPractica
+        duracionSegundos
+        pesoMB
+        archivoURL
+        fechaGrabacion
     }
 
     class EvaluacionPostural {
-        idEvaluacion: Integer
-        porcentajeCoincidencia: Float
-        articulacionFalla: String
-        tiempoProcesamientoSeg: Float
-        estadoDiagnostico: String
+        idEvaluacion
+        porcentajeCoincidencia
+        articulacionFalla
+        tiempoProcesamientoSeg
+        estadoDiagnostico
     }
 
     class FotogramaAnotado {
-        idFotograma: Integer
-        imagenURL: String
-        coordenadaFallaX: Integer
-        coordenadaFallaY: Integer
-        colorIndicador: String
+        idFotograma
+        imagenURL
+        coordenadaFallaX
+        coordenadaFallaY
+        colorIndicador
     }
 
     class ConsejoGemini {
-        idConsejo: Integer
-        textoConsejo: String
-        tonoMensaje: String
-        fechaGeneracion: DateTime
+        idConsejo
+        textoConsejo
+        tonoMensaje
+        fechaGeneracion
     }
 
     class HistorialProgreso {
-        idHistorial: Integer
-        totalEvaluaciones: Integer
-        porcentajePromedio: Float
-        fechaUltimaActualizacion: DateTime
+        idHistorial
+        totalEvaluaciones
+        porcentajePromedio
+        fechaUltimaActualizacion
     }
 
     AcademiaBJJ "1" *-- "1..*" Usuario : nuclea

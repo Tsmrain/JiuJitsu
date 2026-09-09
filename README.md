@@ -512,252 +512,198 @@ _Figura 5._ Diagrama de clases del modelo conceptual de dominio según Larman (2
 
 # Capítulo V: Análisis y Diseño
 
-El presente capítulo expone la transición formal del modelo de requisitos hacia la **arquitectura lógica del sistema** y el **diseño de la base de datos relacional**. Se aplican rigurosamente los patrones de asignación de responsabilidades generales de software (**GRASP**) postulados por Larman (2004) y las reglas de conversión relacional y normalización de Mannino (2019).
+El presente capítulo especifica la **arquitectura lógica del software** según el Proceso Unificado (Larman, 2004) y el **diseño relacional normalizado de la base de datos** (Mannino, 2019).
 
 ---
 
-## 5.1 Arquitectura Lógica del Sistema y Separación de Capas (*Layers Pattern*)
+## 5.1 Arquitectura Lógica en Capas (*Layers Pattern*)
 
-Conforme al patrón arquitectónico **Layers** de Larman (2004), el sistema se organiza en capas lógicas con desacoplamiento vertical, garantizando la separación de intereses (*separation of concerns*):
+Organización en tres capas lógicas con desacoplamiento estricto:
 
 ```mermaid
 graph TD
-    subgraph Presentacion["Capa de Presentación (UI)"]
-        PWA["Cliente Web Progresivo (PWA - Mobile)"]
+    subgraph UI["1. Capa de Presentación"]
+        PWA["Cliente Web PWA Mobile"]
     end
 
-    subgraph AplicacionDominio["Capa de Aplicación y Dominio"]
+    subgraph Domain["2. Capa de Aplicación y Dominio"]
         RC["RecursoController (GRASP Controller)"]
         EC["EvaluacionController (GRASP Controller)"]
         EP["EvaluacionPostural (Information Expert)"]
-        TP["TecnicaPatron"]
-        RD["RecursoDidactico"]
     end
 
-    subgraph ServiciosTecnicos["Capa de Servicios Técnicos e Infraestructura"]
+    subgraph Tech["3. Capa de Servicios Técnicos e Infraestructura"]
         YOLO["YOLOEngine (YOLO26x-Pose 3D)"]
-        DTW["SincronizadorDTW (Dynamic Time Warping)"]
+        DTW["SincronizadorDTW"]
         VDB["VectorDBService (Gemini Embedding 2)"]
         SGF["ServicioGeminiFlash (Gemini 3.8 Flash)"]
         BD["BaseDatosRelacional (PostgreSQL/SQLite)"]
     end
 
-    PWA -->|Peticiones HTTP/HTTPS| RC
-    PWA -->|Peticiones HTTP/HTTPS| EC
-    RC -->|Gestiona| TP
-    RC -->|Gestiona| RD
-    RC -->|Procesa RAG| VDB
-    RC -->|Procesa Patrón| YOLO
-    RC -->|Persiste| BD
-    EC -->|Crea/Orquesta| EP
-    EC -->|Inferencia 3D| YOLO
-    EC -->|Alineamiento| DTW
-    EC -->|Consulta RAG| VDB
-    EC -->|Sintetiza| SGF
-    EC -->|Persiste| BD
+    PWA -->|HTTPS POST| RC & EC
+    RC --> VDB & YOLO & BD
+    EC --> EP & YOLO & DTW & VDB & SGF & BD
 ```
 _Figura 6._ Diagrama de arquitectura lógica del sistema y separación de capas (*Layers Pattern*) según Larman (2004).
 
-1. **Capa de Presentación (*Presentation Layer*):** Interfaz Web Progresiva (PWA) móvil liviana que captura videos de práctica, presenta las imágenes con marcadores visuales y despliega las recomendaciones de IA sin ejecutar lógica de negocio ni modelos locales.
-2. **Capa de Aplicación y Dominio (*Application/Domain Layer*):** Encapsula la lógica de negocio del Jiu-Jitsu y orquesta las operaciones mediante controladores lógicos GRASP, manteniendo las entidades puras y desacopladas de la infraestructura.
-3. **Capa de Servicios Técnicos e Infraestructura (*Technical Services Layer*):** Encapsula los servicios pesados de visión computacional, alineamiento temporal, base de datos vectorial y modelos de lenguaje de Google AI Studio.
+* **Presentación (UI):** Interfaz PWA liviana en móvil; envía video y recibe el diagnóstico con marcadores.
+* **Dominio/Aplicación:** Contiene las reglas del Jiu-Jitsu y orquesta la auditoría postural mediante controladores GRASP.
+* **Servicios Técnicos:** Encapsula la inferencia 3D con YOLO26x-Pose, el cálculo vectorial de Gemini Embedding 2, la matriz DTW y la síntesis con Gemini 3.8 Flash.
 
 ---
 
-## 5.2 Asignación de Responsabilidades mediante Patrones GRASP
+## 5.2 Matriz de Asignación de Responsabilidades GRASP
 
-Larman (2004) establece que la habilidad fundamental en el diseño orientado a objetos es la asignación de responsabilidades a las clases de software. En este proyecto se aplican los siguientes patrones:
+En cumplimiento con la metodología de Larman (2004), la asignación de responsabilidades se resume en la siguiente matriz sintética:
 
-* **Controlador (*Controller*):** Se definen dos controladores lógicos de caso de uso para recibir los eventos del sistema (*system events*) desde la capa de UI sin recargar la presentación con lógica de negocio:
-  * `RecursoController`: Maneja los eventos de carga y catalogación curricular (**CU-01** y **CU-05**).
-  * `EvaluacionController`: Orquesta el flujo de auditoría postural asincrónica (**CU-02** y **CU-03**).
-* **Experto en Información (*Information Expert*):** Asignado a la entidad `EvaluacionPostural`. Al poseer el conocimiento de los puntos clave $3\text{D}$, los vectores de desviación espacial en $\mathbb{R}^3$ y los umbrales anatómicos, es la clase responsable de calcular el porcentaje global de coincidencia cinemática y clasificar la articulación crítica.
-* **Creador (*Creator*):** Asignado a `EvaluacionController`. Este controlador registra, utiliza de cerca y agrega los datos intermedios del pipeline analítico, teniendo la responsabilidad legítima de instanciar los objetos `EvaluacionPostural`.
-* **Bajo Acoplamiento y Alta Cohesión (*Low Coupling & High Cohesion*):** Las clases de dominio no interactúan directamente con las APIs de Google AI Studio ni con las bibliotecas de visión computacional; lo hacen a través de servicios especializados (`YOLOEngine`, `VectorDBService`, `ServicioGeminiFlash`) que actúan como *Pure Fabrications* e *Indirections*.
-* **Fabricación Pura (*Pure Fabrication*) e Indirección (*Indirection*):** Clases artificiales como `VectorDBService` y `SincronizadorDTW` no representan conceptos del dominio físico del tatami, pero se crean para mantener las clases de dominio livianas, cohesivas y reutilizables.
+**Tabla 4**  
+*Matriz de asignación de responsabilidades mediante patrones GRASP según Larman (2004)*
+
+| Clase de Software | Patrón GRASP Aplicado | Responsabilidad Asignada | Justificación Técnica |
+| :--- | :--- | :--- | :--- |
+| **`RecursoController`** | **Controller** | Recibir y derivar eventos de carga curricular (**CU-01, CU-05**). | Aísla la interfaz PWA de la lógica de indexación y extracción. |
+| **`EvaluacionController`** | **Controller / Creator** | Orquestar el flujo asincrónico (**CU-02, CU-03**) e instanciar `EvaluacionPostural`. | Agrega y utiliza de cerca los datos de visión, DTW y RAG. |
+| **`EvaluacionPostural`** | **Information Expert** | Calcular porcentaje de coincidencia y clasificar articulación en falla en $\mathbb{R}^3$. | Posee las coordenadas esqueléticas 3D y umbrales angulares. |
+| **`YOLOEngine`** | **Pure Fabrication / Indirection** | Extraer la matriz de keypoints 3D ($X, Y, Z$) desde el video. | Evita acoplar entidades del tatami con la biblioteca Ultralytics. |
+| **`VectorDBService`** | **Pure Fabrication / Indirection** | Gestionar embeddings y similitud de cosenos con Gemini Embedding 2. | Mantiene limpia la entidad `FuenteConocimiento`. |
+| **`ServicioGeminiFlash`** | **Protected Variations** | Generar recomendación fundamentada con Gemini 3.8 Flash. | Encapsula la API remota ante posibles variaciones de contrato. |
+
+*Nota.* Asignación metodológica de responsabilidades a clases de software basada en los patrones GRASP de Larman (2004).
 
 ---
 
-## 5.3 Realización de Casos de Uso Críticos (Diagramas de Secuencia del Sistema)
+## 5.3 Diagramas de Secuencia del Sistema (Use-Case Realizations)
 
-### 5.3.1 Diagrama de Secuencia: Gestión y Catalogación de Recursos (CU-01 y CU-05)
-
-Mapea la discriminación de las tres rutas de entrada de recursos por parte del Instructor:
+### 5.3.1 Secuencia: Catalogación Curricular y Recursos (CU-01 y CU-05)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor I as Instructor
     participant C as RecursoController
-    participant Y as YOLOEngine
-    participant V as VectorDBService
+    participant V as VectorDBService (Gemini Embedding 2)
+    participant Y as YOLOEngine (YOLO26x-Pose)
     participant BD as BaseDatosRelacional
 
-    alt Ruta 1: Manual Técnico PDF (Pipeline RAG)
-        I->>C: UploadPDF(idTecnica, archivoPDF)
-        C->>V: procesarEmbeddingsTexto(archivoPDF)
-        Note over V: Segmentación e indexación vectorial con Gemini Embedding 2
-        V-->>C: vectoresSemanticosIndexados
-        C->>BD: persistirRecursoDidactico(idTecnica, "PDF", rutaPDF)
-        C-->>I: notificarIndexacionExitosa()
-    else Ruta 2: Enlace YouTube (Sin IA ni VectorDB)
-        I->>C: SaveYouTubeURL(idTecnica, urlYouTube)
-        Note over C,BD: Almacenamiento relacional directo para reproducción PWA (sin cómputo de IA)
-        C->>BD: persistirRecursoDidactico(idTecnica, "YOUTUBE", urlYouTube)
-        C-->>I: notificarEnlaceRegistrado()
-    else Ruta 3: Video Patrón de Referencia (Visión 3D)
-        I->>C: UploadReferenceVideo(idInstructor, datosTecnica, videoArchivo)
-        C->>Y: extraerKeypoints3D(videoArchivo)
-        Note over Y: YOLO26x-Pose estima coordenadas (X, Y, Z)
+    alt Ruta PDF (Manual RAG)
+        I->>C: UploadPDF(idTecnica, pdfFile)
+        C->>V: procesarEmbeddings(pdfFile)
+        V-->>C: vectoresOK
+        C->>BD: INSERT RecursoDidactico("PDF")
+    else Ruta YouTube (Enlace PWA)
+        I->>C: SaveYouTubeURL(idTecnica, url)
+        C->>BD: INSERT RecursoDidactico("YOUTUBE")
+    else Ruta Video Patrón (3D)
+        I->>C: UploadPattern(idTecnica, videoFile)
+        C->>Y: extraerKeypoints3D(videoFile)
         Y-->>C: matrizEsqueletica3D
-        C->>BD: persistirTecnicaPatron(datosTecnica, matrizEsqueletica3D)
-        C-->>I: notificarTecnicaPatronPublicada()
+        C->>BD: INSERT TecnicaPatron(matriz3D)
     end
+    C-->>I: Confirmación
 ```
 _Figura 7._ Diagrama de secuencia del sistema para la gestión y catalogación de recursos del instructor (CU-01 y CU-05) según Larman (2004).
 
-### 5.3.2 Diagrama de Secuencia: Auditoría Postural Asincrónica (CU-02 y CU-03)
-
-Mapea la interacción paso a paso entre la captura de video, la selección manual del sujeto activo y la síntesis con IA:
+### 5.3.2 Secuencia: Auditoría Postural Asincrónica (CU-02 y CU-03)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor P as Practicante
     participant C as EvaluacionController
-    participant V as YOLOEngine
+    participant Y as YOLOEngine
     participant D as SincronizadorDTW
-    participant R as BaseVectorialGemini
+    participant V as VectorDBService
     participant G as ServicioGeminiFlash
 
-    P->>C: solicitarEvaluacion(idPracticante, idTecnica, videoPractica)
-    C->>V: extraerEsqueletos3D(videoPractica)
-    V-->>C: listaEsqueletosDetectados(coordenadas3D)
-    C-->>P: presentarEsqueletosDetectados(listaEsqueletos)
+    P->>C: solicitarEvaluacion(idPracticante, idTecnica, video)
+    C->>Y: extraerEsqueletos3D(video)
+    Y-->>C: listaEsqueletos
+    C-->>P: presentarEsqueletosUI()
     P->>C: confirmarSujetoActivo(idEsqueleto)
-    C->>D: alinearSecuencias(esqueletoSujeto, esqueletoPatron)
-    D-->>C: fotogramaMayorDesviacion, articulacionCritica
-    C->>R: consultarContextoSemantico(articulacionCritica, idTecnica)
-    Note over C,R: Búsqueda por similitud de cosenos sobre vectores de Gemini Embedding 2
-    R-->>C: fragmentoManualPedagogico
-    C->>G: solicitarRecomendacion(fragmentoManualPedagogico, articulacionCritica)
-    Note over C,G: Síntesis fundamentada con Gemini 3.8 Flash
-    G-->>C: textoRecomendacionPedagogica
-    C-->>P: presentarDiagnostico(fotogramaAnotado, textoRecomendacionPedagogica)
+    C->>D: alinearDTW(esqueletoSujeto, esqueletoPatron)
+    D-->>C: fotogramaFalla, articulacionCritica
+    C->>V: buscarContexto(articulacionCritica)
+    V-->>C: textoManualPDF
+    C->>G: generarConsejo(textoManual, articulacionCritica)
+    G-->>C: consejoPedagogico
+    C-->>P: presentarDiagnostico(imagenAnotada, consejoPedagogico)
 ```
 _Figura 8._ Diagrama de secuencia del sistema para la auditoría postural asincrónica (CU-02 y CU-03) según Larman (2004).
 
 ---
 
-## 5.4 Diseño de la Base de Datos Relacional (Metodología de Mannino)
-
-La transformación del modelo conceptual hacia la persistencia relacional sigue las reglas formales de **Mannino (2019)**.
+## 5.4 Diseño Relacional y Normalización (Metodología de Mannino)
 
 ### 5.4.1 Esquema Lógico Relacional
+Estructura en notación formal:
 
-Notación formal de esquemas relacionales (Clave Primaria $\underline{\text{PK}}$, Clave Foránea $\text{FK}^*$):
+* **`Usuarios`** ($\underline{\text{idUsuario}}$, nombreCompleto, correoElectronico, telefonoWhatsApp, fechaRegistro, tipoUsuario)
+* **`Instructores`** ($\underline{\text{idUsuario}}^*$, gradoCinturon, licenciaInstructor)
+  * *FK:* $\text{idUsuario} \rightarrow \text{Usuarios}(\text{idUsuario})$
+* **`Practicantes`** ($\underline{\text{idUsuario}}^*$, gradoCinturon, pesoKg, estadoMembresia)
+  * *FK:* $\text{idUsuario} \rightarrow \text{Usuarios}(\text{idUsuario})$
+* **`TecnicasPatron`** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, matrizEsqueleticaURL, fechaPublicacion)
+  * *FK:* $\text{idInstructor} \rightarrow \text{Instructores}(\text{idUsuario})$
+* **`RecursosDidacticos`** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga)
+  * *FK:* $\text{idTecnicaPatron} \rightarrow \text{TecnicasPatron}(\text{idTecnicaPatron})$
+* **`VideosPractica`** ($\underline{\text{idVideoPractica}}$, $\text{idPracticante}^*$, $\text{idTecnicaPatron}^*$, duracionSegundos, archivoURL, fechaGrabacion)
+  * *FK:* $\text{idPracticante} \rightarrow \text{Practicantes}(\text{idUsuario})$, $\text{idTecnicaPatron} \rightarrow \text{TecnicasPatron}(\text{idTecnicaPatron})$
+* **`EvaluacionesPosturales`** ($\underline{\text{idEvaluacion}}$, $\text{idVideoPractica}^*$, porcentajeCoincidencia, articulacionFalla, tiempoProcesamientoSeg, estadoDiagnostico)
+  * *FK:* $\text{idVideoPractica} \rightarrow \text{VideosPractica}(\text{idVideoPractica})$ `[UNIQUE]`
 
-* **Usuarios** ($\underline{\text{idUsuario}}$, nombreCompleto, correoElectronico, telefonoWhatsApp, fechaRegistro, tipoUsuario).
-* **Instructores** ($\underline{\text{idUsuario}}^*$, gradoCinturon, licenciaInstructor).
-  * *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
-* **Practicantes** ($\underline{\text{idUsuario}}^*$, gradoCinturon, pesoKg, estadoMembresia).
-  * *Integridad referencial:* $\text{idUsuario}^*$ referencia a $\text{Usuarios}(\text{idUsuario})$.
-* **TecnicasPatron** ($\underline{\text{idTecnicaPatron}}$, $\text{idInstructor}^*$, nombreTecnica, categoriaTecnica, posicionOrigen, videoReferenciaURL, matrizEsqueleticaURL, fechaPublicacion).
-  * *Integridad referencial:* $\text{idInstructor}^*$ referencia a $\text{Instructores}(\text{idUsuario})$.
-* **RecursosDidacticos** ($\underline{\text{idRecurso}}$, $\text{idTecnicaPatron}^*$, titulo, tipoRecurso, localizadorRecurso, fechaCarga).
-  * *Integridad referencial:* $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$.
-  * *Diseño 3FN:* Se omite la clave externa redundante $\text{idInstructor}$ en esta tabla, resolviendo la relación con el docente mediante navegación relacional ($\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$), erradicando la dependencia transitiva y garantizando la 3FN.
-* **VideosPractica** ($\underline{\text{idVideoPractica}}$, $\text{idPracticante}^*$, $\text{idTecnicaPatron}^*$, duracionSegundos, archivoURL, fechaGrabacion).
-  * *Integridad referencial:* $\text{idPracticante}^*$ referencia a $\text{Practicantes}(\text{idUsuario})$; $\text{idTecnicaPatron}^*$ referencia a $\text{TecnicasPatron}(\text{idTecnicaPatron})$.
-* **EvaluacionesPosturales** ($\underline{\text{idEvaluacion}}$, $\text{idVideoPractica}^*$, porcentajeCoincidencia, articulacionFalla, tiempoProcesamientoSeg, estadoDiagnostico).
-  * *Integridad referencial:* $\text{idVideoPractica}^*$ referencia a $\text{VideosPractica}(\text{idVideoPractica})$ con restricción `UNIQUE` (relación 1:1).
-
-### 5.4.2 Diagrama UML de Clases de Datos Lógicos
+### 5.4.2 Diagrama UML de Datos Lógicos
 
 ```mermaid
 classDiagram
     direction TB
-
     class Usuario {
         +int idUsuario <<PK>>
         +string nombreCompleto
         +string correoElectronico
-        +string telefonoWhatsApp
-        +date fechaRegistro
         +string tipoUsuario
     }
-
-    class Instructor {
-        +int idUsuario <<PK, FK>>
-        +string gradoCinturon
-        +string licenciaInstructor
-    }
-
-    class Practicante {
-        +int idUsuario <<PK, FK>>
-        +string gradoCinturon
-        +decimal pesoKg
-        +string estadoMembresia
-    }
-
+    class Instructor { +int idUsuario <<PK,FK>> }
+    class Practicante { +int idUsuario <<PK,FK>> }
     class TecnicaPatron {
         +int idTecnicaPatron <<PK>>
         +int idInstructor <<FK>>
-        +string nombreTecnica
-        +string categoriaTecnica
-        +string posicionOrigen
-        +string videoReferenciaURL
         +string matrizEsqueleticaURL
-        +date fechaPublicacion
     }
-
     class RecursoDidactico {
         +int idRecurso <<PK>>
         +int idTecnicaPatron <<FK>>
-        +string titulo
         +string tipoRecurso
-        +string localizadorRecurso
-        +date fechaCarga
     }
-
     class VideoPractica {
         +int idVideoPractica <<PK>>
         +int idPracticante <<FK>>
         +int idTecnicaPatron <<FK>>
-        +decimal duracionSegundos
-        +string archivoURL
-        +date fechaGrabacion
     }
-
     class EvaluacionPostural {
         +int idEvaluacion <<PK>>
-        +int idVideoPractica <<FK, Unique>>
+        +int idVideoPractica <<FK,Unique>>
         +decimal porcentajeCoincidencia
         +string articulacionFalla
-        +decimal tiempoProcesamientoSeg
-        +string estadoDiagnostico
     }
 
-    Usuario <|-- Instructor : especializa
-    Usuario <|-- Practicante : especializa
-    Instructor "1" -- "0..*" TecnicaPatron : homologa
-    TecnicaPatron "1" -- "0..*" RecursoDidactico : complementa-con
-    Practicante "1" -- "0..*" VideoPractica : remite
-    TecnicaPatron "1" -- "0..*" VideoPractica : modela
-    VideoPractica "1" -- "1" EvaluacionPostural : genera
+    Usuario <|-- Instructor
+    Usuario <|-- Practicante
+    Instructor "1" -- "0..*" TecnicaPatron
+    TecnicaPatron "1" -- "0..*" RecursoDidactico
+    Practicante "1" -- "0..*" VideoPractica
+    TecnicaPatron "1" -- "0..*" VideoPractica
+    VideoPractica "1" -- "1" EvaluacionPostural
 ```
 _Figura 9._ Diagrama UML del modelo lógico de datos relacionales y clases de diseño según Mannino (2019).
 
-### 5.4.3 Auditoría y Verificación de Normalización (1FN, 2FN, 3FN)
+### 5.4.3 Auditoría Sintética de Normalización (1FN, 2FN, 3FN)
 
-Siguiendo a Mannino (2019), se evalúan las dependencias funcionales (DF) para confirmar la ausencia de anomalías de modificación:
+Conforme a Mannino (2019):
 
-1. **Primera Forma Normal (1FN):** Todos los atributos contienen valores atómicos e indivisibles. Las matrices tridimensionales pesadas ($X, Y, Z$) extraídas por YOLO26x-Pose se procesan en memoria volátil de GPU y se persisten mediante referencias de archivos binarios/URL (`matrizEsqueleticaURL`), manteniendo las celdas de las tablas puras.
-2. **Segunda Forma Normal (2FN):** Todas las relaciones están en 1FN y sus claves primarias son simples (de un solo atributo). Al no existir claves primarias compuestas en las entidades principales (`idEvaluacion`, `idRecurso`, `idVideoPractica`), se elimina por definición cualquier posibilidad de dependencia funcional parcial.
-3. **Tercera Forma Normal (3FN):** Se verifica formalmente que ningún atributo no clave dependa de forma transitiva de la clave primaria:
-   * En `EvaluacionesPosturales`:
-     $$\text{idEvaluacion} \rightarrow \text{idVideoPractica}, \text{porcentajeCoincidencia}, \text{articulacionFalla}, \text{tiempoProcesamientoSeg}, \text{estadoDiagnostico}$$
-     Cada atributo no clave depende **única y directamente** de la clave primaria.
-   * En `RecursosDidacticos`:
-     $$\text{idRecurso} \rightarrow \text{idTecnicaPatron}, \text{titulo}, \text{tipoRecurso}, \text{localizadorRecurso}, \text{fechaCarga}$$
-     La supresión del atributo redundante `idInstructor` elimina la cadena transitiva $\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$, garantizando que la relación cumpla estrictamente con la **3FN / BCNF**.
+1. **Primera Forma Normal (1FN):** Atributos atómicos. Las matrices de keypoints 3D ($X, Y, Z$) se almacenan fuera de la base relacional como binarios/archivos referenciados por URL (`matrizEsqueleticaURL`), previniendo campos multivaluados.
+2. **Segunda Forma Normal (2FN):** Todas las claves primarias son atómicas (un solo atributo). Se erradica por definición cualquier dependencia parcial de claves compuestas.
+3. **Tercera Forma Normal (3FN):** Ausencia de dependencias transitivas.
+   * *Prueba en `RecursosDidacticos`:* Se omitió la relación directa con `idInstructor`. La dependencia transitiva $\text{idRecurso} \rightarrow \text{idTecnicaPatron} \rightarrow \text{idInstructor}$ se resuelve por navegación relacional, garantizando 3FN / BCNF.
+   * *Prueba en `EvaluacionesPosturales`:* Dependencia funcional directa:
+     $$\text{idEvaluacion} \rightarrow \{\text{idVideoPractica}, \text{porcentajeCoincidencia}, \text{articulacionFalla}, \text{tiempoProcesamientoSeg}\}$$
+     Todos los atributos dependen de forma única, directa y completa de la clave primaria.

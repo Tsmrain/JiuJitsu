@@ -1,9 +1,3 @@
-A partir del desglose oficial y las pautas institucionales de la Universidad Privada de Santa Cruz de la Sierra (UPSA), se ha estructurado de forma íntegra el borrador maestro de la tesis. Se ha unificado formalmente la terminología del proyecto: el análisis es tridimensional espacial en $\mathbb{R}^3$ mediante Ultralytics YOLO26x-Pose, las comparaciones biomecánicas se procesan de forma asíncrona mediante Dynamic Time Warping (DTW) y la base de conocimiento pedagógico (libros en PDF) se gestiona utilizando Vector Embeddings provistos por OpenAI almacenados en una base de datos vectorial para dar contexto a los servicios de Google Gemini. El marco de trabajo de ingeniería de software sigue de manera estricta el Proceso Unificado (Larman, 2004) y los fundamentos de diseño de bases de datos (Mannino, 2019).
-
-El documento se expone de forma directa y exhaustiva, redactado con un vocabulario de ingeniería formal, claro, accesible y libre de cualquier elemento informal.
-
----
-
 # Capítulo I: Definición del Proyecto de Investigación
 
 ## 1.1 Definición del Problema

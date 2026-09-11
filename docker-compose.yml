@@ -21,6 +21,8 @@ services:
       DATABASE_URL: "postgresql://postgres:postgrespassword@db:5432/bjj_biomechanics"
       GEMINI_API_KEY: "${GEMINI_API_KEY}"
       COLAB_TUNNEL_URL: "${COLAB_TUNNEL_URL}"
+    volumes:
+      - .:/app
     depends_on:
       - db
 

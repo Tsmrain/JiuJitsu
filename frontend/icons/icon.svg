@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="50%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="#00F0FF" stroke-opacity="0.25" stroke-width="4"/>
+
+  <!-- Biomechanical Grid Circles -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#3B82F6" stroke-opacity="0.15" stroke-width="2" stroke-dasharray="8 8"/>
+  <circle cx="256" cy="256" r="130" fill="none" stroke="#00F0FF" stroke-opacity="0.1" stroke-width="1.5"/>
+
+  <!-- Skeleton / Joint Bones -->
+  <g stroke="url(#cyanGrad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <!-- Spine & Torso -->
+    <line x1="256" y1="170" x2="256" y2="280"/>
+    <line x1="190" y1="200" x2="322" y2="200"/>
+    <line x1="200" y1="280" x2="312" y2="280"/>
+    <!-- Left Arm -->
+    <line x1="190" y1="200" x2="130" y2="240"/>
+    <line x1="130" y1="240" x2="160" y2="300"/>
+    <!-- Right Arm (Armbar Lever Angle) -->
+    <line x1="322" y1="200" x2="380" y2="170"/>
+    <line x1="380" y1="170" x2="420" y2="120"/>
+    <!-- Legs -->
+    <line x1="200" y1="280" x2="160" y2="380"/>
+    <line x1="160" y1="380" x2="120" y2="430"/>
+    <line x1="312" y1="280" x2="340" y2="370"/>
+    <line x1="340" y1="370" x2="400" y2="410"/>
+  </g>
+
+  <!-- Glowing Joint Nodes (Keypoints 3D) -->
+  <g fill="#00F0FF" filter="url(#glow)">
+    <!-- Head -->
+    <circle cx="256" cy="130" r="28" fill="url(#cyanGrad)"/>
+    <!-- Shoulders -->
+    <circle cx="190" cy="200" r="10"/>
+    <circle cx="322" cy="200" r="10"/>
+    <!-- Elbows -->
+    <circle cx="130" cy="240" r="9"/>
+    <circle cx="380" cy="170" r="12" fill="#F59E0B"/><!-- Highlighted Joint -->
+    <!-- Wrists -->
+    <circle cx="160" cy="300" r="8"/>
+    <circle cx="420" cy="120" r="8"/>
+    <!-- Hips -->
+    <circle cx="200" cy="280" r="9"/>
+    <circle cx="312" cy="280" r="9"/>
+    <!-- Knees -->
+    <circle cx="160" cy="380" r="9"/>
+    <circle cx="340" cy="370" r="9"/>
+    <!-- Ankles -->
+    <circle cx="120" cy="430" r="8"/>
+    <circle cx="400" cy="410" r="8"/>
+  </g>
+
+  <!-- BJJ Text Emblem -->
+  <text x="256" y="475" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" letter-spacing="6">BJJ BIO</text>
+</svg>

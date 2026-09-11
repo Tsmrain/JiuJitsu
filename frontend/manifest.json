@@ -1,0 +1,18 @@
+{
+  "name": "BJJ Biomechanics",
+  "short_name": "BJJ Bio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "description": "Auditoría biomecánica 3D y retroalimentación pedagógica para practicantes de Jiu-Jitsu Brasileño.",
+  "icons": [
+    {
+      "src": "/static/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

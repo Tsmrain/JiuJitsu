@@ -1560,3 +1560,104 @@ python demo_e2e.py
 El script ejecutará:
 1. **Prueba directa a Colab (`/inferir`)**: Enviará el video de prueba [`tests/fixtures/test_video.mp4`](tests/fixtures/test_video.mp4) a la GPU remota y verificará la extracción de los 17 puntos 3D fusionados.
 2. **Prueba a la API Local (`/evaluar-asincrono` y `/progreso`)**: Despachará la evaluación biomecánica real, ejecutará la comparación angular frente al patrón y guardará automáticamente el resultado en PostgreSQL para consulta del alumno.
+
+---
+
+## Iteración 6: Rediseño de Interfaz de Usuario - Simplificación Total
+
+### Filosofía y Experiencia de Usuario en el Tatami
+En la **Iteración 6**, la aplicación web móvil (PWA) fue rediseñada integralmente para eliminar cualquier fricción cognitiva o tecnicismo innecesario. Tanto instructores como alumnos en el gimnasio disponen de una interfaz limpia, sobria e intuitiva adaptada a su rol específico, sin configuraciones complejas, sin emojis y sin terminología técnica abstracta.
+
+### Diagrama de Flujo del Usuario Final
+
+```mermaid
+graph TD
+    A[Inicio: Selección de Rol] -->|Soy Instructor| B[Instructor: Solo 2 Campos]
+    B --> B1[Escribe nombre de la técnica]
+    B1 --> B2[Sube video de referencia]
+    B2 --> B3[Guardar Técnica]
+    
+    A -->|Soy Alumno| C[Alumno: Práctica Directa]
+    C --> C1[Selecciona Instructor]
+    C1 --> C2[Selecciona Técnica del Instructor]
+    C2 --> C3[Comenzar Práctica]
+    C3 --> C4[Sube o graba video del movimiento]
+    C4 --> C5[Analizar Video]
+    C5 --> D[Pantalla de Resultado Visual]
+    D --> D1[Fotograma con círculos rojos en articulaciones desviadas]
+    D --> D2[Consejo pedagógico claro y directo]
+    D --> D3[Botón: Practicar de nuevo]
+```
+
+### Guía de Uso para Usuarios Finales
+
+#### 1. Para el Instructor
+1. **Acceso:** En la pantalla inicial, pulsa el botón **Instructor**.
+2. **Formulario minimalista:** Solo debes completar 2 campos:
+   - **Nombre de la técnica:** Escribe el nombre del movimiento (ejemplo: *Armbar desde guardia*).
+   - **Video de referencia:** Selecciona el archivo de video de tu demostración correcta.
+3. **Guardar:** Pulsa el botón **Guardar Técnica**. El sistema procesa el molde automáticamente y lo deja disponible para todos tus alumnos.
+
+#### 2. Para el Alumno
+1. **Acceso:** En la pantalla inicial, pulsa el botón **Alumno**.
+2. **Seleccionar práctica:**
+   - Selecciona a tu **Instructor** en el desplegable.
+   - Selecciona la **Técnica** que deseas entrenar hoy.
+   - Pulsa **Comenzar Práctica**.
+3. **Grabar ejecución:**
+   - Selecciona o graba con la cámara del celular tu intento del movimiento en el tatami.
+   - Pulsa **Analizar Video**.
+4. **Visualizar corrección:**
+   - El sistema muestra el fotograma clave de tu movimiento.
+   - Las articulaciones que requieren ajuste aparecen marcadas con **círculos rojos de alto contraste**.
+   - Debajo se presenta un consejo pedagógico directo y sin jerga técnica para corregir la postura en el siguiente intento.
+   - Pulsa **Practicar de nuevo** para volver a intentarlo.
+
+### Resumen de Pruebas Automatizadas (50/50 Passing)
+```bash
+$ pytest tests/ -v
+============================== 50 passed in 0.89s ==============================
+```
+- Verificación estricta de ausencia de emojis y términos técnicos en HTML visible (`tests/test_ui_simplicity.py`).
+- Verificación de límites de formulario de instructor a 2 campos y selectores simples de alumno.
+- Verificación de compatibilidad con endpoints REST e inferencia en servidor.
+- Verificación de persistencia física en `uploads/` y extracción de fotograma real anotado.
+
+---
+
+## Iteración 7: Flujo Real de Datos, Gestión de Instructores y Visualización de Fotograma Real
+
+### Explicación Técnica del Flujo de Datos (Para Defensa de Grado)
+A continuación se detalla la arquitectura de comunicación extremo a extremo implementada para garantizar que el sistema procese videos reales sin depender de esqueletos genéricos ni datos simulados:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Alumno as PWA (Dispositivo Móvil)
+    participant LocalAPI as Backend Local (FastAPI :8000)
+    participant Disco as Sistema de Archivos (/uploads)
+    participant Colab as GPU Remota (Colab YOLO26 + OpenCV)
+    participant Gemini as Google AI Studio (Gemini 3.8 Flash)
+
+    Alumno->>LocalAPI: 1. POST /api/v1/evaluaciones/evaluar-real (multipart/form-data)
+    LocalAPI->>Disco: 2. Guarda archivo binario en uploads/{filename}
+    LocalAPI->>Colab: 3. POST {COLAB_TUNNEL_URL}/inferir con archivo físico
+    Colab->>Colab: Procesa con YOLO26x-Pose en GPU
+    Colab->>Colab: OpenCV captura frame clave y dibuja keypoints detectados
+    Colab-->>LocalAPI: 4. JSON: keypoints_3d, frame_base64 (data:image/jpeg;base64)
+    LocalAPI->>LocalAPI: Calcula desviaciones articulares en R^3 (Dominio Puro)
+    LocalAPI->>Gemini: Solicita consejo pedagógico contextualizado
+    Gemini-->>LocalAPI: Retorna instrucción pedagógica clara
+    LocalAPI-->>Alumno: 5. JSON: frame_alumno (base64 real), desviaciones, consejo, video_patron_url
+    Alumno->>Alumno: Renderiza fotograma real con círculos rojos sobre canvas y video del profesor
+```
+
+#### Flujo Detallado Paso a Paso:
+1. **PWA → Backend Local:** La PWA captura o selecciona el video del practicante y lo envía como `multipart/form-data` al endpoint `http://localhost:8000/api/v1/evaluaciones/evaluar-real` (o `/evaluar`).
+2. **Backend Local → Disco:** FastAPI recibe el stream binario y lo almacena físicamente en el directorio local `/uploads` (sin eliminarlo prematuramente para auditoría y persistencia).
+3. **Backend Local → Colab:** A través de `ColabYOLOAdapter`, FastAPI despacha una petición HTTP POST con el archivo físico al túnel seguro de Ngrok que expone el servidor FastAPI en Google Colab (`{COLAB_TUNNEL_URL}/inferir`).
+4. **Colab → YOLO26 & OpenCV:** En el entorno GPU de Google Colab:
+   - YOLO26x-Pose detecta la pose humana y calcula las coordenadas esqueléticas tridimensionales (`keypoints_3d`).
+   - OpenCV (`cv2.VideoCapture`) captura el fotograma clave exacto donde ocurre la detección, superpone los puntos detectados (`cv2.circle`) y codifica la imagen a JPEG Base64 (`frame_base64`).
+   - Colab responde con un JSON conteniendo `keypoints_3d` y `frame_base64`.
+5. **Colab → Backend Local → PWA:** El backend local recibe el JSON de Colab, pasa las coordenadas al motor biomecánico de dominio puro para cuantificar ángulos articulares contra la técnica patrón, solicita la retroalimentación pedagógica a Gemini y entrega a la PWA el objeto final que incluye `frame_alumno`, `desviaciones`, `consejo` y `video_patron_url`. La PWA muestra inmediatamente la imagen real del alumno con los indicadores de corrección sin requerir ningún gráfico o muñeco genérico.

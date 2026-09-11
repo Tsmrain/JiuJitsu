@@ -15,7 +15,8 @@ class TestColabYOLOAdapter:
                 "6": {"x": 150.0, "y": 200.0, "z": 2.0},
                 "8": {"x": 180.0, "y": 230.0, "z": 2.3},
                 "10": {"x": 210.0, "y": 260.0, "z": 2.6}
-            }
+            },
+            "frame_base64": "data:image/jpeg;base64,mockbase64encodedframe"
         }
         mock_post.return_value = mock_response
 
@@ -28,6 +29,7 @@ class TestColabYOLOAdapter:
         assert punto_codo.x == 180.0
         assert punto_codo.y == 230.0
         assert punto_codo.z == 2.3
+        assert adapter.ultimo_frame_base64 == "data:image/jpeg;base64,mockbase64encodedframe"
 
         # Verificar que la llamada HTTP se hizo al endpoint /inferir con multipart file
         mock_post.assert_called_once()

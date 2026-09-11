@@ -1,0 +1,28 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: bjj_postgres
+    environment:
+      POSTGRES_DB: bjj_biomechanics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+
+  api:
+    build: .
+    container_name: bjj_api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgrespassword@db:5432/bjj_biomechanics"
+      GEMINI_API_KEY: "${GEMINI_API_KEY}"
+      COLAB_TUNNEL_URL: "${COLAB_TUNNEL_URL}"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

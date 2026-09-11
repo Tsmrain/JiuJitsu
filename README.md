@@ -1206,3 +1206,357 @@ class MatrizEsqueleticaProxy:
 ---
 
 > **Nota final del capítulo:** Todo el diseño presentado en este capítulo sigue la filosofía de Larman de que los modelos y diagramas son **artefactos opcionales** cuyo valor reside en la comunicación y el razonamiento, no en la documentación por sí misma. La habilidad fundamental sigue siendo la **asignación metódica de responsabilidades** mediante los patrones GRASP y GoF, aplicada de forma iterativa y adaptativa en cada sprint del proyecto.
+
+---
+
+## Iteración 1: Dominio Puro y TDD
+
+### Filosofía de Diseño
+Se ha implementado el núcleo del dominio siguiendo los principios de **Craig Larman**:
+- **TDD**: Las pruebas (`tests/test_domain.py`) guían la implementación bajo el ciclo Red-Green-Refactor.
+- **GRASP**: 
+  - *Experto en Información*: `Punto3D` maneja álgebra vectorial euclidiana; `MatrizEsqueletica` conoce la topología corporal e invoca la trigonometría angular espacial.
+  - *Fabricación Pura*: `CalculadoraBiomecanica` orquesta la evaluación sin representar un objeto físico tangible del tatami, preservando alta cohesión.
+  - *Alta Cohesión/Bajo Acoplamiento*: El dominio es 100% puro e independiente de frameworks web (FastAPI), bases de datos (SQLAlchemy) o bibliotecas de validación externa (Pydantic).
+
+### Modelo Matemático
+El cálculo angular en $\mathbb{R}^3$ se realiza mediante:
+$$ \theta = \arccos\left( \frac{\vec{u} \cdot \vec{v}}{\|\vec{u}\| \|\vec{v}\|} \right) $$
+Donde $\vec{u} = A - B$ y $\vec{v} = C - B$, siendo $B$ la articulación central. Se aplica clamping numérico estricto en el intervalo $[-1.0, 1.0]$ para asegurar estabilidad numérica ante errores de precisión de punto flotante.
+
+### Rebanada Vertical (Vertical Slice): Caso de Uso CU-02 (Cargar Video y Evaluar)
+Siguiendo los principios de **Craig Larman**, se completó una rebanada vertical ejecutable e integrada de extremo a extremo para el caso de uso **CU-02**, aplicando los siguientes patrones GRASP:
+- **Controlador (Session Facade)**: `EvaluacionController` centraliza y orquesta el flujo del caso de uso desacoplando la capa de presentación de la lógica del dominio.
+- **Variaciones Protegidas**: Contratos abstractos en `src/domain/interfaces.py` (`IInferenceEngine`, `IGenerationService`, `ITecnicaRepository`) protegen el núcleo del sistema ante cambios o reemplazos en la tecnología de inferencia o LLM.
+- **Adaptador e Indirección**: Clases simuladas en `src/infrastructure/mocks.py` (`MockYOLOEngine`, `MockGeminiService`, `MockTecnicaRepository`) permiten la ejecución y validación de pruebas automatizadas continuas sin latencia ni costos de API externos.
+
+### Evidencia de Pruebas
+```bash
+$ pytest tests/ -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- /home/santiago/Desktop/JiuJitsu/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/santiago/Desktop/JiuJitsu
+configfile: pytest.ini
+collecting ... collected 17 items
+
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_ejecucion_correcta_sin_desviaciones PASSED [  5%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_con_desviacion_biomecanica PASSED [ 11%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_tecnica_no_encontrada PASSED [ 17%]
+tests/test_domain.py::TestPunto3D::test_resta_vectorial PASSED           [ 23%]
+tests/test_domain.py::TestPunto3D::test_producto_punto PASSED            [ 29%]
+tests/test_domain.py::TestPunto3D::test_magnitud PASSED                  [ 35%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_90_grados PASSED [ 41%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_articular_codo PASSED [ 47%]
+tests/test_domain.py::TestMatrizEsqueletica::test_clamping_precision_flotante PASSED [ 52%]
+tests/test_domain.py::TestMatrizEsqueletica::test_segmento_longitud_cero PASSED [ 58%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_180_grados PASSED [ 64%]
+tests/test_domain.py::TestMatrizEsqueletica::test_invarianza_traslacion_y_escala PASSED [ 70%]
+tests/test_domain.py::TestMatrizEsqueletica::test_articulacion_no_encontrada PASSED [ 76%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion PASSED [ 82%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion_articular PASSED [ 88%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_con_umbral PASSED [ 94%]
+tests/test_domain.py::TestDominioPuroAislamiento::test_sin_dependencias_de_frameworks PASSED [100%]
+
+============================== 17 passed in 0.02s ==============================
+```
+
+---
+
+## Iteración 2: Infraestructura Real y Exposición REST
+
+### Filosofía de Diseño e Integración
+En la **Iteración 2** (Fase de Elaboración del Proceso Unificado), se completó la transición de los adaptadores simulados (*mocks*) hacia implementaciones de producción preparadas para conectividad externa, junto con la exposición de una API REST moderna:
+- **Inyección de Dependencias Desacoplada (`Depends`)**: FastAPI inyecta el controlador `EvaluacionController` mediante una función de fábrica de dependencias, permitiendo sobrescribir adaptadores (`app.dependency_overrides`) durante las pruebas de integración sin requerir conexiones activas a PostgreSQL o APIs externas.
+- **Persistencia en Forma Normal de Boyce-Codd (BCNF) con `pgvector`**: Modelado relacional riguroso bajo los principios de Mannino, estructurando esquemas DDL con extensiones vectoriales e índices HNSW.
+- **Aislamiento Multicapa**: El dominio puro (`src/domain/models.py`) se preserva 100% libre de dependencias de infraestructura, mientras que la capa `src/infrastructure/` implementa los contratos abstractos de `src/domain/interfaces.py`.
+
+### Esquema de Base de Datos (`database/01_init.sql`)
+Se diseñó el esquema relacional con extensión `vector` e índice HNSW para búsqueda semántica:
+- **`tecnicas_patron`**: Almacena las técnicas de referencia del instructor con clave primaria `id_tecnica`, metadatos descriptivos y la matriz postural tridimensional serializada en formato `JSONB`.
+- **`recursos_didacticos`**: Almacena manuales y textos pedagógicos indexados con vectores de dimensión 768 (`vector(768)`) para el modelo `text-embedding-004` de Google Gemini.
+- **`idx_recursos_embedding_hnsw`**: Índice de mundo pequeño navegable jerárquico (*Hierarchical Navigable Small World - HNSW*) operando con la métrica de distancia coseno (`vector_cosine_ops`).
+
+### Adaptadores Reales de Infraestructura
+- **`PostgresTecnicaRepository` (`src/infrastructure/persistence.py`)**: Implementa `ITecnicaRepository` mediante consultas parametrizadas con `psycopg2`, deserializando las coordenadas JSONB en instancias de `Punto3D` y `MatrizEsqueletica`.
+- **`GeminiServiceAdapter` (`src/infrastructure/gemini_adapter.py`)**: Implementa `IGenerationService` e `IEmbeddingService` a través del SDK oficial `google-genai`, generando retroalimentación biomecánica concisa (`gemini-2.0-flash`) y vectores de incrustación (`text-embedding-004`).
+- **`ColabYOLOAdapter` (`src/infrastructure/colab_adapter.py`)**: Implementa `IInferenceEngine` gestionando la transferencia multipart HTTP vía `requests` hacia el backend YOLO26x en Colab o entornos Cloud.
+- **`API REST FastAPI` (`src/presentation/api.py`)**: Expone el endpoint `POST /api/v1/evaluaciones/evaluar` validado mediante DTOs de Pydantic (`SolicitudEvaluacionDTO`, `EvaluacionRespuestaDTO`).
+
+### Evidencia de Pruebas de Integración y Dominio
+```bash
+$ pytest tests/ -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- /home/santiago/Desktop/JiuJitsu/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/santiago/Desktop/JiuJitsu
+configfile: pytest.ini
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 19 items
+
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_ejecucion_correcta_sin_desviaciones PASSED [  5%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_con_desviacion_biomecanica PASSED [ 10%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_tecnica_no_encontrada PASSED [ 15%]
+tests/test_domain.py::TestPunto3D::test_resta_vectorial PASSED           [ 21%]
+tests/test_domain.py::TestPunto3D::test_producto_punto PASSED            [ 26%]
+tests/test_domain.py::TestPunto3D::test_magnitud PASSED                  [ 31%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_90_grados PASSED [ 36%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_articular_codo PASSED [ 42%]
+tests/test_domain.py::TestMatrizEsqueletica::test_clamping_precision_flotante PASSED [ 47%]
+tests/test_domain.py::TestMatrizEsqueletica::test_segmento_longitud_cero PASSED [ 52%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_180_grados PASSED [ 57%]
+tests/test_domain.py::TestMatrizEsqueletica::test_invarianza_traslacion_y_escala PASSED [ 63%]
+tests/test_domain.py::TestMatrizEsqueletica::test_articulacion_no_encontrada PASSED [ 68%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion PASSED [ 73%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion_articular PASSED [ 78%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_con_umbral PASSED [ 84%]
+tests/test_domain.py::TestDominioPuroAislamiento::test_sin_dependencias_de_frameworks PASSED [ 89%]
+tests/test_integration.py::test_endpoint_evaluar_retorna_200_y_estructura_valida PASSED [ 94%]
+tests/test_integration.py::test_endpoint_evaluar_tecnica_no_encontrada_retorna_404 PASSED [100%]
+
+============================== 19 passed in 0.30s ==============================
+```
+
+---
+
+## Iteración 3: Ingesta RAG, Registro de Patrones y Asincronía
+
+### Filosofía y Mitigación de Riesgos Técnicos
+Siguiendo las pautas de **Craig Larman** para la fase de elaboración, la **Iteración 3** expande la línea base arquitectónica atacando los riesgos críticos de latencia y completando los casos de uso de soporte fundamentales:
+1. **Mitigación del Riesgo de Timeout por Procesamiento Pesado de Video:** El análisis de pose y alineamiento espaciotemporal en secuencias de video es computacionalmente intensivo. La API expone procesamiento desacoplado mediante tareas en segundo plano (`BackgroundTasks`), retornando inmediatamente un `tarea_id` y permitiendo sondeo asíncrono no bloqueante del estado (`PENDIENTE`, `PROCESANDO`, `COMPLETADO`, `ERROR`).
+2. **Ingesta y Recuperación Aumentada por Generación (RAG):** El servicio `IngestorRAG` fragmenta manuales técnicos de Jiu-Jitsu en chunks parametrizables, genera vectores densos de dimensión 768 mediante `GeminiServiceAdapter` y los persiste en la tabla `recursos_didacticos` con casting explícito `%s::vector` en `pgvector`.
+3. **Caso de Uso CU-01: Registrar Técnica Patrón:** El controlador de aplicación `RegistrarTecnicaController` coordina la extracción del esqueleto tridimensional a partir del video del instructor mediante `IInferenceEngine`, serializa los keypoints anatómicos a `JSONB` y ejecuta operaciones de `UPSERT` en PostgreSQL (`tecnicas_patron`).
+
+### Componentes Incorporados
+- **`IngestorRAG` (`src/infrastructure/rag_ingestion.py`)**: Servicio de ingesta semántica y fragmentación de literatura técnica de BJJ.
+- **`RegistrarTecnicaController` (`src/application/pattern_controller.py`)**: Controlador de aplicación para el caso de uso `CU-01`.
+- **`Backend Colab YOLO26 Real` (`colab_backend.ipynb`)**: Servidor de visión computacional en Google Colab con GPU (A100/T4), cumpliendo con **RD-01** y **RF-03**. Ejecuta en paralelo `YOLO26x-Pose` (17 keypoints 2D COCO) y `YOLO26x-depth` (matriz de profundidad métrica en metros reales), intersectando geométricamente $(X, Y)$ con el mapa denso de profundidad ($Z = \text{depth\_map}[y, x]$) y exponiendo el túnel seguro mediante `pyngrok`.
+- **Endpoints Asíncronos (`src/presentation/api.py`)**:
+  - `POST /api/v1/evaluaciones/evaluar-asincrono`: Inicia procesamiento en segundo plano y retorna `tarea_id`.
+  - `GET /api/v1/evaluaciones/tareas/{tarea_id}`: Consulta el estado de ejecución y resultado diagnóstico.
+- **Suite de Pruebas Automatizadas (`tests/test_iteracion3.py` y `tests/test_colab_adapter.py`)**: Pruebas de integración del ciclo de vida asíncrono, mocks de base de datos para `IngestorRAG` y `RegistrarTecnicaController`, y validación del payload 3D devuelto por Colab hacia `ColabYOLOAdapter`.
+
+### Evidencia de Pruebas
+```bash
+$ pytest tests/ -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- /home/santiago/Desktop/JiuJitsu/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/santiago/Desktop/JiuJitsu
+configfile: pytest.ini
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 24 items
+
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_ejecucion_correcta_sin_desviaciones PASSED [  4%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_con_desviacion_biomecanica PASSED [  8%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_tecnica_no_encontrada PASSED [ 12%]
+tests/test_colab_adapter.py::TestColabYOLOAdapter::test_inferir_esqueleto_3d_formato_colab PASSED [ 16%]
+tests/test_domain.py::TestPunto3D::test_resta_vectorial PASSED           [ 20%]
+tests/test_domain.py::TestPunto3D::test_producto_punto PASSED            [ 25%]
+tests/test_domain.py::TestPunto3D::test_magnitud PASSED                  [ 29%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_90_grados PASSED [ 33%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_articular_codo PASSED [ 37%]
+tests/test_domain.py::TestMatrizEsqueletica::test_clamping_precision_flotante PASSED [ 41%]
+tests/test_domain.py::TestMatrizEsqueletica::test_segmento_longitud_cero PASSED [ 45%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_180_grados PASSED [ 50%]
+tests/test_domain.py::TestMatrizEsqueletica::test_invarianza_traslacion_y_escala PASSED [ 54%]
+tests/test_domain.py::TestMatrizEsqueletica::test_articulacion_no_encontrada PASSED [ 58%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion PASSED [ 62%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion_articular PASSED [ 66%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_con_umbral PASSED [ 70%]
+tests/test_domain.py::TestDominioPuroAislamiento::test_sin_dependencias_de_frameworks PASSED [ 75%]
+tests/test_integration.py::test_endpoint_evaluar_retorna_200_y_estructura_valida PASSED [ 79%]
+tests/test_integration.py::test_endpoint_evaluar_tecnica_no_encontrada_retorna_404 PASSED [ 83%]
+tests/test_iteracion3.py::test_flujo_asincrono_crea_tarea_y_consulta_estado PASSED [ 87%]
+tests/test_iteracion3.py::test_consulta_tarea_inexistente_retorna_404 PASSED [ 91%]
+tests/test_iteracion3.py::TestRegistrarTecnicaController::test_registrar_patron_exitoso PASSED [ 95%]
+tests/test_iteracion3.py::TestIngestorRAG::test_indexar_documento_fragmentacion_y_guardado PASSED [100%]
+
+============================== 24 passed in 0.56s ==============================
+```
+
+---
+
+## Iteración 4: Histórico de Progreso (CU-04) y Fallback RAG
+
+### Filosofía y Diseño Arquitectónico
+En la **Iteración 4** (Fase de Construcción del Proceso Unificado), se implementaron dos componentes indispensables para la madurez del sistema:
+1. **Caso de Uso CU-04: Consultar Historial de Progreso**: Permite almacenar y auditar la curva de evolución biomecánica de cada alumno a lo largo del tiempo, posibilitando al instructor y practicante visualizar si los desajustes articulares disminuyen con las semanas de entrenamiento.
+2. **Resiliencia y Fallback RAG**: Para prevenir alucinaciones de la IA generativa derivadas de recuperaciones semánticas irrelevantes o distantes, se implementó una compuerta estricta de similitud basada en la distancia coseno: si el `score_similitud` devuelto por `pgvector` es menor a `0.65`, el contexto manual es descartado automáticamente y la IA recurre a su conocimiento biomecánico fundamental.
+
+### Esquema de Base de Datos para Histórico (`database/02_historico.sql`)
+Diseñado bajo la Forma Normal de Boyce-Codd (BCNF) según las directrices de Mannino (2019):
+- **Tabla `evaluaciones_alumno`**:
+  - `id_evaluacion`: Clave primaria UUID.
+  - `id_alumno`: Identificador del practicante auditado.
+  - `id_tecnica`: Clave foránea que referencia `tecnicas_patron(id_tecnica)`.
+  - `es_valido`: Booleano indicativo del cumplimiento de tolerancias.
+  - `total_desviaciones`: Conteo de articulaciones con discrepancias.
+  - `desviacion_promedio_grados`: Magnitud angular promedio de error en grados.
+  - `consejo_pedagogico`: Retroalimentación generativa provista por Gemini.
+  - `fecha_evaluacion`: Timestamp con zona horaria por defecto `CURRENT_TIMESTAMP`.
+- **Índice B-Tree `idx_evaluaciones_alumno_fecha`**: Optimiza las consultas cronológicas descendentes por alumno (`WHERE id_alumno = ... ORDER BY fecha_evaluacion DESC`).
+
+### Componentes de Software Desarrollados
+- **`PostgresHistorialRepository` (`src/infrastructure/history_repository.py`)**: Implementa la persistencia y consulta con `psycopg2`, garantizando el acceso posicional seguro por tupla (`r[0]` a `r[6]`) para evitar fallos de indexación por clave y serializando fechas a formato ISO-8601.
+- **Controlador con Fallback RAG (`src/application/controllers.py`)**: `EvaluacionController.evaluar_ejecucion` valida el umbral de similitud semántica antes de inyectar el contexto textual en `IGenerationService`.
+- **Endpoint REST `GET /api/v1/alumnos/{id_alumno}/progreso` (`src/presentation/api.py`)**: Expone la secuencia histórica de evaluaciones del practicante mediante FastAPI con inyección desacoplada de repositorio.
+- **Suite de Pruebas Automatizadas (`tests/test_iteracion4.py`)**: Valida la activación del fallback con similitud deficiente (< 0.65), la incorporación con similitud alta (>= 0.65), la persistencia y lectura en base de datos mockeada, y el contrato del endpoint HTTP.
+
+### Evidencia de Pruebas Automatizadas (100% Passing)
+```bash
+$ pytest tests/ -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- /home/santiago/Desktop/JiuJitsu/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/santiago/Desktop/JiuJitsu
+configfile: pytest.ini
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 31 items
+
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_ejecucion_correcta_sin_desviaciones PASSED [  3%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_con_desviacion_biomecanica PASSED [  6%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_tecnica_no_encontrada PASSED [  9%]
+tests/test_colab_adapter.py::TestColabYOLOAdapter::test_inferir_esqueleto_3d_formato_colab PASSED [ 12%]
+tests/test_domain.py::TestPunto3D::test_resta_vectorial PASSED           [ 16%]
+tests/test_domain.py::TestPunto3D::test_producto_punto PASSED            [ 19%]
+tests/test_domain.py::TestPunto3D::test_magnitud PASSED                  [ 22%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_90_grados PASSED [ 25%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_articular_codo PASSED [ 29%]
+tests/test_domain.py::TestMatrizEsqueletica::test_clamping_precision_flotante PASSED [ 32%]
+tests/test_domain.py::TestMatrizEsqueletica::test_segmento_longitud_cero PASSED [ 35%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_180_grados PASSED [ 38%]
+tests/test_domain.py::TestMatrizEsqueletica::test_invarianza_traslacion_y_escala PASSED [ 41%]
+tests/test_domain.py::TestMatrizEsqueletica::test_articulacion_no_encontrada PASSED [ 45%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion PASSED [ 48%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion_articular PASSED [ 51%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_con_umbral PASSED [ 54%]
+tests/test_domain.py::TestDominioPuroAislamiento::test_sin_dependencias_de_frameworks PASSED [ 58%]
+tests/test_integration.py::test_endpoint_evaluar_retorna_200_y_estructura_valida PASSED [ 61%]
+tests/test_integration.py::test_endpoint_evaluar_tecnica_no_encontrada_retorna_404 PASSED [ 64%]
+tests/test_iteracion3.py::test_flujo_asincrono_crea_tarea_y_consulta_estado PASSED [ 67%]
+tests/test_iteracion3.py::test_consulta_tarea_inexistente_retorna_404 PASSED [ 70%]
+tests/test_iteracion3.py::TestRegistrarTecnicaController::test_registrar_patron_exitoso PASSED [ 74%]
+tests/test_iteracion3.py::TestIngestorRAG::test_indexar_documento_fragmentacion_y_guardado PASSED [ 77%]
+tests/test_iteracion4.py::TestFallbackRAG::test_fallback_activado_cuando_similitud_baja PASSED [ 80%]
+tests/test_iteracion4.py::TestFallbackRAG::test_contexto_aplicado_cuando_similitud_alta PASSED [ 83%]
+tests/test_iteracion4.py::TestFallbackRAG::test_evaluacion_sin_contexto_manual PASSED [ 87%]
+tests/test_iteracion4.py::TestPostgresHistorialRepository::test_guardar_evaluacion_persiste_registro PASSED [ 90%]
+tests/test_iteracion4.py::TestPostgresHistorialRepository::test_obtener_progreso_mapea_tuplas_psycopg2 PASSED [ 93%]
+tests/test_iteracion4.py::TestApiHistorialProgreso::test_obtener_progreso_alumno_exitoso PASSED [ 96%]
+tests/test_iteracion4.py::TestApiHistorialProgreso::test_obtener_progreso_error_servidor_500 PASSED [100%]
+
+============================== 31 passed in 0.55s ==============================
+```
+
+---
+
+## Iteración 5: Empaquetado y Despliegue con Docker
+
+### Filosofía y Cierre de la Fase de Construcción
+En la **Iteración 5**, el sistema culmina la fase de construcción del Proceso Unificado alcanzando el cierre funcional y preparando el empaquetado para despliegues reproducibles:
+1. **Integración del Historial en el Worker Asíncrono:** La tarea en segundo plano (`tarea_procesar_evaluacion`) despachada por el endpoint `POST /api/v1/evaluaciones/evaluar-asincrono` persiste automáticamente el diagnóstico biomecánico en `evaluaciones_alumno` asociándolo al practicante (`id_alumno`), cerrando el ciclo entre inferencia, análisis cinemático, síntesis pedagógica y auditoría histórica.
+2. **Contenedorización con Docker y Docker Compose:**
+   - **`Dockerfile`**: Basado en `python:3.11-slim`, instala dependencias nativas del sistema (`build-essential`, `libpq-dev`), empaqueta el código fuente y expone la API REST mediante `uvicorn`.
+   - **`docker-compose.yml`**: Orquesta el servicio de base de datos relacional y vectorial `pgvector/pgvector:pg16` inicializado automáticamente con los esquemas de `database/` (`01_init.sql` y `02_historico.sql`), junto con el servicio `api` conectado a través de variables de entorno estandarizadas.
+
+### Evidencia de Pruebas Automatizadas (35/35 Passing)
+```bash
+$ pytest tests/ -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- /home/santiago/Desktop/JiuJitsu/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/santiago/Desktop/JiuJitsu
+configfile: pytest.ini
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 35 items
+
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_ejecucion_correcta_sin_desviaciones PASSED [  2%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_con_desviacion_biomecanica PASSED [  5%]
+tests/test_application.py::TestCasoDeUsoEvaluacion::test_evaluacion_tecnica_no_encontrada PASSED [  8%]
+tests/test_colab_adapter.py::TestColabYOLOAdapter::test_inferir_esqueleto_3d_formato_colab PASSED [ 11%]
+tests/test_domain.py::TestPunto3D::test_resta_vectorial PASSED           [ 14%]
+tests/test_domain.py::TestPunto3D::test_producto_punto PASSED            [ 17%]
+tests/test_domain.py::TestPunto3D::test_magnitud PASSED                  [ 20%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_90_grados PASSED [ 22%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_articular_codo PASSED [ 25%]
+tests/test_domain.py::TestMatrizEsqueletica::test_clamping_precision_flotante PASSED [ 28%]
+tests/test_domain.py::TestMatrizEsqueletica::test_segmento_longitud_cero PASSED [ 31%]
+tests/test_domain.py::TestMatrizEsqueletica::test_calcular_angulo_180_grados PASSED [ 34%]
+tests/test_domain.py::TestMatrizEsqueletica::test_invarianza_traslacion_y_escala PASSED [ 37%]
+tests/test_domain.py::TestMatrizEsqueletica::test_articulacion_no_encontrada PASSED [ 40%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion PASSED [ 42%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_desviacion_articular PASSED [ 45%]
+tests/test_domain.py::TestCalculadoraBiomecanica::test_evaluar_con_umbral PASSED [ 48%]
+tests/test_domain.py::TestDominioPuroAislamiento::test_sin_dependencias_de_frameworks PASSED [ 51%]
+tests/test_integration.py::test_endpoint_evaluar_retorna_200_y_estructura_valida PASSED [ 54%]
+tests/test_integration.py::test_endpoint_evaluar_tecnica_no_encontrada_retorna_404 PASSED [ 57%]
+tests/test_iteracion3.py::test_flujo_asincrono_crea_tarea_y_consulta_estado PASSED [ 60%]
+tests/test_iteracion3.py::test_consulta_tarea_inexistente_retorna_404 PASSED [ 62%]
+tests/test_iteracion3.py::TestRegistrarTecnicaController::test_registrar_patron_exitoso PASSED [ 65%]
+tests/test_iteracion3.py::TestIngestorRAG::test_indexar_documento_fragmentacion_y_guardado PASSED [ 68%]
+tests/test_iteracion4.py::TestFallbackRAG::test_fallback_activado_cuando_similitud_baja PASSED [ 71%]
+tests/test_iteracion4.py::TestFallbackRAG::test_contexto_aplicado_cuando_similitud_alta PASSED [ 74%]
+tests/test_iteracion4.py::TestFallbackRAG::test_evaluacion_sin_contexto_manual PASSED [ 77%]
+tests/test_iteracion4.py::TestPostgresHistorialRepository::test_guardar_evaluacion_persiste_registro PASSED [ 80%]
+tests/test_iteracion4.py::TestPostgresHistorialRepository::test_obtener_progreso_mapea_tuplas_psycopg2 PASSED [ 82%]
+tests/test_iteracion4.py::TestApiHistorialProgreso::test_obtener_progreso_alumno_exitoso PASSED [ 85%]
+tests/test_iteracion4.py::TestApiHistorialProgreso::test_obtener_progreso_error_servidor_500 PASSED [ 88%]
+tests/test_iteracion5.py::test_worker_guarda_historial_automaticamente PASSED [ 91%]
+tests/test_iteracion5.py::test_worker_guarda_con_alumno_por_defecto PASSED [ 94%]
+tests/test_iteracion5.py::test_flujo_completo_asincrono_y_consulta_progreso PASSED [ 97%]
+tests/test_iteracion5.py::test_worker_sin_historial_repository_no_falla PASSED [100%]
+
+============================== 35 passed in 0.55s ==============================
+```
+
+---
+
+## Guía de Despliegue Real y Validación End-to-End (E2E)
+
+Esta guía permite al investigador validar el pipeline completo en hardware real (Laptop + GPU Google Colab Pro) sin depender de adaptadores simulados (*mocks*).
+
+### Requisitos de Tesis Verificados
+* **RD-01:** Ejecución estricta de `yolo26x-pose.pt` (17 articulaciones COCO 2D) y `yolo26x-depth.pt` (mapa de profundidad métrica en metros flotantes).
+* **RF-03:** Fusión geométrica $Z = \text{depth\_map}[y, x]$, resolviendo la profundidad métrica real sin sensores activos.
+* **CU-02 & CU-04:** Evaluación asíncrona de video y consulta de historial de progreso.
+
+### Procedimiento de Validación Paso a Paso
+
+#### 1. Iniciar la Base de Datos y la API
+Desde la terminal en la raíz del proyecto:
+```bash
+# Opción A: Contenedores Docker (Recomendado)
+docker compose up -d
+
+# Opción B: Ejecución nativa con venv
+source .venv/bin/activate
+uvicorn src.presentation.api:app --host 0.0.0.0 --port 8000
+```
+
+#### 2. Abrir y Ejecutar el Backend en Google Colab Pro
+1. Abre [Google Colab](https://colab.research.google.com/) y sube el archivo [`colab_backend.ipynb`](colab_backend.ipynb).
+2. Ve a **Entorno de ejecución > Cambiar tipo de entorno de ejecución** y selecciona aceleración por hardware **GPU (T4 o A100)** con RAM alta si está disponible.
+3. Ejecuta la **Celda 1**: Verificará que la GPU esté activa y reportará la VRAM y RAM de sistema disponibles.
+4. Ejecuta la **Celda 2 y 3**: Instalará dependencias y cargará `yolo26x-pose.pt` y `yolo26x-depth.pt` en la VRAM de la GPU.
+5. Ejecuta la **Celda 4 y 5**: En la Celda 5, introduce tu token de [Ngrok](https://dashboard.ngrok.com) en `NGROK_AUTH_TOKEN` y ejecuta la celda.
+6. Copia la URL pública generada en consola:
+   ```text
+   🔗 NGROK URL: https://xxxx-xx-xxx.ngrok-free.app
+   ```
+7. Mantén abierta la pestaña de Colab en tu navegador para asegurar la persistencia del túnel HTTP.
+
+#### 3. Configurar la Conexión en el Entorno Local
+Abre el archivo `.env` en la raíz del proyecto y actualiza la variable con la URL copiada:
+```env
+COLAB_TUNNEL_URL=https://xxxx-xx-xxx.ngrok-free.app
+```
+
+#### 4. Ejecutar la Prueba de Fuego End-to-End
+Ejecuta el script de validación real:
+```bash
+python demo_e2e.py
+```
+El script ejecutará:
+1. **Prueba directa a Colab (`/inferir`)**: Enviará el video de prueba [`tests/fixtures/test_video.mp4`](tests/fixtures/test_video.mp4) a la GPU remota y verificará la extracción de los 17 puntos 3D fusionados.
+2. **Prueba a la API Local (`/evaluar-asincrono` y `/progreso`)**: Despachará la evaluación biomecánica real, ejecutará la comparación angular frente al patrón y guardará automáticamente el resultado en PostgreSQL para consulta del alumno.

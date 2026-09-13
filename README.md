@@ -1661,3 +1661,25 @@ sequenceDiagram
    - OpenCV (`cv2.VideoCapture`) captura el fotograma clave exacto donde ocurre la detección, superpone los puntos detectados (`cv2.circle`) y codifica la imagen a JPEG Base64 (`frame_base64`).
    - Colab responde con un JSON conteniendo `keypoints_3d` y `frame_base64`.
 5. **Colab → Backend Local → PWA:** El backend local recibe el JSON de Colab, pasa las coordenadas al motor biomecánico de dominio puro para cuantificar ángulos articulares contra la técnica patrón, solicita la retroalimentación pedagógica a Gemini y entrega a la PWA el objeto final que incluye `frame_alumno`, `desviaciones`, `consejo` y `video_patron_url`. La PWA muestra inmediatamente la imagen real del alumno con los indicadores de corrección sin requerir ningún gráfico o muñeco genérico.
+
+---
+
+## Capítulo 10: Referencias Bibliográficas
+
+Google Developers. (s.f.). *Multimodal RAG with Gemini*. Google Codelabs. Recuperado de: https://codelabs.developers.google.com/multimodal-rag-gemini#0  
+*Propósito:* Guía de implementación para el pipeline de Recuperación Aumentada por Generación (RAG) multimodal, justificando el uso de Gemini para la síntesis pedagógica contextualizada.
+
+Havle, G. (s.f.). *Building Production RAG Systems: From Zero to Hero*. Dev.to. Recuperado de: https://dev.to/gautamvhavle/building-production-rag-systems-from-zero-to-hero-2f1i  
+*Propósito:* Mejores prácticas y patrones de diseño para llevar un sistema RAG de un prototipo a un entorno de producción robusto y escalable.
+
+Ngxson. (s.f.). *Make Your Own RAG*. Hugging Face Blog. Recuperado de: https://huggingface.co/blog/ngxson/make-your-own-rag  
+*Propósito:* Sustento metodológico para la construcción y vectorización de bases de conocimiento personalizadas (embeddings) en el sistema.
+
+Ultralytics Documentation. (2026). *Depth Estimation Tasks*. Recuperado de: https://docs.ultralytics.com/es/tasks/depth  
+*Propósito:* Sustento técnico para la fusión de datos de profundidad métrica con las coordenadas 2D, permitiendo la reconstrucción en el espacio $\mathbb{R}^3$.
+
+Ultralytics Documentation. (2026). *Pose Estimation Tasks*. Recuperado de: https://docs.ultralytics.com/es/tasks/pose  
+*Propósito:* Documentación técnica específica sobre la extracción de keypoints y el esqueleto 3D utilizado para el análisis biomecánico.
+
+Ultralytics YOLO26 Documentation. (2026). *YOLO26 Models*. Recuperado de: https://docs.ultralytics.com/es/models/yolo26  
+*Propósito:* Sustento oficial de la arquitectura base del modelo de visión por computadora seleccionado para la estimación de pose y profundidad.

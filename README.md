@@ -1330,7 +1330,7 @@ Siguiendo las pautas de **Craig Larman** para la fase de elaboración, la **Iter
 ### Componentes Incorporados
 - **`IngestorRAG` (`src/infrastructure/rag_ingestion.py`)**: Servicio de ingesta semántica y fragmentación de literatura técnica de BJJ.
 - **`RegistrarTecnicaController` (`src/application/pattern_controller.py`)**: Controlador de aplicación para el caso de uso `CU-01`.
-- **`Backend Colab YOLO26 Real` (`colab_backend.ipynb`)**: Servidor de visión computacional en Google Colab con GPU (A100/T4), cumpliendo con **RD-01** y **RF-03**. Ejecuta en paralelo `YOLO26x-Pose` (17 keypoints 2D COCO) y `YOLO26x-depth` (matriz de profundidad métrica en metros reales), intersectando geométricamente $(X, Y)$ con el mapa denso de profundidad ($Z = \text{depth\_map}[y, x]$) y exponiendo el túnel seguro mediante `pyngrok`.
+- **`Backend Colab YOLO26 Real` (`colab_backend.ipynb`)**: Servidor de visión computacional en Google Colab con GPU (A100/T4), cumpliendo con **RD-01** y **RF-03**. Ejecuta en paralelo `YOLO26x-Pose` (17 keypoints 2D COCO) y `YOLO26x-depth` (matriz de profundidad métrica en metros reales), intersectando geométricamente $(X, Y)$ con el mapa denso de profundidad (`Z = depth_map[y, x]`) y exponiendo el túnel seguro mediante `pyngrok`.
 - **Endpoints Asíncronos (`src/presentation/api.py`)**:
   - `POST /api/v1/evaluaciones/evaluar-asincrono`: Inicia procesamiento en segundo plano y retorna `tarea_id`.
   - `GET /api/v1/evaluaciones/tareas/{tarea_id}`: Consulta el estado de ejecución y resultado diagnóstico.

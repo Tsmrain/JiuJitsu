@@ -1633,23 +1633,23 @@ A continuación se detalla la arquitectura de comunicación extremo a extremo im
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Alumno as PWA (Dispositivo Móvil)
-    participant LocalAPI as Backend Local (FastAPI :8000)
-    participant Disco as Sistema de Archivos (/uploads)
-    participant Colab as GPU Remota (Colab YOLO26 + OpenCV)
-    participant Gemini as Google AI Studio (Gemini 3.8 Flash)
+    actor Alumno as PWA Dispositivo Movil
+    participant LocalAPI as Backend Local FastAPI 8000
+    participant Disco as Sistema de Archivos uploads
+    participant Colab as GPU Remota Colab YOLO26 OpenCV
+    participant Gemini as Google AI Studio Gemini 3.8 Flash
 
-    Alumno->>LocalAPI: 1. POST /api/v1/evaluaciones/evaluar-real (multipart/form-data)
-    LocalAPI->>Disco: 2. Guarda archivo binario en uploads/{filename}
-    LocalAPI->>Colab: 3. POST {COLAB_TUNNEL_URL}/inferir con archivo físico
+    Alumno->>LocalAPI: 1. POST evaluar-real multipart-form-data
+    LocalAPI->>Disco: 2. Guarda archivo binario en uploads/filename
+    LocalAPI->>Colab: 3. POST COLAB_TUNNEL_URL/inferir con archivo fisico
     Colab->>Colab: Procesa con YOLO26x-Pose en GPU
-    Colab->>Colab: OpenCV captura frame clave y dibuja keypoints detectados
-    Colab-->>LocalAPI: 4. JSON: keypoints_3d, frame_base64 (data:image/jpeg;base64)
-    LocalAPI->>LocalAPI: Calcula desviaciones articulares en R^3 (Dominio Puro)
-    LocalAPI->>Gemini: Solicita consejo pedagógico contextualizado
-    Gemini-->>LocalAPI: Retorna instrucción pedagógica clara
-    LocalAPI-->>Alumno: 5. JSON: frame_alumno (base64 real), desviaciones, consejo, video_patron_url
-    Alumno->>Alumno: Renderiza fotograma real con círculos rojos sobre canvas y video del profesor
+    Colab->>Colab: OpenCV captura frame clave y dibuja keypoints
+    Colab-->>LocalAPI: 4. Retorna keypoints_3d y frame en JPEG Base64
+    LocalAPI->>LocalAPI: Calcula desviaciones articulares en R3
+    LocalAPI->>Gemini: Solicita consejo pedagogico contextualizado
+    Gemini-->>LocalAPI: Retorna instruccion pedagogica clara
+    LocalAPI-->>Alumno: 5. Retorna frame real, desviaciones, consejo y video patron
+    Alumno->>Alumno: Renderiza fotograma real con indicadores visuales
 ```
 
 #### Flujo Detallado Paso a Paso:

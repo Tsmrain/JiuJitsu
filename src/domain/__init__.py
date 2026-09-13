@@ -9,12 +9,17 @@ from src.domain.models import (
     MatrizEsqueletica,
     DesviacionArticular,
     CalculadoraBiomecanica,
+    Profesor,
+    TecnicaPatron,
+    FuenteConocimiento,
 )
 from src.domain.interfaces import (
     IInferenceEngine,
     IGenerationService,
     IEmbeddingService,
+    IProfesorRepository,
     ITecnicaRepository,
+    IFuenteConocimientoRepository,
 )
 
 __all__ = [
@@ -22,9 +27,15 @@ __all__ = [
     "MatrizEsqueletica",
     "DesviacionArticular",
     "CalculadoraBiomecanica",
+    "Profesor",
+    "TecnicaPatron",
+    "FuenteConocimiento",
     "IInferenceEngine",
     "IGenerationService",
     "IEmbeddingService",
+    "IProfesorRepository",
     "ITecnicaRepository",
+    "IFuenteConocimientoRepository",
 ]
+
 

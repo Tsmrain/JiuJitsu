@@ -265,3 +265,92 @@ class CalculadoraBiomecanica:
             articulaciones=self.articulaciones,
             umbral_tolerancia_grados=umbral,
         )
+
+
+import re
+from datetime import datetime, timezone
+
+EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
+
+
+@dataclass(frozen=True)
+class Profesor:
+    """Entidad de Dominio Puro que modela a un instructor o profesor de Jiu-Jitsu.
+
+    Aplica el patrón GRASP: Experto en Información para validar su identidad y formato
+    de comunicación, completamente desacoplada de la capa de persistencia relacional.
+    """
+
+    id_profesor: str
+    nombre: str
+    email: str
+    fecha_registro: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        if not self.id_profesor or not self.id_profesor.strip():
+            raise ValueError("El id_profesor no puede ser vacío.")
+        if not self.nombre or not self.nombre.strip():
+            raise ValueError("El nombre no puede ser vacío.")
+        if not self.email or not EMAIL_REGEX.match(self.email.strip()):
+            raise ValueError(f"El email '{self.email}' no tiene un formato válido.")
+        if self.fecha_registro is None:
+            object.__setattr__(self, "fecha_registro", datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True)
+class TecnicaPatron:
+    """Entidad de Dominio Puro que modela el estándar biomecánico de una técnica.
+
+    Aplica Variaciones Protegidas: custodia la referencia a la MatrizEsqueletica
+    tridimensional de dominio, prohibiendo diccionarios no tipados o estructuras JSONB crudas.
+    """
+
+    id_tecnica: str
+    id_profesor: str
+    nombre: str
+    categoria: str
+    matriz_esqueletica: MatrizEsqueletica
+    video_url: Optional[str] = None
+    descripcion: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if not self.id_tecnica or not self.id_tecnica.strip():
+            raise ValueError("El id_tecnica no puede ser vacío.")
+        if not self.id_profesor or not self.id_profesor.strip():
+            raise ValueError("El id_profesor no puede ser vacío.")
+        if not self.nombre or not self.nombre.strip():
+            raise ValueError("El nombre no puede ser vacío.")
+        if not isinstance(self.matriz_esqueletica, MatrizEsqueletica):
+            raise TypeError("matriz_esqueletica debe ser una instancia de MatrizEsqueletica del dominio.")
+
+
+@dataclass(frozen=True)
+class FuenteConocimiento:
+    """Entidad de Dominio Puro para el acervo documental del sistema RAG.
+
+    Modela fragmentos textuales pedagógicos vinculados a técnicas biomecánicas,
+    con su representación vectorial densa de 768 dimensiones.
+    """
+
+    id_fuente: str
+    id_tecnica: str
+    titulo: str
+    tipo_recurso: str
+    chunk_texto: str
+    embedding_vector: Optional[List[float]] = None
+    fecha_carga: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        if not self.id_fuente or not self.id_fuente.strip():
+            raise ValueError("El id_fuente no puede ser vacío.")
+        if not self.id_tecnica or not self.id_tecnica.strip():
+            raise ValueError("El id_tecnica no puede ser vacío.")
+        if not self.titulo or not self.titulo.strip():
+            raise ValueError("El titulo no puede ser vacío.")
+        if not self.chunk_texto or not self.chunk_texto.strip():
+            raise ValueError("El chunk_texto no puede ser vacío.")
+        if self.embedding_vector is not None and len(self.embedding_vector) != 768:
+            raise ValueError(f"La dimensión del embedding debe ser 768 (recibido: {len(self.embedding_vector)}).")
+        if self.fecha_carga is None:
+            object.__setattr__(self, "fecha_carga", datetime.now(timezone.utc))
+

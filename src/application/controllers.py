@@ -26,9 +26,11 @@ class EvaluacionController:
     ) -> Dict[str, Any]:
         """Evalúa la ejecución técnica contrastándola con el patrón e incorpora Fallback RAG."""
         # 1. Obtener la técnica patrón de referencia
-        patron = self._tecnica_repository.obtener_patron(id_tecnica)
-        if not patron:
+        patron_obj = self._tecnica_repository.obtener_patron(id_tecnica)
+        if not patron_obj:
             raise ValueError(f"Técnica patrón '{id_tecnica}' no encontrada.")
+        patron = getattr(patron_obj, "matriz_esqueletica", patron_obj)
+
 
         # 2. Extraer esqueleto 3D del video del alumno
         esqueleto_alumno = self._inference_engine.inferir_esqueleto_3d(video_path)

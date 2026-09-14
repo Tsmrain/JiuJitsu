@@ -7,7 +7,6 @@
     <meta name="description" content="Asistente biomecanico para Jiu-Jitsu Brasileño.">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
@@ -119,9 +118,33 @@
             </div>
             <button class="btn-secundario" onclick="reiniciar()">Practicar de nuevo</button>
         </div>
+
+        <!-- Vista Alumno: Sección Mi Progreso -->
+        <div id="pantalla-progreso" style="display:none;">
+            <h3>Mi Progreso</h3>
+            <p class="subtitulo">Historial biomecánico y evaluaciones realizadas:</p>
+            <div id="lista-progreso" class="tarjetas-grid">
+                <p>Cargando historial de evaluaciones...</p>
+            </div>
+            <button class="btn-secundario" onclick="navegarAlumno('evaluar')" style="margin-top:16px;">&larr; Volver a Evaluación</button>
+        </div>
+
+        <!-- Vista Alumno: Sección Recursos -->
+        <div id="pantalla-recursos" style="display:none;">
+            <h3>Recursos Didácticos</h3>
+            <p class="subtitulo">Técnicas de referencia y videos patrón disponibles:</p>
+            <div id="lista-recursos" class="tarjetas-grid">
+                <p>Cargando recursos didácticos...</p>
+            </div>
+            <button class="btn-secundario" onclick="navegarAlumno('evaluar')" style="margin-top:16px;">&larr; Volver a Evaluación</button>
+        </div>
     </div>
 
+    <!-- Barra de Navegación Móvil Fija PWA Dinámica (Renderizada por rol en app.js) -->
+    <nav class="nav-pwa-bottom" id="nav-pwa-bottom" aria-label="Navegación principal" style="display:none;">
+    </nav>
+
     <script src="/static/app.js"></script>
-    <script src="app.js"></script>
 </body>
 </html>
+

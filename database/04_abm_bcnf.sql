@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_tecnicas_id_profesor ON tecnicas_patron (id_profe
 
 -- 3. Tabla Fuentes Conocimiento: vector(768) compatible con gemini-embedding-2
 CREATE TABLE IF NOT EXISTS fuentes_conocimiento (
-    id_fuente UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_fuente VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
     id_tecnica VARCHAR(36) REFERENCES tecnicas_patron(id_tecnica) ON DELETE SET NULL,
     titulo VARCHAR(200) NOT NULL,
     tipo_recurso VARCHAR(50) NOT NULL,

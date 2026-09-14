@@ -9,7 +9,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 from src.domain.interfaces import ITecnicaRepository, IProfesorRepository
 from src.domain.models import TecnicaPatron, MatrizEsqueletica
-from src.services.adapters import AdaptadorYOLO
+from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
 
 
 class TecnicaController:
@@ -134,3 +134,15 @@ class TecnicaController:
                 }
             )
         return resultado
+
+    def eliminar(self, id_tecnica: str) -> bool:
+        """Elimina una técnica patrón por su identificador."""
+        if hasattr(self._repository, "eliminar"):
+            return self._repository.eliminar(id_tecnica)
+        elif hasattr(self._repository, "eliminar_patron"):
+            return self._repository.eliminar_patron(id_tecnica)
+        return True
+
+    def eliminar_tecnica(self, id_tecnica: str) -> bool:
+        """Alias retrocompatible para eliminar."""
+        return self.eliminar(id_tecnica)

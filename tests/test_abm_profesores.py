@@ -125,3 +125,63 @@ class TestCasoDeUsoRegistrarProfesor:
         assert ctrl.eliminar(pid) is True
         mock_tec_repo.eliminar.assert_called_once_with("T_MOCK")
 
+    def test_actualizar_profesor_exitoso_y_mismo_email(self):
+        controller = crear_profesor_controller(usar_db_real=False)
+        pid = controller.registrar(nombre="Roger Gracie", email="roger@bjj.bo")
+
+        # Actualizar nombre y nuevo email
+        exito = controller.actualizar_profesor(id_profesor=pid, nombre="Roger Gracie Mestre", email="roger_mestre@bjj.bo")
+        assert exito is True
+
+        prof = controller.obtener_profesor(pid)
+        assert prof["nombre"] == "Roger Gracie Mestre"
+        assert prof["email"] == "roger_mestre@bjj.bo"
+
+        # Actualizar nombre manteniendo el mismo email del profesor (no debe dar colisión)
+        exito2 = controller.actualizar(id_profesor=pid, nombre="Roger Gracie 10x World Champion", email="roger_mestre@bjj.bo")
+        assert exito2 is True
+        prof2 = controller.obtener_profesor(pid)
+        assert prof2["nombre"] == "Roger Gracie 10x World Champion"
+
+    def test_actualizar_profesor_email_duplicado_lanza_excepcion(self):
+        controller = crear_profesor_controller(usar_db_real=False)
+        pid1 = controller.registrar(nombre="Prof Uno", email="uno@bjj.bo")
+        pid2 = controller.registrar(nombre="Prof Dos", email="dos@bjj.bo")
+
+        with pytest.raises(ValueError, match="ya se encuentra registrado"):
+            controller.actualizar_profesor(id_profesor=pid2, nombre="Prof Dos Renombrado", email="uno@bjj.bo")
+
+    def test_actualizar_profesor_inexistente_lanza_keyerror(self):
+        controller = crear_profesor_controller(usar_db_real=False)
+        with pytest.raises(KeyError, match="no encontrado"):
+            controller.actualizar_profesor(id_profesor="id_inexistente_999", nombre="Fantasma", email="fantasma@bjj.bo")
+
+
+def test_postgres_profesor_repository_actualizar():
+    import os
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        pytest.skip("DATABASE_URL no configurado")
+    import uuid
+    from src.infrastructure.persistence import PostgresProfesorRepository
+    from src.domain.models import Profesor
+    repo = PostgresProfesorRepository(db_url)
+    uid = uuid.uuid4().hex[:6]
+    pid = f"prof_pg_{uid}"
+    email_inicial = f"pg_prof_{uid}@bjj.com"
+    email_nuevo = f"pg_prof_new_{uid}@bjj.com"
+
+    try:
+        repo.guardar(Profesor(id_profesor=pid, nombre="Prof PG Inicial", email=email_inicial))
+        actualizado = repo.actualizar(id_profesor=pid, nombre="Prof PG Modificado", email=email_nuevo)
+        assert actualizado is True
+
+        prof_db = repo.obtener_por_id(pid)
+        assert prof_db is not None
+        assert prof_db.nombre == "Prof PG Modificado"
+        assert prof_db.email == email_nuevo
+    finally:
+        repo.eliminar(pid)
+
+
+

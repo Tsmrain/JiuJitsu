@@ -76,6 +76,7 @@ class TestCasoDeUsoFuentesConocimiento:
             titulo="Guía A",
             tipo_recurso="PDF",
             chunk_texto="Contenido relevante A",
+            embedding_vector=[0.05] * 768,
         )
         controller.indexar_fuente(
             id_fuente="F2",
@@ -83,6 +84,7 @@ class TestCasoDeUsoFuentesConocimiento:
             titulo="Guía B",
             tipo_recurso="PDF",
             chunk_texto="Contenido relevante B",
+            embedding_vector=[0.05] * 768,
         )
 
         consulta = [0.05] * 768

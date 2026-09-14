@@ -1,6 +1,6 @@
 # tests/test_rag_stub_contrato.py
 import inspect
-from src.infrastructure.rag_ingestion import (
+from src.infrastructure.persistence.rag_ingestion import (
     IngestorRAGStub,
     CHUNK_SIZE,
     CHUNK_OVERLAP,

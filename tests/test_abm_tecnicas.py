@@ -12,7 +12,7 @@ from src.application.factory import (
     reiniciar_repositorios_memoria,
 )
 from src.domain.models import MatrizEsqueletica, Punto3D
-from src.services.adapters import AdaptadorYOLO
+from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
 
 
 @pytest.fixture(autouse=True)

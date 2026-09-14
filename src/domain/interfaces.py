@@ -50,6 +50,11 @@ class IProfesorRepository(ABC):
     def eliminar(self, id_profesor: str) -> bool:
         pass
 
+    @abstractmethod
+    def actualizar(self, id_profesor: str, nombre: str, email: str) -> bool:
+        """Actualiza los datos de un profesor existente. Lanza ValueError si el email ya existe en otro registro."""
+        pass
+
 class ITecnicaRepository(ABC):
     """Contrato para almacenamiento y recuperación de Técnicas Patrón."""
     @abstractmethod

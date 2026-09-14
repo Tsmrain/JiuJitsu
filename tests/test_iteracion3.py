@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from src.presentation.api import app, container, TAREAS_ESTADO
 from src.application.controllers import EvaluacionController
 from src.application.pattern_controller import RegistrarTecnicaController
-from src.infrastructure.rag_ingestion import IngestorRAG
+from src.infrastructure.persistence.rag_ingestion import IngestorRAG
 from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService, MockTecnicaRepository
 
 @pytest.fixture

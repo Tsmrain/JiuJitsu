@@ -1,7 +1,7 @@
 # tests/test_colab_adapter.py
 from unittest.mock import patch, MagicMock
 import pytest
-from src.infrastructure.colab_adapter import ColabYOLOAdapter
+from src.infrastructure.adapters.colab_adapter import ColabYOLOAdapter
 from src.domain.models import MatrizEsqueletica, Punto3D
 
 class TestColabYOLOAdapter:

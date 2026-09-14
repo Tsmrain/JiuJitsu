@@ -1,10 +1,15 @@
-"""Capa de Servicios de Aplicación y Adaptadores Externos.
+"""Servicios de Aplicación Transversales (Pure Fabrication — Larman, Cap. 16).
 
-Siguiendo a Craig Larman (Variaciones Protegidas e Indirección), este módulo
-expone adaptadores unificados para motores de visión artificial (YOLO) y
-modelos de lenguaje generativo/embeddings (Gemini).
+Contiene servicios de orquestación que no pertenecen a ninguna entidad de dominio
+pero tampoco son infraestructura pura. Siguiendo Pure Fabrication de Larman, estos
+servicios mejoran la cohesión evitando sobrecargar las entidades de dominio.
+
+Módulos:
+    chunker_semantico         — Fragmentación semántica de literatura técnica (LangChain)
+    sintesis_pedagogica_service — Orquestación RAG + Gemini para feedback contextualizado
 """
 
-from src.services.adapters import AdaptadorYOLO, AdaptadorGemini
-
-__all__ = ["AdaptadorYOLO", "AdaptadorGemini"]
+__all__ = [
+    "ChunkerSemanticoBJJ",
+    "SintesisPedagogicaService",
+]

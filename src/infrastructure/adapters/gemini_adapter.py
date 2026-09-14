@@ -1,4 +1,4 @@
-# src/infrastructure/gemini_adapter.py
+# src/infrastructure/adapters/gemini_adapter.py
 import os
 from typing import List, Optional
 try:
@@ -43,11 +43,24 @@ class GeminiServiceAdapter(IGenerationService, IEmbeddingService):
             falla = desviaciones[0]
             return f"En {tecnica}, se detectó un desajuste en {falla.nombre_articulacion} de {falla.desviacion_grados:.1f}°. Recuerda ajustar el ángulo."
 
-        response = self._client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
-        return response.text
+        try:
+            response = self._client.models.generate_content(model="gemini-2.5-flash-lite", contents=prompt)
+            return response.text
+        except Exception:
+            response = self._client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+            return response.text
 
     def generate_embedding(self, text: str) -> List[float]:
         if not self._client:
             return [0.0] * 768
-        response = self._client.models.embed_content(model="text-embedding-004", contents=text)
-        return response.embedding.values
+        try:
+            from google.genai import types
+            response = self._client.models.embed_content(
+                model="gemini-embedding-2",
+                contents=f"task: search result | query: {text}",
+                config=types.EmbedContentConfig(output_dimensionality=768)
+            )
+            return response.embeddings[0].values
+        except Exception:
+            return [0.0] * 768
+

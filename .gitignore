@@ -6,6 +6,8 @@ venv/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
 *$py.class
 
 # Pytest cache and test artifacts
@@ -22,4 +24,15 @@ htmlcov/
 .vscode/
 .idea/
 *.swp
-uploads/*
+
+# Compressed build artifacts (no rastro en repo)
+*.gz
+*.zip
+
+# Carpetas de datos volátiles (no versionadas)
+uploads/
+videos/
+data/media/
+
+# Contexto generado automáticamente (herramienta de desarrollo)
+docs/CONTEXTO_ARQUITECTURA_QWEN.md

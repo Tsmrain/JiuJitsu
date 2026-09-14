@@ -270,7 +270,7 @@ class CalculadoraBiomecanica:
 import re
 from datetime import datetime, timezone
 
-EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
+from src.domain.validation_constants import EMAIL_REGEX
 
 
 @dataclass(frozen=True)
@@ -339,6 +339,7 @@ class FuenteConocimiento:
     chunk_texto: str
     embedding_vector: Optional[List[float]] = None
     fecha_carga: Optional[datetime] = None
+    similitud: Optional[float] = None
 
     def __post_init__(self) -> None:
         if not self.id_fuente or not self.id_fuente.strip():
@@ -353,4 +354,20 @@ class FuenteConocimiento:
             raise ValueError(f"La dimensión del embedding debe ser 768 (recibido: {len(self.embedding_vector)}).")
         if self.fecha_carga is None:
             object.__setattr__(self, "fecha_carga", datetime.now(timezone.utc))
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)
+
+
+@dataclass(frozen=True)
+class ConfiguracionRAG:
+    """Configuración de Dominio para el Subsistema RAG (Experto en Información).
+    
+    Centraliza los parámetros de calidad biomecánica y recuperación semántica
+    permitiendo su evolución desacoplada de la infraestructura de persistencia.
+    """
+
+    umbral_similitud_minima: float = 0.65
+    top_k_resultados: int = 3
+    plantilla_fallback: str = "Discrepancia postural detectada en {articulacion} sin contexto específico por encima del umbral de calidad."
 

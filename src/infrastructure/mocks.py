@@ -21,6 +21,7 @@ from src.domain.models import (
     Profesor,
     TecnicaPatron,
     FuenteConocimiento,
+    ConfiguracionRAG,
 )
 
 
@@ -147,19 +148,69 @@ class InMemoryProfesorRepository(IProfesorRepository):
             return True
         return False
 
+    def actualizar(self, id_profesor: str, nombre: str, email: str) -> bool:
+        if id_profesor not in self._storage:
+            return False
+        clean_email = email.strip().lower()
+        for pid, p in self._storage.items():
+            if pid != id_profesor and p.email.strip().lower() == clean_email:
+                raise ValueError(f"El email '{email}' ya se encuentra registrado.")
+        profesor_actual = self._storage[id_profesor]
+        self._storage[id_profesor] = Profesor(
+            id_profesor=id_profesor,
+            nombre=nombre,
+            email=email.strip(),
+            fecha_registro=profesor_actual.fecha_registro,
+        )
+        return True
+
 
 class InMemoryFuenteConocimientoRepository(IFuenteConocimientoRepository):
     """Repositorio en memoria para pruebas unitarias de Fuentes de Conocimiento RAG (<10ms)."""
 
-    def __init__(self):
+    def __init__(self, config_rag: Optional[ConfiguracionRAG] = None):
         self._storage: Dict[str, FuenteConocimiento] = {}
+        self._config = config_rag if config_rag is not None else ConfiguracionRAG()
 
     def indexar_documento(self, fuente: FuenteConocimiento) -> str:
         self._storage[fuente.id_fuente] = fuente
         return fuente.id_fuente
 
-    def buscar_contexto(self, consulta_embedding: List[float], limite: int = 3) -> List[FuenteConocimiento]:
-        return list(self._storage.values())[:limite]
+    def buscar_contexto(
+        self,
+        consulta_embedding: List[float],
+        limite: Optional[int] = None,
+        id_tecnica: Optional[str] = None,
+    ) -> List[FuenteConocimiento]:
+        if len(consulta_embedding) != 768:
+            raise ValueError(f"Dimensión de embedding de búsqueda incorrecta: {len(consulta_embedding)} != 768")
+
+        if isinstance(limite, str) and id_tecnica is None:
+            id_tecnica = limite
+            limite = None
+
+        k = limite if (isinstance(limite, int) and limite > 0) else self._config.top_k_resultados
+
+        candidatos = list(self._storage.values())
+        if id_tecnica:
+            candidatos = [f for f in candidatos if f.id_tecnica == id_tecnica]
+
+        def calcular_similitud(f: FuenteConocimiento) -> float:
+            if not f.embedding_vector or len(f.embedding_vector) != len(consulta_embedding):
+                return 1.0
+            norm_a = math.sqrt(sum(a * a for a in f.embedding_vector))
+            norm_b = math.sqrt(sum(b * b for b in consulta_embedding))
+            if norm_a == 0 or norm_b == 0:
+                return 1.0
+            dot = sum(a * b for a, b in zip(f.embedding_vector, consulta_embedding))
+            return dot / (norm_a * norm_b)
+
+        filtrados = [
+            f for f in candidatos
+            if calcular_similitud(f) >= self._config.umbral_similitud_minima
+        ]
+        filtrados.sort(key=calcular_similitud, reverse=True)
+        return filtrados[:k]
 
     def listar_fuentes(self, id_tecnica: Optional[str] = None) -> List[FuenteConocimiento]:
         if id_tecnica:

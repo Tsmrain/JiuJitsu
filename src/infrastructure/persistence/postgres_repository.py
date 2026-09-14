@@ -1,4 +1,4 @@
-# src/infrastructure/persistence.py
+# src/infrastructure/persistence/postgres_repository.py
 """Adaptadores de Persistencia Relacional en PostgreSQL y pgvector.
 
 Diseñado bajo la Forma Normal de Boyce-Codd (BCNF) según Mannino (7th Ed., Cap. 6-8).
@@ -14,8 +14,15 @@ from src.domain.interfaces import (
     ITecnicaRepository,
     IFuenteConocimientoRepository,
 )
-from src.domain.models import Profesor, TecnicaPatron, FuenteConocimiento, MatrizEsqueletica
-from src.services.adapters import AdaptadorYOLO, AdaptadorGemini  # REUTILIZACIÓN OBLIGATORIA
+from src.domain.models import (
+    Profesor,
+    TecnicaPatron,
+    FuenteConocimiento,
+    MatrizEsqueletica,
+    ConfiguracionRAG,
+)
+from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
+from src.infrastructure.adapters.gemini_service_adapter import AdaptadorGemini
 
 
 class _DBContext:
@@ -30,15 +37,20 @@ class _DBContext:
         if isinstance(self.db, str):
             self.conn = psycopg2.connect(self.db)
             self._owned = True
+            if hasattr(self.conn, "__enter__"):
+                return self.conn.__enter__()
             return self.conn
-        # Conexión o mock inyectado
         return self.db
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._owned and self.conn:
-            if exc_type is None:
-                self.conn.commit()
-            self.conn.close()
+            if hasattr(self.conn, "__exit__"):
+                self.conn.__exit__(exc_type, exc_val, exc_tb)
+            else:
+                if exc_type is None and hasattr(self.conn, "commit"):
+                    self.conn.commit()
+                if hasattr(self.conn, "close"):
+                    self.conn.close()
 
 
 class PostgresProfesorRepository(IProfesorRepository):
@@ -95,6 +107,22 @@ class PostgresProfesorRepository(IProfesorRepository):
             with conn.cursor() as cur:
                 cur.execute("DELETE FROM profesores WHERE id_profesor = %s;", (id_profesor,))
                 return getattr(cur, "rowcount", 1) > 0
+
+    def actualizar(self, id_profesor: str, nombre: str, email: str) -> bool:
+        clean_email = email.strip()
+        with _DBContext(self._db) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id_profesor FROM profesores WHERE LOWER(email) = LOWER(%s) AND id_profesor != %s;",
+                    (clean_email, id_profesor),
+                )
+                if cur.fetchone():
+                    raise ValueError(f"El email '{email}' ya se encuentra registrado.")
+                cur.execute(
+                    "UPDATE profesores SET nombre = %s, email = %s WHERE id_profesor = %s;",
+                    (nombre, clean_email, id_profesor),
+                )
+                return getattr(cur, "rowcount", 0) > 0
 
 
 class PostgresTecnicaRepository(ITecnicaRepository):
@@ -192,11 +220,29 @@ class PostgresTecnicaRepository(ITecnicaRepository):
 
 
 class PostgresFuenteConocimientoRepository(IFuenteConocimientoRepository):
-    """Implementación de persistencia para fuentes RAG indexadas en pgvector."""
+    """Implementación de persistencia para fuentes RAG indexadas en pgvector.
 
-    def __init__(self, db_connection: Union[Any, str], gemini_adapter: Optional[AdaptadorGemini] = None):
+    Aplica el principio de Experto en Información (Larman p. 235) inyectando
+    ConfiguracionRAG para gobernar umbrales de similitud y límites de recuperación.
+    """
+
+    def __init__(
+        self,
+        db_connection: Union[Any, str],
+        config_rag: Optional[ConfiguracionRAG] = None,
+        gemini_adapter: Optional[AdaptadorGemini] = None,
+    ):
         self._db = db_connection
-        self._gemini = gemini_adapter if gemini_adapter is not None else AdaptadorGemini()
+        if isinstance(config_rag, ConfiguracionRAG):
+            self._config = config_rag
+            self._gemini = gemini_adapter if gemini_adapter is not None else AdaptadorGemini()
+        elif config_rag is not None and not isinstance(config_rag, ConfiguracionRAG) and gemini_adapter is None:
+            # Compatibilidad si se inyecta adaptador en el segundo parámetro posicional
+            self._config = ConfiguracionRAG()
+            self._gemini = config_rag
+        else:
+            self._config = config_rag if config_rag is not None else ConfiguracionRAG()
+            self._gemini = gemini_adapter if gemini_adapter is not None else AdaptadorGemini()
 
     def indexar_documento(self, fuente: FuenteConocimiento) -> str:
         # GENERAR embedding usando AdaptadorGemini EXISTENTE si no viene provisto
@@ -233,21 +279,46 @@ class PostgresFuenteConocimientoRepository(IFuenteConocimientoRepository):
                 )
         return fuente.id_fuente
 
-    def buscar_contexto(self, consulta_embedding: List[float], limite: int = 3) -> List[FuenteConocimiento]:
+    def buscar_contexto(
+        self,
+        consulta_embedding: List[float],
+        limite: Optional[int] = None,
+        id_tecnica: Optional[str] = None,
+    ) -> List[FuenteConocimiento]:
         if len(consulta_embedding) != 768:
             raise ValueError(f"Dimensión de embedding de búsqueda incorrecta: {len(consulta_embedding)} != 768")
 
+        if isinstance(limite, str) and id_tecnica is None:
+            id_tecnica = limite
+            limite = None
+
+        k = limite if (isinstance(limite, int) and limite > 0) else self._config.top_k_resultados
+        umbral = self._config.umbral_similitud_minima
+
         with _DBContext(self._db) as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT id_fuente, id_tecnica, titulo, tipo_recurso, chunk_texto, fecha_carga
-                    FROM fuentes_conocimiento
-                    ORDER BY embedding_vector <=> %s::vector
-                    LIMIT %s;
-                    """,
-                    (consulta_embedding, limite),
-                )
+                if id_tecnica:
+                    cur.execute(
+                        """
+                        SELECT id_fuente, id_tecnica, titulo, tipo_recurso, chunk_texto, fecha_carga
+                        FROM fuentes_conocimiento
+                        WHERE id_tecnica = %s AND (1 - (embedding_vector <=> %s::vector)) >= %s
+                        ORDER BY embedding_vector <=> %s::vector ASC
+                        LIMIT %s;
+                        """,
+                        (id_tecnica, consulta_embedding, umbral, consulta_embedding, k),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        SELECT id_fuente, id_tecnica, titulo, tipo_recurso, chunk_texto, fecha_carga
+                        FROM fuentes_conocimiento
+                        WHERE (1 - (embedding_vector <=> %s::vector)) >= %s
+                        ORDER BY embedding_vector <=> %s::vector ASC
+                        LIMIT %s;
+                        """,
+                        (consulta_embedding, umbral, consulta_embedding, k),
+                    )
                 rows = cur.fetchall()
                 return [
                     FuenteConocimiento(

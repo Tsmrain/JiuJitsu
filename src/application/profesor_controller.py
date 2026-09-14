@@ -72,6 +72,10 @@ class ProfesorController:
             for p in profesores
         ]
 
+    def listar(self) -> List[Dict[str, Any]]:
+        """Alias para listar_profesores."""
+        return self.listar_profesores()
+
     def eliminar(self, id_profesor: str) -> bool:
         """Elimina un profesor y propaga cascada a técnicas vinculadas (ON DELETE CASCADE)."""
         if self._tecnica_repo:
@@ -87,3 +91,21 @@ class ProfesorController:
     def eliminar_profesor(self, id_profesor: str) -> bool:
         """Alias retrocompatible para eliminar."""
         return self.eliminar(id_profesor)
+
+    def actualizar_profesor(self, id_profesor: str, nombre: str, email: str) -> bool:
+        """Actualiza los datos de un profesor existente validando existencia y unicidad de email."""
+        profesor = self._repository.obtener_por_id(id_profesor)
+        if not profesor:
+            raise KeyError(f"Profesor con ID '{id_profesor}' no encontrado.")
+
+        clean_email = email.strip()
+        existentes = self._repository.listar_todos()
+        for p in existentes:
+            if p.id_profesor != id_profesor and p.email.lower() == clean_email.lower():
+                raise ValueError(f"El email '{email}' ya se encuentra registrado.")
+
+        return self._repository.actualizar(id_profesor=id_profesor, nombre=nombre, email=clean_email)
+
+    def actualizar(self, id_profesor: str, nombre: str, email: str) -> bool:
+        """Alias para actualizar_profesor."""
+        return self.actualizar_profesor(id_profesor=id_profesor, nombre=nombre, email=email)

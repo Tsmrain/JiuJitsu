@@ -47,6 +47,65 @@ function mostrarToast(mensaje, tipo = 'info') {
 }
 
 // --- 2. Control de Roles (Instructor vs Alumno) ---
+function renderizarNavegacion(rol) {
+    const nav = document.getElementById('nav-pwa-bottom');
+    if (!nav) return;
+
+    if (rol === 'alumno') {
+        nav.innerHTML = `
+            <button class="nav-item nav-item-activo" id="nav-btn-evaluar" onclick="navegarAlumno('evaluar')">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span class="nav-label">Evaluar</span>
+            </button>
+            <button class="nav-item" id="nav-btn-progreso" onclick="navegarAlumno('progreso')">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <span class="nav-label">Mi Progreso</span>
+            </button>
+            <button class="nav-item" id="nav-btn-recursos" onclick="navegarAlumno('recursos')">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span class="nav-label">Recursos</span>
+            </button>
+        `;
+        nav.style.display = 'flex';
+    } else if (rol === 'instructor') {
+        nav.innerHTML = `
+            <button class="nav-item nav-item-activo" id="nav-btn-reg-tec" onclick="navegarInstructor('tecnica')">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span class="nav-label">Registrar Técnica</span>
+            </button>
+            <button class="nav-item" id="nav-btn-gest-prof" onclick="navegarInstructor('profesores')">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span class="nav-label">Gestionar Profesores</span>
+            </button>
+            <button class="nav-item" id="nav-btn-gest-fuent" onclick="navegarInstructor('fuentes')">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+                <span class="nav-label">Gestionar Fuentes</span>
+            </button>
+        `;
+        nav.style.display = 'flex';
+    } else {
+        nav.style.display = 'none';
+    }
+}
+
 function seleccionarRol(rol) {
     localStorage.setItem('user_role', rol);
 
@@ -58,14 +117,17 @@ function seleccionarRol(rol) {
     if (pantallaRol) pantallaRol.style.display = 'none';
     if (btnCambiarRol) btnCambiarRol.style.display = 'block';
 
+    renderizarNavegacion(rol);
+
     if (rol === 'instructor') {
         if (vistaInstructor) vistaInstructor.style.display = 'block';
         if (vistaAlumno) vistaAlumno.style.display = 'none';
-        mostrarTab('tab-registro');
+        navegarInstructor('tecnica');
         cargarInstructores();
     } else {
         if (vistaInstructor) vistaInstructor.style.display = 'none';
         if (vistaAlumno) vistaAlumno.style.display = 'block';
+        navegarAlumno('evaluar');
         cargarInstructores();
     }
 }
@@ -77,11 +139,138 @@ function cambiarRol() {
     const vistaInstructor = document.getElementById('vista-instructor');
     const vistaAlumno = document.getElementById('vista-alumno');
     const btnCambiarRol = document.getElementById('btn-cambiar-rol');
+    const nav = document.getElementById('nav-pwa-bottom');
 
     if (vistaInstructor) vistaInstructor.style.display = 'none';
     if (vistaAlumno) vistaAlumno.style.display = 'none';
     if (btnCambiarRol) btnCambiarRol.style.display = 'none';
+    if (nav) nav.style.display = 'none';
     if (pantallaRol) pantallaRol.style.display = 'block';
+}
+
+function navegarAlumno(seccion) {
+    const pantallaSeleccion = document.getElementById('pantalla-seleccion');
+    const pantallaUpload = document.getElementById('pantalla-upload');
+    const pantallaResultado = document.getElementById('pantalla-resultado');
+    const pantallaProgreso = document.getElementById('pantalla-progreso');
+    const pantallaRecursos = document.getElementById('pantalla-recursos');
+
+    const btnEvaluar = document.getElementById('nav-btn-evaluar');
+    const btnProgreso = document.getElementById('nav-btn-progreso');
+    const btnRecursos = document.getElementById('nav-btn-recursos');
+
+    if (btnEvaluar) btnEvaluar.className = `nav-item ${seccion === 'evaluar' ? 'nav-item-activo' : ''}`;
+    if (btnProgreso) btnProgreso.className = `nav-item ${seccion === 'progreso' ? 'nav-item-activo' : ''}`;
+    if (btnRecursos) btnRecursos.className = `nav-item ${seccion === 'recursos' ? 'nav-item-activo' : ''}`;
+
+    if (seccion === 'evaluar') {
+        if (pantallaSeleccion) pantallaSeleccion.style.display = 'block';
+        if (pantallaUpload) pantallaUpload.style.display = 'none';
+        if (pantallaResultado) pantallaResultado.style.display = 'none';
+        if (pantallaProgreso) pantallaProgreso.style.display = 'none';
+        if (pantallaRecursos) pantallaRecursos.style.display = 'none';
+    } else if (seccion === 'progreso') {
+        if (pantallaSeleccion) pantallaSeleccion.style.display = 'none';
+        if (pantallaUpload) pantallaUpload.style.display = 'none';
+        if (pantallaResultado) pantallaResultado.style.display = 'none';
+        if (pantallaProgreso) pantallaProgreso.style.display = 'block';
+        if (pantallaRecursos) pantallaRecursos.style.display = 'none';
+        cargarProgresoAlumno();
+    } else if (seccion === 'recursos') {
+        if (pantallaSeleccion) pantallaSeleccion.style.display = 'none';
+        if (pantallaUpload) pantallaUpload.style.display = 'none';
+        if (pantallaResultado) pantallaResultado.style.display = 'none';
+        if (pantallaProgreso) pantallaProgreso.style.display = 'none';
+        if (pantallaRecursos) pantallaRecursos.style.display = 'block';
+        cargarRecursosAlumno();
+    }
+}
+
+async function cargarProgresoAlumno() {
+    const contenedor = document.getElementById('lista-progreso');
+    if (!contenedor) return;
+    contenedor.innerHTML = '<p>Consultando historial biomecánico...</p>';
+
+    try {
+        const res = await fetch('/api/v1/alumno/progreso');
+        if (!res.ok) throw new Error('Error al cargar progreso.');
+        const data = await res.json();
+        const historial = data.historial || [];
+
+        if (historial.length === 0) {
+            contenedor.innerHTML = '<p class="texto-vacio">Aún no tienes evaluaciones registradas. Realiza tu primera práctica en la pestaña "Evaluar".</p>';
+            return;
+        }
+
+        contenedor.innerHTML = historial.map(item => `
+            <div class="tarjeta-abm">
+                <div class="tarjeta-header">
+                    <h4>${item.id_tecnica || 'Evaluación'}</h4>
+                    <span class="badge ${item.es_valido ? 'badge-valido' : 'badge-desvio'}">
+                        ${item.es_valido ? 'Válido' : 'Requiere Ajuste'}
+                    </span>
+                </div>
+                <p><strong>Desviaciones:</strong> ${item.total_desviaciones || 0}</p>
+                <p class="nota-muted">${item.fecha_evaluacion || 'Reciente'}</p>
+            </div>
+        `).join('');
+    } catch (err) {
+        contenedor.innerHTML = `<p class="error-msg">Error al cargar progreso: ${err.message}</p>`;
+    }
+}
+
+async function cargarRecursosAlumno() {
+    const contenedor = document.getElementById('lista-recursos');
+    if (!contenedor) return;
+    contenedor.innerHTML = '<p>Cargando recursos didácticos...</p>';
+
+    try {
+        const res = await fetch('/api/v1/alumno/recursos');
+        if (!res.ok) throw new Error('Error al consultar recursos.');
+        const data = await res.json();
+        const recursos = data.recursos || [];
+
+        if (recursos.length === 0) {
+            contenedor.innerHTML = '<p class="texto-vacio">No hay técnicas o recursos registrados actualmente.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = recursos.map(rec => `
+            <div class="tarjeta-abm">
+                <div class="tarjeta-header">
+                    <h4>${rec.nombre}</h4>
+                    <span class="badge">${rec.categoria || 'Técnica'}</span>
+                </div>
+                <p>${rec.descripcion || 'Sin descripción detallada.'}</p>
+                <p><strong>Profesor:</strong> ${rec.profesor || 'Instructor Oficial'}</p>
+                ${rec.video_stream_url ? `
+                    <a href="${rec.video_stream_url}" target="_blank" class="btn-secundario-pequeno" style="display:inline-block; margin-top:8px; text-decoration:none;">
+                        Ver Video de Referencia
+                    </a>
+                ` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        contenedor.innerHTML = `<p class="error-msg">Error al cargar recursos: ${err.message}</p>`;
+    }
+}
+
+function navegarInstructor(seccion) {
+    const btnRegTec = document.getElementById('nav-btn-reg-tec');
+    const btnGestProf = document.getElementById('nav-btn-gest-prof');
+    const btnGestFuent = document.getElementById('nav-btn-gest-fuent');
+
+    if (btnRegTec) btnRegTec.className = `nav-item ${seccion === 'tecnica' ? 'nav-item-activo' : ''}`;
+    if (btnGestProf) btnGestProf.className = `nav-item ${seccion === 'profesores' ? 'nav-item-activo' : ''}`;
+    if (btnGestFuent) btnGestFuent.className = `nav-item ${seccion === 'fuentes' ? 'nav-item-activo' : ''}`;
+
+    if (seccion === 'tecnica') {
+        mostrarTab('tab-registro');
+    } else if (seccion === 'profesores') {
+        mostrarTab('tab-crear-inst');
+    } else if (seccion === 'fuentes') {
+        mostrarTab('tab-manual');
+    }
 }
 
 // --- 3. Pestañas de Vista de Instructor ---
@@ -559,4 +748,28 @@ function reiniciar() {
     if (pantallaResultado) pantallaResultado.style.display = 'none';
     if (pantallaUpload) pantallaUpload.style.display = 'none';
     if (pantallaSeleccion) pantallaSeleccion.style.display = 'block';
+}
+
+// --- 7. Carga Diferida (Lazy Loading) de Módulos ABM (RP-02 / Larman UP) ---
+let abmModulePromise = null;
+
+function cargarModuloABM() {
+    if (!abmModulePromise) {
+        abmModulePromise = import('/static/js/components/abm_forms.js')
+            .catch(err => {
+                console.warn('Error al cargar módulo ABM diferido:', err);
+                return null;
+            });
+    }
+    return abmModulePromise;
+}
+
+function navegarASeccion(seccion) {
+    if (seccion === 'evaluar') {
+        window.location.href = '/';
+    } else if (seccion === 'tecnicas' || seccion === 'profesores') {
+        cargarModuloABM().then(() => {
+            window.location.href = `/abm#${seccion}`;
+        });
+    }
 }

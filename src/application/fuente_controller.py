@@ -8,7 +8,7 @@ en el acervo documental del sistema pedagógico.
 from typing import Any, Dict, List, Optional
 from src.domain.interfaces import IFuenteConocimientoRepository
 from src.domain.models import FuenteConocimiento
-from src.services.adapters import AdaptadorGemini
+from src.infrastructure.adapters.gemini_service_adapter import AdaptadorGemini
 
 
 class FuenteController:

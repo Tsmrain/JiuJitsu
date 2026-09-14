@@ -410,3 +410,359 @@ input[type="file"] {
     padding: 10px 8px;
   }
 }
+
+/* ==========================================================================
+   ESTILOS ABM Y NAVEGACIÓN PWA MÓVIL (LARMAN UP / USABILIDAD)
+   ========================================================================== */
+
+body {
+  padding-bottom: 74px;
+}
+
+.campo-grupo {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-grupo label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--color-text);
+}
+
+.campo-grupo textarea {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: #ffffff;
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.campo-grupo textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
+}
+
+.mensaje-error {
+  color: var(--color-error);
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.input-invalido {
+  border-color: var(--color-error) !important;
+  background-color: #fff8f8;
+}
+
+.card-abm {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.video-preview-container {
+  margin: 12px 0;
+  background: #000000;
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.preview-label {
+  color: #adb5bd;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+
+.video-preview-container video {
+  width: 100%;
+  max-height: 240px;
+  display: block;
+  border-radius: 4px;
+}
+
+/* Cabeceras de acción */
+.acciones-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.btn-accion-top {
+  width: auto;
+  margin-top: 0;
+  min-height: 38px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.bloque-formulario-plegable {
+  margin-bottom: 24px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Catálogo de Técnicas (Tarjetas) */
+.grid-tarjetas-tecnicas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.card-tecnica {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-tecnica:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.card-video-thumb {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background: #000000;
+}
+
+.card-video-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-overlay {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.card-body {
+  padding: 12px;
+  flex: 1;
+}
+
+.card-body h4 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: var(--color-text);
+}
+
+.badge-categoria {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: #eef5fc;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* Tabla Responsiva de Profesores */
+.tabla-responsive-container {
+  overflow-x: auto;
+  margin-top: 14px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+.tabla-responsive {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tabla-responsive th,
+.tabla-responsive td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 0.92rem;
+}
+
+.tabla-responsive th {
+  background: #fafafa;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.col-acciones {
+  text-align: right;
+  width: 110px;
+}
+
+.td-acciones {
+  text-align: right;
+}
+
+.btn-tabla {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-eliminar {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.btn-eliminar:hover {
+  background: #f5c6cb;
+}
+
+.texto-vacio, .texto-cargando {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+/* Modal Detalle Técnica */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.modal-card {
+  background: var(--color-surface);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.btn-cerrar-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-video-box video {
+  width: 100%;
+  max-height: 280px;
+  background: #000;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.modal-desc-texto {
+  font-size: 0.92rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* Barra de Navegación Inferior Móvil Fija PWA */
+.nav-pwa-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #ffffff;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+  min-width: 58px;
+  cursor: pointer;
+}
+
+.nav-icon {
+  margin-bottom: 3px;
+  stroke: currentColor;
+}
+
+.nav-item:hover,
+.nav-item-activo {
+  color: var(--color-primary);
+  font-weight: 600;
+}

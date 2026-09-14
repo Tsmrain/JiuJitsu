@@ -1,28 +1,34 @@
-"""Adaptadores de Servicios Externos (YOLO y Gemini).
+# src/infrastructure/adapters/yolo_adapter.py
+"""Adaptador YOLO26x con serialización JSONB para PostgreSQL.
 
-Reutiliza los componentes probados de infraestructura (ColabYOLOAdapter y GeminiServiceAdapter)
-garantizando Variaciones Protegidas y evitando duplicación de lógica de serialización o API calls.
+Consolida la lógica de AdaptadorYOLO (antes en src/services/adapters.py):
+- Selección de motor: ColabYOLOAdapter (real) o MockYOLOEngine (fallback)
+- Validación anatómica de MatrizEsqueletica
+- Serialización/deserialización JSONB para columna JSONB de PostgreSQL
+
+Aplica el patrón Variaciones Protegidas (Larman, Cap. 17): la capa de
+persistencia y aplicación nunca sabe si hay GPU o mock detrás.
 """
 
 import json
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from src.domain.interfaces import IInferenceEngine, IGenerationService, IEmbeddingService
-from src.domain.models import MatrizEsqueletica, Punto3D, DesviacionArticular
+from src.domain.interfaces import IInferenceEngine
+from src.domain.models import MatrizEsqueletica, Punto3D
 
 
 class AdaptadorYOLO(IInferenceEngine):
-    """Adaptador intermediario para visión artificial YOLO26x.
+    """Adaptador de orquestación para visión artificial YOLO26x.
 
-    Encapsula la validación anatómica, la inferencia remota y la serialización JSONB
-    para la capa de persistencia relacional.
+    Selecciona ColabYOLOAdapter o MockYOLOEngine según entorno,
+    y agrega capacidades de validación y persistencia JSONB.
     """
 
     def __init__(self, colab_url: Optional[str] = None):
         url = colab_url or os.getenv("COLAB_TUNNEL_URL", "").strip()
         if url and not url.startswith("https://placeholder"):
-            from src.infrastructure.colab_adapter import ColabYOLOAdapter
+            from src.infrastructure.adapters.colab_adapter import ColabYOLOAdapter
             self._engine: IInferenceEngine = ColabYOLOAdapter(url)
         else:
             from src.infrastructure.mocks import MockYOLOEngine
@@ -39,7 +45,6 @@ class AdaptadorYOLO(IInferenceEngine):
         puntos = matriz.puntos_3d if getattr(matriz, "puntos_3d", None) else matriz.puntos
         if not puntos:
             return False
-        # Validar que los puntos sean objetos Punto3D válidos
         for p in puntos.values():
             if not isinstance(p, Punto3D):
                 return False
@@ -49,7 +54,6 @@ class AdaptadorYOLO(IInferenceEngine):
         """Serializa la matriz esquelética en JSONB canónico para PostgreSQL."""
         if not self.validar_matriz_esqueletica(matriz):
             raise ValueError("Matriz esquelética inválida según contrato YOLO26x")
-
         puntos = matriz.puntos_3d if getattr(matriz, "puntos_3d", None) else matriz.puntos
         return json.dumps({
             str(k): {"x": float(v.x), "y": float(v.y), "z": float(v.z)}
@@ -64,7 +68,9 @@ class AdaptadorYOLO(IInferenceEngine):
             data = dict(raw_data)
 
         # Manejo de registros históricos o esquemas simplificados
-        if "angulos" in data and not any(isinstance(k, int) or (isinstance(k, str) and k.isdigit()) for k in data):
+        if "angulos" in data and not any(
+            isinstance(k, int) or (isinstance(k, str) and k.isdigit()) for k in data
+        ):
             puntos = {
                 6: Punto3D(0.0, 0.0, 0.0),
                 8: Punto3D(1.0, 0.0, 0.0),
@@ -82,36 +88,3 @@ class AdaptadorYOLO(IInferenceEngine):
                 puntos_dict[key] = Punto3D(float(v["x"]), float(v["y"]), float(v["z"]))
 
         return MatrizEsqueletica(puntos_3d=puntos_dict)
-
-
-class AdaptadorGemini(IGenerationService, IEmbeddingService):
-    """Adaptador intermediario para los servicios de IA Generativa y Vectorización de Gemini.
-
-    Garantiza generación de embeddings con dimensión estricta de 768 floats (gemini-embedding-2).
-    """
-
-    def __init__(self, api_key: Optional[str] = None):
-        from src.infrastructure.gemini_adapter import GeminiServiceAdapter
-        key = api_key or os.getenv("GEMINI_API_KEY", "")
-        self._inner = GeminiServiceAdapter(api_key=key)
-
-    def generar_embedding(self, texto: str) -> List[float]:
-        """Genera un vector embedding de 768 dimensiones para el texto dado."""
-        vector = self._inner.generate_embedding(texto)
-        if not vector or len(vector) != 768:
-            # Si no hay cliente Gemini configurado o mock default, asegurar 768 dimensiones
-            return [0.05] * 768
-        return vector
-
-    def generate_embedding(self, text: str) -> List[float]:
-        """Implementación del contrato IEmbeddingService."""
-        return self.generar_embedding(text)
-
-    def generar_consejo(
-        self,
-        tecnica: str,
-        desviaciones: List[DesviacionArticular],
-        contexto_manual: Optional[str] = None,
-    ) -> str:
-        """Implementación del contrato IGenerationService."""
-        return self._inner.generar_consejo(tecnica, desviaciones, contexto_manual)

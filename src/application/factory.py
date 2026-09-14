@@ -11,6 +11,8 @@ from typing import Any, Optional
 from src.application.profesor_controller import ProfesorController
 from src.application.tecnica_controller import TecnicaController
 from src.application.fuente_controller import FuenteController
+from src.application.controllers import EvaluacionController
+from src.services.sintesis_pedagogica_service import SintesisPedagogicaService
 
 from src.infrastructure.mocks import (
     InMemoryProfesorRepository,
@@ -22,7 +24,9 @@ from src.infrastructure.persistence import (
     PostgresTecnicaRepository,
     PostgresFuenteConocimientoRepository,
 )
-from src.services.adapters import AdaptadorYOLO, AdaptadorGemini
+from src.domain.models import ConfiguracionRAG
+from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
+from src.infrastructure.adapters.gemini_service_adapter import AdaptadorGemini
 
 # Almacenes compartidos en memoria para integración de casos de uso sin base de datos activa
 _SHARED_MEM_TECNICA_REPO = InMemoryTecnicaRepository()
@@ -87,14 +91,54 @@ def crear_tecnica_controller(
 def crear_fuente_controller(
     usar_db_real: bool = False,
     db_conn: Optional[Any] = None,
+    config_rag: Optional[ConfiguracionRAG] = None,
     gemini_adapter: Optional[AdaptadorGemini] = None,
     nuevo_almacen: bool = False,
 ) -> FuenteController:
-    """Crea una instancia de FuenteController inyectando repositorio y adaptador Gemini."""
+    """Crea una instancia de FuenteController inyectando repositorio, configuración RAG y adaptador Gemini."""
     gemini = gemini_adapter if gemini_adapter is not None else AdaptadorGemini()
+    cfg = config_rag if config_rag is not None else ConfiguracionRAG()
     if usar_db_real:
         conn = db_conn if db_conn is not None else get_db_connection()
-        repo = PostgresFuenteConocimientoRepository(conn, gemini_adapter=gemini)
+        repo = PostgresFuenteConocimientoRepository(conn, config_rag=cfg, gemini_adapter=gemini)
     else:
-        repo = InMemoryFuenteConocimientoRepository() if nuevo_almacen else _SHARED_MEM_FUENTE_REPO
+        repo = InMemoryFuenteConocimientoRepository(config_rag=cfg) if nuevo_almacen else _SHARED_MEM_FUENTE_REPO
     return FuenteController(repository=repo, gemini_adapter=gemini)
+
+
+def crear_sintesis_pedagogica_service(
+    usar_db_real: bool = False,
+    db_conn: Optional[Any] = None,
+    config_rag: Optional[ConfiguracionRAG] = None,
+    nuevo_almacen: bool = False,
+) -> SintesisPedagogicaService:
+    """Crea una instancia de SintesisPedagogicaService con repositorio y configuración inyectada."""
+    cfg = config_rag if config_rag is not None else ConfiguracionRAG()
+    if usar_db_real:
+        conn = db_conn if db_conn is not None else get_db_connection()
+        repo = PostgresFuenteConocimientoRepository(conn, config_rag=cfg)
+    else:
+        repo = InMemoryFuenteConocimientoRepository(config_rag=cfg) if nuevo_almacen else _SHARED_MEM_FUENTE_REPO
+    return SintesisPedagogicaService(repo=repo, config=cfg)
+
+
+def crear_evaluacion_controller(
+    inference_engine: Optional[Any] = None,
+    generation_service: Optional[Any] = None,
+    tecnica_repository: Optional[Any] = None,
+    usar_db_real: bool = False,
+    db_conn: Optional[Any] = None,
+    config_rag: Optional[ConfiguracionRAG] = None,
+) -> EvaluacionController:
+    """Crea una instancia de EvaluacionController con el servicio de síntesis pedagógica inyectado."""
+    from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService
+    inf = inference_engine if inference_engine is not None else MockYOLOEngine()
+    gen = generation_service if generation_service is not None else MockGeminiService()
+    tec = tecnica_repository if tecnica_repository is not None else _SHARED_MEM_TECNICA_REPO
+    sintesis = crear_sintesis_pedagogica_service(usar_db_real=usar_db_real, db_conn=db_conn, config_rag=config_rag)
+    return EvaluacionController(
+        inference_engine=inf,
+        generation_service=gen,
+        tecnica_repository=tec,
+        sintesis_service=sintesis,
+    )

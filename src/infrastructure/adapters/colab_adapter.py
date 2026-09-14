@@ -1,4 +1,4 @@
-# src/infrastructure/colab_adapter.py
+# src/infrastructure/adapters/colab_adapter.py
 import requests
 from typing import Dict, Any, Optional
 from src.domain.interfaces import IInferenceEngine

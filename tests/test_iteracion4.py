@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from src.presentation.api import app, container
 from src.application.controllers import EvaluacionController
-from src.infrastructure.history_repository import PostgresHistorialRepository
+from src.infrastructure.persistence.history_repository import PostgresHistorialRepository
 from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService, MockTecnicaRepository
 
 class TestFallbackRAG:

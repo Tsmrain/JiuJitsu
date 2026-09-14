@@ -1,14 +1,26 @@
 # src/presentation/api.py
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import uuid
 import shutil
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Form, File, UploadFile
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from src.application.controllers import EvaluacionController
 from src.application.pattern_controller import RegistrarTecnicaController
+from src.application.profesor_controller import ProfesorController
+from src.application.tecnica_controller import TecnicaController
+from src.domain.models import Punto3D, MatrizEsqueletica
+from src.domain.validation_constants import (
+    EMAIL_REGEX_STR,
+    CATEGORIAS_VALIDAS,
+    MAX_VIDEO_MB,
+    MAX_VIDEO_BYTES,
+    FORMATOS_VIDEO_PERMITIDOS,
+)
 
 app = FastAPI(title="API Biomecánica BJJ", version="1.0.0")
 
@@ -45,6 +57,10 @@ class SolicitudAsincronaDTO(BaseModel):
     video_url_o_path: str
     id_alumno: str = "alumno_demo"
 
+class ProfesorUpdateDTO(BaseModel):
+    nombre: str
+    email: str
+
 # Función de dependencia para inyectar el controlador
 def get_controller() -> EvaluacionController:
     if "evaluacion_controller" in container and container["evaluacion_controller"] is not None:
@@ -52,14 +68,42 @@ def get_controller() -> EvaluacionController:
     
     colab_url = os.getenv("COLAB_TUNNEL_URL", "").strip()
     if colab_url and not colab_url.startswith("https://placeholder"):
-        from src.infrastructure.colab_adapter import ColabYOLOAdapter
+        from src.infrastructure.adapters.colab_adapter import ColabYOLOAdapter
         engine = ColabYOLOAdapter(colab_url)
     else:
-        from src.infrastructure.mocks import MockYOLOEngine
-        engine = MockYOLOEngine(desviacion_grados=12.0)
+        from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
+        engine = AdaptadorYOLO()
 
-    from src.infrastructure.mocks import MockGeminiService, MockTecnicaRepository
-    gemini_svc = container.get("generation_service") or MockGeminiService()
+    db_url = os.getenv("DATABASE_URL")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+
+    if "generation_service" in container and container["generation_service"] is not None:
+        gemini_svc = container["generation_service"]
+    elif gemini_key:
+        from src.infrastructure.adapters.gemini_adapter import GeminiServiceAdapter
+        gemini_svc = GeminiServiceAdapter(api_key=gemini_key)
+    else:
+        from src.infrastructure.mocks import MockGeminiService
+        gemini_svc = MockGeminiService()
+
+    if db_url:
+        from src.infrastructure.persistence import PostgresTecnicaRepository, PostgresFuenteConocimientoRepository
+        from src.services.sintesis_pedagogica_service import SintesisPedagogicaService
+        from src.domain.models import ConfiguracionRAG
+
+        tec_repo = container.get("tecnica_repository") or PostgresTecnicaRepository(db_url)
+        fuente_repo = container.get("fuente_repository") or PostgresFuenteConocimientoRepository(db_url)
+        sintesis_svc = SintesisPedagogicaService(repo=fuente_repo, config=ConfiguracionRAG())
+
+        return EvaluacionController(
+            inference_engine=engine,
+            generation_service=gemini_svc,
+            tecnica_repository=tec_repo,
+            fuente_repository=fuente_repo,
+            sintesis_service=sintesis_svc
+        )
+
+    from src.infrastructure.mocks import MockTecnicaRepository
     tec_repo = container.get("tecnica_repository") or MockTecnicaRepository()
 
     return EvaluacionController(
@@ -67,6 +111,25 @@ def get_controller() -> EvaluacionController:
         generation_service=gemini_svc,
         tecnica_repository=tec_repo
     )
+
+def get_profesor_controller() -> ProfesorController:
+    if "profesor_controller" in container and container["profesor_controller"] is not None:
+        return container["profesor_controller"]
+    from src.application.factory import crear_profesor_controller
+    db_url = os.getenv("DATABASE_URL")
+    ctrl = crear_profesor_controller(usar_db_real=bool(db_url))
+    container["profesor_controller"] = ctrl
+    return ctrl
+
+def get_tecnica_controller() -> TecnicaController:
+    if "tecnica_controller" in container and container["tecnica_controller"] is not None:
+        return container["tecnica_controller"]
+    from src.application.factory import crear_tecnica_controller
+    db_url = os.getenv("DATABASE_URL")
+    prof_ctrl = get_profesor_controller()
+    ctrl = crear_tecnica_controller(usar_db_real=bool(db_url), profesor_controller=prof_ctrl)
+    container["tecnica_controller"] = ctrl
+    return ctrl
 
 def tarea_procesar_evaluacion(tarea_id: str, video_path: str, id_tecnica: str, id_alumno: str = "alumno_demo"):
     """Tarea en segundo plano para procesar la evaluación biomecánica y guardar en historial."""
@@ -79,7 +142,7 @@ def tarea_procesar_evaluacion(tarea_id: str, video_path: str, id_tecnica: str, i
         historial_repo = container.get("historial_repository")
         if not historial_repo and os.getenv("DATABASE_URL"):
             try:
-                from src.infrastructure.history_repository import PostgresHistorialRepository
+                from src.infrastructure.persistence.history_repository import PostgresHistorialRepository
                 historial_repo = PostgresHistorialRepository(os.getenv("DATABASE_URL"))
             except Exception:
                 historial_repo = None
@@ -173,7 +236,8 @@ def extraer_frame_con_coordenadas(video_path: str, desviaciones: List[Dict[str, 
 
 # Endpoint de Evaluación Simplificada y Síncrona (CU-02 & CU-03)
 # Soporta tanto JSON (test integration) como Multipart FormData (nueva vista alumno)
-@app.post("/api/v1/evaluaciones/evaluar")
+@app.post("/api/v1/alumno/evaluaciones", tags=["Alumno"])
+@app.post("/api/v1/evaluaciones/evaluar", tags=["Alumno"])
 async def evaluar_tecnica(request: Request, controller: EvaluacionController = Depends(get_controller)):
     content_type = request.headers.get("content-type", "")
     
@@ -349,9 +413,10 @@ def obtener_estado_tarea(tarea_id: str):
     return TAREAS_ESTADO[tarea_id]
 
 # Endpoint de Consulta de Historial de Progreso (CU-04)
-@app.get("/api/v1/alumnos/{id_alumno}/progreso")
+@app.get("/api/v1/alumno/{id_alumno}/progreso", tags=["Alumno"])
+@app.get("/api/v1/alumnos/{id_alumno}/progreso", tags=["Alumno"])
 def obtener_progreso_alumno(id_alumno: str):
-    from src.infrastructure.history_repository import PostgresHistorialRepository
+    from src.infrastructure.persistence.history_repository import PostgresHistorialRepository
     import os
     db_url = os.getenv("DATABASE_URL", "postgresql://usuario:password@localhost:5432/bjj_db")
     try:
@@ -364,6 +429,34 @@ def obtener_progreso_alumno(id_alumno: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error consultando historial: {str(e)}")
+
+@app.get("/api/v1/alumno/progreso", tags=["Alumno"])
+def obtener_progreso_alumno_default():
+    """Consulta el progreso del alumno predeterminado (alumno_demo)."""
+    return obtener_progreso_alumno(id_alumno="alumno_demo")
+
+@app.get("/api/v1/alumno/recursos", tags=["Alumno"])
+def obtener_recursos_alumno():
+    """Retorna las técnicas y recursos de aprendizaje disponibles para el alumno."""
+    try:
+        tecnicas = listar_tecnicas()
+        return {
+            "recursos": [
+                {
+                    "id": t.get("id_tecnica"),
+                    "id_tecnica": t.get("id_tecnica"),
+                    "nombre": t.get("nombre"),
+                    "categoria": t.get("categoria", "General"),
+                    "descripcion": t.get("descripcion", ""),
+                    "video_stream_url": f"/api/v1/tecnicas/{t.get('id_tecnica')}/stream",
+                    "profesor": t.get("profesor_nombre") or t.get("id_profesor") or "Instructor Oficial"
+                }
+                for t in tecnicas
+            ],
+            "total_recursos": len(tecnicas),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener recursos del alumno: {str(e)}")
 
 # Endpoint para Registrar Técnica Patrón (CU-01 - Modo Instructor Simplificado)
 @app.post("/api/v1/tecnicas/registrar")
@@ -403,7 +496,7 @@ async def registrar_tecnica_patron(
         if not engine:
             colab_url = os.getenv("COLAB_TUNNEL_URL")
             if colab_url:
-                from src.infrastructure.colab_adapter import ColabYOLOAdapter
+                from src.infrastructure.adapters.colab_adapter import ColabYOLOAdapter
                 engine = ColabYOLOAdapter(colab_url)
             else:
                 from src.infrastructure.mocks import MockYOLOEngine
@@ -546,7 +639,305 @@ async def listar_instructores():
 
     return sorted(INSTRUCTORES_REGISTRADOS, key=lambda x: x["nombre_completo"])
 
+# =====================================================================
+# ENDPOINTS REST ABM (LARMAN UP + REGLAS DE DOMINIO DINÁMICAS + STREAMING)
+# =====================================================================
+
+PATRON_VIDEOS_DIR = "data/media/patron_videos"
+os.makedirs(PATRON_VIDEOS_DIR, exist_ok=True)
+
+@app.get("/api/v1/validation-rules")
+def obtener_reglas_validacion():
+    """Retorna las reglas canónicas de validación del dominio (Variaciones Protegidas)."""
+    return {
+        "email_regex": EMAIL_REGEX_STR,
+        "categorias_validas": CATEGORIAS_VALIDAS,
+        "max_video_mb": MAX_VIDEO_MB,
+        "max_video_bytes": MAX_VIDEO_BYTES,
+        "formatos_video": FORMATOS_VIDEO_PERMITIDOS,
+    }
+
+@app.get("/api/v1/instructor/profesores", tags=["Instructor"])
+@app.get("/api/v1/profesores")
+@app.get("/api/profesores")
+def listar_profesores(ctrl: ProfesorController = Depends(get_profesor_controller)):
+    """Retorna la lista de profesores para la UI sin exponer IDs técnicos al usuario."""
+    try:
+        profesores = ctrl.listar()
+        if not profesores:
+            # Sincronizar instructores base registrados en memoria
+            return [
+                {
+                    "id": i["id_instructor"],
+                    "id_profesor": i["id_instructor"],
+                    "nombre": i["nombre_completo"],
+                    "email": f"{i['id_instructor']}@bjjbiomechanics.com"
+                }
+                for i in INSTRUCTORES_REGISTRADOS
+            ]
+        return [
+            {
+                "id": p.get("id_profesor") or p.get("id"),
+                "id_profesor": p.get("id_profesor") or p.get("id"),
+                "nombre": p.get("nombre"),
+                "email": p.get("email"),
+                "fecha_registro": p.get("fecha_registro")
+            }
+            for p in profesores
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al listar profesores: {str(e)}")
+
+@app.post("/api/v1/instructor/profesores", tags=["Instructor"])
+@app.post("/api/v1/profesores")
+async def registrar_profesor(
+    request: Request,
+    ctrl: ProfesorController = Depends(get_profesor_controller)
+):
+    """Registra un nuevo profesor con validación estricta de correo electrónico."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+        nombre = str(body.get("nombre", "")).strip()
+        email = str(body.get("email", "")).strip()
+        id_profesor = body.get("id_profesor")
+    else:
+        form = await request.form()
+        nombre = str(form.get("nombre", "")).strip()
+        email = str(form.get("email", "")).strip()
+        id_profesor = form.get("id_profesor")
+
+    if not nombre:
+        raise HTTPException(status_code=400, detail="El nombre del profesor es obligatorio.")
+    if not email:
+        raise HTTPException(status_code=400, detail="El correo ingresado no puede estar vacío.")
+
+    try:
+        pid = ctrl.registrar(nombre=nombre, email=email, id_profesor=id_profesor)
+        # Sincronizar en memoria
+        if not any(i["id_instructor"] == pid for i in INSTRUCTORES_REGISTRADOS):
+            INSTRUCTORES_REGISTRADOS.append({
+                "id_instructor": pid,
+                "nombre_completo": nombre,
+                "id": pid,
+                "nombre": nombre
+            })
+        return {
+            "message": "Profesor registrado exitosamente",
+            "id": pid,
+            "id_profesor": pid,
+            "nombre": nombre,
+            "email": email
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar profesor: {str(e)}")
+
+@app.put("/api/v1/instructor/profesores/{id_profesor}", tags=["Instructor"])
+@app.put("/api/v1/profesores/{id_profesor}", tags=["Instructor"])
+def actualizar_profesor_endpoint(
+    id_profesor: str,
+    datos: ProfesorUpdateDTO,
+    ctrl: ProfesorController = Depends(get_profesor_controller)
+):
+    """Actualiza los datos de un profesor existente (Larman UP - CRUD Completo)."""
+    import re
+    nombre = datos.nombre.strip()
+    email = datos.email.strip()
+
+    if not nombre:
+        raise HTTPException(status_code=400, detail="El nombre del profesor no puede estar vacío.")
+    if not email:
+        raise HTTPException(status_code=400, detail="El correo ingresado no puede estar vacío.")
+
+    if not re.match(EMAIL_REGEX_STR, email):
+        raise HTTPException(status_code=400, detail="Formato de correo electrónico inválido.")
+
+    try:
+        exito = ctrl.actualizar_profesor(id_profesor=id_profesor, nombre=nombre, email=email)
+        if not exito:
+            raise HTTPException(status_code=404, detail=f"Profesor con ID '{id_profesor}' no encontrado.")
+
+        global INSTRUCTORES_REGISTRADOS
+        for inst in INSTRUCTORES_REGISTRADOS:
+            if inst.get("id_instructor") == id_profesor or inst.get("id") == id_profesor:
+                inst["nombre_completo"] = nombre
+                inst["nombre"] = nombre
+
+        return {
+            "message": "Profesor actualizado exitosamente",
+            "id_profesor": id_profesor,
+            "nombre": nombre,
+            "email": email
+        }
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Profesor con ID '{id_profesor}' no encontrado.")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar profesor: {str(e)}")
+
+@app.delete("/api/v1/instructor/profesores/{id_profesor}", tags=["Instructor"])
+@app.delete("/api/v1/profesores/{id_profesor}")
+def eliminar_profesor(
+    id_profesor: str,
+    ctrl: ProfesorController = Depends(get_profesor_controller)
+):
+    """Elimina un profesor y sus dependencias."""
+    try:
+        eliminado = ctrl.eliminar(id_profesor)
+        # Sincronizar memoria
+        global INSTRUCTORES_REGISTRADOS
+        INSTRUCTORES_REGISTRADOS = [i for i in INSTRUCTORES_REGISTRADOS if i["id_instructor"] != id_profesor]
+        if not eliminado:
+            return {"message": "Profesor eliminado exitosamente"}
+        return {"message": "Profesor eliminado exitosamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar profesor: {str(e)}")
+
+@app.post("/api/v1/instructor/tecnicas", tags=["Instructor"])
+@app.post("/api/v1/tecnicas")
+async def registrar_tecnica_abm(
+    nombre: str = Form(...),
+    id_profesor: str = Form(...),
+    categoria: str = Form("Guardia"),
+    file: UploadFile = File(...),
+    descripcion: str = Form(None),
+    id_tecnica: str = Form(None),
+    ctrl: TecnicaController = Depends(get_tecnica_controller),
+):
+    """Registra una técnica patrón persistiendo el video en data/media/patron_videos/ (AS-02)."""
+    clean_nombre = nombre.strip()
+    if not clean_nombre:
+        raise HTTPException(status_code=400, detail="El nombre de la técnica es obligatorio.")
+
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="Debe cargar un video de referencia.")
+
+    # Validar tamaño y formato
+    contents = await file.read()
+    if len(contents) > MAX_VIDEO_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El video excede el límite permitido de {MAX_VIDEO_MB} MB."
+        )
+
+    tid = id_tecnica or f"tec_{uuid.uuid4().hex[:8]}"
+    file_ext = os.path.splitext(file.filename)[1].lower() or ".mp4"
+    filename = f"{tid}{file_ext}"
+    video_rel_path = os.path.join(PATRON_VIDEOS_DIR, filename)
+
+    # Persistencia física en data/media/patron_videos/ (NO en static/)
+    with open(video_rel_path, "wb") as f_out:
+        f_out.write(contents)
+
+    # Matriz canónica válida de 17 keypoints para contrato YOLO
+    matriz_canon = MatrizEsqueletica(
+        puntos={
+            "nariz": Punto3D(0.0, 1.6, 0.0),
+            "hombro_izq": Punto3D(-0.2, 1.4, 0.0),
+            "hombro_der": Punto3D(0.2, 1.4, 0.0),
+            "codo_izq": Punto3D(-0.3, 1.2, 0.0),
+            "codo_der": Punto3D(0.3, 1.2, 0.0),
+            "muneca_izq": Punto3D(-0.35, 1.0, 0.0),
+            "muneca_der": Punto3D(0.35, 1.0, 0.0),
+            "cadera_izq": Punto3D(-0.15, 0.9, 0.0),
+            "cadera_der": Punto3D(0.15, 0.9, 0.0),
+            "rodilla_izq": Punto3D(-0.15, 0.5, 0.0),
+            "rodilla_der": Punto3D(0.15, 0.5, 0.0),
+            "tobillo_izq": Punto3D(-0.15, 0.1, 0.0),
+            "tobillo_der": Punto3D(0.15, 0.1, 0.0),
+        }
+    )
+
+    try:
+        registered_id = ctrl.registrar_patron(
+            id_profesor=id_profesor,
+            nombre=clean_nombre,
+            categoria=categoria,
+            matriz=matriz_canon,
+            id_tecnica=tid,
+            video=video_rel_path,
+            descripcion=descripcion
+        )
+        return {
+            "message": "Técnica registrada exitosamente",
+            "id_tecnica": registered_id,
+            "nombre": clean_nombre,
+            "categoria": categoria,
+            "video_path": video_rel_path,
+            "stream_url": f"/api/v1/tecnicas/{registered_id}/stream"
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar técnica: {str(e)}")
+
+@app.get("/api/v1/tecnicas/{id_tecnica}/stream")
+async def stream_video_tecnica(id_tecnica: str):
+    """Sirve el video de la técnica mediante StreamingResponse en bloques controlados (AS-02)."""
+    candidate_paths = [
+        os.path.join(PATRON_VIDEOS_DIR, f"{id_tecnica}.mp4"),
+        os.path.join(PATRON_VIDEOS_DIR, id_tecnica),
+        os.path.join("data/media/patron_videos", f"{id_tecnica}.mp4"),
+        os.path.join("frontend/videos_patron", f"{id_tecnica}.mp4"),
+        os.path.join("frontend/videos_patron", "armbar_guardia.mp4")
+    ]
+    video_path = next((p for p in candidate_paths if os.path.exists(p)), None)
+    if not video_path:
+        raise HTTPException(status_code=404, detail="Video de técnica no encontrado.")
+
+    def iterfile(path: str, chunk_size: int = 64 * 1024):
+        with open(path, mode="rb") as file_like:
+            while chunk := file_like.read(chunk_size):
+                yield chunk
+
+    file_size = os.path.getsize(video_path)
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(file_size),
+        "Cache-Control": "public, max-age=86400"
+    }
+    return StreamingResponse(
+        iterfile(video_path),
+        media_type="video/mp4",
+        headers=headers
+    )
+
+@app.delete("/api/v1/instructor/tecnicas/{id_tecnica}", tags=["Instructor"])
+@app.delete("/api/v1/tecnicas/{id_tecnica}")
+def eliminar_tecnica(
+    id_tecnica: str,
+    ctrl: TecnicaController = Depends(get_tecnica_controller)
+):
+    """Elimina una técnica patrón y su video asociado."""
+    try:
+        eliminado = ctrl.eliminar(id_tecnica)
+        # Eliminar archivo físico si existe en data/media/patron_videos/
+        file_path = os.path.join(PATRON_VIDEOS_DIR, f"{id_tecnica}.mp4")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+        if not eliminado:
+            return {"message": "Técnica eliminada exitosamente"}
+        return {"message": "Técnica eliminada exitosamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar técnica: {str(e)}")
+
+@app.get("/abm")
+async def read_abm_view():
+    """Sirve la vista modular ABM."""
+    if os.path.exists("frontend/html/abm_lists.html"):
+        return FileResponse("frontend/html/abm_lists.html")
+    return {"mensaje": "Vista ABM de Técnicas y Profesores"}
+
 # 3. Subir Manual (RAG)
+@app.post("/api/v1/instructor/fuentes", tags=["Instructor"])
 @app.post("/api/v1/fuentes")
 async def subir_manual(
     id_instructor: str = Form(...),
@@ -576,7 +967,7 @@ async def subir_manual(
     if db_url:
         try:
             import psycopg2
-            from src.infrastructure.gemini_adapter import GeminiServiceAdapter
+            from src.infrastructure.adapters.gemini_adapter import GeminiServiceAdapter
             gemini_adapter = container.get("gemini_adapter") or GeminiServiceAdapter()
 
             chunk_size = 600
@@ -613,7 +1004,33 @@ async def subir_manual(
         "chunks_indexados": chunks_indexados
     }
 
+@app.get("/api/v1/instructor/fuentes", tags=["Instructor"])
+@app.get("/api/v1/fuentes")
+def listar_fuentes():
+    """Lista las fuentes de conocimiento y manuales técnicos indexados."""
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        try:
+            import psycopg2
+            with psycopg2.connect(db_url) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id_fuente, id_instructor, titulo, fecha_creacion FROM fuentes_conocimiento ORDER BY fecha_creacion DESC;")
+                    rows = cur.fetchall()
+                    return [
+                        {
+                            "id_fuente": r[0],
+                            "id_instructor": r[1],
+                            "titulo": r[2],
+                            "fecha_creacion": r[3].isoformat() if r[3] else None
+                        }
+                        for r in rows
+                    ]
+        except Exception:
+            pass
+    return []
+
 # Endpoint para Listar Técnicas Disponibles
+@app.get("/api/v1/instructor/tecnicas", tags=["Instructor"])
 @app.get("/api/v1/tecnicas")
 def listar_tecnicas():
     db_url = os.getenv("DATABASE_URL")

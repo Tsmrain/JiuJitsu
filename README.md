@@ -23,7 +23,23 @@ El sistema sigue una arquitectura en capas orientada a objetos para garantizar *
 ### Casos de Uso Implementados
 
 - **CU-01 — Registrar Patrón:** El instructor sube un video; el sistema extrae la `MatrizEsqueletica` patrón via YOLO26x y la persiste con su embedding vectorial.
-- **CU-02 — Evaluar Ejecución:** El alumno sube su video; el sistema compara esqueletos, calcula `DesviacionArticular` y genera consejo pedagógico con RAG.
+- **CU-02 — Evaluar Ejecución con Síntesis Pedagógica Estructurada:** El alumno sube su video; el sistema compara esqueletos, calcula `DesviacionArticular`, recupera literatura técnica con RAG y orquesta **Gemini 2.5 Flash** para generar un reporte estructurado en 4 claves (`analisis_postural`, `riesgo_lesion`, `paso_a_paso`, `resumen_ejecutivo`).
+  - **PWA Frontend:** Recibe una concatenación legible de `resumen_ejecutivo` y `paso_a_paso`.
+  - **Persistencia Histórica:** Se almacena de forma íntegra en la columna `JSONB` (`consejo_pedagogico`) de la tabla `evaluaciones_alumno`.
+
+---
+
+## Síntesis Pedagógica Estructurada (Gemini 2.5 Flash & JSONB)
+
+El flujo de evaluación biomecánica implementa una síntesis pedagógica estructurada bajo el principio de **Variaciones Protegidas**:
+1. **Detección Biomecánica:** La capa de Dominio calcula el desajuste angular exacto frente al patrón del maestro.
+2. **Recuperación Semántica (RAG):** Si la desviación supera el umbral, se busca contexto de manuales (ej. *Jiu Jitsu University*).
+3. **Generación con Gemini 2.5 Flash:** El adaptador `GeminiServiceAdapter` solicita explícitamente un schema JSON con 4 claves:
+   - `analisis_postural`: Diagnóstico biomecánico detallado del desajuste angular.
+   - `riesgo_lesion`: Riesgo anatómico, sobrecarga articular o pérdida de apalancamiento mecánico.
+   - `paso_a_paso`: Instrucciones secuenciales de reajuste corporal accionables por el alumno.
+   - `resumen_ejecutivo`: Síntesis concisa para comprensión rápida inmediata.
+4. **Almacenamiento JSONB (Mannino):** En la tabla `evaluaciones_alumno`, la columna `consejo_pedagogico` almacena el payload como tipo `JSONB` nativo (`psycopg2.extras.Json`).
 
 ---
 
@@ -36,7 +52,7 @@ JiuJitsu/
 ├── src/
 │   ├── domain/                    # Núcleo puro: Modelos, Interfaces, Lógica Biomecánica
 │   │   ├── models.py              # Entidades: Profesor, TecnicaPatron, MatrizEsqueletica
-│   │   └── interfaces.py          # Contratos ABC: IInferenceEngine, IProfesorRepository...
+│   │   └── interfaces.py          # Contratos ABC: IInferenceEngine, IGenerationService...
 │   ├── application/               # Casos de Uso y Controladores GRASP
 │   │   ├── controllers.py         # EvaluacionController (CU-02)
 │   │   ├── pattern_controller.py  # RegistrarTecnicaController (CU-01)
@@ -51,13 +67,14 @@ JiuJitsu/
 │   │   ├── adapters/              # IA y hardware externo
 │   │   │   ├── colab_adapter.py           # ColabYOLOAdapter → YOLO26x vía HTTP/Colab GPU
 │   │   │   ├── yolo_adapter.py            # AdaptadorYOLO → orquestación + serialización JSONB
-│   │   │   ├── gemini_adapter.py          # GeminiServiceAdapter → Gemini 2.5 Flash (raw)
-│   │   │   ├── gemini_service_adapter.py  # AdaptadorGemini → orquestación con fallback 768d
-│   │   │   └── gemini_embedding_adapter.py # GeminiEmbedding2Adapter → batch + retry 429
+│   │   │   ├── gemini_adapter.py          # GeminiServiceAdapter → Gemini 2.5 Flash estructurado JSON
+│   │   │   ├── gemini_service_adapter.py  # AdaptadorGemini → orquestación
+│   │   │   ├── qwen_embedding_adapter.py  # QwenEmbeddingAdapter → 2048d (GPU T4 Colab / Local)
+│   │   │   └── qdrant_adapter.py          # QdrantAdapter → persistencia y búsqueda vectorial Local
 │   │   ├── persistence/           # Repositorios SQL y RAG (BCNF — Mannino)
 │   │   │   ├── postgres_repository.py     # PostgresProfesor/Tecnica/FuenteRepository
-│   │   │   ├── history_repository.py      # PostgresHistorialRepository
-│   │   │   └── rag_ingestion.py           # IngestorRAG + PipelineIngestaRAG
+│   │   │   ├── history_repository.py      # PostgresHistorialRepository (JSONB)
+│   │   │   └── rag_ingestion.py           # PipelineIngestaRAG (Qwen 2048d + Qdrant)
 │   │   └── mocks.py               # Dobles de prueba para TDD (sin GPU, sin BD)
 │   └── presentation/              # API FastAPI y configuración de rutas
 │       └── api.py
@@ -65,15 +82,15 @@ JiuJitsu/
 │   ├── index.html                 # SPA con vistas por rol (Instructor / Alumno)
 │   ├── app.js                     # Lógica de presentación y consumo de API
 │   └── style.css
-├── tests/                         # Suite TDD completa (126 tests)
+├── tests/                         # Suite TDD completa
 │   ├── test_domain.py             # Pruebas unitarias de lógica biomecánica pura
-│   ├── test_application.py        # Pruebas de casos de uso
-│   ├── test_integration.py        # Pruebas de integración API ↔ Dominio
+│   ├── test_application.py        # Pruebas de casos de uso y DTO estructurado
+│   ├── test_integration.py        # Pruebas de integración API ↔ Dominio ↔ JSONB
 │   ├── test_e2e_rag.py            # Pruebas E2E del pipeline RAG
 │   └── test_abm_*.py              # Pruebas ABM (Profesores, Técnicas, Fuentes)
 ├── database/                      # Scripts de inicialización SQL (BCNF)
 │   ├── 01_init.sql
-│   ├── 02_historico.sql
+│   ├── 02_historico.sql           # Schema evaluaciones_alumno con JSONB
 │   ├── 03_instructores_fuentes.sql
 │   └── 04_abm_bcnf.sql
 ├── tools/                         # Scripts utilitarios de desarrollo
@@ -126,8 +143,8 @@ La aplicación estará disponible en: `http://localhost:8000`
 # Suite completa
 pytest tests/ -v
 
-# Solo pruebas de dominio (sin dependencias externas, < 1 segundo)
-pytest tests/test_domain.py tests/test_application.py -v
+# Pruebas de aplicación e integración de evaluación
+pytest tests/test_application.py tests/test_integration.py tests/test_iteracion4.py -v
 ```
 
 **Cobertura actual:** 126 tests, 0 fallos.
@@ -138,12 +155,12 @@ pytest tests/test_domain.py tests/test_application.py -v
 
 El esquema sigue diseño **normalizado hasta BCNF** (Mannino, 7th Ed., Cap. 6-8):
 
-| Tabla | Descripción |
-|-------|-------------|
-| `profesores` | Instructores registrados |
-| `tecnicas_patron` | Técnicas con su `MatrizEsqueletica` en JSONB |
-| `fuentes_conocimiento` | Manuales técnicos indexados con embeddings 768-dim |
-| `historial_evaluaciones` | Registro de evaluaciones por alumno |
+| Tabla | Tipo Columna Clave | Descripción |
+|-------|--------------------|-------------|
+| `profesores` | - | Instructores registrados |
+| `tecnicas_patron` | `matriz_esqueletica JSONB` | Técnicas con su `MatrizEsqueletica` en JSONB |
+| `fuentes_conocimiento` | `embedding_vector vector(2048)` | Manuales técnicos indexados para RAG |
+| `evaluaciones_alumno` | `consejo_pedagogico JSONB` | Registro histórico con reporte pedagógico estructurado (4 claves) |
 
 Inicialización automática con: `docker compose up -d`
 
@@ -155,6 +172,6 @@ Inicialización automática con: `docker compose up -d`
 |---------|------------|
 | **Desarrollo** | Proceso Unificado (Larman) con iteraciones cortas por Caso de Uso |
 | **Patrones** | GRASP: Experto en Información, Controlador, Creador, Variaciones Protegidas, Pure Fabrication |
-| **Calidad** | Test-Driven Development (TDD) — cobertura >90% en capa de dominio |
-| **Base de datos** | Diseño normalizado BCNF (Mannino) con pgvector para búsqueda semántica |
-| **IA Generativa** | RAG sobre `gemini-embedding-2` (768d) + `gemini-2.5-flash` para síntesis pedagógica |
+| **Calidad** | Test-Driven Development (TDD) |
+| **Base de datos** | Diseño normalizado BCNF (Mannino) con pgvector y JSONB |
+| **IA Generativa** | RAG sobre embeddings + `gemini-2.5-flash` para síntesis pedagógica estructurada |

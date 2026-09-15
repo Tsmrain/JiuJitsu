@@ -34,5 +34,10 @@ uploads/
 videos/
 data/media/
 
+# Archivos de vídeo grandes (no versionar)
+*.mp4
+*.mov
+*.avi
+
 # Contexto generado automáticamente (herramienta de desarrollo)
 docs/CONTEXTO_ARQUITECTURA_QWEN.md

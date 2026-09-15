@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS evaluaciones_alumno (
     es_valido BOOLEAN NOT NULL,
     total_desviaciones INT NOT NULL,
     desviacion_promedio_grados FLOAT NOT NULL,
-    consejo_pedagogico TEXT NOT NULL,
+    consejo_pedagogico JSONB NOT NULL, -- Espera claves: analisis_postural, riesgo_lesion, paso_a_paso, resumen_ejecutivo
     fecha_evaluacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -10,7 +10,7 @@ directamente del SDK de Google Genai.
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union
 
 from src.domain.interfaces import IGenerationService, IEmbeddingService
 from src.domain.models import DesviacionArticular
@@ -43,6 +43,6 @@ class AdaptadorGemini(IGenerationService, IEmbeddingService):
         tecnica: str,
         desviaciones: List[DesviacionArticular],
         contexto_manual: Optional[str] = None,
-    ) -> str:
-        """Implementación del contrato IGenerationService."""
+    ) -> Union[Dict[str, Any], str]:
+        """Implementación del contrato IGenerationService con soporte estructurado JSON."""
         return self._inner.generar_consejo(tecnica, desviaciones, contexto_manual)

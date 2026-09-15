@@ -42,7 +42,7 @@ class SintesisPedagogicaService:
             )
         except TypeError:
             resultados = self._repo.buscar_contexto(
-                consulta_embedding=embedding_desviacion or [0.05] * 768,
+                consulta_embedding=embedding_desviacion or [0.05] * 2048,
                 limite=self._config.top_k_resultados,
                 id_tecnica=id_tecnica,
             )

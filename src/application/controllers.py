@@ -88,11 +88,39 @@ class EvaluacionController:
             uso_fallback = info_rag["usó_fallback"]
 
         # 5. Generar consejo pedagógico con el servicio de IA
-        consejo = self._generation_service.generar_consejo(
-            tecnica=id_tecnica,
+        consejo_raw = self._generation_service.generar_consejo(
+            tecnica=patron_obj.nombre,
             desviaciones=desviaciones,
             contexto_manual=texto_contexto_final,
         )
+
+        # Normalizar y estructurar el consejo pedagógico (Larman - GRASP & Variaciones Protegidas)
+        if isinstance(consejo_raw, dict):
+            def _normalizar_texto(val: Any) -> str:
+                if isinstance(val, list):
+                    return "\n".join(str(item) for item in val)
+                return str(val) if val is not None else ""
+
+            consejo_dict = {
+                "analisis_postural": _normalizar_texto(consejo_raw.get("analisis_postural", "")),
+                "riesgo_lesion": _normalizar_texto(consejo_raw.get("riesgo_lesion", "")),
+                "paso_a_paso": _normalizar_texto(consejo_raw.get("paso_a_paso", "")),
+                "resumen_ejecutivo": _normalizar_texto(consejo_raw.get("resumen_ejecutivo", "")),
+            }
+            resumen = consejo_dict["resumen_ejecutivo"]
+            pasos = consejo_dict["paso_a_paso"]
+            if resumen and pasos:
+                consejo_str = f"{resumen}\n\nPaso a paso correctivo:\n{pasos}"
+            else:
+                consejo_str = resumen or pasos or str(consejo_raw)
+        else:
+            consejo_str = str(consejo_raw)
+            consejo_dict = {
+                "analisis_postural": consejo_str,
+                "riesgo_lesion": "No especificado.",
+                "paso_a_paso": consejo_str,
+                "resumen_ejecutivo": consejo_str
+            }
 
         # 6. Estructurar el DTO de respuesta para la PWA
         return {
@@ -108,7 +136,8 @@ class EvaluacionController:
                 }
                 for d in desviaciones
             ],
-            "consejo_pedagogico": consejo,
+            "consejo_pedagogico": consejo_str,
+            "consejo_estructurado": consejo_dict,
             "score_similitud_rag": score_final,
             "usó_fallback_rag": uso_fallback,
         }
@@ -135,6 +164,7 @@ class EvaluacionController:
             "punto_rojo": {"x": 0.0, "y": 0.0} if not art else {"x": 0.5, "y": 0.5},
             "consejo": resultado["consejo_pedagogico"],
             "consejo_pedagogico": resultado["consejo_pedagogico"],
+            "consejo_estructurado": resultado.get("consejo_estructurado"),
             "id_tecnica": resultado["id_tecnica"],
             "es_valido": resultado["es_valido"],
             "total_desviaciones": resultado["total_desviaciones"],

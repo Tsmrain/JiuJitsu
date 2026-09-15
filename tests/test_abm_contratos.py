@@ -42,10 +42,10 @@ class TestEntidadesInmutablesExpertoInformacion:
             )
 
     def test_fuente_rechaza_embedding_dimension_incorrecta(self):
-        """Embedding debe tener exactamente 768 dimensiones (gemini-embedding-2)."""
-        with pytest.raises(ValueError):
+        """Embedding debe tener exactamente 2048 dimensiones (Qwen3-VL-Embedding-2B)."""
+        with pytest.raises(ValueError, match="La dimensión del embedding debe ser 2048"):
             FuenteConocimiento(
                 id_fuente="F001", id_tecnica="T001", titulo="Test",
-                tipo_recurso="PDF", embedding_vector=[0.1] * 512,
+                tipo_recurso="PDF", embedding_vector=[0.1] * 768,
                 chunk_texto="texto", fecha_carga=None
             )

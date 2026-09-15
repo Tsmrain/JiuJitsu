@@ -1,5 +1,7 @@
 -- database/01_init.sql
+-- Habilitar extensión vectorial para tipos compatibles
 CREATE EXTENSION IF NOT EXISTS vector;
+-- Nota: La persistencia vectorial principal se delega a Qdrant Local. PostgreSQL permanece puramente relacional (BCNF).
 
 CREATE TABLE IF NOT EXISTS tecnicas_patron (
     id_tecnica VARCHAR(50) PRIMARY KEY,
@@ -13,14 +15,15 @@ CREATE TABLE IF NOT EXISTS recursos_didacticos (
     id SERIAL PRIMARY KEY,
     titulo VARCHAR(200) NOT NULL,
     contenido_texto TEXT NOT NULL,
-    embedding vector(768), -- Dimensión estándar para Gemini Embedding
+    embedding vector(2048), -- Dimensión para Qwen3-VL-Embedding-2B
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índice HNSW para búsqueda semántica rápida por similitud de coseno
-CREATE INDEX IF NOT EXISTS idx_recursos_embedding_hnsw 
-ON recursos_didacticos 
-USING hnsw (embedding vector_cosine_ops);
+-- NOTA HNSW: pgvector limita índices HNSW/IVFFlat a 2000 dimensiones.
+-- Para 2048d (Qwen3-VL-Embedding-2B), se utiliza búsqueda secuencial KNN directa con operador (<=>).
+-- CREATE INDEX IF NOT EXISTS idx_recursos_embedding_hnsw 
+-- ON recursos_didacticos 
+-- USING hnsw (embedding vector_cosine_ops);
 
 -- Técnicas estándar precargadas para evaluación e histórico
 INSERT INTO tecnicas_patron (id_tecnica, nombre, descripcion, matriz_esqueletica)

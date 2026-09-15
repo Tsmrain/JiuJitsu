@@ -94,3 +94,42 @@ class TestCasoDeUsoEvaluacion:
         assert resultado["usó_fallback_rag"] is False
         assert resultado["score_similitud_rag"] == 0.88
         assert "Ajuste biomecánico" in resultado["consejo"]
+
+    def test_evaluacion_transforma_json_gemini_a_string_pwa_y_dto(self):
+        """Verifica que EvaluacionController transforma el JSON de Gemini con 4 claves a string legible para PWA y DTO estructurado."""
+        from unittest.mock import MagicMock
+        from src.domain.interfaces import IGenerationService
+
+        mock_gemini_estructurado = MagicMock(spec=IGenerationService)
+        mock_gemini_estructurado.generar_consejo.return_value = {
+            "analisis_postural": "El codo derecho se abre 20 grados respecto al patrón ideal de la palanca.",
+            "riesgo_lesion": "Pérdida de palanca efectiva y posible escape del oponente.",
+            "paso_a_paso": "1. Pega tu codo a las costillas.\n2. Cierra las rodillas antes de arquear.",
+            "resumen_ejecutivo": "Excelente intento, pero mantén el codo cerrado."
+        }
+
+        controller = EvaluacionController(
+            inference_engine=MockYOLOEngine(desviacion_grados=20.0),
+            generation_service=mock_gemini_estructurado,
+            tecnica_repository=MockTecnicaRepository(),
+        )
+
+        resultado = controller.evaluar_ejecucion("video_test.mp4", "armbar_guardia")
+
+        # 1. Verificar consejo_pedagogico como string legible concatenando resumen y paso a paso
+        consejo_pwa = resultado["consejo_pedagogico"]
+        assert isinstance(consejo_pwa, str)
+        assert "Excelente intento, pero mantén el codo cerrado." in consejo_pwa
+        assert "Paso a paso correctivo:" in consejo_pwa
+        assert "1. Pega tu codo a las costillas." in consejo_pwa
+
+        # 2. Verificar que se incluye el DTO estructurado con las 4 claves para persistencia JSONB
+        assert "consejo_estructurado" in resultado
+        estructurado = resultado["consejo_estructurado"]
+        assert isinstance(estructurado, dict)
+        assert "analisis_postural" in estructurado
+        assert "riesgo_lesion" in estructurado
+        assert "paso_a_paso" in estructurado
+        assert "resumen_ejecutivo" in estructurado
+        assert estructurado["analisis_postural"] == "El codo derecho se abre 20 grados respecto al patrón ideal de la palanca."
+

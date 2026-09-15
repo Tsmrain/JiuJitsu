@@ -766,3 +766,65 @@ body {
   color: var(--color-primary);
   font-weight: 600;
 }
+
+/* Estilos de Botones y Navegación Simplificada (PWA Refactor) */
+.btn-nav-alumno,
+.btn-nav-profesor {
+  flex: 1;
+  padding: 12px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.btn-nav-alumno:hover,
+.btn-nav-profesor:hover {
+  background: #e9f0fc;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,86,179,0.12);
+}
+
+.btn-secundario-pequeno {
+  background: #f1f3f5;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.btn-secundario-pequeno:hover {
+  background: #e2e6ea;
+}
+
+.btn-peligro-pequeno {
+  background: var(--color-error);
+  color: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.btn-peligro-pequeno:hover {
+  background: #bd2130;
+}
+

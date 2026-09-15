@@ -12,6 +12,7 @@ google-genai>=0.1.0
 # Base de Datos y Vectores
 psycopg2-binary>=2.9.9
 pgvector>=0.2.5
+qdrant-client>=1.7.0
 
 # Testing (TDD e Integración)
 pytest>=8.0.0
@@ -21,3 +22,4 @@ requests>=2.31.0
 pypdf>=4.0.0
 langchain-text-splitters>=0.2.0
 
+Pillow>=10.0.0

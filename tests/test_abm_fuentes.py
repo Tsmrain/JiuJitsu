@@ -22,7 +22,7 @@ def limpiar_estado():
 class TestCasoDeUsoFuentesConocimiento:
     """Valida la orquestación del Session Facade FuenteController."""
 
-    def test_indexar_fuente_autogenera_embedding_768_con_gemini(self):
+    def test_indexar_fuente_autogenera_embedding_2048_con_qwen(self):
         controller = crear_fuente_controller(usar_db_real=False)
 
         resultado = controller.indexar_fuente(
@@ -31,16 +31,16 @@ class TestCasoDeUsoFuentesConocimiento:
             titulo="Manual de Finalizaciones Gracie",
             tipo_recurso="PDF",
             chunk_texto="Para el armbar desde la guardia, bloquea el tríceps y escala las caderas sobre el hombro.",
-            embedding_vector=None,  # Debe ser autogenerado por AdaptadorGemini
+            embedding_vector=None,  # Debe ser autogenerado por QwenEmbeddingAdapter
         )
 
         assert resultado["id_fuente"] == "fuente_armbar_01"
-        assert resultado["dimension_embedding"] == 768
+        assert resultado["dimension_embedding"] == 2048
         assert resultado["longitud_chunk"] > 0
 
     def test_indexar_fuente_con_vector_manual_valido(self):
         controller = crear_fuente_controller(usar_db_real=False)
-        vector_valido = [0.12] * 768
+        vector_valido = [0.12] * 2048
 
         resultado = controller.indexar_fuente(
             id_fuente="fuente_manual_02",
@@ -52,13 +52,13 @@ class TestCasoDeUsoFuentesConocimiento:
         )
 
         assert resultado["id_fuente"] == "fuente_manual_02"
-        assert resultado["dimension_embedding"] == 768
+        assert resultado["dimension_embedding"] == 2048
 
     def test_indexar_fuente_rechaza_vector_dimension_incorrecta(self):
         controller = crear_fuente_controller(usar_db_real=False)
-        vector_invalido = [0.1] * 512  # Debe fallar según regla BCNF / gemini-embedding-2
+        vector_invalido = [0.1] * 768  # Debe fallar según regla BCNF / Qwen3-VL-Embedding-2B (2048)
 
-        with pytest.raises(ValueError, match="La dimensión del embedding debe ser 768"):
+        with pytest.raises(ValueError, match="La dimensión del embedding debe ser 2048"):
             controller.indexar_fuente(
                 id_fuente="fuente_erronea",
                 id_tecnica="omoplata",
@@ -76,7 +76,7 @@ class TestCasoDeUsoFuentesConocimiento:
             titulo="Guía A",
             tipo_recurso="PDF",
             chunk_texto="Contenido relevante A",
-            embedding_vector=[0.05] * 768,
+            embedding_vector=[0.05] * 2048,
         )
         controller.indexar_fuente(
             id_fuente="F2",
@@ -84,10 +84,10 @@ class TestCasoDeUsoFuentesConocimiento:
             titulo="Guía B",
             tipo_recurso="PDF",
             chunk_texto="Contenido relevante B",
-            embedding_vector=[0.05] * 768,
+            embedding_vector=[0.05] * 2048,
         )
 
-        consulta = [0.05] * 768
+        consulta = [0.05] * 2048
         recuperados = controller.buscar_contexto(consulta_embedding=consulta, limite=2)
 
         assert len(recuperados) <= 2

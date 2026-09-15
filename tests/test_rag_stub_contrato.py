@@ -29,5 +29,5 @@ def test_ingestor_rag_stub_fragmenta_con_solapamiento():
 def test_constantes_rag_configuradas():
     assert CHUNK_SIZE == 1000
     assert CHUNK_OVERLAP == 200
-    assert EMBEDDING_DIM == 768
-    assert EMBEDDING_MODEL == "gemini-embedding-2"
+    assert EMBEDDING_DIM == 2048
+    assert EMBEDDING_MODEL == "Qwen3-VL-Embedding-2B"

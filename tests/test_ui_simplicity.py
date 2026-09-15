@@ -118,7 +118,7 @@ def test_instructor_solo_tiene_dos_campos():
     assert "<textarea" not in form_html, "No debe haber campo de descripción en la vista simplificada"
 
 def test_alumno_utiliza_selectores_y_comparador():
-    """Verifica que la pantalla de inicio del alumno consista en selectores y el comparador tenga video y frame con canvas."""
+    """Verifica que la pantalla de inicio del alumno consista en selector directo de técnica y el comparador tenga video y frame con canvas."""
     with open("frontend/index.html", "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -128,9 +128,8 @@ def test_alumno_utiliza_selectores_y_comparador():
     sel_html = sel_match.group(1)
 
     selects = re.findall(r'<select\s+[^>]*id="([^"]+)"', sel_html)
-    assert len(selects) >= 2, "La vista del alumno debe tener al menos selector de instructor y de técnica"
-    assert "alumno-instructor" in selects
-    assert "alumno-tecnica" in selects
+    assert "alumno-tecnica" in selects, "La vista del alumno debe tener el selector de técnica"
+    assert "alumno-instructor" not in selects, "No debe requerirse seleccionar instructor en la vista del alumno"
 
     # Pantalla de resultado tiene comparador con video patron, frame alumno y canvas
     assert 'id="video-patron"' in content

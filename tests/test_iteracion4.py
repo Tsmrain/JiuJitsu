@@ -110,7 +110,10 @@ class TestPostgresHistorialRepository:
         assert params[3] is False
         assert params[4] == 1
         assert params[5] == 12.0
-        assert params[6] == "Ajustar ángulo del codo."
+        # params[6] es el adaptador Json(dict)
+        from psycopg2.extras import Json
+        assert isinstance(params[6], Json)
+        assert params[6].adapted["resumen_ejecutivo"] == "Ajustar ángulo del codo."
         assert mock_conn.commit.called
 
     @patch("psycopg2.connect")

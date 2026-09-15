@@ -4,8 +4,8 @@ Contiene adaptadores, repositorios y servicios externos implementando
 los contratos definidos en la capa de dominio (Larman, Proceso Unificado).
 
 Estructura interna:
-    adapters/    — Adaptadores para YOLO26x (Colab), Gemini AI y embeddings
-    persistence/ — Repositorios SQL (PostgreSQL + pgvector) y pipeline RAG
+    adapters/    — Adaptadores para YOLO26x (Colab), Gemini AI, Qwen embeddings y Qdrant
+    persistence/ — Repositorios SQL (PostgreSQL BCNF) y pipeline RAG con Qdrant
     mocks.py     — Dobles de prueba para TDD sin dependencias externas
 """
 
@@ -15,7 +15,8 @@ from src.infrastructure.adapters import (
     GeminiServiceAdapter,
     AdaptadorYOLO,
     AdaptadorGemini,
-    GeminiEmbedding2Adapter,
+    QwenEmbeddingAdapter,
+    QdrantAdapter,
 )
 
 # Persistence
@@ -24,7 +25,6 @@ from src.infrastructure.persistence import (
     PostgresProfesorRepository,
     PostgresFuenteConocimientoRepository,
     PostgresHistorialRepository,
-    IngestorRAG,
     PipelineIngestaRAG,
 )
 
@@ -34,12 +34,13 @@ __all__ = [
     "GeminiServiceAdapter",
     "AdaptadorYOLO",
     "AdaptadorGemini",
-    "GeminiEmbedding2Adapter",
+    "QwenEmbeddingAdapter",
+    "QdrantAdapter",
     # Persistence
     "PostgresTecnicaRepository",
     "PostgresProfesorRepository",
     "PostgresFuenteConocimientoRepository",
     "PostgresHistorialRepository",
-    "IngestorRAG",
     "PipelineIngestaRAG",
 ]
+

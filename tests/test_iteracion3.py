@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from src.presentation.api import app, container, TAREAS_ESTADO
 from src.application.controllers import EvaluacionController
 from src.application.pattern_controller import RegistrarTecnicaController
-from src.infrastructure.persistence.rag_ingestion import IngestorRAG
+from src.infrastructure.persistence.rag_ingestion import PipelineIngestaRAG
 from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService, MockTecnicaRepository
 
 @pytest.fixture
@@ -73,7 +73,7 @@ class TestRegistrarTecnicaController:
         assert "INSERT INTO tecnicas_patron" in args[0]
         assert "triangulo_guardia" in args[1]
 
-class TestIngestorRAG:
+class TestPipelineIngestaRAGIteracion3:
     @patch("psycopg2.connect")
     def test_indexar_documento_fragmentacion_y_guardado(self, mock_connect):
         mock_conn = MagicMock()
@@ -81,24 +81,24 @@ class TestIngestorRAG:
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
         mock_connect.return_value.__enter__.return_value = mock_conn
 
-        # Mock adapter para simular generación de embedding
-        class MockGeminiEmbed:
-            def generate_embedding(self, texto: str):
-                return [0.05] * 768
+        # Mock adapter para simular generación de embedding 2048d
+        class MockQwenEmbed:
+            def generar_embeddings_batch(self, textos, max_retries=3):
+                return [[0.05] * 2048 for _ in textos]
 
-        ingestor = IngestorRAG(
-            db_url="postgresql://test:test@localhost:5432/testdb",
-            gemini_adapter=MockGeminiEmbed()
+        pipeline = PipelineIngestaRAG(
+            db_connection="postgresql://test:test@localhost:5432/testdb",
+            embedding_service=MockQwenEmbed()
         )
 
         texto_largo = "Jiu Jitsu Brasileño es un arte marcial enfocado en la lucha en el suelo. " * 20
-        total_insertados = ingestor.indexar_documento(
+        ids = pipeline.indexar_manual(
+            id_tecnica="fundamentos_bjj",
             titulo="Manual de Fundamentos BJJ",
             texto_completo=texto_largo,
-            tamano_chunk=100
         )
 
-        assert total_insertados > 1
-        assert mock_cursor.execute.call_count == total_insertados
+        assert len(ids) > 1
+        assert mock_cursor.execute.call_count == len(ids)
         args, _ = mock_cursor.execute.call_args
-        assert "INSERT INTO recursos_didacticos" in args[0]
+        assert "INSERT INTO fuentes_conocimiento" in args[0]

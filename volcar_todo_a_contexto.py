@@ -5,19 +5,22 @@ dentro de docs/CONTEXTO_ARQUITECTURA_QWEN.md, respetando la estructura
 de carpetas. Además lista los binarios referenciados (vídeos, iconos,
 comprimidos) sin volcar sus bytes.
 
-Uso:
-    python3 scripts/volcar_todo_a_contexto.py
-    python3 scripts/volcar_todo_a_contexto.py --root . --out docs/CONTEXTO_ARQUITECTURA_QWEN.md
+Uso (DESDE LA RAÍZ DEL PROYECTO):
+    cd ~/Desktop/JiuJitsu
+    python3 tools/volcar_todo_a_contexto.py
+
+    # o especificando rutas:
+    python3 tools/volcar_todo_a_contexto.py --root . --out docs/CONTEXTO_ARQUITECTURA_QWEN.md
 """
 
 import argparse
 import os
+import sys
 from collections import Counter
 from pathlib import Path
 
 # --- Configuración ---------------------------------------------------------
 
-# Carpetas que NO queremos recorrer (ruido, binarios, artefactos)
 EXCLUDE_DIRS = {
     "__pycache__",
     ".git",
@@ -30,9 +33,9 @@ EXCLUDE_DIRS = {
     "env",
     ".idea",
     ".vscode",
+    "tools",  # <-- evita volcar el propio script y su docs/
 }
 
-# Extensiones consideradas texto/código legible
 TEXT_EXTS = {
     # Python
     ".py", ".pyi", ".pyx",
@@ -59,7 +62,6 @@ TEXT_EXTS = {
     ".dockerfile", ".env",
 }
 
-# Nombres exactos que queremos incluir aunque no tengan extensión
 INCLUDE_NAMES = {
     "Dockerfile", "dockerfile",
     "Makefile", "makefile",
@@ -70,13 +72,12 @@ INCLUDE_NAMES = {
     "pytest.ini", "tox.ini", "mypy.ini",
 }
 
-# Archivos concretos que NO queremos volcar
+# Archivos que NO se vuelcan (el propio output se auto-excluye)
 EXCLUDE_FILES = {
-    "CONTEXTO_ARQUITECTURA_QWEN.md",  # el propio output
-    "tree.txt",                        # el árbol
+    "CONTEXTO_ARQUITECTURA_QWEN.md",
+    "tree.txt",
 }
 
-# Extensiones binarias que solo referenciamos (no volcamos)
 BIN_EXTS = {
     ".mp4", ".mov", ".avi", ".webm", ".mkv",
     ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico",
@@ -86,7 +87,6 @@ BIN_EXTS = {
     ".db", ".sqlite", ".sqlite3",
 }
 
-# Tamaño máximo por archivo (bytes) para evitar volcar cosas enormes
 MAX_FILE_BYTES = 2 * 1024 * 1024  # 2 MB
 
 # --- Utilidades ------------------------------------------------------------
@@ -97,9 +97,7 @@ def debe_excluir_dir(name: str) -> bool:
 def es_texto(path: Path) -> bool:
     if path.name in INCLUDE_NAMES:
         return True
-    if path.suffix.lower() in TEXT_EXTS:
-        return True
-    return False
+    return path.suffix.lower() in TEXT_EXTS
 
 def es_binario(path: Path) -> bool:
     return path.suffix.lower() in BIN_EXTS
@@ -153,21 +151,26 @@ def fence_para(path: Path) -> str:
     return mapping.get(ext, "")
 
 def humano(bytes_: int) -> str:
+    b = float(bytes_)
     for unit in ("B", "KB", "MB", "GB"):
-        if bytes_ < 1024:
-            return f"{bytes_:.1f} {unit}" if unit != "B" else f"{bytes_} B"
-        bytes_ /= 1024
-    return f"{bytes_:.1f} TB"
+        if b < 1024:
+            return f"{int(b)} B" if unit == "B" else f"{b:.1f} {unit}"
+        b /= 1024
+    return f"{b:.1f} TB"
 
 # --- Recorrido -------------------------------------------------------------
 
 def recorrer(root: Path):
-    """Devuelve (archivos_texto, archivos_binarios) ordenados."""
+    """Devuelve (textos, binarios) ordenados. NO sigue symlinks a archivos
+    ni a directorios, para evitar duplicar frontend/ vía static -> frontend."""
     textos, binarios = [], []
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         dirnames[:] = sorted(d for d in dirnames if not debe_excluir_dir(d))
         for fname in sorted(filenames):
             p = Path(dirpath) / fname
+            # Saltar symlinks a archivos (ej: frontend/js/app.js -> ../app.js)
+            if p.is_symlink():
+                continue
             if debe_excluir_archivo(p):
                 continue
             if es_texto(p):
@@ -187,9 +190,9 @@ def escribir_contexto(root: Path, out: Path):
         f.write(f"> Proyecto: `{root.resolve()}`\n")
         f.write(f"> Archivos de texto/código volcados: **{total}**\n")
         f.write(f"> Binarios referenciados (no volcados): **{len(binarios)}**\n")
-        f.write(f"> Generado automáticamente por `scripts/volcar_todo_a_contexto.py`\n\n")
+        f.write(f"> Generado por `tools/volcar_todo_a_contexto.py`\n\n")
 
-        # Contadores por extensión
+        # Resumen por extensión
         exts = Counter((p.suffix.lower() or "<sin_ext>") for p in textos)
         f.write("## Resumen por extensión\n\n")
         for e, n in sorted(exts.items(), key=lambda kv: (-kv[1], kv[0])):
@@ -232,10 +235,10 @@ def escribir_contexto(root: Path, out: Path):
         for p in binarios:
             rel = p.relative_to(root).as_posix()
             try:
-                size = p.stat().st_size
-                f.write(f"- `{rel}` — {humano(size)}\n")
+                size = humano(p.stat().st_size)
             except OSError:
-                f.write(f"- `{rel}` — (no accesible)\n")
+                size = "(no accesible)"
+            f.write(f"- `{rel}` — {size}\n")
 
     print(f"[OK] Volcados {total} archivos de texto en {out}")
     print(f"[OK] Referenciados {len(binarios)} binarios")
@@ -257,6 +260,12 @@ def main():
 
     if not root.is_dir():
         raise SystemExit(f"No existe la carpeta: {root}")
+
+    # Validación: avisa si te olvidaste de ejecutar desde la raíz
+    if not (root / "src").is_dir() and not (root / "frontend").is_dir():
+        print(f"[WARN] '{root}' no parece la raíz del proyecto.", file=sys.stderr)
+        print("       Ejecuta: cd ~/Desktop/JiuJitsu && python3 tools/volcar_todo_a_contexto.py",
+              file=sys.stderr)
 
     out.parent.mkdir(parents=True, exist_ok=True)
     escribir_contexto(root, out)

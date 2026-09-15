@@ -13,6 +13,7 @@ from src.domain.interfaces import (
     ITecnicaRepository,
     IProfesorRepository,
     IFuenteConocimientoRepository,
+    IUsuarioRepository,
 )
 from src.domain.models import (
     MatrizEsqueletica,
@@ -22,6 +23,7 @@ from src.domain.models import (
     TecnicaPatron,
     FuenteConocimiento,
     ConfiguracionRAG,
+    Usuario,
 )
 
 
@@ -182,8 +184,8 @@ class InMemoryFuenteConocimientoRepository(IFuenteConocimientoRepository):
         limite: Optional[int] = None,
         id_tecnica: Optional[str] = None,
     ) -> List[FuenteConocimiento]:
-        if len(consulta_embedding) != 768:
-            raise ValueError(f"Dimensión de embedding de búsqueda incorrecta: {len(consulta_embedding)} != 768")
+        if len(consulta_embedding) != 2048:
+            raise ValueError(f"Dimensión de embedding de búsqueda incorrecta: {len(consulta_embedding)} != 2048")
 
         if isinstance(limite, str) and id_tecnica is None:
             id_tecnica = limite
@@ -215,4 +217,46 @@ class InMemoryFuenteConocimientoRepository(IFuenteConocimientoRepository):
     def listar_fuentes(self, id_tecnica: Optional[str] = None) -> List[FuenteConocimiento]:
         if id_tecnica:
             return [f for f in self._storage.values() if f.id_tecnica == id_tecnica]
+        return list(self._storage.values())
+
+    def eliminar(self, id_fuente: str) -> bool:
+        if id_fuente in self._storage:
+            del self._storage[id_fuente]
+            return True
+        return False
+
+    def actualizar(self, id_fuente: str, titulo: str, chunk_texto: Optional[str] = None) -> bool:
+        if id_fuente in self._storage:
+            old = self._storage[id_fuente]
+            self._storage[id_fuente] = FuenteConocimiento(
+                id_fuente=old.id_fuente,
+                id_tecnica=old.id_tecnica,
+                titulo=titulo,
+                tipo_recurso=old.tipo_recurso,
+                chunk_texto=chunk_texto or old.chunk_texto,
+                embedding_vector=old.embedding_vector,
+            )
+            return True
+        return False
+
+class InMemoryUsuarioRepository(IUsuarioRepository):
+    """Repositorio en memoria para pruebas unitarias de Usuarios (<10ms)."""
+
+    def __init__(self):
+        self._storage: Dict[str, Usuario] = {}
+
+    def guardar(self, usuario: Usuario) -> None:
+        self._storage[usuario.id_usuario] = usuario
+
+    def obtener_por_id(self, id_usuario: str) -> Optional[Usuario]:
+        return self._storage.get(id_usuario)
+
+    def obtener_por_email(self, email: str) -> Optional[Usuario]:
+        clean_email = email.strip().lower()
+        for u in self._storage.values():
+            if u.email.strip().lower() == clean_email:
+                return u
+        return None
+
+    def listar_todos(self) -> List[Usuario]:
         return list(self._storage.values())

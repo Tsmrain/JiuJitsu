@@ -27,6 +27,8 @@ from src.infrastructure.persistence import (
 from src.domain.models import ConfiguracionRAG
 from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
 from src.infrastructure.adapters.gemini_service_adapter import AdaptadorGemini
+from src.infrastructure.adapters.qwen_embedding_adapter import QwenEmbeddingAdapter
+from src.infrastructure.adapters.qdrant_adapter import QdrantAdapter
 
 # Almacenes compartidos en memoria para integración de casos de uso sin base de datos activa
 _SHARED_MEM_TECNICA_REPO = InMemoryTecnicaRepository()
@@ -92,18 +94,33 @@ def crear_fuente_controller(
     usar_db_real: bool = False,
     db_conn: Optional[Any] = None,
     config_rag: Optional[ConfiguracionRAG] = None,
-    gemini_adapter: Optional[AdaptadorGemini] = None,
     nuevo_almacen: bool = False,
+    qdrant_adapter: Optional[Any] = None,
 ) -> FuenteController:
-    """Crea una instancia de FuenteController inyectando repositorio, configuración RAG y adaptador Gemini."""
-    gemini = gemini_adapter if gemini_adapter is not None else AdaptadorGemini()
+    """Crea una instancia de FuenteController inyectando el adaptador multimodal de Qwen y Qdrant."""
+    adaptador_qwen = QwenEmbeddingAdapter()
     cfg = config_rag if config_rag is not None else ConfiguracionRAG()
     if usar_db_real:
         conn = db_conn if db_conn is not None else get_db_connection()
-        repo = PostgresFuenteConocimientoRepository(conn, config_rag=cfg, gemini_adapter=gemini)
+        qdrant = qdrant_adapter if qdrant_adapter is not None else QdrantAdapter()
+        repo = PostgresFuenteConocimientoRepository(
+            conn, config_rag=cfg, gemini_adapter=adaptador_qwen, qdrant_adapter=qdrant
+        )
+        from src.infrastructure.persistence.rag_ingestion import PipelineIngestaRAG
+        pipeline = PipelineIngestaRAG(
+            db_connection=conn,
+            embedding_service=adaptador_qwen,
+            qdrant_adapter=qdrant,
+        )
+        return FuenteController(
+            repository=repo,
+            gemini_adapter=adaptador_qwen,
+            qdrant_adapter=qdrant,
+            pipeline_ingesta=pipeline,
+        )
     else:
         repo = InMemoryFuenteConocimientoRepository(config_rag=cfg) if nuevo_almacen else _SHARED_MEM_FUENTE_REPO
-    return FuenteController(repository=repo, gemini_adapter=gemini)
+        return FuenteController(repository=repo, gemini_adapter=adaptador_qwen)
 
 
 def crear_sintesis_pedagogica_service(
@@ -111,12 +128,14 @@ def crear_sintesis_pedagogica_service(
     db_conn: Optional[Any] = None,
     config_rag: Optional[ConfiguracionRAG] = None,
     nuevo_almacen: bool = False,
+    qdrant_adapter: Optional[Any] = None,
 ) -> SintesisPedagogicaService:
     """Crea una instancia de SintesisPedagogicaService con repositorio y configuración inyectada."""
     cfg = config_rag if config_rag is not None else ConfiguracionRAG()
     if usar_db_real:
         conn = db_conn if db_conn is not None else get_db_connection()
-        repo = PostgresFuenteConocimientoRepository(conn, config_rag=cfg)
+        qdrant = qdrant_adapter if qdrant_adapter is not None else QdrantAdapter()
+        repo = PostgresFuenteConocimientoRepository(conn, config_rag=cfg, qdrant_adapter=qdrant)
     else:
         repo = InMemoryFuenteConocimientoRepository(config_rag=cfg) if nuevo_almacen else _SHARED_MEM_FUENTE_REPO
     return SintesisPedagogicaService(repo=repo, config=cfg)
@@ -129,16 +148,36 @@ def crear_evaluacion_controller(
     usar_db_real: bool = False,
     db_conn: Optional[Any] = None,
     config_rag: Optional[ConfiguracionRAG] = None,
+    qdrant_adapter: Optional[Any] = None,
 ) -> EvaluacionController:
     """Crea una instancia de EvaluacionController con el servicio de síntesis pedagógica inyectado."""
     from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService
     inf = inference_engine if inference_engine is not None else MockYOLOEngine()
     gen = generation_service if generation_service is not None else MockGeminiService()
     tec = tecnica_repository if tecnica_repository is not None else _SHARED_MEM_TECNICA_REPO
-    sintesis = crear_sintesis_pedagogica_service(usar_db_real=usar_db_real, db_conn=db_conn, config_rag=config_rag)
+    sintesis = crear_sintesis_pedagogica_service(
+        usar_db_real=usar_db_real, db_conn=db_conn, config_rag=config_rag, qdrant_adapter=qdrant_adapter
+    )
     return EvaluacionController(
         inference_engine=inf,
         generation_service=gen,
         tecnica_repository=tec,
         sintesis_service=sintesis,
     )
+
+def crear_auth_controller(
+    usar_db_real: bool = False,
+    db_conn: Optional[Any] = None,
+    nuevo_almacen: bool = False,
+):
+    from src.application.auth_controller import AuthController
+    from src.infrastructure.persistence.postgres_repository import PostgresUsuarioRepository
+    from src.infrastructure.mocks import InMemoryUsuarioRepository
+
+    if usar_db_real:
+        conn = db_conn if db_conn is not None else get_db_connection()
+        repo = PostgresUsuarioRepository(conn)
+    else:
+        repo = InMemoryUsuarioRepository()
+    return AuthController(usuario_repo=repo)
+

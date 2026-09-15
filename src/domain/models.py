@@ -328,30 +328,35 @@ class TecnicaPatron:
 class FuenteConocimiento:
     """Entidad de Dominio Puro para el acervo documental del sistema RAG.
 
-    Modela fragmentos textuales pedagógicos vinculados a técnicas biomecánicas,
-    con su representación vectorial densa de 768 dimensiones.
+    Modela fragmentos textuales pedagógicos vinculados a técnicas biomecánicas (o acervo general),
+    con su representación vectorial densa de 2048 dimensiones.
     """
 
     id_fuente: str
-    id_tecnica: str
-    titulo: str
-    tipo_recurso: str
-    chunk_texto: str
+    id_tecnica: Optional[str] = None
+    titulo: str = ""
+    tipo_recurso: str = "Manual"
+    chunk_texto: str = ""
     embedding_vector: Optional[List[float]] = None
     fecha_carga: Optional[datetime] = None
     similitud: Optional[float] = None
+    id_instructor: Optional[str] = None
+    id_documento: Optional[str] = None
+    total_chunks: Optional[int] = None
 
     def __post_init__(self) -> None:
-        if not self.id_fuente or not self.id_fuente.strip():
+        if not self.id_fuente or not str(self.id_fuente).strip():
             raise ValueError("El id_fuente no puede ser vacío.")
-        if not self.id_tecnica or not self.id_tecnica.strip():
-            raise ValueError("El id_tecnica no puede ser vacío.")
-        if not self.titulo or not self.titulo.strip():
+        if self.id_tecnica is not None and not str(self.id_tecnica).strip():
+            object.__setattr__(self, "id_tecnica", None)
+        if not self.titulo or not str(self.titulo).strip():
             raise ValueError("El titulo no puede ser vacío.")
-        if not self.chunk_texto or not self.chunk_texto.strip():
-            raise ValueError("El chunk_texto no puede ser vacío.")
-        if self.embedding_vector is not None and len(self.embedding_vector) != 768:
-            raise ValueError(f"La dimensión del embedding debe ser 768 (recibido: {len(self.embedding_vector)}).")
+        if not self.chunk_texto or not str(self.chunk_texto).strip():
+            object.__setattr__(self, "chunk_texto", "(Documento consolidado)")
+        if self.id_documento is None:
+            object.__setattr__(self, "id_documento", str(self.id_fuente))
+        if self.embedding_vector is not None and len(self.embedding_vector) != 2048:
+            raise ValueError(f"La dimensión del embedding debe ser 2048 (recibido: {len(self.embedding_vector)}).")
         if self.fecha_carga is None:
             object.__setattr__(self, "fecha_carga", datetime.now(timezone.utc))
 
@@ -370,4 +375,33 @@ class ConfiguracionRAG:
     umbral_similitud_minima: float = 0.65
     top_k_resultados: int = 3
     plantilla_fallback: str = "Discrepancia postural detectada en {articulacion} sin contexto específico por encima del umbral de calidad."
+
+from typing import ClassVar
+from src.domain.validation_constants import ROLES_VALIDOS, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
+
+@dataclass(frozen=True)
+class Usuario:
+    """Entidad de dominio pura que modela una cuenta de acceso al sistema."""
+    ROLES_VALIDOS: ClassVar[tuple] = tuple(ROLES_VALIDOS)
+
+    id_usuario: str
+    email: str
+    nombre_completo: str
+    rol: str
+    password_hash: str
+    fecha_registro: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        if not self.id_usuario or not self.id_usuario.strip():
+            raise ValueError("El id_usuario no puede ser vacío.")
+        if not self.nombre_completo or not self.nombre_completo.strip():
+            raise ValueError("El nombre completo no puede ser vacío.")
+        if not self.email or not EMAIL_REGEX.match(self.email.strip()):
+            raise ValueError(f"El email '{self.email}' no tiene un formato válido.")
+        if self.rol not in self.ROLES_VALIDOS:
+            raise ValueError(f"Rol inválido: '{self.rol}'. Válidos: {self.ROLES_VALIDOS}.")
+        if not self.password_hash or "$" not in self.password_hash:
+            raise ValueError("El password_hash debe ser generado por src.domain.security.hash_password().")
+        if self.fecha_registro is None:
+            object.__setattr__(self, "fecha_registro", datetime.now(timezone.utc))
 

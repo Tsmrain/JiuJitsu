@@ -23,3 +23,7 @@ CATEGORIAS_VALIDAS: List[str] = [
 MAX_VIDEO_MB: int = 50
 MAX_VIDEO_BYTES: int = MAX_VIDEO_MB * 1024 * 1024
 FORMATOS_VIDEO_PERMITIDOS: List[str] = [".mp4", "video/mp4"]
+
+ROLES_VALIDOS: List[str] = ["alumno", "profesor"]
+MIN_PASSWORD_LENGTH: int = 6
+MAX_PASSWORD_LENGTH: int = 128

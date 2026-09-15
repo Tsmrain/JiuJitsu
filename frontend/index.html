@@ -4,147 +4,217 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BJJ Biomechanics</title>
-    <meta name="description" content="Asistente biomecanico para Jiu-Jitsu Brasileño.">
+    <meta name="description" content="Asistente biomecánico para Jiu-Jitsu Brasileño.">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <header>
         <h1>BJJ Biomechanics</h1>
-        <button id="btn-cambiar-rol" onclick="cambiarRol()" style="display:none;">Cambiar de rol</button>
+        <button id="btn-cerrar-sesion" onclick="cerrarSesion()" class="btn-secundario-pequeno" style="display:none;">Cerrar Sesión</button>
     </header>
 
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-    <!-- Selección de Rol Inicial -->
-    <div id="pantalla-rol" class="contenedor">
-        <h2>Bienvenido</h2>
-        <p class="subtitulo">Selecciona tu rol para ingresar al sistema:</p>
-        <button class="btn-grande btn-rol" onclick="seleccionarRol('instructor')">Soy Instructor</button>
-        <button class="btn-grande btn-rol btn-secundario-grande" onclick="seleccionarRol('alumno')">Soy Alumno</button>
+    <!-- PANTALLA DE AUTENTICACIÓN -->
+    <div id="pantalla-login" class="contenedor" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:70vh;">
+        <h2>Asistente Biomecánico BJJ</h2>
+        <p class="subtitulo" style="text-align:center; margin-bottom:16px;">Demo Biomecánica de Jiu-Jitsu</p>
+        
+        <div class="auth-tabs" style="display:flex; justify-content:center; gap:10px; margin-bottom: 20px;">
+            <button class="btn-secundario active" id="btn-tab-login" onclick="cambiarTabAuth('login')" style="flex:1;">Iniciar Sesión</button>
+            <button class="btn-secundario" id="btn-tab-registro" onclick="cambiarTabAuth('registro')" style="flex:1;">Registro</button>
+        </div>
+
+        <!-- FORMULARIO LOGIN -->
+        <form id="form-login" style="max-width:320px; width:100%;">
+            <label for="login-email">Correo Electrónico:</label>
+            <input type="email" id="login-email" required placeholder="tu@email.com" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+            
+            <label for="login-password">Contraseña:</label>
+            <input type="password" id="login-password" required placeholder="••••••••" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+            
+            <button type="submit" class="btn-primario" style="width:100%; margin-top:16px;">Entrar</button>
+            <p id="login-error" style="color:#dc3545; display:none; margin-top:10px; text-align:center; font-weight:600;">Credenciales incorrectas</p>
+        </form>
+
+        <!-- FORMULARIO REGISTRO -->
+        <form id="form-registro" style="max-width:320px; width:100%; display:none;">
+            <label for="registro-nombre">Nombre Completo:</label>
+            <input type="text" id="registro-nombre" required placeholder="Ej: John Doe" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+            
+            <label for="registro-email">Correo Electrónico:</label>
+            <input type="email" id="registro-email" required placeholder="tu@email.com" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+            
+            <label for="registro-rol">Rol:</label>
+            <select id="registro-rol" required style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+                <option value="alumno">Alumno</option>
+                <option value="profesor">Profesor (Instructor)</option>
+            </select>
+
+            <label for="registro-password">Contraseña:</label>
+            <input type="password" id="registro-password" required placeholder="Min 6 caracteres" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+            
+            <button type="submit" class="btn-primario" style="width:100%; margin-top:16px;">Registrar Cuenta</button>
+            <p id="registro-error" style="color:#dc3545; display:none; margin-top:10px; text-align:center; font-weight:600;"></p>
+        </form>
     </div>
 
-    <!-- VISTA INSTRUCTOR -->
-    <div id="vista-instructor" class="contenedor" style="display:none;">
-        <nav class="pestanas">
-            <button id="btn-tab-registro" class="tab-btn tab-activa" onclick="mostrarTab('tab-registro')">Registrar Técnica</button>
-            <button id="btn-tab-manual" class="tab-btn" onclick="mostrarTab('tab-manual')">Subir Manual</button>
-            <button id="btn-tab-crear-inst" class="tab-btn" onclick="mostrarTab('tab-crear-inst')">Crear Instructor</button>
-        </nav>
-
-        <div id="tab-registro" class="contenido-tab">
-            <h3>Registrar Nueva Técnica</h3>
-            <form id="form-tecnica" onsubmit="guardarTecnica(event)">
-                <label for="tec-nombre">Nombre de la técnica:</label>
-                <input type="text" id="tec-nombre" required placeholder="Ej: Armbar desde guardia">
-                <label for="tec-video">Video de referencia del Maestro:</label>
-                <input type="file" id="tec-video" accept="video/mp4" required>
-                <button type="submit" id="btn-guardar-tec" class="btn-primario">Guardar Técnica</button>
-            </form>
-            <div id="status-tecnica" class="status-box" style="display:none;"></div>
-        </div>
-
-        <div id="tab-manual" class="contenido-tab" style="display:none;">
-            <h3>Agregar Fuente de Conocimiento</h3>
-            <form id="form-manual" onsubmit="guardarManual(event)">
-                <label for="manual-instructor">Seleccionar Instructor (Autor):</label>
-                <select id="manual-instructor" required>
-                    <option value="">-- Seleccionar Instructor --</option>
-                </select>
-                <label for="manual-titulo">Título del Manual:</label>
-                <input type="text" id="manual-titulo" required placeholder="Ej: Fundamentos de la Guardia Cerrada">
-                <label for="manual-archivo">Archivo PDF:</label>
-                <input type="file" id="manual-archivo" accept=".pdf,application/pdf" required>
-                <button type="submit" id="btn-guardar-manual" class="btn-primario">Procesar Manual</button>
-            </form>
-            <div id="status-manual" class="status-box" style="display:none;"></div>
-        </div>
-
-        <div id="tab-crear-inst" class="contenido-tab" style="display:none;">
-            <h3>Registrar Nuevo Instructor</h3>
-            <form id="form-instructor" onsubmit="guardarInstructor(event)">
-                <label for="inst-id">ID del Instructor (ej. prof_juan):</label>
-                <input type="text" id="inst-id" required placeholder="prof_juan">
-                <label for="inst-nombre">Nombre Completo:</label>
-                <input type="text" id="inst-nombre" required placeholder="Prof. Juan Silva">
-                <button type="submit" id="btn-crear-inst" class="btn-primario">Crear Instructor</button>
-            </form>
-            <div id="status-instructor" class="status-box" style="display:none;"></div>
-        </div>
+    <!-- PANTALLA ROL COMPATIBILIDAD -->
+    <div id="pantalla-rol" style="display:none;">
+        <button onclick="seleccionarRol('alumno')">Alumno</button>
+        <button onclick="seleccionarRol('instructor')">Instructor</button>
     </div>
 
     <!-- VISTA ALUMNO -->
     <div id="vista-alumno" class="contenedor" style="display:none;">
-        <div id="pantalla-seleccion">
-            <h3>Practicar Técnica</h3>
-            <label for="alumno-instructor">Selecciona tu Instructor:</label>
-            <select id="alumno-instructor" onchange="cargarTecnicas()" required>
-                <option value="">-- Seleccionar --</option>
-            </select>
-            <label for="alumno-tecnica">Selecciona la Técnica:</label>
-            <select id="alumno-tecnica" required disabled>
-                <option value="">-- Primero selecciona un instructor --</option>
-            </select>
-            <button class="btn-primario" id="btn-comenzar-practica" onclick="mostrarUpload()" disabled>Comenzar Práctica</button>
+        <!-- NAVEGACIÓN SIMPLIFICADA ALUMNO -->
+        <div class="nav-alumno-simplificada" style="display:flex; justify-content:space-around; gap:10px; padding:16px; background:#f0f0f0; border-radius:8px; margin-bottom:20px;">
+            <button onclick="mostrarSeccionAlumno('evaluar')" class="btn-nav-alumno" id="btn-nav-alumno-evaluar">
+                Evaluar
+            </button>
+            <button onclick="mostrarSeccionAlumno('progreso')" class="btn-nav-alumno" id="btn-nav-alumno-progreso">
+                Mi Progreso
+            </button>
+            <button onclick="mostrarSeccionAlumno('historial')" class="btn-nav-alumno" id="btn-nav-alumno-historial">
+                Historial
+            </button>
         </div>
 
-        <div id="pantalla-upload" style="display:none;">
-            <button class="btn-enlace" onclick="volverASeleccion()">&larr; Cambiar de técnica</button>
-            <h3 id="titulo-upload-tecnica">Grabar tu ejecución</h3>
-            <label for="alumno-video">Video de tu movimiento:</label>
-            <input type="file" id="alumno-video" accept="video/mp4" required>
-            <button class="btn-primario" id="btn-enviar-analisis" onclick="enviarAnalisis()">Analizar Biomecánica</button>
-            <div id="status-analisis" class="status-box" style="display:none;">Analizando video biomecánico...</div>
-        </div>
+        <!-- SECCIÓN EVALUAR -->
+        <div id="seccion-evaluar" class="seccion-alumno">
+            <div id="pantalla-seleccion">
+                <h3>Practicar Técnica</h3>
+                <label for="alumno-tecnica">Selecciona la Técnica:</label>
+                <select id="alumno-tecnica" required>
+                    <option value="">-- Seleccionar Técnica --</option>
+                </select>
+                <button class="btn-primario" id="btn-comenzar-practica" onclick="mostrarUpload()" disabled>Comenzar Práctica</button>
+            </div>
 
-        <div id="pantalla-resultado" style="display:none;">
-            <h3>Resultado del Análisis</h3>
-            <div class="comparador">
-                <div class="panel-video">
-                    <h4>Técnica del Instructor</h4>
-                    <video id="video-patron" controls loop playsinline></video>
-                </div>
-                <div class="panel-frame">
-                    <h4>Tu Ejecución (Fotograma Clave)</h4>
-                    <div class="canvas-container">
-                        <img id="frame-alumno" src="" alt="Fotograma analizado">
-                        <canvas id="canvas-puntos"></canvas>
+            <div id="pantalla-upload" style="display:none;">
+                <button class="btn-enlace" onclick="volverASeleccion()">&larr; Cambiar de técnica</button>
+                <h3 id="titulo-upload-tecnica">Grabar tu ejecución</h3>
+                <label for="alumno-video">Video de tu movimiento:</label>
+                <input type="file" id="alumno-video" accept="video/mp4,video/*" required>
+                <video id="preview-video-alumno" controls style="display:none; max-width:100%; margin-top:10px;"></video>
+                <button class="btn-primario" id="btn-enviar-analisis" onclick="enviarAnalisis()">Analizar Biomecánica</button>
+                <div id="status-analisis" class="status-box" style="display:none;">Analizando video biomecánico...</div>
+            </div>
+
+            <div id="pantalla-resultado" style="display:none;">
+                <h3>Resultado del Análisis</h3>
+                <div class="comparador">
+                    <div class="panel-video">
+                        <h4>Técnica del Instructor</h4>
+                        <video id="video-patron" controls loop playsinline></video>
+                    </div>
+                    <div class="panel-frame">
+                        <h4>Tu Ejecución (Fotograma Clave)</h4>
+                        <div class="canvas-container">
+                            <img id="frame-alumno" src="" alt="Fotograma analizado">
+                            <canvas id="canvas-puntos"></canvas>
+                        </div>
                     </div>
                 </div>
+                <div class="consejo-box">
+                    <h4>Recomendación para mejorar:</h4>
+                    <p id="texto-consejo"></p>
+                </div>
+                <button class="btn-secundario" onclick="reiniciar()">Practicar de nuevo</button>
             </div>
-            <div class="consejo-box">
-                <h4>Recomendación para mejorar:</h4>
-                <p id="texto-consejo"></p>
-            </div>
-            <button class="btn-secundario" onclick="reiniciar()">Practicar de nuevo</button>
         </div>
 
-        <!-- Vista Alumno: Sección Mi Progreso -->
-        <div id="pantalla-progreso" style="display:none;">
+        <!-- SECCIÓN PROGRESO -->
+        <div id="seccion-progreso" class="seccion-alumno" style="display:none;">
             <h3>Mi Progreso</h3>
-            <p class="subtitulo">Historial biomecánico y evaluaciones realizadas:</p>
-            <div id="lista-progreso" class="tarjetas-grid">
-                <p>Cargando historial de evaluaciones...</p>
+            <div id="contenedor-progreso">
+                <!-- Aquí se cargará el progreso desde la API -->
             </div>
-            <button class="btn-secundario" onclick="navegarAlumno('evaluar')" style="margin-top:16px;">&larr; Volver a Evaluación</button>
         </div>
 
-        <!-- Vista Alumno: Sección Recursos -->
-        <div id="pantalla-recursos" style="display:none;">
-            <h3>Recursos Didácticos</h3>
-            <p class="subtitulo">Técnicas de referencia y videos patrón disponibles:</p>
-            <div id="lista-recursos" class="tarjetas-grid">
-                <p>Cargando recursos didácticos...</p>
+        <!-- SECCIÓN HISTORIAL -->
+        <div id="seccion-historial" class="seccion-alumno" style="display:none;">
+            <h3>Historial de Evaluaciones</h3>
+            <div id="contenedor-historial">
+                <!-- Aquí se cargará el historial desde la API -->
             </div>
-            <button class="btn-secundario" onclick="navegarAlumno('evaluar')" style="margin-top:16px;">&larr; Volver a Evaluación</button>
         </div>
     </div>
 
-    <!-- Barra de Navegación Móvil Fija PWA Dinámica (Renderizada por rol en app.js) -->
-    <nav class="nav-pwa-bottom" id="nav-pwa-bottom" aria-label="Navegación principal" style="display:none;">
-    </nav>
+    <!-- VISTA INSTRUCTOR / PROFESOR -->
+    <div id="vista-instructor" class="contenedor" style="display:none;">
+        <!-- NAVEGACIÓN SIMPLIFICADA PROFESOR -->
+        <div class="nav-profesor-simplificada" style="display:flex; justify-content:space-around; gap:12px; padding:16px; background:#f0f0f0; border-radius:8px; margin-bottom:20px;">
+            <button onclick="mostrarSeccionProfesor('tecnicas')" class="btn-nav-profesor" id="btn-nav-prof-tecnicas">
+                Enseñar Técnica
+            </button>
+            <button onclick="mostrarSeccionProfesor('fuentes')" class="btn-nav-profesor" id="btn-nav-prof-fuentes">
+                Fuentes de Información
+            </button>
+        </div>
+
+        <!-- SECCIÓN TÉCNICAS (CRUD) -->
+        <div id="seccion-tecnicas" class="seccion-profesor">
+            <h3>Gestión de Técnicas</h3>
+            
+            <!-- FORMULARIO CREAR/EDITAR TÉCNICA -->
+            <div id="form-tecnica-container" style="border:1px solid #ced4da; padding:18px; border-radius:8px; margin-bottom:20px; background:#fafafa;">
+                <h4 id="titulo-form-tecnica">Registrar Nueva Técnica</h4>
+                <input type="hidden" id="tecnica-id-editar">
+                <form id="form-tecnica">
+                    <label for="tec-nombre">Nombre de la Técnica:</label>
+                    <input type="text" id="tec-nombre" required placeholder="Ej: Armbar desde Guardia" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+                    
+                    <label for="tec-video">Video de Referencia:</label>
+                    <input type="file" id="tec-video" accept="video/*" required style="width:100%; padding:8px; margin:8px 0;">
+                    <video id="preview-video-profesor" controls style="display:none; max-width:100%; margin-top:10px;"></video>
+                    
+                    <div style="margin-top:14px; display:flex; gap:10px;">
+                        <button type="submit" class="btn-primario" style="margin-top:0;">Guardar Técnica</button>
+                        <button type="button" onclick="cancelarEdicionTecnica()" class="btn-secundario" style="display:none;" id="btn-cancelar-tecnica">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- LISTADO DE TÉCNICAS -->
+            <h4>Técnicas Registradas</h4>
+            <div id="lista-tecnicas-profesor">
+                <!-- Se carga dinámicamente -->
+            </div>
+        </div>
+
+        <!-- SECCIÓN FUENTES (CRUD) -->
+        <div id="seccion-fuentes" class="seccion-profesor" style="display:none;">
+            <h3>Gestión de Fuentes de Información</h3>
+            
+            <!-- FORMULARIO CREAR/EDITAR FUENTE -->
+            <div id="form-fuente-container" style="border:1px solid #ced4da; padding:18px; border-radius:8px; margin-bottom:20px; background:#fafafa;">
+                <h4 id="titulo-form-fuente">Registrar Nueva Fuente</h4>
+                <form id="form-fuente-crud">
+                    <input type="hidden" id="fuente-id-editar">
+                    
+                    <label for="fuente-titulo">Título:</label>
+                    <input type="text" id="fuente-titulo" required placeholder="Ej: Manual de Fundamentos y Biomecánica BJJ" style="width:100%; padding:10px; margin:8px 0; border:1px solid #ced4da; border-radius:6px;">
+                    
+                    <label for="fuente-archivo">Archivo PDF:</label>
+                    <input type="file" id="fuente-archivo" accept="application/pdf,.pdf" style="width:100%; padding:8px; margin:8px 0;">
+                    
+                    <div style="margin-top:14px; display:flex; gap:10px;">
+                        <button type="submit" class="btn-primario" style="margin-top:0;">Guardar Fuente</button>
+                        <button type="button" onclick="cancelarEdicionFuente()" class="btn-secundario" style="display:none;" id="btn-cancelar-fuente">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- LISTADO DE FUENTES -->
+            <h4>Fuentes Registradas</h4>
+            <div id="lista-fuentes-profesor">
+                <!-- Se carga dinámicamente -->
+            </div>
+        </div>
+    </div>
 
     <script src="/static/app.js"></script>
 </body>
 </html>
-

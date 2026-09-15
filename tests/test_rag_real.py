@@ -1,136 +1,61 @@
 # tests/test_rag_real.py
-"""Pruebas Unitarias TDD para Subsistema RAG Real con gemini-embedding-2 y Chunker Semántico.
+"""Pruebas Unitarias TDD para Subsistema RAG con Qwen3-VL-Embedding (2048d) y Qdrant Local.
 
 Verifica:
-1. Prefijo oficial Google 'task: search result | query:' en GeminiEmbedding2Adapter.
-2. Dimensión canónica estricta de 768 floats y validación de dimensionalidad.
-3. Reintento exponencial ante excepciones de cuota HTTP 429.
+1. Dimensión canónica estricta de 2048 floats en QwenEmbeddingAdapter.
+2. Contrato IEmbeddingService y alias generate_embedding.
+3. Generación en lote (batch) de embeddings de 2048 dimensiones.
 4. ChunkerSemanticoBJJ encapsulando langchain_text_splitters (1000/200).
 5. ConfiguracionRAG como Experto en Información inyectado en repositorios.
-6. Filtrado por umbral configurable (0.65 por defecto) sin valores mágicos hardcodeados.
+6. Integración con QdrantAdapter Local (colección bjj_knowledge).
 """
 
 from unittest.mock import MagicMock, patch
 import pytest
 from src.domain.models import ConfiguracionRAG, FuenteConocimiento
 from src.services.chunker_semantico import ChunkerSemanticoBJJ
-from src.infrastructure.adapters.gemini_embedding_adapter import GeminiEmbedding2Adapter
+from src.infrastructure.adapters.qwen_embedding_adapter import QwenEmbeddingAdapter
 from src.infrastructure.persistence import PostgresFuenteConocimientoRepository
 from src.infrastructure.persistence.rag_ingestion import PipelineIngestaRAG
 
 
-class TestGeminiEmbedding2Adapter:
-    """Valida el adaptador para gemini-embedding-2 bajo el SDK google-genai."""
+class TestQwenEmbeddingAdapter:
+    """Valida el adaptador para Qwen3-VL-Embedding-2B (2048 dimensiones)."""
 
-    def test_prefijo_oficial_google_en_generar_embedding(self):
-        """Verifica que el prompt se formatea con 'task: search result | query: '."""
-        adapter = GeminiEmbedding2Adapter(api_key="fake-test-key")
-        mock_client = MagicMock()
-        mock_embedding = MagicMock()
-        mock_embedding.values = [0.01] * 768
-        mock_response = MagicMock()
-        mock_response.embeddings = [mock_embedding]
-        mock_client.models.embed_content.return_value = mock_response
-        adapter._client = mock_client
-
-        texto_consulta = "escape de guardia cerrada"
-        resultado = adapter.generar_embedding(texto_consulta)
-
-        assert len(resultado) == 768
-        assert mock_client.models.embed_content.called
-        _, kwargs = mock_client.models.embed_content.call_args
-        assert kwargs["contents"] == f"task: search result | query: {texto_consulta}"
-        assert kwargs["model"] == "gemini-embedding-2"
-        assert kwargs["config"].output_dimensionality == 768
-
-    def test_rechaza_vector_dimension_distinta_de_768(self):
-        """Lanza ValueError si el backend devuelve dimensión errónea (ej. 512 o 1536)."""
-        adapter = GeminiEmbedding2Adapter(api_key="fake-test-key")
-        mock_client = MagicMock()
-        mock_embedding = MagicMock()
-        mock_embedding.values = [0.01] * 512  # Dimensión incorrecta
-        mock_response = MagicMock()
-        mock_response.embeddings = [mock_embedding]
-        mock_client.models.embed_content.return_value = mock_response
-        adapter._client = mock_client
-
-        with pytest.raises(ValueError, match="Dimensión incorrecta"):
-            adapter.generar_embedding("armbar biomecánica")
-
-    def test_generar_embeddings_batch_con_prefijo_y_reintento_429(self):
-        """Verifica lote con prefijo para cada elemento y reintento exponencial ante 429."""
-        adapter = GeminiEmbedding2Adapter(api_key="fake-test-key")
-        mock_client = MagicMock()
-        adapter._client = mock_client
-
-        mock_embedding = MagicMock()
-        mock_embedding.values = [0.05] * 768
-        mock_response = MagicMock()
-        mock_response.embeddings = [mock_embedding, mock_embedding]
-
-        # Simula error 429 en el primer intento y éxito en el segundo
-        mock_client.models.embed_content.side_effect = [
-            Exception("ResourceExhausted: 429 Quota exceeded"),
-            mock_response,
-        ]
-
-        textos = ["palanca de brazo", "estrangulación cruzada"]
-        with patch("time.sleep") as mock_sleep:
-            vectores = adapter.generar_embeddings_batch(textos, max_retries=3, backoff_base=0.01)
-
-        assert len(vectores) == 2
-        assert mock_client.models.embed_content.call_count == 2
-        assert mock_sleep.called
-        # Verificar que ambos textos tienen el prefijo oficial
-        _, kwargs = mock_client.models.embed_content.call_args
-        assert kwargs["contents"] == [
-            "task: search result | query: palanca de brazo",
-            "task: search result | query: estrangulación cruzada",
-        ]
-
-    def test_adapter_sin_api_key_retorna_vector_deterministico_768(self):
-        """Garantiza funcionamiento offline/test devolviendo vector normalizado 768d."""
-        with patch.dict("os.environ", {}, clear=True):
-            adapter = GeminiEmbedding2Adapter(api_key="")
-            vector = adapter.generar_embedding("prueba sin credenciales")
-            assert len(vector) == 768
-            assert vector[0] == 0.05
-
-            lote = adapter.generar_embeddings_batch(["texto 1", "texto 2"])
-            assert len(lote) == 2
-            assert len(lote[0]) == 768
-
-    def test_generar_embeddings_batch_textos_vacios_retorna_vacio(self):
-        adapter = GeminiEmbedding2Adapter(api_key="fake-test-key")
-        assert adapter.generar_embeddings_batch([]) == []
-
-    def test_generar_embeddings_batch_dimension_invalida_lanza_error(self):
-        adapter = GeminiEmbedding2Adapter(api_key="fake-test-key")
-        mock_client = MagicMock()
-        mock_embedding = MagicMock()
-        mock_embedding.values = [0.01] * 256  # Invalida
-        mock_response = MagicMock()
-        mock_response.embeddings = [mock_embedding]
-        mock_client.models.embed_content.return_value = mock_response
-        adapter._client = mock_client
-
-        with pytest.raises(ValueError, match="dimensión incorrecta"):
-            adapter.generar_embeddings_batch(["prueba"])
-
-    def test_generar_embeddings_batch_reintentos_agotados_lanza_excepcion(self):
-        adapter = GeminiEmbedding2Adapter(api_key="fake-test-key")
-        mock_client = MagicMock()
-        mock_client.models.embed_content.side_effect = Exception("429 Too Many Requests")
-        adapter._client = mock_client
-
-        with patch("time.sleep"):
-            with pytest.raises(Exception, match="429"):
-                adapter.generar_embeddings_batch(["texto"], max_retries=2, backoff_base=0.001)
+    def test_generar_embedding_dimension_2048(self):
+        adapter = QwenEmbeddingAdapter()
+        resultado = adapter.generar_embedding("escape de guardia cerrada")
+        assert len(resultado) == 2048
 
     def test_generate_embedding_alias_contrato(self):
-        adapter = GeminiEmbedding2Adapter(api_key="")
-        vec = adapter.generate_embedding("armbar")
-        assert len(vec) == 768
+        adapter = QwenEmbeddingAdapter()
+        vec = adapter.generate_embedding("armbar biomecánica")
+        assert len(vec) == 2048
+
+    def test_generar_embeddings_batch_dimensiones_y_longitud(self):
+        adapter = QwenEmbeddingAdapter()
+        textos = ["Técnica 1", "Técnica 2", "Técnica 3"]
+        vectores = adapter.generar_embeddings_batch(textos)
+        assert len(vectores) == 3
+        for v in vectores:
+            assert len(v) == 2048
+
+    def test_generar_embeddings_batch_textos_vacios_retorna_vacio(self):
+        adapter = QwenEmbeddingAdapter()
+        assert adapter.generar_embeddings_batch([]) == []
+
+    def test_llamar_colab_remoto_mock(self):
+        adapter = QwenEmbeddingAdapter()
+        adapter.colab_url = "https://mock-colab-tunnel.ngrok.io"
+        with patch("requests.post") as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.json.return_value = {"embeddings": [[0.02] * 2048, [0.03] * 2048]}
+            mock_post.return_value = mock_resp
+
+            vectores = adapter.generar_embeddings_batch(["chunk 1", "chunk 2"])
+            assert len(vectores) == 2
+            assert len(vectores[0]) == 2048
+            assert mock_post.called
 
 
 class TestChunkerSemanticoBJJ:
@@ -159,7 +84,7 @@ class TestChunkerSemanticoBJJ:
 
 
 class TestConfiguracionRAGYPersistencia:
-    """Valida el patrón Experto en Información para umbrales RAG e inyección en Postgres."""
+    """Valida el patrón Experto en Información para umbrales RAG y delegación a Qdrant."""
 
     def test_configuracion_rag_valores_por_defecto_y_congelada(self):
         cfg = ConfiguracionRAG()
@@ -170,50 +95,153 @@ class TestConfiguracionRAGYPersistencia:
         with pytest.raises(Exception):
             cfg.umbral_similitud_minima = 0.75  # type: ignore
 
-    def test_inyeccion_configuracion_rag_en_repositorio_postgres(self):
-        """Verifica que el repositorio recibe ConfiguracionRAG y la utiliza en la consulta."""
+    def test_inyeccion_configuracion_rag_en_repositorio_postgres_y_delegacion_qdrant(self):
+        """Verifica que el repositorio recibe ConfiguracionRAG y delega la búsqueda a Qdrant."""
         mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_qdrant = MagicMock()
+        mock_qdrant.buscar.return_value = [
+            {
+                "id_fuente": "f1",
+                "id_tecnica": "armbar",
+                "titulo": "Guía Armbar",
+                "tipo_recurso": "Manual",
+                "chunk_texto": "Texto del armbar",
+                "similitud": 0.89,
+            }
+        ]
 
         config_instructor = ConfiguracionRAG(umbral_similitud_minima=0.72, top_k_resultados=5)
         repo = PostgresFuenteConocimientoRepository(
             db_connection=mock_conn,
             config_rag=config_instructor,
+            qdrant_adapter=mock_qdrant,
         )
 
-        mock_cursor.fetchall.return_value = [
-            ("f1", "armbar", "Guía Armbar", "Manual", "Texto del armbar", None),
-        ]
-
-        embedding_consulta = [0.02] * 768
+        embedding_consulta = [0.02] * 2048
         resultados = repo.buscar_contexto(embedding_consulta)
 
         assert len(resultados) == 1
-        assert mock_cursor.execute.called
-        sql_query, sql_params = mock_cursor.execute.call_args[0]
+        assert resultados[0].id_fuente == "f1"
+        assert resultados[0].similitud == 0.89
+        assert mock_qdrant.buscar.called
+        _, kwargs = mock_qdrant.buscar.call_args
         # Verificar que el umbral usado es 0.72 inyectado, NO 0.65 hardcodeado
-        assert 0.72 in sql_params
-        assert sql_params[-1] == 5  # top_k inyectado
-        assert "embedding_vector <=>" in sql_query
+        assert kwargs["umbral_similitud"] == 0.72
+        assert kwargs["limite"] == 5
 
-    def test_buscar_contexto_con_filtro_id_tecnica(self):
+    def test_buscar_contexto_con_filtro_id_tecnica_en_qdrant(self):
         mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_qdrant = MagicMock()
+        mock_qdrant.buscar.return_value = []
 
         config_custom = ConfiguracionRAG(umbral_similitud_minima=0.80, top_k_resultados=2)
-        repo = PostgresFuenteConocimientoRepository(db_connection=mock_conn, config_rag=config_custom)
+        repo = PostgresFuenteConocimientoRepository(
+            db_connection=mock_conn,
+            config_rag=config_custom,
+            qdrant_adapter=mock_qdrant,
+        )
 
-        mock_cursor.fetchall.return_value = []
-        embedding_consulta = [0.03] * 768
+        embedding_consulta = [0.03] * 2048
         repo.buscar_contexto(embedding_consulta, id_tecnica="kimura_guardia")
 
-        sql_query, sql_params = mock_cursor.execute.call_args[0]
-        assert "id_tecnica = %s" in sql_query
-        assert sql_params[0] == "kimura_guardia"
-        assert 0.80 in sql_params
-        assert sql_params[-1] == 2
+        assert mock_qdrant.buscar.called
+        _, kwargs = mock_qdrant.buscar.call_args
+        assert kwargs["id_tecnica"] == "kimura_guardia"
+        assert kwargs["umbral_similitud"] == 0.80
+        assert kwargs["limite"] == 2
+
+
+class TestQdrantAdapterLocal:
+    """Valida la persistencia vectorial en Qdrant Local corriendo en http://localhost:6333."""
+
+    @pytest.fixture(autouse=True)
+    def verificar_qdrant(self):
+        import urllib.request
+        try:
+            req = urllib.request.urlopen("http://localhost:6333/collections", timeout=2)
+            if req.status != 200:
+                pytest.skip("Qdrant local no está disponible en http://localhost:6333")
+        except Exception:
+            pytest.skip("Qdrant local no está disponible en http://localhost:6333")
+
+    def test_creacion_automatica_coleccion_2048_cosine(self):
+        from src.infrastructure.adapters.qdrant_adapter import QdrantAdapter
+        adapter = QdrantAdapter(url="http://localhost:6333", collection_name="bjj_knowledge_test")
+        adapter.asegurar_coleccion()
+
+        # Verificar que la colección existe en Qdrant y sus parámetros son 2048 y Cosine
+        info = adapter._client.get_collection("bjj_knowledge_test")
+        assert info is not None
+        vectors_cfg = info.config.params.vectors
+        # vectors_cfg puede ser VectorParams o dict
+        size = getattr(vectors_cfg, "size", None) or vectors_cfg.get("size")
+        assert size == 2048
+
+    def test_indexacion_y_busqueda_con_umbral_75_y_filtro_tecnica(self):
+        from src.infrastructure.adapters.qdrant_adapter import QdrantAdapter
+        adapter = QdrantAdapter(url="http://localhost:6333", collection_name="bjj_knowledge_test")
+        adapter.asegurar_coleccion()
+
+        # Insertar dos vectores de 2048d
+        vec_armbar = [0.1] * 2048
+        adapter.upsert(
+            id_fuente="fuente_armbar_qdrant",
+            vector=vec_armbar,
+            payload={
+                "id_fuente": "fuente_armbar_qdrant",
+                "titulo": "Armbar desde la Guardia Cerrada",
+                "chunk_texto": "Asegura la muñeca del rival contra tu pecho.",
+                "id_tecnica": "armbar_guardia",
+            },
+        )
+
+        vec_triangulo = [-0.1] * 1024 + [0.1] * 1024
+        adapter.upsert(
+            id_fuente="fuente_triangulo_qdrant",
+            vector=vec_triangulo,
+            payload={
+                "id_fuente": "fuente_triangulo_qdrant",
+                "titulo": "Triángulo desde la Guardia",
+                "chunk_texto": "Pasa la pierna sobre el hombro y bloquea el cuello.",
+                "id_tecnica": "triangulo_guardia",
+            },
+        )
+
+        # 1. Búsqueda con vector similar y umbral >= 0.75
+        resultados = adapter.buscar(
+            consulta_embedding=vec_armbar,
+            limite=3,
+            umbral_similitud=0.75,
+            id_tecnica="armbar_guardia",
+        )
+
+        assert len(resultados) >= 1
+        mejor = resultados[0]
+        assert mejor["id_fuente"] == "fuente_armbar_qdrant"
+        assert mejor["titulo"] == "Armbar desde la Guardia Cerrada"
+        assert mejor["similitud"] >= 0.75
+        assert mejor["id_tecnica"] == "armbar_guardia"
+
+        # 2. Filtrado por otra técnica no debe devolver el armbar
+        res_tri = adapter.buscar(
+            consulta_embedding=vec_armbar,
+            limite=3,
+            umbral_similitud=0.75,
+            id_tecnica="triangulo_guardia",
+        )
+        assert len(res_tri) == 0
+
+    def test_rechaza_vector_dimension_incorrecta(self):
+        from src.infrastructure.adapters.qdrant_adapter import QdrantAdapter
+        adapter = QdrantAdapter(url="http://localhost:6333", collection_name="bjj_knowledge_test")
+
+        vector_invalido = [0.05] * 768
+        with pytest.raises(ValueError, match="Dimensión incorrecta"):
+            adapter.upsert("f_invalida", vector_invalido, {})
+
+        with pytest.raises(ValueError, match="Dimensión incorrecta"):
+            adapter.buscar(vector_invalido)
+
 
 
 class TestPipelineIngestaRAG:
@@ -225,7 +253,7 @@ class TestPipelineIngestaRAG:
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
         mock_embed_svc = MagicMock()
-        mock_embed_svc.generar_embeddings_batch.return_value = [[0.05] * 768, [0.05] * 768]
+        mock_embed_svc.generar_embeddings_batch.return_value = [[0.05] * 2048, [0.05] * 2048]
 
         pipeline = PipelineIngestaRAG(
             db_connection=mock_conn,
@@ -268,7 +296,7 @@ class TestPipelineIngestaRAG:
                 self.intentos += 1
                 if self.intentos == 1:
                     raise Exception("429 Rate limit exceeded")
-                return [0.05] * 768
+                return [0.05] * 2048
 
         svc = ServicioEmbeddingUnitario()
         pipeline = PipelineIngestaRAG(db_connection=mock_conn, embedding_service=svc)
@@ -292,18 +320,3 @@ class TestPipelineIngestaRAG:
         with pytest.raises(ValueError, match="Dimensión incorrecta del embedding"):
             pipeline.indexar_manual("guillotina", "Guillotina", "Apretar el cuello.")
 
-    def test_ingestor_rag_legacy_con_generar_embedding(self):
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
-
-        class AdaptadorSimpleGenerar:
-            def generar_embedding(self, texto: str):
-                return [0.05] * 768
-
-        from src.infrastructure.persistence.rag_ingestion import IngestorRAG
-
-        ingestor = IngestorRAG(db_url=mock_conn, gemini_adapter=AdaptadorSimpleGenerar())
-        total = ingestor.indexar_documento("Titulo", "Texto " * 50, tamano_chunk=200)
-        assert total > 0
-        assert mock_cursor.execute.called

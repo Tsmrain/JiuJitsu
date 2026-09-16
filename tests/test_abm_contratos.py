@@ -46,6 +46,6 @@ class TestEntidadesInmutablesExpertoInformacion:
         with pytest.raises(ValueError, match="La dimensión del embedding debe ser 2048"):
             FuenteConocimiento(
                 id_fuente="F001", id_tecnica="T001", titulo="Test",
-                tipo_recurso="PDF", embedding_vector=[0.1] * 768,
+                tipo_recurso="PDF", embedding_vector=[0.1] * 1024,
                 chunk_texto="texto", fecha_carga=None
             )

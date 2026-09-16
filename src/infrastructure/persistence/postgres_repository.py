@@ -15,6 +15,7 @@ from src.domain.interfaces import (
     IFuenteConocimientoRepository,
     IVectorStore,
     IUsuarioRepository,
+    IEmbeddingService,
 )
 from src.domain.models import (
     Profesor,
@@ -25,7 +26,6 @@ from src.domain.models import (
     Usuario,
 )
 from src.infrastructure.adapters.yolo_adapter import AdaptadorYOLO
-from src.infrastructure.adapters.gemini_service_adapter import AdaptadorGemini
 from src.infrastructure.adapters.qwen_embedding_adapter import QwenEmbeddingAdapter
 from src.infrastructure.adapters.qdrant_adapter import QdrantAdapter
 
@@ -252,21 +252,12 @@ class PostgresFuenteConocimientoRepository(IFuenteConocimientoRepository):
         self,
         db_connection: Union[Any, str],
         config_rag: Optional[ConfiguracionRAG] = None,
-        gemini_adapter: Optional[Any] = None,
         qdrant_adapter: Optional[IVectorStore] = None,
-        embedding_service: Optional[Any] = None,
+        embedding_service: Optional[IEmbeddingService] = None,
     ):
         self._db = db_connection
         self._config = config_rag if isinstance(config_rag, ConfiguracionRAG) else ConfiguracionRAG()
-        if embedding_service is not None:
-            self._embedding = embedding_service
-        elif gemini_adapter is not None:
-            self._embedding = gemini_adapter
-        elif config_rag is not None and not isinstance(config_rag, ConfiguracionRAG):
-            self._embedding = config_rag
-        else:
-            self._embedding = QwenEmbeddingAdapter()
-        self._gemini = self._embedding  # Retrocompatibilidad
+        self._embedding = embedding_service if embedding_service is not None else QwenEmbeddingAdapter()
 
         if qdrant_adapter is not None:
             self._qdrant = qdrant_adapter

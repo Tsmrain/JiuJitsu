@@ -2,6 +2,7 @@ import time
 import uuid
 from typing import Any, List, Optional, Union
 import psycopg2
+from src.domain.interfaces import IEmbeddingService
 
 from src.services.chunker_semantico import ChunkerSemanticoBJJ
 from src.infrastructure.adapters.qwen_embedding_adapter import QwenEmbeddingAdapter
@@ -95,7 +96,7 @@ class PipelineIngestaRAG:
     def __init__(
         self,
         db_connection: Union[Any, str],
-        embedding_service: Optional[Any] = None,
+        embedding_service: Optional[IEmbeddingService] = None,
         chunker: Optional[ChunkerSemanticoBJJ] = None,
         qdrant_adapter: Optional[Any] = None,
     ):

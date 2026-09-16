@@ -4,7 +4,7 @@
 
 Sistema de asistencia técnica para Jiu-Jitsu Brasileño que utiliza visión artificial (**YOLO26x-Pose**) y modelos lingüísticos (**Gemini 2.5 Flash**) para evaluar la ejecución de técnicas mediante comparación biomecánica 3D.
 
-El alumno graba su movimiento, el sistema extrae y compara su esqueleto 3D contra el patrón del instructor, y genera retroalimentación pedagógica personalizada con contexto extraído de literatura técnica mediante **RAG** (Retrieval-Augmented Generation) sobre **pgvector**.
+El alumno graba su movimiento, el sistema extrae y compara su esqueleto 3D contra el patrón del instructor, y genera retroalimentación pedagógica personalizada con contexto extraído de literatura técnica mediante **RAG** (Retrieval-Augmented Generation) sobre **Qdrant Vector Database**.
 
 ---
 
@@ -18,7 +18,7 @@ El sistema sigue una arquitectura en capas orientada a objetos para garantizar *
 | **Aplicación** | Controladores de Casos de Uso | `EvaluacionController` (CU-02), `RegistrarTecnicaController` (CU-01) |
 | **Servicios** | Pure Fabrication transversal | `SintesisPedagogicaService`, `ChunkerSemanticoBJJ` |
 | **Dominio** | Lógica de negocio pura | `CalculadoraBiomecanica`, `TecnicaPatron`, `MatrizEsqueletica` |
-| **Infraestructura** | Adaptadores y persistencia | YOLO26x (Colab), Gemini AI, PostgreSQL + pgvector |
+| **Infraestructura** | Adaptadores y persistencia | YOLO26x (Colab), PostgreSQL (BCNF) + Qdrant (vectores 2048d) + Gemini 2.5 Flash (solo generación) |
 
 ### Casos de Uso Implementados
 
@@ -29,12 +29,12 @@ El sistema sigue una arquitectura en capas orientada a objetos para garantizar *
 
 ---
 
-## Síntesis Pedagógica Estructurada (Gemini 2.5 Flash & JSONB)
+## Síntesis Pedagógica Estructurada (Gemini 2.5 Flash SOLO Generación)
 
 El flujo de evaluación biomecánica implementa una síntesis pedagógica estructurada bajo el principio de **Variaciones Protegidas**:
 1. **Detección Biomecánica:** La capa de Dominio calcula el desajuste angular exacto frente al patrón del maestro.
 2. **Recuperación Semántica (RAG):** Si la desviación supera el umbral, se busca contexto de manuales (ej. *Jiu Jitsu University*).
-3. **Generación con Gemini 2.5 Flash:** El adaptador `GeminiServiceAdapter` solicita explícitamente un schema JSON con 4 claves:
+3. **Generación con Gemini 2.5 Flash:** El adaptador `GeminiServiceAdapter` se encarga **exclusivamente** de la generación del texto, delegando los embeddings a Qwen. Solicita un schema JSON con 4 claves:
    - `analisis_postural`: Diagnóstico biomecánico detallado del desajuste angular.
    - `riesgo_lesion`: Riesgo anatómico, sobrecarga articular o pérdida de apalancamiento mecánico.
    - `paso_a_paso`: Instrucciones secuenciales de reajuste corporal accionables por el alumno.
@@ -106,7 +106,7 @@ JiuJitsu/
 ## Requisitos Previos
 
 - **Python 3.13+**
-- **Docker y Docker Compose** (para PostgreSQL + pgvector)
+- **Docker y Docker Compose** (para PostgreSQL y Qdrant)
 - **Cuenta en Google AI Studio** (para API Key de Gemini)
 - **Acceso a Google Colab Pro** (para inferencia YOLO26x en GPU)
 
@@ -123,7 +123,7 @@ cd JiuJitsu
 cp .env.example .env
 # Editar .env con las credenciales de Gemini y base de datos
 
-# 3. Levantar base de datos PostgreSQL + pgvector
+# 3. Levantar base de datos PostgreSQL y Qdrant
 docker compose up -d
 
 # 4. Instalar dependencias
@@ -159,7 +159,7 @@ El esquema sigue diseño **normalizado hasta BCNF** (Mannino, 7th Ed., Cap. 6-8)
 |-------|--------------------|-------------|
 | `profesores` | - | Instructores registrados |
 | `tecnicas_patron` | `matriz_esqueletica JSONB` | Técnicas con su `MatrizEsqueletica` en JSONB |
-| `fuentes_conocimiento` | `embedding_vector vector(2048)` | Manuales técnicos indexados para RAG |
+| `fuentes_conocimiento` | - | Manuales técnicos indexados para RAG (Persistencia vectorial delegada a Qdrant) |
 | `evaluaciones_alumno` | `consejo_pedagogico JSONB` | Registro histórico con reporte pedagógico estructurado (4 claves) |
 
 Inicialización automática con: `docker compose up -d`
@@ -173,5 +173,5 @@ Inicialización automática con: `docker compose up -d`
 | **Desarrollo** | Proceso Unificado (Larman) con iteraciones cortas por Caso de Uso |
 | **Patrones** | GRASP: Experto en Información, Controlador, Creador, Variaciones Protegidas, Pure Fabrication |
 | **Calidad** | Test-Driven Development (TDD) |
-| **Base de datos** | Diseño normalizado BCNF (Mannino) con pgvector y JSONB |
+| **Base de datos** | Diseño normalizado BCNF (Mannino) con Qdrant y JSONB |
 | **IA Generativa** | RAG sobre embeddings + `gemini-2.5-flash` para síntesis pedagógica estructurada |

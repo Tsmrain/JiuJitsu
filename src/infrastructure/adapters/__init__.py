@@ -3,7 +3,7 @@
 Implementaciones concretas de los contratos de dominio:
   - IInferenceEngine  → ColabYOLOAdapter, AdaptadorYOLO
   - IGenerationService → GeminiServiceAdapter, AdaptadorGemini
-  - IEmbeddingService  → QwenEmbeddingAdapter, AdaptadorGemini
+  - IEmbeddingService  → QwenEmbeddingAdapter
   - IVectorStore       → QdrantAdapter
 
 Aplican el patrón Variaciones Protegidas (Larman, Cap. 17): el núcleo de dominio

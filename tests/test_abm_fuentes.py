@@ -1,7 +1,7 @@
 # tests/test_abm_fuentes.py
 """Pruebas TDD para el Caso de Uso de Administración de Fuentes Didácticas RAG.
 
-Valida la generación de embeddings de 768 dimensiones con AdaptadorGemini,
+Valida la generación de embeddings de 2048 dimensiones con QwenEmbeddingAdapter,
 el filtrado por técnica y la búsqueda de contexto vectorial.
 """
 

@@ -162,7 +162,7 @@ def test_pdf_without_text_raises_400(client):
     assert "El PDF no contiene texto extraíble" in resp.json()["detail"]
 
 def test_qwen_and_gemini_service_adapters_syntax_and_dim():
-    """Verifica que Qwen use dimensión 2048 y GeminiServiceAdapter use 768."""
+    """Verifica que Qwen use dimensión 2048 y GeminiServiceAdapter no tenga métodos de embedding."""
     from src.infrastructure.adapters.qwen_embedding_adapter import QwenEmbeddingAdapter
     from src.infrastructure.adapters.gemini_adapter import GeminiServiceAdapter
 
@@ -171,7 +171,7 @@ def test_qwen_and_gemini_service_adapters_syntax_and_dim():
     assert len(vec1) == 2048
 
     adapter2 = GeminiServiceAdapter()
-    vec2 = adapter2.generate_embedding("Fundamentos de la guardia cerrada en Jiu Jitsu")
-    assert len(vec2) == 768
+    assert not hasattr(adapter2, "generate_embedding")
+    assert not hasattr(adapter2, "generar_embedding")
 
 

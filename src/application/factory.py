@@ -104,7 +104,7 @@ def crear_fuente_controller(
         conn = db_conn if db_conn is not None else get_db_connection()
         qdrant = qdrant_adapter if qdrant_adapter is not None else QdrantAdapter()
         repo = PostgresFuenteConocimientoRepository(
-            conn, config_rag=cfg, gemini_adapter=adaptador_qwen, qdrant_adapter=qdrant
+            conn, config_rag=cfg, embedding_service=adaptador_qwen, qdrant_adapter=qdrant
         )
         from src.infrastructure.persistence.rag_ingestion import PipelineIngestaRAG
         pipeline = PipelineIngestaRAG(
@@ -114,13 +114,13 @@ def crear_fuente_controller(
         )
         return FuenteController(
             repository=repo,
-            gemini_adapter=adaptador_qwen,
+            embedding_service=adaptador_qwen,
             qdrant_adapter=qdrant,
             pipeline_ingesta=pipeline,
         )
     else:
         repo = InMemoryFuenteConocimientoRepository(config_rag=cfg) if nuevo_almacen else _SHARED_MEM_FUENTE_REPO
-        return FuenteController(repository=repo, gemini_adapter=adaptador_qwen)
+        return FuenteController(repository=repo, embedding_service=adaptador_qwen)
 
 
 def crear_sintesis_pedagogica_service(

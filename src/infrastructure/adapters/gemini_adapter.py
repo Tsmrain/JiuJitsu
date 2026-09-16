@@ -7,7 +7,7 @@ try:
 except ImportError:
     genai = None
 
-from src.domain.interfaces import IGenerationService, IEmbeddingService
+from src.domain.interfaces import IGenerationService
 from src.domain.models import DesviacionArticular
 
 try:
@@ -16,8 +16,8 @@ try:
 except ImportError:
     pass
 
-class GeminiServiceAdapter(IGenerationService, IEmbeddingService):
-    """Adaptador de infraestructura para la API oficial de Google Gemini."""
+class GeminiServiceAdapter(IGenerationService):
+    """Adaptador de infraestructura para la API oficial de Google Gemini (Solo Generación)."""
 
     def __init__(self, api_key: Optional[str] = None):
         self._api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
@@ -96,22 +96,4 @@ class GeminiServiceAdapter(IGenerationService, IEmbeddingService):
         except Exception:
             return fallback_dict
 
-    def generate_embedding(self, text: str) -> List[float]:
-        if not self._client:
-            return [0.05] * 768
-        try:
-            from google.genai import types
-            model = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-2")
-            response = self._client.models.embed_content(
-                model=model,
-                contents=text,
-                config=types.EmbedContentConfig(output_dimensionality=768)
-            )
-            return response.embeddings[0].values
-        except Exception as e:
-            print(f"[ERROR GEMINI EMBEDDING] {e}")
-            return [0.05] * 768
-
-    def generar_embedding(self, texto: str) -> List[float]:
-        return self.generate_embedding(texto)
 

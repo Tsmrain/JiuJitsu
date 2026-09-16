@@ -1,15 +1,15 @@
 # src/application/fuente_controller.py
 """Controlador de Aplicación / Fachada de Sesión para Fuentes de Conocimiento (RAG).
 
-Orquesta la fragmentación, vectorización con AdaptadorGemini y almacenamiento
+Orquesta la fragmentación, vectorización con QwenEmbeddingAdapter (2048d) y almacenamiento
 en el acervo documental del sistema pedagógico.
 """
 
 import uuid
 from typing import Any, Dict, List, Optional
-from src.domain.interfaces import IFuenteConocimientoRepository, IVectorStore
+from src.domain.interfaces import IFuenteConocimientoRepository, IVectorStore, IEmbeddingService
 from src.domain.models import FuenteConocimiento
-from src.infrastructure.adapters.gemini_service_adapter import AdaptadorGemini
+from src.infrastructure.adapters.qwen_embedding_adapter import QwenEmbeddingAdapter
 
 
 class FuenteController:
@@ -22,12 +22,12 @@ class FuenteController:
     def __init__(
         self,
         repository: IFuenteConocimientoRepository,
-        gemini_adapter: Optional[Any] = None,
+        embedding_service: Optional[IEmbeddingService] = None,
         qdrant_adapter: Optional[IVectorStore] = None,
         pipeline_ingesta: Optional[Any] = None,
     ):
         self._repository = repository
-        self._gemini = gemini_adapter if gemini_adapter is not None else AdaptadorGemini()
+        self._embedding_service = embedding_service if embedding_service is not None else QwenEmbeddingAdapter()
         self._qdrant = qdrant_adapter
         self._pipeline = pipeline_ingesta
 
@@ -43,7 +43,7 @@ class FuenteController:
         """Genera embedding mediante Adaptador (Qwen) si no se provee y persiste."""
         vector = embedding_vector
         if vector is None:
-            vector = self._gemini.generar_embedding(chunk_texto)
+            vector = self._embedding_service.generate_embedding(chunk_texto)
 
         fuente = FuenteConocimiento(
             id_fuente=id_fuente,
@@ -136,7 +136,7 @@ class FuenteController:
         vector = consulta_embedding
         if vector is None:
             if texto_consulta:
-                vector = self._gemini.generar_embedding(texto_consulta)
+                vector = self._embedding_service.generate_embedding(texto_consulta)
             else:
                 vector = [0.05] * 2048
 

@@ -1,8 +1,8 @@
 # Fdb version 4
-["pdflatex"] 1789586519.66482 "/home/santiago/Desktop/JiuJitsu/docs/Documento.tex" "Documento.pdf" "Documento" 1789586520.85541 0
+["pdflatex"] 1789587751.73377 "/home/santiago/Desktop/JiuJitsu/docs/Documento.tex" "Documento.pdf" "Documento" 1789587752.9194 0
   "/etc/texmf/web2c/texmf.cnf" 1789363578.09822 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/home/santiago/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1200.600pk" 1789364046.16991 14040 f103b2161933cd993fd5ee524bc664e3 ""
-  "/home/santiago/Desktop/JiuJitsu/docs/Documento.tex" 1789501666.98624 52706 8744211c8912c87c7d2b7f02cde2dbd0 ""
+  "/home/santiago/Desktop/JiuJitsu/docs/Documento.tex" 1789587750.36342 57119 5908bed78e7a3fb0d33c082808eea9ec ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/tcrm1200.tfm" 1136768653 1536 74b7293ec3713bb7fdca8dd1bd1f469c ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
@@ -73,9 +73,9 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1741904018 41538 c016915c1d51223b6dbbfe27341748a8 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1789364007 128227 ed67923a37f7748d267799454bc1f95b ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1789364040 1928192 7459f1671cd8c1ba730f819e033e79bd ""
-  "Documento.aux" 1789586520.79979 12394 d6ede42fb5c32ca4fec364e3239557c5 "pdflatex"
-  "Documento.tex" 1789501666.98624 52706 8744211c8912c87c7d2b7f02cde2dbd0 ""
-  "Documento.toc" 1789586520.80379 7108 86fcd4adb3c213f3d0d74a911d0a6977 "pdflatex"
+  "Documento.aux" 1789587752.86743 12164 ab582ea84c3b5a5b9e8d9be28c4435b0 "pdflatex"
+  "Documento.tex" 1789587750.36342 57119 5908bed78e7a3fb0d33c082808eea9ec ""
+  "Documento.toc" 1789587752.87143 6999 6e2fc3c06c65873cde46fb9ec42d2a5d "pdflatex"
   "Flujo del negocio.png" 1789586510.22749 1360622 7d5cb52322d4d38dc6e47934f70d55b9 ""
   "KnockOut.jpg" 1789491332.50682 4771 e6e7b12a8ec6ab51d4d106e7d065067f ""
   "Organigrama.png" 1789586151.14816 487172 6282e516b58aa41815c950ce1776be76 ""

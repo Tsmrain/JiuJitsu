@@ -310,14 +310,23 @@ El objeto de investigación es el proceso de evaluación y corrección biomecán
 
 \subsection{Justificación}
 
-\subsubsection{Justificación Técnica}
-El proyecto demuestra la aplicación convergente de tecnología moderna en ingeniería de software, visión artificial e inteligencia artificial generativa, organizada bajo patrones de diseño de software y principios de arquitectura limpia para asegurar mantenibilidad y calidad.
+\subsubsection{Justificación Técnica y de Diseño del Producto}
+Desde una perspectiva operativa, el proyecto se justifica al diseñar una solución tecnológica modular y optimizada, cuya infraestructura central delega de forma inteligente el procesamiento de datos a la nube. Esto permite que el producto final funcione de manera ágil y fluida en cualquier dispositivo móvil comercial, sin exigir inversiones en equipos o hardware costosos por parte de los alumnos o la academia. Asimismo, el sistema almacena de forma ordenada la información transaccional de los usuarios y las respuestas automatizadas, asegurando la integridad, confidencialidad y consistencia de los datos para futuras auditorías o reportes administrativos de desempeño.
 
-\subsubsection{Justificación Práctica y Social}
-Brinda a los alumnos de la academia \textit{Corpo e Mente} un asistente técnico disponible las 24 horas que democratiza el aprendizaje guiado, reduce la frustración en etapas iniciales y promueve una práctica deportiva segura al corregir malas posturas.
+\subsubsection{Justificación Práctica, Social y de Retención de Clientes}
+El análisis comercial de la sucursal revela un problema crítico de pérdida de clientes activos (Churn Rate). La comunidad digital de la sucursal registra una base histórica latente de 79 miembros, pero el tatami sostiene una asistencia promedio real de solo 15 alumnos. Esta brecha expone una tasa de inactividad o abandono del 81\%, provocada por la frustración de los principiantes al no recibir atención individualizada en clases masivas (el cuello de botella operativo), el estancamiento fuera del aula y el temor a sufrir lesiones por malas posturas. La implementación de esta plataforma actúa directamente como una estrategia de fidelización y retención de clientes. Al proveer al cliente un asistente de entrenamiento virtual disponible las 24 horas para corregir sus errores basándose en las guías oficiales de la escuela, se elimina la barrera de la frustración inicial. Esto democratiza la atención personalizada, acelera el progreso del practicante y mitiga los riesgos de abandono, incentivando a que la masa de clientes inactivos regrese a consumir el servicio presencial de forma recurrente.
 
-\subsubsection{Justificación Institucional}
-Posiciona a la academia \textit{Corpo e Mente} a la vanguardia tecnológica en la enseñanza de artes marciales en la región, incorporando análisis biomecánico asistido por inteligencia artificial en su propuesta pedagógica.
+\subsubsection{Justificación Económica, Institucional y de Negocio}
+Actualmente, el principal generador de ingresos de la sucursal anfitriona (Knockout Gym) es un modelo paquetizado de 300 Bs mensuales por acceso ilimitado, donde el Jiu-Jitsu interactúa con otras disciplinas de manera indirecta dentro de un control de accesos centralizado (administrado mediante sistemas tradicionales como Microsoft Access y lectores de huella locales). Dado que Knockout controla el flujo de caja global y Corpo e Mente no tiene injerencia en la cobranza diaria de este punto, la academia necesita consolidar un factor de valor agregado y diferenciación comercial exclusiva para justificar su permanencia, aumentar su poder de negociación frente al gimnasio y captar un mayor porcentaje de los ingresos del paquete.
+
+Más allá de este caso de estudio local, la viabilidad económica del proyecto radica en su capacidad de Escalabilidad y Comercialización Internacional bajo un modelo de negocio de Software como Servicio (SaaS). El sistema no está diseñado como una herramienta aislada, sino como un producto empaquetado listo para ser monetizado en el mercado global de las artes marciales mediante dos vías de ingresos:
+
+\begin{itemize}
+    \item \textbf{Modelos de Licenciamiento por Volumen:} Venta de licencias anuales a academias y redes de dojos de cualquier país, parametrizadas y cobradas según la capacidad de alumnos registrados en su base de datos (Slots de usuarios).
+    \item \textbf{Contratos de Soporte y Actualizaciones de Contenido:} Cobros anuales recurrentes por soporte técnico, mantenimiento y la actualización constante del catálogo de conocimientos y videotutoriales con profesores de alto rango internacional.
+\end{itemize}
+
+De este modo, el proyecto pasa de ser un gasto operativo a convertirse en un activo tecnológico de alta rentabilidad que eleva el valor de mercado de Corpo e Mente y abre una nueva línea de ingresos digitales escalables.
 
 \newpage
 
@@ -379,7 +388,7 @@ La gestión operativa del proyecto se alinea con el marco ágil \textbf{Scrum}, 
 \vspace{1cm}
 
 \section{Antecedentes Institucionales}
-La academia \textit{Corpo e Mente} (asociada al centro de entrenamiento \textit{KnockOut Training Center}) es una institución especializada en la enseñanza y perfeccionamiento de artes marciales y deportes de contacto, destacando principalmente en la disciplina del Jiu-Jitsu Brasileño (BJJ), Judó y Boxeo. Fundada con el propósito de fomentar la disciplina física, mental y el desarrollo deportivo integral bajo la dirección técnica del maestro Humberto Tavares, la academia ofrece programas de formación orientados a practicantes de diversos niveles de experiencia, desde principiantes hasta competidores de alto rendimiento.
+La academia \textit{Corpo e Mente} (asociada al centro de entrenamiento \textit{KnockOut Training Center}) es una institución especializada en la enseñanza y perfeccionamiento de artes marciales y deportes de contacto, destacando principalmente en la disciplina del Jiu-Jitsu Brasileño (BJJ) y Judó. Fundada con el propósito de fomentar la disciplina física, mental y el desarrollo deportivo integral bajo la dirección técnica del maestro Humberto Tavares, la academia ofrece programas de formación orientados a practicantes de diversos niveles de experiencia, desde principiantes hasta competidores de alto rendimiento.
 
 \begin{figure}[htbp]
     \centering
@@ -390,18 +399,26 @@ La academia \textit{Corpo e Mente} (asociada al centro de entrenamiento \textit{
     \label{fig:logotipos_institucionales}
 \end{figure}
 
-\section{Misión y Visión}
-
-\subsection{Misión}
-Brindar una formación técnica integral en Jiu-Jitsu Brasileño y deportes de contacto a través de métodos de enseñanza de alta calidad, promoviendo el desarrollo físico, la salud mental, la autodisciplina y el respeto entre sus alumnos dentro de un ambiente deportivo seguro y colaborativo.
-
-\subsection{Visión}
-Consolidarse como la academia líder en la enseñanza y análisis técnico de artes marciales en la región, incorporando innovación tecnológica para optimizar los procesos de aprendizaje biomecánico y elevar el nivel competitivo de sus alumnos.
 
 \section{Estructura Orgánica (Organigrama)}
-La Figura~\ref{fig:organigrama} ilustra la estructura organizacional de \textbf{KnockOut Training Center}. Es importante aclarar el contexto institucional: \textbf{Corpo e Mente} es una academia de Jiu-Jitsu independiente que cuenta con múltiples sucursales (3 Pasos al Frente, UFC Gym Ventura Mall, UAGRM y las instalaciones de KnockOut). En la sucursal que opera dentro de KnockOut, Corpo e Mente hace uso de sus instalaciones físicas, y es KnockOut quien asume la remuneración de los instructores.
 
-Los servicios ofrecidos por Corpo e Mente incluyen exámenes de grado, clases grupales y clases privadas. Aunque la academia cuenta con varios profesores en sus distintas sucursales, el presente proyecto de software ha sido diseñado y delimitado específicamente para el uso de \textbf{un (1) profesor} en la sucursal ubicada en \textbf{KnockOut}.
+La estructura organizacional que rige el funcionamiento de la academia se presenta en la Figura \ref{fig:organigrama}, detallando la jerarquía internacional de la asociación y su descentralización operativa dentro del territorio boliviano, con especial énfasis en el nodo correspondiente al objeto de estudio.
+
+El modelo responde a una estructura mixta (lineal-funcional) que opera bajo un esquema descentralizado de matriz-filial y alianzas estratégicas de infraestructura corporativa. A continuación, se describen los niveles y componentes que integran esta estructura:
+
+\begin{itemize}
+    \item \textbf{1. Nivel Estratégico Internacional (Sede Matriz - Brasil):} Representa la máxima autoridad doctrinaria y metodológica de la escuela, liderada a nivel global por el fundador Master Humberto Tavares. Este nivel se encarga de emitir los lineamientos técnicos oficiales y validar las certificaciones internacionales de grados ante entes reguladores globales como la International Brazilian Jiu-Jitsu Federation (IBJJF). Su relación con la filial nacional es estrictamente doctrinal y de auditoría técnica, sin interferencia directa en la gestión financiera local.
+    
+    \item \textbf{2. Nivel de Coordinación Nacional (Corpo e Mente - Estructura Central Bolivia):} Estructura encargada de centralizar la personería de la marca en el país. Está dirigida por la Dirección General / Representante Nacional, unidad de la cual dependen las áreas funcionales de Gestión de Afiliaciones e Inscripciones (responsable del ecosistema digital en la plataforma Smoothcomp) y la Coordinación de Eventos y Selectivos (encargada de la logística de torneos inter-academias). Este nivel supervisa de manera directa la Red de Sucursales distribuidas en la ciudad de Santa Cruz de la Sierra (Sucursal UFC Gym, Sucursal 3 Pasos al Frente, Sucursal UAGRM y la célula del Programa en KnockOut).
+    
+    \item \textbf{3. El Gimnasio Independiente (Convenio Proveedor Externo - KnockOut Gym):} KnockOut Gym opera como un ente administrativo y legalmente independiente a Corpo e Mente. La relación institucional se define mediante una Alianza Estratégica de Tercerización de Infraestructura (Outsourcing) bajo un formato horario específico. KnockOut Gym funge como el agente de recaudación y cobro de membresías mensuales de los alumnos de Jiu-Jitsu, asumiendo el riesgo comercial del espacio y ejecutando posteriormente el desembolso económico correspondiente (por horas de clase o porcentaje acordado) hacia el cuerpo docente de la academia. KnockOut Gym no posee participación alguna en la toma de decisiones organizacionales, metodológicas o de graduaciones de Corpo e Mente, limitándose contractualmente al alquiler del espacio físico del tatami.
+    
+    \item \textbf{4. Estructura Operativa Interna (Célula Operativa Nocturna - Sucursal KnockOut):} Representa el alcance físico e institucional donde se acota el despliegue del sistema de software desarrollado. Debido a la naturaleza de la alianza con el gimnasio anfitrión, la operación se simplifica en una estructura lineal de turno único enfocado en el horario nocturno.
+    \begin{itemize}
+        \item \textbf{Profesor Encargado (Prof. Miguel Baigorria - Cinturón Negro):} Unidad responsable del desarrollo técnico, la planificación de las clases, la supervisión de la seguridad y el enlace operativo con la administración de KnockOut Gym. En el contexto del sistema BJJ Biomechanics, este puesto asume de forma exclusiva el rol de Profesor, encargándose de alimentar el catálogo de técnicas patrón, cargar videos de referencia cinemática y gestionar el repositorio semántico del motor RAG.
+        \item \textbf{Alumnos y Atletas de BJJ (Turno Noche):} Usuarios finales del programa de entrenamiento nocturno. Dentro del alcance del software, asumen el rol de Alumno, interactuando con la Aplicación Web Progresiva (PWA) para registrar sus ejecuciones y recibir la retroalimentación biomecánica automatizada orientada a optimizar su curva de aprendizaje.
+    \end{itemize}
+\end{itemize}
 
 \begin{figure}[htbp]
     \centering
@@ -409,20 +426,6 @@ Los servicios ofrecidos por Corpo e Mente incluyen exámenes de grado, clases gr
     \caption{Organigrama Estructural de KnockOut Training Center}
     \label{fig:organigrama}
 \end{figure}
-
-Nota: La Administradora (de KnockOut) cumple funciones organizacionales (inscripciones, cobros, coordinación) FUERA del alcance del software BJJ Biomechanics. Dentro del sistema, las funciones de gestión de catálogo y fuentes bibliográficas son asumidas por el rol Profesor.
-
-Como se observa en la Figura~\ref{fig:organigrama}, la estructura jerárquica general de las instalaciones se compone de:
-\begin{itemize}
-    \item \textbf{Administradora:} Encargada de la gestión operativa, inscripciones, control de pagos y coordinación general.
-    \item \textbf{Cuerpo Docente / Profesores:}
-    \begin{itemize}
-        \item \textbf{Profesor de Brazilian Jiu-Jitsu (BJJ) (Corpo e Mente):} Responsable del desarrollo técnico y evaluación biomecánica de los practicantes de Jiu-Jitsu (usuario primario de este sistema).
-        \item \textbf{Profesor de Boxeo:} Encargado de la instrucción de la técnica de golpeo e itinerario de acondicionamiento de boxeo.
-        \item \textbf{Profesor de Artes Marciales:} Responsable del entrenamiento integral en disciplinas complementarias (Judó, MMA).
-    \end{itemize}
-    \item \textbf{Alumnos:} Estudiantes asignados a cada especialidad técnica.
-\end{itemize}
 
 \section{Flujo del Negocio y Análisis de Procesos}
 El flujo operativo tradicional para la atención y formación de los alumnos dentro de la academia sigue una serie de pasos secuenciales desde su registro administrativo hasta el entrenamiento en el tatami.
@@ -437,7 +440,7 @@ El flujo operativo tradicional para la atención y formación de los alumnos den
 El proceso operativo ilustrado en la Figura~\ref{fig:flujo_negocio} comprende las siguientes etapas:
 \begin{enumerate}
     \item El alumno se dirige a la administración para solicitar información o renovar su membresía.
-    \item La administración muestra el catálogo de disciplinas disponibles (BJJ, Boxeo, MMA).
+    \item La administración muestra el catálogo de disciplinas disponibles (BJJ, Judó).
     \item El alumno selecciona la disciplina de su preferencia (foco principal en BJJ).
     \item El alumno realiza el pago de la disciplina seleccionada en la recepción.
     \item La administración registra el pago en el sistema contable.

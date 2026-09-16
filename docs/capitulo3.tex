@@ -1,0 +1,162 @@
+\chapter{MARCO TEÓRICO Y TECNOLÓGICO}
+
+\section{Fundamentos Teóricos}
+
+\subsection{Jiu-Jitsu Brasileño (BJJ) y Análisis Biomecánico Postural}
+El Jiu-Jitsu Brasileño es un deporte de combate y arte marcial centrado en la lucha cuerpo a cuerpo (\textit{grappling}), donde la victoria se logra mediante el dominio de posiciones de control o la aplicación de técnicas de sometimiento (palancas articulares y estrangulamientos). La efectividad de una técnica radica en principios físicos fundamentales: aprovechamiento de palancas cinemáticas, alineación de ejes articulares, gestión del centro de masa corporal y optimización del apalancamiento mecánico.
+
+El análisis biomecánico en el BJJ estudia el movimiento corporal y las fuerzas involucradas durante la ejecución de las técnicas. La evaluación de los ángulos articulares en puntos críticos (hombros, codos, caderas, rodillas y tobillos) permite determinar cuantitativamente si la ejecución de un alumno coincide con el patrón ideal dictado por el profesor o si presenta desviaciones que comprometan la eficacia técnica o incrementen el riesgo de lesiones.
+
+\subsection{Estimación de Pose Corporales y Profundidad Métrica Monocular}
+La estimación de pose es una rama de la visión por computadora encargada de identificar y rastrear la posición espacial de nodos articulares anatómicos (\textit{keypoints}) en fotogramas de video. Combinada con la estimación de profundidad métrica monocular, es posible reconstruir las coordenadas cinemáticas en tres dimensiones $\mathbb{R}^3 (X, Y, Z)$ en metros reales absolutos, sin necesidad de emplear cámaras físicas o sensores infrarrojos RGB-D costosos.
+
+La fusión geométrica se realiza mediante muestreo bilineal: para cada keypoint 2D (x, y) detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad (x\_d, y\_d) y se extrae la componente Z métrica: Z = depth\_map[y\_d, x\_d], expresada en metros reales. La matriz resultante es una MatrizEsqueletica de dominio con puntos Punto3D(x, y, z).
+
+\subsection{Recuperación Aumentada por Generación (RAG)}
+El pipeline RAG implementado consta de 5 etapas:
+\begin{enumerate}
+    \item Fragmentación semántica: ChunkerSemanticoBJJ con RecursiveCharacterTextSplitter (chunk\_size=1000, chunk\_overlap=200).
+    \item Vectorización: Qwen3-VL-Embedding-2B (2048 dimensiones, normalizado).
+    \item Almacenamiento vectorial: Qdrant local (colección 'bjj\_knowledge', métrica Cosine, búsqueda KNN con filtro por id\_tecnica).
+    \item Persistencia relacional: PostgreSQL BCNF (tabla fuentes\_conocimiento con id\_documento para agrupar chunks).
+    \item Generación: Gemini 2.5 Flash con salida JSON estricta (4 claves).
+\end{enumerate}
+
+\newpage
+
+\section{Selección y Justificación Tecnológica}
+
+En esta sección se describen en detalle las tecnologías seleccionadas para la implementación del sistema informático, presentando el análisis comparativo y la justificación técnica de cada elección frente a otras alternativas existentes en el mercado.
+
+\subsection{Módulo de Visión Artificial: Suite YOLO26x-Pose + YOLO26x-Depth}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó la suite combinada de **YOLO26x-Pose** (detección de 17 articulaciones anatómicas COCO) y **YOLO26x-Depth** (mapa de profundidad métrica monocular en metros reales absolutos).
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{MediaPipe Pose (Google):} Modelo liviano optimizado para dispositivos móviles y detección de personas individuales.
+    \item \textbf{OpenPose:} Framework académico de alta precisión para detección multipersona basado en campos de afinidad corporal (PAFs).
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
+    \hline
+    Criterio & YOLO26x Pose + Depth (Elegido) & MediaPipe Pose & OpenPose \\ \hline
+    Contacto Corporal & Alto desempeño en agarres y oclusión. & Falla con solapamiento de dos personas. & Bueno pero muy lento en CPU. \\ \hline
+    Profundidad 3D & Profundidad métrica real $Z$ vía YOLO Depth. & Sin profundidad métrica real absoluta. & Requiere calibración compleja. \\ \hline
+    Velocidad / Latencia & Inferencia sincrónica en tiempo real sobre GPU. & Muy rápida en móvil. & Latencia elevada (baja velocidad). \\ \hline
+\end{tabularx}
+\caption{Cuadro Comparativo de Tecnologías de Estimación de Pose y Profundidad}
+\label{tab:comp_pose}
+\end{table}
+
+En Jiu-Jitsu Brasileño, dos alumnos interactúan en contacto físico estrecho, generando oclusiones constantes de extremidades. \textbf{MediaPipe} fue descartado debido a su baja tolerancia al solapamiento corporal y pérdida de seguimiento en posiciones de suelo. \textbf{OpenPose} fue descartado por requerir un consumo excesivo de memoria y latencias altas. La combinación de **YOLO26x-Pose + YOLO26x-Depth** permite obtener coordenadas reales $(X, Y, Z)$ en metros dentro del espacio tridimensional sin requerir sensores hardware RGB-D. La inferencia de YOLO26x-Pose + YOLO26x-Depth se delega a Google Colab Pro (GPU NVIDIA T4/A100) mediante un servidor Flask expuesto por túnel Ngrok. El backend FastAPI local consume el endpoint POST /inferir y recibe keypoints\_3d + frame\_base64. Si el túnel no está disponible, el sistema usa AdaptadorYOLO con MockYOLOEngine como fallback (ver src/infrastructure/adapters/yolo\_adapter.py).
+
+\subsection{Infraestructura de Inferencia GPU en la Nube: Google Colab GPU + Ngrok}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó un servidor de inferencia remoto alojado en **Google Colab** respaldado por procesadores GPU (NVIDIA T4 / A100), comunicado con la aplicación backend a través de un túnel seguro **Ngrok**.
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{Procesamiento Local en CPU/GPU del Servidor Backend:} Ejecutar los modelos de visión artificial en la misma máquina que aloja la base de datos y la API.
+    \item \textbf{Servicios Cloud Pagos Dedicados (AWS SageMaker / GCP Vertex AI):} Instancias de inferencia de modelos en la nube con costos por hora elevados.
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+La inferencia sincrónica de YOLO26x-Pose y YOLO26x-Depth requiere aceleración GPU intensiva. El uso de **Google Colab GPU** permite delegar la carga pesada de cálculo a la nube sin incurrir en los costos fijos de servidores locales con tarjetas gráficas costosas ni en la facturación de servicios como AWS SageMaker. El túnel **Ngrok** garantiza la comunicación cifrada y transparente con la API REST principal en FastAPI. El túnel Ngrok se configura en \texttt{colab\_backend.ipynb} celda 5, y su URL se inyecta en \texttt{.env} como \texttt{COLAB\_TUNNEL\_URL}.
+
+\subsection{Modelo de Lenguaje Generativo: Gemini 2.5 Flash}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó el modelo de lenguaje generativo \textbf{Gemini 2.5 Flash} de Google.
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{OpenAI GPT-4o / GPT-3.5 Turbo:} Modelos comerciales de lenguaje de alto uso general.
+    \item \textbf{Anthropic Claude 3.5 Sonnet:} Modelo enfocado en razonamiento lógico y código.
+    \item \textbf{Modelos Locales (Llama 3 / Qwen):} Modelos de código abierto ejecutados en servidores propios.
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
+    \hline
+    Criterio & Gemini 2.5 Flash (Elegido) & GPT-4o & Modelos Locales (Llama 3) \\ \hline
+    Latencia y Costo & Excelente relación velocidad/costo. & Costo por token elevado. & Requiere GPUs de gran memoria. \\ \hline
+    Salida Estructurada & Garantía estricta de JSON Schema. & Soporta JSON pero mayor latencia. & Inestable en esquemas JSON complejos. \\ \hline
+    Ventana de Contexto & Muy amplia para ingesta RAG. & Adecuada. & Limitada según hardware. \\ \hline
+\end{tabularx}
+\caption{Cuadro Comparativo de Modelos del Lenguaje (LLM)}
+\label{tab:comp_llm}
+\end{table}
+
+Se seleccionó \textbf{Gemini 2.5 Flash} debido a su soporte nativo para forzar respuestas bajo esquemas JSON estrictos (garantizando los cuatro bloques pedagógicos requeridos: Análisis Postural, Riesgo de Lesión, Paso a Paso y Resumen Ejecutivo), combinado con una velocidad de respuesta superior y costos operativos reducidos en comparación con GPT-4o. El adaptador GeminiServiceAdapter (src/infrastructure/adapters/gemini\_adapter.py) fuerza la respuesta mediante un prompt que exige JSON válido con 4 claves exactas. Si el parseo falla, se usa un fallback\_dict determinista para evitar alucinaciones.
+
+\subsection{Base de Datos Vectorial para RAG: Qdrant Vector Database}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó la base de datos vectorial especializada **Qdrant**.
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{pgvector (Extensión PostgreSQL):} Extensión relacional para vectores.
+    \item \textbf{Pinecone:} Servicio de base de datos vectorial 100\% gestionado en la nube.
+    \item \textbf{ChromaDB / FAISS (Meta):} Almacenes de vectores embebidos en memoria.
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+Tecnología seleccionada: Qdrant Vector Database (contenedor Docker bjj\_qdrant, puerto 6333).
+
+Frente a pgvector: la extensión pgvector restringe los índices HNSW/IVFFlat a un máximo de 2000 dimensiones. Dado que Qwen3-VL-Embedding-2B produce vectores de 2048 dimensiones, Qdrant es la única alternativa que permite indexación eficiente con filtros de metadatos (id\_tecnica, id\_documento).
+
+Frente a Pinecone: Qdrant se ejecuta on-premise vía Docker, garantizando soberanía de datos y costo cero operativo.
+
+\subsection{Framework Backend: FastAPI (Python 3.11+)}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó el framework \textbf{FastAPI} en lenguaje Python 3.11+.
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{Django:} Framework Web monolítico "baterías incluidas".
+    \item \textbf{Flask:} Microframework minimalista para Python.
+    \item \textbf{Node.js (Express.js):} Entorno de ejecución en JavaScript asíncrono.
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+\textbf{FastAPI} se eligió por su alto rendimiento basado en \texttt{asyncio} y \texttt{Starlette} (comparable a Node.js), su validación automática de datos con \texttt{Pydantic} y la generación automática de documentación interactiva (OpenAPI/Swagger). Frente a Django, FastAPI es infinitamente más ligero para construir arquitecturas de microservicios y APIs REST limpias en capas. Frente a Node.js, permite integrar directamente las bibliotecas nativas de inteligencia artificial y ciencia de datos de Python. El servidor se expone vía uvicorn en el puerto 8000 (configurable vía API\_PORT). Monta la PWA en /static y sirve el index.html en /.
+
+\subsection{Base de Datos Relacional: PostgreSQL en BCNF con JSONB}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó \textbf{PostgreSQL} estructurado en Tercera Forma Normal (3FN / BCNF) con soporte de columnas de tipo \texttt{JSONB}.
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{MySQL / MariaDB:} Sistema relacional tradicional popular.
+    \item \textbf{MongoDB:} Base de datos orientada a documentos NoSQL.
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+\textbf{PostgreSQL} proporciona integridad referencial estricta para entidades transaccionales (Usuarios, Profesores, Registro de Pagos, Técnicas Patrón), soportando simultáneamente el tipo de dato nativo \texttt{JSONB} para almacenar las respuestas pedagógicas complejas emitidas por la IA en la tabla de evaluaciones del alumno. PostgreSQL almacena exclusivamente metadatos relacionales (usuarios, profesores, técnicas\_patron, evaluaciones\_alumno, fuentes\_conocimiento). La persistencia vectorial se delega íntegramente a Qdrant. La columna JSONB consejo\_pedagogico en evaluaciones\_alumno almacena el objeto estructurado de 4 claves generado por Gemini.
+
+\subsection{Interfaz de Usuario: Aplicación Web Progresiva (PWA)}
+
+\subsubsection{Tecnología Seleccionada}
+Se seleccionó una **Aplicación Web Progresiva (PWA)** desarrollada con HTML5, JavaScript moderno y CSS3.
+
+\subsubsection{Alternativas Consideradas}
+\begin{itemize}
+    \item \textbf{Desarrollo Nativo Móvil (Swift para iOS / Kotlin para Android):} Aplicaciones compiladas específicas para cada plataforma.
+    \item \textbf{Frameworks Multiplataforma (React Native / Flutter):} Aplicaciones nativas compiladas desde un solo código fuente.
+\end{itemize}
+
+\subsubsection{Justificación de la Selección}
+Una **PWA** permite a los alumnos y profesores utilizar la aplicación directamente desde el navegador de su teléfono móvil o computadora sin necesidad de descargas ni comisiones en tiendas de aplicaciones (Google Play / App Store). Ofrece acceso directo a la cámara del dispositivo para la grabación de videos, soporte para funcionamiento \textit{offline} mediante Service Workers e instalación directa en la pantalla de inicio, reduciendo significativamente los costos de mantenimiento multiplataforma. La PWA implementa un Service Worker (frontend/service-worker.js) con estrategia NetworkFirst para rutas /api/* y CacheFirst para assets estáticos. El manifest.json permite instalación en pantalla de inicio.

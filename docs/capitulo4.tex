@@ -1,0 +1,209 @@
+\chapter{DEFINICIÓN DE REQUISITOS}
+
+\section{Introducción}
+
+\subsection{Propósito}
+El propósito de este capítulo es especificar de manera formal y detallada los requisitos funcionales, no funcionales y de sistema para la Aplicación Web Progresiva (PWA) de análisis biomecánico de Jiu-Jitsu Brasileño para la academia \textit{Corpo e Mente}. Este documento sirve como contrato de requerimientos bajo la norma IEEE 830 y como base para el diseño arquitectónico y desarrollo de los casos de uso bajo el Proceso Unificado (UP).
+
+\subsection{Ámbito del sistema}
+El sistema denominado \textbf{BJJ Biomechanics} es una plataforma de software cliente-servidor orientada al ámbito deportivo y educativo. Permite a la academia \textit{Corpo e Mente} digitalizar el catálogo de técnicas patrón de sus profesores, procesar videos de alumnos mediante inferencia 3D en la nube (YOLO26x Pose + Depth en Google Colab GPU), realizar comparaciones angulares cinemáticas, consultar repositorios de literatura técnica mediante RAG (Qdrant Vector Database) y generar sintetizaciones pedagógicas explicativas utilizando modelos del lenguaje (Gemini 2.5 Flash).
+
+\subsection{Definiciones, acrónimos y abreviaturas}
+\begin{itemize}
+    \item \textbf{BJJ:} \textit{Brazilian Jiu-Jitsu} (Jiu-Jitsu Brasileño).
+    \item \textbf{PWA:} \textit{Progressive Web App} (Aplicación Web Progresiva).
+    \item \textbf{UP:} \textit{Unified Process} (Proceso Unificado).
+    \item \textbf{SRS / ERS:} Especificación de Requisitos de Software (norma IEEE 830).
+    \item \textbf{Keypoint:} Punto de referencia o nodo articular anatómico (hombro, codo, rodilla, etc.).
+    \item \textbf{RAG:} \textit{Retrieval-Augmented Generation} (Generación Aumentada por Recuperación).
+    \item \textbf{LLM:} \textit{Large Language Model} (Gran Modelo de Lenguaje).
+    \item \textbf{JSONB:} Tipo de dato binario optimizado para almacenamiento JSON en PostgreSQL.
+    \item \textbf{Profesor:} Sinónimo de \textbf{Instructor}. Se usa "Profesor" en el texto narrativo. En código, la tabla canónica es \texttt{usuarios} con rol \texttt{profesor}.
+    \item \textbf{Alumno:} Practicante de BJJ. Se identifica por un \texttt{id\_alumno} lógico (\texttt{VARCHAR(50)}) que referencia al \texttt{id\_usuario} de la tabla \texttt{usuarios} con rol \texttt{alumno}.
+    \item \textbf{Administradora:} Rol \textbf{organizacional externo} al software (no implementado como rol de sistema). Sus funciones en el software son asumidas por el Profesor.
+    \item \textbf{Embedding canónico:} \textbf{Qwen3-VL-Embedding-2B}, 2048 dimensiones. Es el único embedding válido para RAG.
+    \item \textbf{Embedding Gemini:} 768 dimensiones. Solo se usa en adaptador legacy \texttt{GeminiServiceAdapter}. \textbf{NO se usa para RAG.}
+    \item \textbf{Técnica Patrón:} Estándar biomecánico registrado por el Profesor (\texttt{tecnicas\_patron.matriz\_esqueletica} JSONB).
+    \item \textbf{Consejo Pedagógico:} Sinónimo de \textbf{Síntesis Pedagógica Estructurada}. Objeto JSONB con 4 claves: \texttt{analisis\_postural}, \texttt{riesgo\_lesion}, \texttt{paso\_a\_paso}, \texttt{resumen\_ejecutivo}.
+    \item \textbf{Ngrok:} Túnel seguro.
+\end{itemize}
+
+\subsection{Visión general del documento}
+El resto de este capítulo organiza la descripción general del producto, las características de los usuarios, las restricciones técnicas, la especificación detallada de los requisitos de software/hardware, la identificación formal de los casos de uso y la especificación del diagrama del modelo de dominio.
+
+\newpage
+
+\section{Descripción general}
+
+\subsection{Perspectiva del producto}
+El sistema es una solución independiente de arquitectura desacoplada en 5 capas (Presentación, Aplicación, Servicios, Dominio e Infraestructura). Funciona como un ecosistema donde la interfaz PWA móvil se conecta mediante APIs REST con el servidor backend FastAPI, delegando la inferencia de visión artificial a un cluster GPU en Google Colab a través de un túnel seguro Ngrok.
+
+\subsection{Funciones del Producto}
+Las funciones principales que ofrece el software son:
+\begin{enumerate}
+    \item \textbf{Gestión de Técnicas Patrón (CU-01):} Implementado en TecnicaController.registrar\_patron() y RegistrarTecnicaController. Expuesto en POST /api/v1/profesor/tecnicas y POST /api/v1/tecnicas/registrar.
+    \item \textbf{Evaluación Biomecánica Autónoma (CU-02):} Implementado en EvaluacionController.evaluar\_ejecucion() y solicitar\_evaluacion(). Expuesto en POST /api/v1/alumno/evaluaciones y POST /api/v1/evaluaciones/evaluar.
+    \item \textbf{Gestión de Catálogo y Usuarios (CU-03):} Implementado en ProfesorController, TecnicaController y FuenteController. El rol Administrador NO existe en el sistema; estas funciones las asume el Profesor.
+    \item \textbf{Consulta de Historial y Progreso (CU-04):} Implementado en PostgresHistorialRepository.obtener\_progreso(). Expuesto en GET /api/v1/alumno/\{id\_alumno\}/progreso.
+    \item \textbf{Ingesta de Literatura Técnica (CU-05):} Implementado en FuenteController.indexar\_manual() + PipelineIngestaRAG. Expuesto en POST /api/v1/profesor/fuentes.
+\end{enumerate}
+
+\subsection{Características de los Usuarios}
+\begin{itemize}
+    \item \textbf{Alumno:} Practicante de BJJ. Interactúa con la PWA para grabar ejecuciones, recibir retroalimentación estructurada y consultar su historial. Rol implementado en tabla usuarios (rol='alumno').
+    \item \textbf{Profesor:} Encargado de grabar videos patrones, gestionar el catálogo de técnicas y subir manuales PDF para el RAG. Rol implementado en tabla usuarios (rol='profesor').
+    \item \textbf{Administradora:} Rol organizacional EXTERNO al software (inscripciones, cobros). No implementado como rol de sistema. Sus funciones de gestión de catálogo son asumidas por el Profesor.
+\end{itemize}
+
+\subsection{Restricciones}
+\begin{itemize}
+    \item Dependencia de conectividad a Internet para el envío de videos y recepción de análisis.
+    \item Requerimiento de aceleración por GPU (Google Colab) para la ejecución sincrónica de YOLO26x-Pose y YOLO26x-Depth.
+    \item Límite de resolución y formato de video soportado (MP4/WebM hasta 1080p).
+\end{itemize}
+
+\subsection{Suposiciones y Dependencias}
+\begin{itemize}
+    \item Se asume que el alumno graba el video con iluminación adecuada y encuadre completo de su cuerpo.
+    \item Dependencia de la disponibilidad del túnel Ngrok y la instancia activa de Google Colab GPU para la inferencia de visión artificial.
+    \item Dependencia de la API de Google Gemini para la generación de la síntesis pedagógica.
+\end{itemize}
+
+\subsection{Requisitos Futuros}
+\begin{itemize}
+    \item Soporte para análisis biomecánico en tiempo real vía \textit{streaming} de video.
+    \item Módulo de comparación multi-persona para entrenamientos de combate en vivo (\textit{sparring}).
+    \item Integración con dispositivos vestibles (\textit{wearables}) para medición de aceleración e impacto.
+\end{itemize}
+
+\newpage
+
+\section{Requisitos Específicos}
+
+\subsection{Interfaces Externas}
+
+\subsubsection{Interfaces de Software}
+\begin{itemize}
+    \item \textbf{Google Colab GPU / Ngrok Tunnel API:} Interfaz HTTP REST para envío de imágenes/fotogramas y recepción de mapas de pose 3D $(X, Y, Z)$.
+    \item \textbf{Google Gemini API:} API de modelos de lenguaje para síntesis estructurada bajo JSON Schema.
+    \item \textbf{Qdrant Vector DB API:} Interfaz de búsqueda de vecinos más cercanos (HNSW) sobre vectores de 2048d.
+    \item \textbf{PostgreSQL Database Driver:} Conexión relacional SQL vía \texttt{psycopg2} / SQLAlchemy.
+\end{itemize}
+
+\subsubsection{Interfaces de Hardware}
+\begin{itemize}
+    \item \textbf{Cámara del Dispositivo Móvil:} Captura de video a 30 FPS o superior en resolución mínima de 720p.
+    \item \textbf{Servidor GPU Cloud:} Servidor con tarjeta gráfica NVIDIA (T4 o superior) para inferencia de modelos en la nube.
+\end{itemize}
+
+\subsection{Requisitos Funcionales}
+\begin{itemize}
+    \item \textbf{RF-01 (Registro de Patrón):} El sistema permite al Profesor subir un video de demostración. La matriz esquelética 3D se extrae vía YOLO26x en Colab y se persiste en tecnicas\_patron.matriz\_esqueletica (JSONB). Implementado en TecnicaController.registrar\_patron().
+    \item \textbf{RF-02 (Cálculo de Desviación Angular):} El sistema calcula la diferencia angular entre keypoints del alumno y el patrón usando CalculadoraBiomecanica (producto punto + arcocoseno con clamping numérico). Implementado en src/domain/models.py.
+    \item \textbf{RF-03 (Búsqueda Semántica RAG):} El sistema recupera pasajes relevantes de manuales indexados cuando la desviación supera el umbral. Usa SintesisPedagogicaService con umbral\_similitud\_minima=0.65. Implementado en src/services/sintesis\_pedagogica\_service.py.
+    \item \textbf{RF-04 (Síntesis Pedagógica Structured JSON):} Gemini 2.5 Flash genera un reporte con 4 claves obligatorias. Forzado por prompt estricto en GeminiServiceAdapter.generar\_consejo(). Si el parseo falla, se usa fallback\_dict determinista.
+    \item \textbf{RF-05 (Almacenamiento Histórico):} El diagnóstico se almacena en evaluaciones\_alumno.consejo\_pedagogico (JSONB con 4 claves obligatorias: analisis\_postural, riesgo\_lesion, paso\_a\_paso, resumen\_ejecutivo) usando psycopg2.extras.Json. Implementado en PostgresHistorialRepository.guardar\_evaluacion().
+\end{itemize}
+
+\subsection{Requisitos de Rendimiento}
+\begin{itemize}
+    \item \textbf{RNF-01 (Tiempo de Respuesta):} El análisis de un video de 10 segundos debe completarse en menos de 15 segundos. NOTA: Este requisito no cuenta con benchmark formal automatizado en la suite actual. Se recomienda agregar un test de rendimiento con pytest-benchmark en trabajo futuro.
+    \item \textbf{RNF-02 (Concurrencia):} El backend debe soportar al menos 50 solicitudes de evaluación simultáneas sin pérdida de paquetes.
+\end{itemize}
+
+\subsection{Restricciones de Diseño}
+\begin{itemize}
+    \item Arquitectura estricta en 5 capas bajo patrones GRASP y principios SOLID.
+    \item Modelo de base de datos relacional normalizado en 3FN/BCNF.
+\end{itemize}
+
+\subsection{Atributos del Sistema}
+\begin{itemize}
+    \item \textbf{Usabilidad:} Interfaz limpia sin tecnicismos complejos para el alumno.
+    \item \textbf{Mantenibilidad:} Cobertura de pruebas unitarias e integración con \texttt{pytest}.
+    \item \textbf{Seguridad:} Autenticación segura y protección de datos personales de los alumnos.
+\end{itemize}
+
+\newpage
+
+\section{Identificación de los casos de uso}
+
+La Tabla~\ref{tab:casos_de_uso} resume los casos de uso principales identificados en el sistema bajo la metodología del Proceso Unificado.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|l|>{\bfseries}l|}
+    \hline
+    Código & Nombre del Caso de Uso & Actor Principal & Prioridad \\ \hline
+    CU-01 & Registrar Patrón de Técnica & Profesor & Alta \\ \hline
+    CU-02 & Evaluar Ejecución Biomecánica con Síntesis Pedagógica & Alumno & Alta \\ \hline
+    CU-03 & Gestionar Catálogo de Técnicas y Profesores & Profesor & Media \\ \hline
+    CU-04 & Consultar Historial de Evaluaciones y Progreso & Alumno & Media \\ \hline
+    CU-05 & Ingestar Literatura Técnica en Base de Datos Vectorial & Profesor & Media \\ \hline
+\end{tabularx}
+\caption{Identificación de Casos de Uso del Sistema}
+\label{tab:casos_de_uso}
+\end{table}
+
+\newpage
+
+\section{Diagrama de dominio}
+
+El Modelo de Dominio ilustrado en la Figura~\ref{fig:diagrama_dominio} representa las entidades conceptuales del negocio y sus relaciones fundamentales.
+
+\begin{figure}[htbp]
+    \centering
+    \fbox{%
+    \begin{minipage}{0.92\textwidth}
+        \vspace{0.3cm}
+        \centering
+        \textbf{DIAGRAMA DEL MODELO DE DOMINIO DEL NEGOCIO} \par
+        \vspace{0.3cm}
+        \raggedright
+        \begin{itemize}
+            \item \textbf{Usuario} $(1) \longrightarrow (*)$ \textbf{EvaluacionAlumno}: id\_alumno referencia lógica al id\_usuario de la tabla usuarios (rol='alumno'). NO existe FK explícita en el esquema físico actual; es un identificador lógico.
+            \item \textbf{Profesor} $(1) \longrightarrow (*)$ \textbf{TecnicaPatron}: Registra patrones de movimiento. Implementado con id\_profesor FK a usuarios(id\_usuario).
+            \item \textbf{TecnicaPatron} $(1) \longrightarrow (1)$ \textbf{MatrizEsqueletica}: Contiene la firma de articulaciones 3D almacenada como JSONB.
+            \item \textbf{EvaluacionAlumno} $(*) \longrightarrow (1)$ \textbf{TecnicaPatron}: Se compara contra el patrón.
+            \item \textbf{EvaluacionAlumno} $(1) \longrightarrow (1)$ \textbf{ConsejoPedagogico (JSONB)}: Almacena el diagnóstico estructurado en 4 claves.
+            \item \textbf{FuenteConocimiento} $(*) \longrightarrow (0..1)$ \textbf{TecnicaPatron}: Aporta contexto RAG. La relación es opcional (id\_tecnica NULL permitido para acervo general).
+            \item \textbf{FuenteConocimiento} $(1) \longrightarrow (1)$ \textbf{id\_documento}: Agrupa chunks bajo un mismo documento padre para presentación consolidada.
+        \end{itemize}
+        \vspace{0.3cm}
+    \end{minipage}%
+    }
+    \caption{Representación Conceptual del Diagrama de Dominio del Sistema}
+    \label{fig:diagrama_dominio}
+\end{figure}
+
+\subsection{Trazabilidad Casos de Uso $\rightarrow$ Código}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
+    \hline
+    CU & Controlador & Endpoint API & Repositorio \\ \hline
+    CU-01 & TecnicaController / RegistrarTecnicaController & POST /api/v1/profesor/tecnicas & PostgresTecnicaRepository \\ \hline
+    CU-02 & EvaluacionController & POST /api/v1/alumno/evaluaciones & PostgresHistorialRepository \\ \hline
+    CU-03 & ProfesorController + TecnicaController & GET/POST/PUT/DELETE /api/v1/profesor/profesores & PostgresProfesorRepository \\ \hline
+    CU-04 & — & GET /api/v1/alumno/\{id\}/progreso & PostgresHistorialRepository \\ \hline
+    CU-05 & FuenteController & POST /api/v1/profesor/fuentes & PostgresFuenteConocimientoRepository + QdrantAdapter \\ \hline
+\end{tabularx}
+\caption{Tabla de Trazabilidad (Casos de Uso $\rightarrow$ Implementación)}
+\label{tab:trazabilidad}
+\end{table}
+
+\section{Limitaciones del Sistema y Trabajo Futuro}
+
+Deuda técnica identificada:
+\begin{enumerate}
+    \item Duplicidad de tablas profesores e instructores (unificar en usuarios).
+    \item Rol 'administrador' no implementado como rol de sistema.
+    \item FK explícita id\_alumno $\rightarrow$ usuarios(id\_usuario) no definida en el esquema.
+    \item Doble sistema de embeddings (Gemini 768d legacy + Qwen 2048d canónico). El adaptador Gemini debería removerse de IEmbeddingService.
+    \item Validación de FPS y soporte de formatos .webm pendiente.
+    \item Benchmark formal del RNF-01 (<15s) no automatizado.
+    \item Autenticación sin JWT (solo PBKDF2 en login, sin sesiones persistentes).
+    \item Sin cifrado en reposo para datos personales (Ley 164 Bolivia).
+\end{enumerate}

@@ -1,0 +1,105 @@
+\chapter{MARCO INSTITUCIONAL Y MARCO TEÓRICO}
+
+\section{Marco Institucional}
+
+\subsection{Antecedentes de la Academia Corpo e Mente / KnockOut Training Center}
+La academia \textit{Corpo e Mente} (asociada al centro de entrenamiento \textit{KnockOut Training Center}) es una institución especializada en la enseñanza y perfeccionamiento de artes marciales y deportes de contacto, destacando principalmente en la disciplina del Jiu-Jitsu Brasileño (BJJ), Judó y Boxeo. Fundada con el propósito de fomentar la disciplina física, mental y el desarrollo deportivo integral bajo la dirección técnica del maestro Humberto Tavares, la academia ofrece programas de formación orientados a alumnos de diversos niveles de experiencia, desde principiantes hasta competidores de alto rendimiento.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.35\textwidth]{corpo.jpeg}
+    \hspace{1cm}
+    \includegraphics[width=0.35\textwidth]{KnockOut.jpg}
+    \caption{Logotipos Institucionales: Academia Corpo e Mente y KnockOut Training Center}
+    \label{fig:logotipos_institucionales}
+\end{figure}
+
+\subsection{Misión y Visión}
+
+\subsubsection{Misión}
+Brindar una formación técnica integral en Jiu-Jitsu Brasileño y deportes de contacto a través de métodos de enseñanza de alta calidad, promoviendo el desarrollo físico, la salud mental, la autodisciplina y el respeto entre sus alumnos dentro de un ambiente deportivo seguro y colaborativo.
+
+\subsubsection{Visión}
+Consolidarse como la academia líder en la enseñanza y análisis técnico de artes marciales en la región, incorporando innovación tecnológica para optimizar los procesos de aprendizaje biomecánico y elevar el nivel competitivo de sus alumnos.
+
+\subsection{Estructura Orgánica (Organigrama)}
+La Figura \ref{fig:organigrama} ilustra la estructura organizacional de \textbf{KnockOut Training Center}. Es importante aclarar el contexto institucional: \textbf{Corpo e Mente} es una academia de Jiu-Jitsu independiente que cuenta con múltiples sucursales (3 Pasos al Frente, UFC Gym Ventura Mall, UAGRM y las instalaciones de KnockOut). En la sucursal que opera dentro de KnockOut, Corpo e Mente hace uso de sus instalaciones físicas, y es KnockOut quien asume la remuneración de los profesores.
+
+Los servicios ofrecidos por Corpo e Mente incluyen exámenes de grado, clases grupales y clases privadas. Aunque la academia cuenta con varios profesores en sus distintas sucursales, el presente proyecto de software ha sido diseñado y delimitado específicamente para el uso de \textbf{un (1) profesor} en la sucursal ubicada en \textbf{KnockOut}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Organigrama.png}
+    \caption{Organigrama Estructural de KnockOut Training Center}
+    \label{fig:organigrama}
+\end{figure}
+
+Nota: La Administradora (de KnockOut) cumple funciones organizacionales (inscripciones, cobros, coordinación) FUERA del alcance del software BJJ Biomechanics. Dentro del sistema, las funciones de gestión de catálogo y fuentes bibliográficas son asumidas por el rol Profesor.
+
+Como se observa en la Figura \ref{fig:organigrama}, la estructura jerárquica general de las instalaciones se compone de:
+\begin{itemize}
+    \item \textbf{Administradora:} Encargada de la gestión operativa, inscripciones, control de pagos y coordinación general.
+    \item \textbf{Cuerpo Docente / Profesores:}
+    \begin{itemize}
+        \item \textbf{Profesor de Brazilian Jiu-Jitsu (BJJ) (Corpo e Mente):} Responsable del desarrollo técnico y evaluación biomecánica de los alumnos de Jiu-Jitsu (usuario primario de este sistema).
+        \item \textbf{Profesor de Boxeo:} Encargado de la instrucción de la técnica de golpeo e itinerario de acondicionamiento de boxeo.
+        \item \textbf{Profesor de Artes Marciales:} Responsable del entrenamiento integral en disciplinas complementarias (Judó, MMA).
+    \end{itemize}
+    \item \textbf{Alumnos:} Alumnos asignados a cada especialidad técnica.
+\end{itemize}
+
+\subsection{Flujo del Negocio y Análisis de Procesos}
+El flujo operativo tradicional para la atención y formación de los alumnos dentro de la academia sigue una serie de pasos secuenciales desde su registro administrativo hasta el entrenamiento en el tatami.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Flujo del negocio.png}
+    \caption{Diagrama del Flujo del Negocio de la Academia y Detección del Cuello de Botella}
+    \label{fig:flujo_negocio}
+\end{figure}
+
+El proceso operativo ilustrado en la Figura \ref{fig:flujo_negocio} comprende las siguientes etapas:
+\begin{enumerate}
+    \item El alumno se dirige a la administración para solicitar información o renovar su membresía.
+    \item La administración muestra el catálogo de disciplinas disponibles (BJJ, Boxeo, MMA).
+    \item El alumno selecciona la disciplina de su preferencia (foco principal en BJJ).
+    \item El alumno realiza el pago de la disciplina seleccionada en la recepción.
+    \item La administración registra el pago en el sistema contable.
+    \item La administración entrega el recibo o comprobante de inscripción al alumno.
+    \item El alumno ingresa al área de entrenamiento y entrega el comprobante de pago al profesor asignado.
+    \item El profesor imparte la clase técnica y guía el entrenamiento del alumno.
+    \item \textbf{Cuello de Botella Identificado (Evaluación del Alumno):} La evaluación personalizada de posturas y ejecuciones biomecánicas por parte del profesor constituye un punto crítico de estrangulamiento. Debido al número de alumnos por clase y al tiempo limitado del entrenamiento presencial, el profesor no puede realizar una retroalimentación continua e individualizada para cada repetición técnica.
+\end{enumerate}
+
+El sistema de software propuesto viene a resolver directamente este cuello de botella, permitiendo que la evaluación técnica sea automatizada mediante visión artificial e inteligencia artificial.
+
+El cuello de botella identificado (evaluación personalizada) es resuelto directamente por el caso de uso CU-02 (Evaluar Ejecución Biomecánica con Síntesis Pedagógica), implementado en el controlador EvaluacionController y expuesto vía POST /api/v1/alumno/evaluaciones.
+
+\newpage
+
+\section{Marco Teórico}
+
+\subsection{Jiu-Jitsu Brasileño (BJJ) y Análisis Biomecánico Postural}
+El Jiu-Jitsu Brasileño es un arte marcial y deporte de combate enfocado en la lucha de agarre (\textit{grappling}) y el control en el suelo. Su eficacia radica en la aplicación eficiente de principios físicos como palancas, ángulos de articulación, distribución del peso y control del centro de masa para someter o controlar al oponente.
+
+El análisis biomecánico en el BJJ estudia las fuerzas internas y externas que actúan sobre el cuerpo humano durante la ejecución de llaves articulares, estrangulamientos, pasajes de guardia y proyecciones. La precisión angular de articulaciones clave (hombros, codos, caderas y rodillas) determina si una técnica es biomecánicamente efectiva o si expone al alumno a fallas de postura y riesgo de lesiones.
+
+\subsection{Visión por Computadora y Estimación de Pose (Pose Estimation)}
+La visión por computadora es un campo de la inteligencia artificial centrado en permitir que las computadoras extraigan información estructurada a partir de imágenes o videos digitales.
+
+La estimación de pose (\textit{Pose Estimation}) es una técnica que detecta e identifica la ubicación de puntos de referencia anatómicos (\textit{keypoints} o nodos articulares) del cuerpo humano en tiempo real. Mediante la extracción de las coordenadas esqueléticas de cada fotograma de video, es posible construir una matriz postural que represente la posición cinemática del alumno para su posterior comparación matemática contra posturas patrón de referencia.
+
+\subsection{Inteligencia Artificial Generativa y Modelos de Lenguaje (LLM)}
+La inteligencia artificial generativa engloba modelos capaces de crear contenido textual, código o análisis explicativos complejos a partir de datos de entrada. Los Grandes Modelos de Lenguaje (LLM, \textit{Large Language Models}) procesan contextos textuales y numéricos extensos para interpretar patrones y producir explicaciones pedagógicas adaptadas al dominio de aplicación.
+
+En el contexto del sistema, los modelos de lenguaje reciben los cálculos de desviación angular generados por el módulo biomecánico y sintetizan diagnósticos en lenguaje natural estructurado, facilitando la comprensión del alumno sobre los errores cometidos en su postura.
+
+\subsection{Arquitectura RAG (Retrieval-Augmented Generation) y Bases de Datos Vectoriales}
+La Recuperación Aumentada por Generación (RAG) es una arquitectura que combina la capacidad generativa de los modelos de lenguaje con la precisión de motores de búsqueda semántica en bases de datos externas.
+
+Mediante el uso de bases de datos vectoriales, los manuales y libros de texto especializados en Jiu-Jitsu Brasileño son fragmentados e indexados en forma de vectores de alta dimensión (\textit{embeddings}). Ante un diagnóstico de falla técnica, el sistema recupera los fragmentos de literatura más relevantes y los proporciona como contexto al modelo generativo, asegurando que las correcciones pedagógicas entregadas al alumno estén rigurosamente fundamentadas en fuentes bibliográficas confiables.
+
+\subsection{Aplicaciones Web Progresivas (PWA) e Ingeniería de Software}
+Una Aplicación Web Progresiva (PWA) es un tipo de software de aplicación entregado a través de la web que utiliza tecnologías estándar de la industria para ofrecer una experiencia de usuario similar a una aplicación nativa en dispositivos móviles y de escritorio.
+
+Las PWAs permiten la captura directa de video a través de la cámara del dispositivo móvil, ejecutan interfaces responsivas y se conectan mediante arquitecturas basadas en APIs REST con servidores de procesamiento en la nube, brindando alta disponibilidad para el acceso de profesores y alumnos dentro y fuera de la academia.

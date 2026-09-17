@@ -282,7 +282,7 @@ La estimación de pose en video requiere extraer las articulaciones humanas en c
 2.  **Fusión Geométrica 3D (YOLO26x-Pose + YOLO26x-Depth):** Para cada keypoint 2D $(x, y)$ detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad $(x_d, y_d)$ generado por YOLO26x-Depth y se extrae la componente Z métrica en metros reales:
 
 $$
-Z = \text{depth\_map}[y_d, x_d]
+Z = \text{depth-map}[y_d, x_d]
 $$
 
 *En palabras simples: esta fórmula asigna a cada articulación su profundidad en metros reales, sin necesidad de sensores RGB-D costosos.*
@@ -355,7 +355,7 @@ flowchart LR
 
 *   **YOLO26x-Pose (Ultralytics, 2026):** Detector de pose de última generación optimizado para mantener un tracking confiable bajo oclusión moderada. Extrae los 17 keypoints COCO en cada fotograma a 30 FPS. En videos de práctica cooperativa, YOLO26x opera en modo multi-persona: detecta dos esqueletos simultáneos, y el sistema asigna el esqueleto del alumno según la posición indicada manualmente en la PWA.
 
-*   **YOLO26x-Depth (Ultralytics, 2026):** Modelo complementario que genera un mapa de profundidad métrica monocular en metros reales absolutos. Se ejecuta de forma sincrónica con YOLO26x-Pose en la misma GPU. Para cada keypoint 2D $(x, y)$ detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad $(x_d, y_d)$ y se extrae la componente Z métrica: $Z = \text{depth\_map}[y_d, x_d]$, expresada en metros reales. La fusión geométrica permite obtener coordenadas $(X, Y, Z)$ tridimensionales sin sensores RGB-D costosos.
+*   **YOLO26x-Depth (Ultralytics, 2026):** Modelo complementario que genera un mapa de profundidad métrica monocular en metros reales absolutos. Se ejecuta de forma sincrónica con YOLO26x-Pose en la misma GPU. Para cada keypoint 2D $(x, y)$ detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad $(x_d, y_d)$ y se extrae la componente Z métrica: $Z = \text{depth-map}[y_d, x_d]$, expresada en metros reales. La fusión geométrica permite obtener coordenadas $(X, Y, Z)$ tridimensionales sin sensores RGB-D costosos.
 
 *   **Qwen3-VL-Embedding-2B (Qwen Team, 2026):** Modelo Vision-Language de 2B parámetros ejecutado mediante `SentenceTransformer` en GPU. Genera representaciones numéricas de 2048 dimensiones a partir de textos doctrinales de BJJ. **Nota:** Qwen3-VL se utiliza exclusivamente para vectorizar texto (manuales, libros, reglamentos), no para analizar movimiento corporal.
 
@@ -432,7 +432,7 @@ La comparación angular directa (Sección A) mide la similitud global entre dos 
 2.  **Matriz de Costo y Camino Óptimo:** Se construye la matriz de distancias euclidianas locales $D(i, j)$ entre la secuencia del alumno y la del profesor. Mediante programación dinámica, se halla el camino de alineamiento óptimo que minimiza el costo acumulado:
 
 $$
-\gamma(i, j) = D(i, j) + \min \left\{ \gamma(i-1, j), \gamma(i, j-1), \gamma(i-1, j-1) \right\}
+\gamma(i, j) = D(i, j) + \min \left\lbrace \gamma(i-1, j), \gamma(i, j-1), \gamma(i-1, j-1) \right\rbrace
 $$
 
 *En palabras simples: esta fórmula sincroniza paso a paso los movimientos del alumno con los del profesor a pesar de las diferencias de velocidad.*
@@ -446,7 +446,7 @@ $$
 4.  **Extracción del Timestamp Exacto:** El segundo del error corresponde al instante de máxima divergencia cinemática que excede el límite de tolerancia angular:
 
 $$
-t_{\text{error}} = \frac{1}{\text{FPS}} \cdot \arg\max_{t_a} \left\{ E(t_a) \mid E(t_a) > \tau_{\text{angular}} \right\}
+t_{\text{error}} = \frac{1}{\text{FPS}} \cdot \arg\max_{t_a} \left\lbrace E(t_a) \mid E(t_a) > \tau_{\text{angular}} \right\rbrace
 $$
 
 *En palabras simples: esta fórmula encuentra el segundo exacto del video donde ocurrió el error más grande para mostrárselo al alumno.*

@@ -145,12 +145,15 @@
     <!-- VISTA INSTRUCTOR / PROFESOR -->
     <div id="vista-instructor" class="contenedor" style="display:none;">
         <!-- NAVEGACIÓN SIMPLIFICADA PROFESOR -->
-        <div class="nav-profesor-simplificada" style="display:flex; justify-content:space-around; gap:12px; padding:16px; background:#f0f0f0; border-radius:8px; margin-bottom:20px;">
+        <div class="nav-profesor-simplificada" style="display:flex; justify-content:space-around; gap:12px; padding:16px; background:#f0f0f0; border-radius:8px; margin-bottom:20px; flex-wrap:wrap;">
             <button onclick="mostrarSeccionProfesor('tecnicas')" class="btn-nav-profesor" id="btn-nav-prof-tecnicas">
                 Enseñar Técnica
             </button>
             <button onclick="mostrarSeccionProfesor('fuentes')" class="btn-nav-profesor" id="btn-nav-prof-fuentes">
                 Fuentes de Información
+            </button>
+            <button onclick="mostrarSeccionProfesor('analitica')" class="btn-nav-profesor" id="btn-nav-prof-analitica">
+                Analítica de Tatami
             </button>
         </div>
 
@@ -211,6 +214,47 @@
             <h4>Fuentes Registradas</h4>
             <div id="lista-fuentes-profesor">
                 <!-- Se carga dinámicamente -->
+            </div>
+        </div>
+
+        <!-- SECCIÓN ANALÍTICA (CU-04) -->
+        <div id="seccion-analitica" class="seccion-profesor" style="display:none;">
+            <h3>Analítica de Tatami</h3>
+            
+            <div id="analitica-dashboard">
+                <div style="margin-bottom: 20px;">
+                    <label for="analitica-tecnica-select"><strong>Seleccionar Técnica:</strong></label>
+                    <select id="analitica-tecnica-select" style="padding:8px; border-radius:4px; margin-left:10px;">
+                        <option value="">-- Cargando --</option>
+                    </select>
+                </div>
+                
+                <div id="analitica-contenido" style="display:none; border:1px solid #ced4da; border-radius:8px; padding:20px; background:#fafafa;">
+                    <h4 id="analitica-titulo" style="margin-top:0;"></h4>
+                    
+                    <div style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;">
+                        <div style="flex:1; background:white; padding:15px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); text-align:center;">
+                            <p style="margin:0; font-size:14px; color:#6B7280;">Total Evaluaciones</p>
+                            <h2 style="margin:5px 0 0; color:#1f2937;" id="analitica-total">0</h2>
+                        </div>
+                        <div style="flex:1; background:white; padding:15px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); text-align:center;">
+                            <p style="margin:0; font-size:14px; color:#6B7280;">Aprobadas</p>
+                            <h2 style="margin:5px 0 0; color:#10B981;" id="analitica-aprobadas">0</h2>
+                        </div>
+                        <div style="flex:1; background:white; padding:15px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); text-align:center;">
+                            <p style="margin:0; font-size:14px; color:#6B7280;">Tasa Éxito</p>
+                            <h2 style="margin:5px 0 0; color:#3B82F6;" id="analitica-tasa">0%</h2>
+                        </div>
+                    </div>
+                    
+                    <h5>Desviaciones Articulares Frecuentes</h5>
+                    <div id="analitica-grafico" style="background:white; padding:15px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); min-height:150px;">
+                        <!-- Gráfico de barras -->
+                    </div>
+                </div>
+                <div id="analitica-vacio" style="display:none; padding:20px; text-align:center; color:#6B7280; border:1px dashed #ced4da; border-radius:8px;">
+                    No hay datos de evaluaciones para esta técnica.
+                </div>
             </div>
         </div>
     </div>

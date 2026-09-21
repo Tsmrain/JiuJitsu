@@ -8,7 +8,28 @@ from src.domain.models import (
     MatrizEsqueletica,
     DesviacionArticular,
     Usuario,
+    ReporteAnalitica,
 )
+
+class IHistorialRepository(ABC):
+    """Contrato para persistencia y consulta del historial y analítica."""
+
+    @abstractmethod
+    def guardar_evaluacion(self, id_alumno: str, id_tecnica: str, resultado: Dict[str, Any]) -> str:
+        pass
+
+    @abstractmethod
+    def obtener_progreso(self, id_alumno: str) -> List[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    def obtener_analitica_por_tecnica(self, id_tecnica: str) -> ReporteAnalitica:
+        pass
+
+    @abstractmethod
+    def listar_tecnicas_mas_evaluadas(self, limite: int = 5) -> List[Dict[str, Any]]:
+        pass
+
 
 class IUsuarioRepository(ABC):
     """Contrato para persistencia y consulta de cuentas de usuario."""

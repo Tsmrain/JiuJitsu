@@ -6,7 +6,7 @@ base de datos PostgreSQL activa ni hardware GPU.
 """
 
 import math
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from src.domain.interfaces import (
     IInferenceEngine,
     IGenerationService,
@@ -14,6 +14,7 @@ from src.domain.interfaces import (
     IProfesorRepository,
     IFuenteConocimientoRepository,
     IUsuarioRepository,
+    IHistorialRepository,
 )
 from src.domain.models import (
     MatrizEsqueletica,
@@ -24,6 +25,8 @@ from src.domain.models import (
     FuenteConocimiento,
     ConfiguracionRAG,
     Usuario,
+    ReporteAnalitica,
+    EstadisticaArticular,
 )
 
 
@@ -260,3 +263,106 @@ class InMemoryUsuarioRepository(IUsuarioRepository):
 
     def listar_todos(self) -> List[Usuario]:
         return list(self._storage.values())
+
+import uuid
+from datetime import datetime, timezone
+
+class MockHistorialRepository(IHistorialRepository):
+    """Repositorio en memoria para pruebas unitarias del historial y analítica (<10ms)."""
+
+    def __init__(self):
+        self._evaluaciones: List[Dict[str, Any]] = []
+        # Pre-poblar con 20 evaluaciones sintéticas distribuidas en 3 técnicas
+        tecnicas = ["armbar_guardia", "triangulo_guardia", "kimura_guardia"]
+        for i in range(20):
+            t = tecnicas[i % 3]
+            self._evaluaciones.append({
+                "id_evaluacion": str(uuid.uuid4()),
+                "id_alumno": "alumno_test",
+                "id_tecnica": t,
+                "es_valido": i % 4 != 0, # 75% aprobadas
+                "total_desviaciones": 1 if i % 4 != 0 else 3,
+                "desviacion_promedio_grados": 2.5 if i % 4 != 0 else 18.0,
+                "consejo_pedagogico": "Consejo de prueba",
+                "desviaciones_detalle": [
+                    {"nombre_articulacion": "codo_izquierdo", "desviacion_grados": 2.5 if i % 4 != 0 else 18.0}
+                ],
+                "fecha": datetime.now(timezone.utc).isoformat()
+            })
+
+    def guardar_evaluacion(self, id_alumno: str, id_tecnica: str, resultado: Dict[str, Any]) -> str:
+        ide = str(uuid.uuid4())
+        desviaciones = resultado.get("desviaciones", [])
+        
+        suma_desviaciones = 0.0
+        for d in desviaciones:
+            if isinstance(d, dict):
+                suma_desviaciones += d.get("desviacion_grados", d.get("desviacion", 0.0))
+
+        prom = suma_desviaciones / len(desviaciones) if desviaciones else 0.0
+        self._evaluaciones.append({
+            "id_evaluacion": ide,
+            "id_alumno": id_alumno,
+            "id_tecnica": id_tecnica,
+            "es_valido": resultado.get("es_valido", False),
+            "total_desviaciones": len(desviaciones),
+            "desviacion_promedio_grados": prom,
+            "consejo_pedagogico": resultado.get("consejo_pedagogico", "Simulado"),
+            "desviaciones_detalle": desviaciones,
+            "fecha": datetime.now(timezone.utc).isoformat()
+        })
+        return ide
+
+    def obtener_progreso(self, id_alumno: str) -> List[Dict[str, Any]]:
+        return [e for e in self._evaluaciones if e["id_alumno"] == id_alumno]
+
+    def obtener_analitica_por_tecnica(self, id_tecnica: str) -> ReporteAnalitica:
+        evals = [e for e in self._evaluaciones if e["id_tecnica"] == id_tecnica]
+        if not evals:
+            raise ValueError(f"No hay evaluaciones para la técnica {id_tecnica}")
+            
+        total = len(evals)
+        aprobadas = sum(1 for e in evals if e["es_valido"])
+        tasa = (aprobadas / total) * 100.0
+        
+        art_stats = {}
+        for e in evals:
+            detalles = e.get("desviaciones_detalle", [])
+            for d in detalles:
+                art = d.get("nombre_articulacion", d.get("articulacion"))
+                if not art: continue
+                deg = d.get("desviacion_grados", d.get("desviacion", 0.0))
+                if art not in art_stats:
+                    art_stats[art] = {"count": 0, "sum": 0.0}
+                art_stats[art]["count"] += 1
+                art_stats[art]["sum"] += deg
+                
+        criticas = []
+        for art, stats in art_stats.items():
+            avg_deg = stats["sum"] / stats["count"]
+            criticas.append(EstadisticaArticular(
+                nombre_articulacion=str(art),
+                total_detecciones=stats["count"],
+                desviacion_promedio_grados=round(avg_deg, 2)
+            ))
+            
+        criticas.sort(key=lambda x: x.desviacion_promedio_grados, reverse=True)
+        
+        return ReporteAnalitica(
+            id_tecnica=id_tecnica,
+            nombre_tecnica=id_tecnica.replace("_", " ").title(),
+            total_evaluaciones=total,
+            evaluaciones_aprobadas=aprobadas,
+            tasa_aprobacion=round(tasa, 2),
+            articulaciones_criticas=criticas,
+            fecha_generacion=datetime.now(timezone.utc)
+        )
+
+    def listar_tecnicas_mas_evaluadas(self, limite: int = 5) -> List[Dict[str, Any]]:
+        counts = {}
+        for e in self._evaluaciones:
+            t = e["id_tecnica"]
+            counts[t] = counts.get(t, 0) + 1
+            
+        sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+        return [{"id_tecnica": k, "total_evaluaciones": v} for k, v in sorted_counts[:limite]]

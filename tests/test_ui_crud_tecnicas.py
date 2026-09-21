@@ -6,7 +6,7 @@ def test_ui_elementos_y_canvas():
     Verifica estáticamente que los archivos index.html y app.js 
     tengan los elementos requeridos sin tener que ejecutar un browser real.
     """
-    base_dir = "/home/santiago/Desktop/JiuJitsu/frontend"
+    base_dir = "./frontend"
     index_path = os.path.join(base_dir, "index.html")
     app_path = os.path.join(base_dir, "app.js")
     

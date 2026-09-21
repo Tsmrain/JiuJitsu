@@ -594,9 +594,11 @@ function reiniciar() {
 function mostrarSeccionProfesor(seccion) {
     const secTec = document.getElementById('seccion-tecnicas');
     const secFue = document.getElementById('seccion-fuentes');
+    const secAna = document.getElementById('seccion-analitica');
 
     if (secTec) secTec.style.display = 'none';
     if (secFue) secFue.style.display = 'none';
+    if (secAna) secAna.style.display = 'none';
 
     const target = document.getElementById(`seccion-${seccion}`);
     if (target) target.style.display = 'block';
@@ -605,6 +607,8 @@ function mostrarSeccionProfesor(seccion) {
         cargarTecnicasProfesor();
     } else if (seccion === 'fuentes') {
         cargarFuentesProfesor();
+    } else if (seccion === 'analitica') {
+        cargarSelectAnalitica();
     }
 }
 
@@ -857,3 +861,120 @@ function inicializarFormulariosProfesor() {
         });
     }
 }
+
+// ---------------------------------------------------------------------------
+// 6. Analítica de Tatami (CU-04)
+// ---------------------------------------------------------------------------
+async function cargarSelectAnalitica() {
+    const select = document.getElementById('analitica-tecnica-select');
+    if (!select) return;
+    select.innerHTML = '<option value="">-- Cargando --</option>';
+
+    try {
+        const resp = await fetch('/api/v1/analitica/tecnicas/top?limite=100');
+        const tecnicas = await resp.json();
+        
+        select.innerHTML = '<option value="">-- Seleccionar Técnica --</option>';
+        tecnicas.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id_tecnica;
+            opt.textContent = `${t.nombre || t.id_tecnica} (${t.total_evaluaciones} evals)`;
+            select.appendChild(opt);
+        });
+
+        // Add event listener if not already attached
+        if (!select.dataset.listenerAttached) {
+            select.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    cargarDashboardAnalitica(e.target.value);
+                } else {
+                    document.getElementById('analitica-contenido').style.display = 'none';
+                    document.getElementById('analitica-vacio').style.display = 'none';
+                }
+            });
+            select.dataset.listenerAttached = 'true';
+        }
+    } catch (err) {
+        console.error('Error cargando top técnicas para analítica:', err);
+        select.innerHTML = '<option value="">Error al cargar</option>';
+    }
+}
+
+async function cargarDashboardAnalitica(id_tecnica) {
+    const contenido = document.getElementById('analitica-contenido');
+    const vacio = document.getElementById('analitica-vacio');
+    
+    contenido.style.display = 'none';
+    vacio.style.display = 'none';
+    
+    try {
+        const resp = await fetch(`/api/v1/analitica/tecnicas/${id_tecnica}`);
+        if (!resp.ok) {
+            vacio.style.display = 'block';
+            return;
+        }
+        
+        const data = await resp.json();
+        
+        if (data.total_evaluaciones === 0) {
+            vacio.style.display = 'block';
+            return;
+        }
+        
+        document.getElementById('analitica-titulo').textContent = `Estadísticas: ${data.id_tecnica}`;
+        document.getElementById('analitica-total').textContent = data.total_evaluaciones;
+        document.getElementById('analitica-aprobadas').textContent = data.total_evaluaciones_aprobadas;
+        document.getElementById('analitica-tasa').textContent = `${(data.tasa_aprobacion * 100).toFixed(1)}%`;
+        
+        renderizarGraficoAnalitica(data.articulaciones_criticas, data.total_evaluaciones);
+        contenido.style.display = 'block';
+    } catch (err) {
+        console.error('Error cargando panel analítica:', err);
+        vacio.textContent = 'Error al cargar los datos de analítica.';
+        vacio.style.display = 'block';
+    }
+}
+
+function renderizarGraficoAnalitica(articulaciones, total_evaluaciones) {
+    const contenedor = document.getElementById('analitica-grafico');
+    contenedor.innerHTML = '';
+    
+    if (!articulaciones || articulaciones.length === 0) {
+        contenedor.innerHTML = '<p style="color:#6c757d; text-align:center; padding:20px;">No hay desviaciones críticas registradas.</p>';
+        return;
+    }
+    
+    articulaciones.forEach(art => {
+        // Ancho de barras ∝ total_detecciones
+        let pctAncho = (art.total_detecciones / total_evaluaciones) * 100;
+        if (pctAncho > 100) pctAncho = 100;
+        
+        const fila = document.createElement('div');
+        fila.style.marginBottom = '12px';
+        
+        const etiqueta = document.createElement('div');
+        etiqueta.style.display = 'flex';
+        etiqueta.style.justifyContent = 'space-between';
+        etiqueta.style.fontSize = '14px';
+        etiqueta.style.marginBottom = '4px';
+        etiqueta.innerHTML = `<strong>${art.articulacion}</strong> <span>${art.total_detecciones} fallas (Avg: ${art.desviacion_promedio_grados.toFixed(1)}°)</span>`;
+        
+        const barraFondo = document.createElement('div');
+        barraFondo.style.width = '100%';
+        barraFondo.style.height = '12px';
+        barraFondo.style.backgroundColor = '#e9ecef';
+        barraFondo.style.borderRadius = '6px';
+        barraFondo.style.overflow = 'hidden';
+        
+        const barra = document.createElement('div');
+        barra.style.width = `${pctAncho}%`;
+        barra.style.height = '100%';
+        barra.style.backgroundColor = '#EF4444'; // Red para desviaciones
+        
+        barraFondo.appendChild(barra);
+        fila.appendChild(etiqueta);
+        fila.appendChild(barraFondo);
+        contenedor.appendChild(fila);
+    });
+}
+

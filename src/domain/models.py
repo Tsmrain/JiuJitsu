@@ -274,6 +274,39 @@ from src.domain.validation_constants import EMAIL_REGEX
 
 
 @dataclass(frozen=True)
+class EstadisticaArticular:
+    """Objeto de Valor (Value Object) para las estadísticas de una articulación específica."""
+    nombre_articulacion: str
+    total_detecciones: int
+    desviacion_promedio_grados: float
+
+    @property
+    def severidad(self) -> str:
+        """Calcula la severidad de la desviación angular."""
+        if self.desviacion_promedio_grados < 5.0:
+            return "Baja"
+        elif self.desviacion_promedio_grados <= 15.0:
+            return "Media"
+        return "Alta"
+
+
+@dataclass(frozen=True)
+class ReporteAnalitica:
+    """Entidad de Dominio que consolida la analítica de una técnica."""
+    id_tecnica: str
+    nombre_tecnica: str
+    total_evaluaciones: int
+    evaluaciones_aprobadas: int
+    tasa_aprobacion: float
+    articulaciones_criticas: List[EstadisticaArticular]
+    fecha_generacion: datetime
+
+    def __post_init__(self) -> None:
+        if self.fecha_generacion is None:
+            object.__setattr__(self, "fecha_generacion", datetime.now(timezone.utc))
+
+
+@dataclass(frozen=True)
 class Profesor:
     """Entidad de Dominio Puro que modela a un instructor o profesor de Jiu-Jitsu.
 

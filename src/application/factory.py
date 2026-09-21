@@ -181,3 +181,23 @@ def crear_auth_controller(
         repo = InMemoryUsuarioRepository()
     return AuthController(usuario_repo=repo)
 
+
+def crear_analitica_controller(
+    usar_db_real: bool = False,
+    db_conn: Optional[Any] = None,
+    nuevo_almacen: bool = False,
+):
+    from src.application.analitica_controller import AnaliticaController
+    from src.infrastructure.persistence.history_repository import PostgresHistorialRepository
+    from src.infrastructure.mocks import MockHistorialRepository
+
+    if usar_db_real:
+        conn = db_conn if db_conn is not None else get_db_connection()
+        historial_repo = PostgresHistorialRepository(conn)
+        tec_repo = PostgresTecnicaRepository(conn, yolo_adapter=AdaptadorYOLO())
+    else:
+        historial_repo = MockHistorialRepository()
+        tec_repo = InMemoryTecnicaRepository() if nuevo_almacen else _SHARED_MEM_TECNICA_REPO
+
+    return AnaliticaController(historial_repository=historial_repo, tecnica_repository=tec_repo)
+

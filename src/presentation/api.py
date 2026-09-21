@@ -1350,4 +1350,25 @@ def consultar_estado_sistema():
     }
 
 
+def get_analitica_controller():
+    if "analitica_controller" in container and container["analitica_controller"] is not None:
+        return container["analitica_controller"]
+    from src.application.factory import crear_analitica_controller
+    db_url = os.getenv("DATABASE_URL")
+    ctrl = crear_analitica_controller(usar_db_real=bool(db_url))
+    container["analitica_controller"] = ctrl
+    return ctrl
 
+@app.get("/api/v1/analitica/tecnicas/top", tags=["Analítica"])
+@app.get("/api/v1/analitica/tecnicas/top/", tags=["Analítica"])
+def listar_top_tecnicas(limite: int = 5, ctrl=Depends(get_analitica_controller)):
+    """Devuelve el ranking de técnicas más evaluadas."""
+    return ctrl.listar_tecnicas_mas_evaluadas(limite)
+
+@app.get("/api/v1/analitica/tecnicas/{id_tecnica}", tags=["Analítica"])
+def obtener_analitica_tecnica(id_tecnica: str, ctrl=Depends(get_analitica_controller)):
+    """Recupera la analítica completa de una técnica."""
+    try:
+        return ctrl.generar_panel_tecnica(id_tecnica)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

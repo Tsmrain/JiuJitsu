@@ -3,31 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from src.presentation.api import app, container, TAREAS_ESTADO
 from src.application.controllers import EvaluacionController
-from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService, MockTecnicaRepository
-
-class MockHistorialRepository:
-    """Mock en memoria para verificar la persistencia automática de historial."""
-    def __init__(self):
-        self.registros = []
-
-    def guardar_evaluacion(self, id_alumno: str, id_tecnica: str, resultado: dict) -> str:
-        desviaciones = resultado.get("desviaciones", [])
-        promedio = sum(d["desviacion"] for d in desviaciones) / len(desviaciones) if desviaciones else 0.0
-        registro = {
-            "id_evaluacion": f"mock-eval-{len(self.registros) + 1}",
-            "id_alumno": id_alumno,
-            "id_tecnica": id_tecnica,
-            "es_valido": resultado.get("es_valido", False),
-            "total_desviaciones": resultado.get("total_desviaciones", 0),
-            "desviacion_promedio_grados": promedio,
-            "consejo_pedagogico": resultado.get("consejo_pedagogico", ""),
-            "fecha": "2026-09-11T12:00:00"
-        }
-        self.registros.append(registro)
-        return registro["id_evaluacion"]
-
-    def obtener_progreso(self, id_alumno: str):
-        return [r for r in self.registros if r["id_alumno"] == id_alumno]
+from src.infrastructure.mocks import MockYOLOEngine, MockGeminiService, MockTecnicaRepository, MockHistorialRepository
 
 @pytest.fixture
 def api_client_with_history():
@@ -57,8 +33,9 @@ def test_worker_guarda_historial_automaticamente(api_client_with_history):
     tarea_id = response.json()["tarea_id"]
     
     # TestClient de FastAPI ejecuta BackgroundTasks sincrónicamente al completar la petición HTTP
-    assert len(mock_repo.registros) == 1
-    registro = mock_repo.registros[0]
+    # El mock inserta 20 elementos al inicializarse, mas 1 nuevo = 21.
+    assert len(mock_repo._evaluaciones) == 21
+    registro = mock_repo._evaluaciones[-1]
     assert registro["id_alumno"] == "alumno_prueba_01"
     assert registro["id_tecnica"] == "armbar_guardia"
     assert registro["total_desviaciones"] == 1
@@ -81,8 +58,8 @@ def test_worker_guarda_con_alumno_por_defecto(api_client_with_history):
     response = client.post("/api/v1/evaluaciones/evaluar-asincrono", json=payload)
     assert response.status_code == 200
     
-    assert len(mock_repo.registros) == 1
-    assert mock_repo.registros[0]["id_alumno"] == "alumno_demo"
+    assert len(mock_repo._evaluaciones) == 21
+    assert mock_repo._evaluaciones[-1]["id_alumno"] == "alumno_demo"
 
 def test_flujo_completo_asincrono_y_consulta_progreso(api_client_with_history):
     client, mock_repo = api_client_with_history

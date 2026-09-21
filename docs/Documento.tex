@@ -1265,6 +1265,38 @@ A continuación se presentan las decisiones arquitectónicas más relevantes, do
 
 \textbf{Motivación}: Gemini 2.5 Flash garantiza la estructura JSON requerida, combinado con una velocidad de respuesta superior y costos operativos reducidos en comparación con GPT-4o. El adaptador \texttt{GeminiServiceAdapter} implementa un fallback determinista para evitar alucinaciones.
 
+\newpage
+\section{Iteración 2 (Elaboración 2 — CU-04 Analítica de Tatami)}
+\label{sec:iteracion-2}
+
+\subsection{Modelo de Dominio Refinado}
+En esta iteración se incorporó la necesidad de almacenar el detalle angular por cada articulación evaluada (\texttt{desviaciones\_detalle} en formato JSONB) en lugar de solo el promedio global. Esto es fundamental porque el CU-04 (Analítica de Tatami) requiere graficar barras de errores cuyo ancho sea directamente proporcional a la cantidad total de fallas (\texttt{total\_detecciones}) de cada articulación en una técnica específica.
+
+\subsection{Diagramas de Secuencia del Sistema (SSD)}
+\textbf{CU-04: Visualizar Analítica de Tatami (Profesor)}
+\begin{enumerate}
+    \item El \textbf{Profesor} solicita listar las técnicas más practicadas.
+    \item El \textbf{Sistema} retorna el top de técnicas con más evaluaciones.
+    \item El \textbf{Profesor} selecciona una técnica específica.
+    \item El \textbf{Sistema} consolida las evaluaciones históricas y devuelve el total, porcentaje de aprobación y un detalle con la cantidad de fallas por articulación (\texttt{total\_detecciones}) y su desvío promedio.
+\end{enumerate}
+
+\subsection{Contratos de Operación}
+\begin{itemize}
+    \item \textbf{Operación}: \texttt{obtenerAnaliticaTecnica(id\_tecnica)}
+    \item \textbf{Referencias Cruzadas}: CU-04 (RF-20).
+    \item \textbf{Precondiciones}: Existen evaluaciones guardadas para la técnica.
+    \item \textbf{Postcondiciones}: Se retornó un resumen estadístico consolidando todas las instancias de \texttt{EvaluacionAlumno} asociadas a \texttt{id\_tecnica}, agrupando las fallas de \texttt{desviaciones\_detalle} por nombre de articulación.
+\end{itemize}
+
+\subsection{Modelo de Diseño (Interacciones y DCD)}
+Para soportar el CU-04, se aplicaron los patrones GRASP y la arquitectura en 5 capas:
+\begin{itemize}
+    \item \textbf{Controller}: Se creó \texttt{AnaliticaController} que recibe los pedidos de analítica de la API y orquesta la consulta de datos.
+    \item \textbf{Pure Fabrication / Repository}: Se definió la interfaz \texttt{IHistorialRepository} y su implementación concreta con la responsabilidad cohesiva de ejecutar la agregación de datos y cálculos estadísticos en la base de datos.
+    \item \textbf{Information Expert}: El repositorio cuenta con la información para desdoblar el JSONB (\texttt{jsonb\_array\_elements}) y sumar las \texttt{total\_detecciones} para retornarlas estructuradas al controlador y de ahí al Frontend PWA.
+\end{itemize}
+
 \end{document}
 
 

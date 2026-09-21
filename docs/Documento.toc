@@ -76,3 +76,8 @@
 \contentsline {subsubsection}{\numberline {5.6.5.1}Technical Memo 1: Uso de Qdrant en lugar de pgvector}{64}{}%
 \contentsline {subsubsection}{\numberline {5.6.5.2}Technical Memo 2: Uso de Google Colab GPU + Ngrok}{64}{}%
 \contentsline {subsubsection}{\numberline {5.6.5.3}Technical Memo 3: Uso de Gemini 2.5 Flash para Síntesis Estructurada}{65}{}%
+\contentsline {section}{\numberline {5.7}Iteración 2 (Elaboración 2 — CU-04 Analítica de Tatami)}{66}{}%
+\contentsline {subsection}{\numberline {5.7.1}Modelo de Dominio Refinado}{66}{}%
+\contentsline {subsection}{\numberline {5.7.2}Diagramas de Secuencia del Sistema (SSD)}{66}{}%
+\contentsline {subsection}{\numberline {5.7.3}Contratos de Operación}{67}{}%
+\contentsline {subsection}{\numberline {5.7.4}Modelo de Diseño (Interacciones y DCD)}{67}{}%

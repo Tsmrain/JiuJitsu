@@ -3,10 +3,9 @@ import uuid
 import json
 import psycopg2
 from psycopg2.extras import Json
-from typing import List, Dict, Any, Optional
-from src.domain.interfaces import IHistorialRepository
+from typing import List, Dict, Any
 
-class PostgresHistorialRepository(IHistorialRepository):
+class PostgresHistorialRepository:
     """Implementación de persistencia para el historial de progreso de evaluaciones del alumno."""
 
     def __init__(self, db_url: str):
@@ -31,9 +30,6 @@ class PostgresHistorialRepository(IHistorialRepository):
                     "paso_a_paso": str(raw_consejo),
                     "resumen_ejecutivo": str(raw_consejo)
                 }
-        
-        # C2 - Asegurar el esquema JSONB incluyendo las desviaciones
-        consejo_data["desviaciones"] = desviaciones
 
         with psycopg2.connect(self._db_url) as conn:
             with conn.cursor() as cur:
@@ -103,51 +99,3 @@ class PostgresHistorialRepository(IHistorialRepository):
                         "fecha": r[6].isoformat() if hasattr(r[6], 'isoformat') else str(r[6])
                     })
                 return resultado
-
-    def listar_todas(self, id_tecnica: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Recupera todas las evaluaciones históricas, opcionalmente filtradas por técnica."""
-        with psycopg2.connect(self._db_url) as conn:
-            with conn.cursor() as cur:
-                if id_tecnica:
-                    cur.execute(
-                        """
-                        SELECT id_evaluacion, id_tecnica, es_valido, consejo_pedagogico, fecha_evaluacion
-                        FROM evaluaciones_alumno
-                        WHERE id_tecnica = %s
-                        ORDER BY fecha_evaluacion DESC;
-                        """,
-                        (id_tecnica,)
-                    )
-                else:
-                    cur.execute(
-                        """
-                        SELECT id_evaluacion, id_tecnica, es_valido, consejo_pedagogico, fecha_evaluacion
-                        FROM evaluaciones_alumno
-                        ORDER BY fecha_evaluacion DESC;
-                        """
-                    )
-                rows = cur.fetchall()
-                resultado = []
-                for r in rows:
-                    raw_consejo = r[3]
-                    if isinstance(raw_consejo, str):
-                        try:
-                            consejo_obj = json.loads(raw_consejo)
-                        except Exception:
-                            consejo_obj = raw_consejo
-                    else:
-                        consejo_obj = raw_consejo
-
-                    # C3 - Tolerancia histórica
-                    desviaciones = consejo_obj.get("desviaciones", []) or [] if isinstance(consejo_obj, dict) else []
-
-                    resultado.append({
-                        "id_evaluacion": str(r[0]),
-                        "id_tecnica": r[1],
-                        "es_valido": r[2],
-                        "consejo_estructurado": consejo_obj if isinstance(consejo_obj, dict) else None,
-                        "fecha": r[4].isoformat() if hasattr(r[4], 'isoformat') else str(r[4]),
-                        "desviaciones": desviaciones
-                    })
-                return resultado
-

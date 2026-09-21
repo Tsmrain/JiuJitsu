@@ -152,9 +152,6 @@
             <button onclick="mostrarSeccionProfesor('fuentes')" class="btn-nav-profesor" id="btn-nav-prof-fuentes">
                 Fuentes de Información
             </button>
-            <button onclick="mostrarSeccionProfesor('analitica')" class="btn-nav-profesor" id="btn-nav-prof-analitica">
-                Analítica del Tatami
-            </button>
         </div>
 
         <!-- SECCIÓN TÉCNICAS (CRUD) -->
@@ -213,34 +210,6 @@
             <!-- LISTADO DE FUENTES -->
             <h4>Fuentes Registradas</h4>
             <div id="lista-fuentes-profesor">
-                <!-- Se carga dinámicamente -->
-            </div>
-        </div>
-
-        <!-- SECCIÓN ANALÍTICA (CU-04) -->
-        <div id="seccion-analitica" class="seccion-profesor" style="display:none;">
-            <h3>Analítica del Tatami</h3>
-            
-            <div style="margin-bottom: 20px;">
-                <label for="filtro-tecnica-analitica">Filtrar por Técnica:</label>
-                <select id="filtro-tecnica-analitica" onchange="cargarAnaliticaProfesor()" style="padding: 8px; border-radius: 4px;">
-                    <option value="">-- Todas las Técnicas --</option>
-                </select>
-            </div>
-
-            <div id="resumen-analitica" style="display: flex; gap: 20px; margin-bottom: 20px;">
-                <div style="flex: 1; padding: 20px; background: #e9ecef; border-radius: 8px; text-align: center;">
-                    <h4>Total Evaluaciones</h4>
-                    <p id="analitica-total" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0</p>
-                </div>
-                <div style="flex: 1; padding: 20px; background: #e9ecef; border-radius: 8px; text-align: center;">
-                    <h4>Tasa de Aprobación</h4>
-                    <p id="analitica-tasa" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0.0%</p>
-                </div>
-            </div>
-
-            <h4>Debilidades Grupales Detectadas</h4>
-            <div id="lista-debilidades-profesor">
                 <!-- Se carga dinámicamente -->
             </div>
         </div>

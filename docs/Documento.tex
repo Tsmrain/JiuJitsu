@@ -1,30 +1,30 @@
 \documentclass[12pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
+\usepackage{float}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage{geometry}
 \geometry{
     top=2.5cm,
     bottom=2.5cm,
-    left=3cm,
-    right=3cm
+    left=4.0cm,
+    right=2.5cm,
+    includefoot
 }
 \usepackage{setspace}
+\onehalfspacing
+\setlength{\parskip}{2\baselineskip}
+\usepackage{fancyhdr}
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyfoot[R]{\thepage}
+    \renewcommand{\headrulewidth}{0pt}
+    \renewcommand{\footrulewidth}{0pt}
+}
+\pagestyle{plain}
 \usepackage{tabularx}
-\usepackage{tocloft}
-\usepackage{amsmath,amssymb}
-
-% Configuración de nombres en español e imágenes
-\graphicspath{{docs/}{./}}
-\renewcommand{\figurename}{Figura}
-\renewcommand{\tablename}{Tabla}
-\renewcommand{\contentsname}{ÍNDICE GENERAL}
-
-% Configuración del Índice y Numeración
-\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
-
-\begin{document}
-
-% ==========================================
+\usepackage{xltabular}
 \usepackage{tocloft}
 \usepackage{amsmath,amssymb}
 
@@ -43,9 +43,11 @@
 \setlength{\cftsubsubsecnumwidth}{4.5em}
 \setlength{\cftfignumwidth}{3.0em}
 \setlength{\cfttabnumwidth}{3.0em}
-    {\bfseries\large CARRERA: INGENIERÍA DE SISTEMAS \par}
-    
-    \vspace{1.5cm}
+
+\begin{document}
+\pagenumbering{roman}
+\sloppy
+
 % ==========================================
 % HOJA 1: PORTADA PRINCIPAL (EXTERIOR)
 % ==========================================
@@ -142,6 +144,24 @@
     {\bfseries\large 2026 \par}
 
 \end{titlepage}
+
+\clearpage
+
+% ==========================================
+% HOJA 3: HOJA EN BLANCO
+% ==========================================
+\thispagestyle{empty}
+\null
+\clearpage
+
+% ==========================================
+% HOJA 4: AGRADECIMIENTOS
+% ==========================================
+\thispagestyle{empty}
+\begin{center}
+    {\bfseries\Large AGRADECIMIENTOS \par}
+\end{center}
+
 \vspace{1.5cm}
 
 \begin{spacing}{1.5}
@@ -180,7 +200,7 @@ Al jiujitsu brasileño, por enseñarme a afrontar los miedos, seguir incluso cua
 \noindent
 \begin{tabularx}{\textwidth}{|>{\bfseries}l|X|}
     \hline
-    TÍTULO & SISTEMA DE ANÁLISIS BIOMECÁNICO DE APOYO PARA JIUJITSU BRASILEÑO PARA LA ACADEMIA CORPO E MENTE \\ \hline
+    TÍTULO & SISTEMA DE ANÁLISIS BIOMECÁNICO DE TÉCNICAS DE JIU-JITSU BRASILEÑO MEDIANTE INTELIGENCIA ARTIFICIAL PARA LA ACADEMIA CORPO E MENTE \\ \hline
     AUTOR & SANTIAGO BORDA ZAMBRANA \\ \hline
 \end{tabularx}
 
@@ -200,7 +220,7 @@ Al jiujitsu brasileño, por enseñarme a afrontar los miedos, seguir incluso cua
 
 \noindent{\bfseries CONTENIDO \par}
 \vspace{0.3cm}
-\noindent El presente trabajo de investigación se ha desarrollado bajo la metodología del Proceso Unificado (UP).
+\noindent El presente trabajo de investigación se ha desarrollado bajo la metodología del Proceso Unificado (UP), siguiendo el enfoque iterativo, incremental y evolutivo propuesto por Craig Larman.
 
 \vspace{0.8cm}
 
@@ -216,9 +236,10 @@ Al jiujitsu brasileño, por enseñarme a afrontar los miedos, seguir incluso cua
 \end{tabularx}
 
 \clearpage
-\noindent{\bfseries CONTENIDO \par}
-\vspace{0.3cm}
-\noindent El presente trabajo de investigación se ha desarrollado bajo la metodología del Proceso Unificado (UP), siguiendo el enfoque iterativo, incremental y evolutivo propuesto por Craig Larman.
+
+% ==========================================
+% HOJA 6: RESUMEN (FORMATO APA 7)
+% ==========================================
 \thispagestyle{empty}
 \begin{center}
     {\bfseries\large Resumen \par}
@@ -248,9 +269,10 @@ Al jiujitsu brasileño, por enseñarme a afrontar los miedos, seguir incluso cua
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
-% Reconfiguración de numeración para el Capítulo I (1.1, 1.1.1, etc.)
+% Reconfiguración de numeración para el Capítulo I
 \renewcommand{\thesection}{1.\arabic{section}}
 \renewcommand{\thesubsection}{1.\arabic{section}.\arabic{subsection}}
+\setcounter{section}{0}
 
 % ==========================================
 % CAPÍTULO I: DEFINICIÓN DEL PROYECTO
@@ -263,33 +285,11 @@ Al jiujitsu brasileño, por enseñarme a afrontar los miedos, seguir incluso cua
 
 \section{Definición del problema}
 
-\subsection{Situación problemática}
-En la enseñanza del Jiu-Jitsu Brasileño (BJJ) dentro de la academia \textit{Corpo e Mente}, los alumnos principiantes e intermedios enfrentan dificultades significativas para evaluar y perfeccionar su ejecución técnica de manera objetiva y continua. En el modelo tradicional, la enseñanza depende casi exclusivamente de la observación directa y presencial del profesor durante clases grupales numerosas. 
+En la academia Corpo e Mente (filial Knockout Gym, Santa Cruz de la Sierra), los alumnos aprenden Brazilian Jiu-Jitsu principalmente asistiendo a clases presenciales. Sin embargo, tres factores limitan su progreso:
 
-Esta dinámica genera los siguientes problemas críticos:
-\begin{itemize}
-    \item \textbf{Atención individualizada limitada:} En clases con alta afluencia de alumnos, el profesor no puede observar la totalidad de las repeticiones ejecutadas por cada alumno.
-    \item \textbf{Retroalimentación diferida o ausente:} Si un error postural o de apalancamiento no es detectado en el instante preciso de la ejecución, el alumno tiende a automatizar patrones de movimiento incorrectos.
-    \item \textbf{Evaluación subjetiva sin métricas cuantitativas:} La corrección tradicional carece de mediciones objetivas sobre ángulos articulares, alineación espinal o posición del cuerpo.
-    \item \textbf{Riesgo incrementado de lesiones:} La repetición continua de técnicas con una biomecánica defectuosa expone a las articulaciones a sobrecargas y tensiones anómalas.
-    \item \textbf{Progreso estancado fuera del aula:} El alumno no dispone de herramientas de autoevaluación guiadas fuera de los horarios de entrenamiento para comparar su desempeño con la técnica patrón enseñada por su profesor.
-\end{itemize}
+Primero, muchos practicantes no pueden asistir con regularidad por motivos laborales, académicos o familiares. Segundo, los alumnos dependen casi por completo del profesor para saber si están ejecutando bien una técnica. Tercero, aunque existen videos en YouTube y otras plataformas, estos no le dicen al alumno si él mismo lo está haciendo bien; solo muestran cómo debería verse el movimiento.
 
-\subsection{Situación deseada}
-La situación deseada consiste en implementar una solución tecnológica de apoyo para la academia \textit{Corpo e Mente} basada en una aplicación web que integre visión por computadora e inteligencia artificial generativa.
-
-Con esta solución se logrará:
-\begin{enumerate}
-    \item Permitir al alumno grabar sus ejecuciones técnicas desde su dispositivo móvil en cualquier momento.
-    \item Extraer automáticamente la postura corporal del alumno y compararla de forma analítica con la técnica patrón registrada por el profesor.
-    \item Identificar desajustes articulares y generar reportes pedagógicos estructurados (análisis postural, riesgo de lesión y corrección paso a paso).
-    \item Entregar retroalimentación objetiva, inmediata y fundamentada en literatura especializada de BJJ, acelerando la curva de aprendizaje técnico y reduciendo el riesgo de lesiones.
-\end{enumerate}
-
-\subsection{Objeto de investigación}
-El objeto de investigación es el proceso de evaluación y corrección biomecánica postural de técnicas de Jiu-Jitsu Brasileño mediante visión por computadora y modelos de lenguaje orquestados bajo arquitecturas de recuperación de información.
-
-\subsection{Alcance}
+El resultado es que el practicante que no puede asistir seguido queda estancado, pierde motivación y con frecuencia abandona el deporte. Quienes intentan aprender por su cuenta con videos replican mal la técnica. Cuando finalmente la aplican en un combate real, la técnica no les sale porque nunca recibieron corrección sobre su propia ejecución.
 
 \subsection{Situación problemática}
 
@@ -298,80 +298,79 @@ El análisis operativo de la filial revela los siguientes indicadores críticos:
     \item \textbf{Dependencia total del profesor:} Durante la clase de 90 minutos, con 15 alumnos y 675 repeticiones totales, el profesor dispone de 8 segundos por repetición para corregir. Esto deja más del 80\% de los errores técnicos sin retroalimentación. Fuera del aula, el alumno no tiene ninguna forma objetiva de saber si está practicando bien.
     \item \textbf{Frustración al aplicar la técnica:} El alumno que aprende solo con videos replica la forma exterior del movimiento, pero no comprende sus detalles biomecánicos. Cuando intenta ejecutar la técnica durante un combate, esta falla. La repetición del fracaso refuerza la percepción de estancamiento.
 \end{itemize}
-\subsubsection{Alcance Tecnológico}
+
+\subsection{Situación deseada}
+
+Se propone desarrollar una Aplicación Web Progresiva (PWA) que actúe como tutor inteligente accesible desde cualquier lugar y en cualquier momento, sin necesidad de estar físicamente en el tatami. El sistema permitirá al alumno grabar sus ejercicios individuales desde su teléfono celular y recibir correcciones en menos de 180 segundos. Los objetivos concretos son:
 \begin{itemize}
-    \item \textbf{Aplicación Web y Servidor de Procesamiento:} Arquitectura cliente-servidor orientada a servicios para la captura de video, procesamiento de imágenes y almacenamiento de información.
-    \item \textbf{Modelos de Inteligencia Artificial:} YOLO26x-Pose + YOLO26x-Depth para estimación de pose 3D (17 keypoints COCO), Qwen3-VL-Embedding-2B para vectorización densa de 2048 dimensiones, Gemini 2.5 Flash para síntesis pedagógica estructurada en JSON.
+    \item \textbf{Aprender sin depender del horario del gimnasio:} El alumno podrá practicar en su casa, en un parque o donde esté, y recibir la misma corrección que recibiría del profesor.
+    \item \textbf{Corrección objetiva sobre la propia ejecución:} El sistema comparará el video del alumno con el video patrón del profesor y emitirá un reporte pedagógico señalando el segundo exacto del error. No se trata de imitar un video, sino de saber si uno mismo lo está haciendo bien.
+    \item \textbf{Permitir la práctica fuera del tatami:} Lograr que el alumno pueda practicar y recibir corrección sin necesidad de estar físicamente en la academia, independientemente de su horario.
+    \item \textbf{Ventaja competitiva:} Otorgar a la academia una herramienta tecnológica exclusiva que fortalezca su posición comercial y viabilice su futura venta como servicio (SaaS).
 \end{itemize}
 
-\subsubsection{Exclusiones}
+\subsection{Objeto de investigación}
+
+El objeto de investigación comprende la aplicación de visión por computadora para estimar poses 3D, la búsqueda automatizada en manuales oficiales (RAG) y los algoritmos de comparación cinemática temporal, con el fin de evaluar y corregir movimientos individuales y prácticas cooperativas en pareja de Brazilian Jiu-Jitsu fuera del horario y del espacio físico de la academia.
+
+\subsection{Alcance}
+
+\textbf{Alcance funcional:} El sistema incluye autenticación por roles (Profesor y Alumno), registro obligatorio del video semilla del profesor, carga de videos cortos (hasta 30 segundos) de ejercicios individuales (Solo Drills), detección de 17 keypoints COCO-Pose en 3D y evaluación biomecánica de 8 a 12 ángulos articulares clave, comparación cinemática con el patrón del profesor mediante DTW, generación de reportes pedagógicos en cuatro bloques (Análisis Postural, Alertas, Guía Paso a Paso y Resumen), historial de progreso del alumno, panel analítico del profesor y mantenimiento nocturno autónomo.
+
+\vspace{0.3cm}
+\textbf{Alcance tecnológico:} El sistema se compone de un servidor central (FastAPI + PostgreSQL con JSONB en 3FN), una base de datos vectorial (Qdrant), un entorno de análisis remoto en Google Colab (YOLO26x-Pose + YOLO26x-Depth). El desarrollo backend local se basa en FastAPI (Python 3.11) y PostgreSQL (con JSONB) para orquestación, mientras que la base vectorial Qdrant maneja el RAG. La seguridad incluye cifrado TLS 1.3 y autenticación basada en PBKDF2-HMAC-SHA256.
+
+\vspace{0.3cm}
+\textbf{Exclusiones:} El sistema no reemplaza al profesor, no emite diagnósticos médicos ni gestiona cobros de mensualidades. Se enfoca exclusivamente en dos tipos de práctica:
 \begin{itemize}
-    \item El sistema no sustituye la evaluación presencial formal ni el criterio del maestro para la graduación de cinturones.
-    \item No realiza diagnósticos médicos o clínicos fisioterapéuticos de rehabilitación.
+    \item Ejercicios individuales (Solo Drills): movimientos ejecutados sin compañero.
+    \item Prácticas cooperativas en pareja: dos personas repitiendo una técnica predefinida de forma controlada y predecible (ej. uchi komi, entradas de proyección, transiciones de guardia).
 \end{itemize}
+
+Límites estrictos del análisis en pareja:
+\begin{itemize}
+    \item La técnica debe ser predefinida y cooperativa. No se evalúa sparring libre ni competencia.
+    \item La cámara debe estar fija en trípode, con ángulo lateral o de 45 grados. No se acepta video grabado a mano alzada.
+    \item El alumno indica manualmente su rol en la PWA al subir el video (ej. "soy el de la izquierda").
+    \item El sistema rastrea ambos esqueletos con YOLO26x en modo multi-persona, pero solo evalúa el esqueleto del alumno contra el video semilla.
+    \item Si más del 40\% de los puntos del alumno quedan ocluidos durante más del 30\% de la secuencia, el sistema rechaza el video (Filtro Estructural extendido).
+\end{itemize}
+
+Queda excluido el análisis de sparring libre y competencia porque la oclusión severa y la imprevisibilidad del movimiento impiden la detección confiable con una sola cámara.
 
 \subsection{Justificación}
 
-\subsubsection{Justificación Técnica y de Diseño del Producto}
-\textbf{Alcance funcional:} El sistema incluye autenticación por roles (Profesor y Alumno), registro obligatorio del video semilla del profesor, carga de videos cortos (hasta 30 segundos) de ejercicios individuales (Solo Drills), detección de 17 keypoints COCO-Pose en 3D y evaluación biomecánica de 8 a 12 ángulos articulares clave, comparación cinemática con el patrón del profesor mediante DTW, generación de reportes pedagógicos en cuatro bloques (Análisis Postural, Alertas, Guía Paso a Paso y Resumen), historial de progreso del alumno, panel analítico del profesor y mantenimiento nocturno autónomo.
+\textbf{Justificación técnica:} La combinación de visión por computadora (Ultralytics, 2026) con búsqueda aumentada por generación (RAG) representa una innovación en el software deportivo. La arquitectura desacoplada permite ejecutar el análisis pesado en servidores remotos sin costo de infraestructura durante la fase de MVP.
 
-\subsubsection{Justificación Económica, Institucional y de Negocio}
-Actualmente, el principal generador de ingresos de la sucursal anfitriona (Knockout Gym) es un modelo paquetizado de 300 Bs mensuales por acceso ilimitado, donde el Jiu-Jitsu interactúa con otras disciplinas de manera indirecta dentro de un control de accesos centralizado (administrado mediante sistemas tradicionales como Microsoft Access y lectores de huella locales). Dado que Knockout controla el flujo de caja global y Corpo e Mente no tiene injerencia en la cobranza diaria de este punto, la academia necesita consolidar un factor de valor agregado y diferenciación comercial exclusiva para justificar su permanencia, aumentar su poder de negociación frente al gimnasio y captar un mayor porcentaje de los ingresos del paquete.
+\vspace{0.3cm}
+\textbf{Justificación social y pedagógica:} La literatura en sistemas tutoriales inteligentes demuestra que la retroalimentación inmediata y personalizada incrementa la autoeficacia del estudiante. Un tutor virtual disponible 24/7 reduce la frustración, previene lesiones y democratiza la excelencia técnica del profesor.
 
-Más allá de este caso de estudio local, la viabilidad económica del proyecto radica en su capacidad de Escalabilidad y Comercialización Internacional bajo un modelo de negocio de Software como Servicio (SaaS). El sistema no está diseñado como una herramienta aislada, sino como un producto empaquetado listo para ser monetizado en el mercado global de las artes marciales mediante dos vías de ingresos:
-
-\begin{itemize}
-    \item \textbf{Modelos de Licenciamiento por Volumen:} Venta de licencias anuales a academias y redes de dojos de cualquier país, parametrizadas y cobradas según la capacidad de alumnos registrados en su base de datos (Slots de usuarios).
-    \item \textbf{Contratos de Soporte y Actualizaciones de Contenido:} Cobros anuales recurrentes por soporte técnico, mantenimiento y la actualización constante del catálogo de conocimientos y videotutoriales con profesores de alto rango internacional.
-\end{itemize}
-
-De este modo, el proyecto pasa de ser un gasto operativo a convertirse en un activo tecnológico de alta rentabilidad que eleva el valor de mercado de Corpo e Mente y abre una nueva línea de ingresos digitales escalables.
-
-\newpage
+\vspace{0.3cm}
+\textbf{Justificación de negocio:} La solución reduce la pérdida de ingresos por deserción en Knockout Gym. Con una mensualidad de 300 Bs por alumno, cada retención representa un ingreso directo. A mediano plazo, el núcleo arquitectónico permite comercializar el sistema como servicio (SaaS) a otras academias de BJJ.
 
 \section{Objetivos}
 
 \subsection{Objetivo General}
-Desarrollar un sistema de apoyo para el análisis biomecánico de movimientos en Jiu-Jitsu Brasileño para la academia \textit{Corpo e Mente}, mediante visión por computadora e inteligencia artificial, que permita evaluar objetivamente las ejecuciones técnicas de los alumnos y proporcionar retroalimentación pedagógica estructurada en tiempo real.
+
+Desarrollar un sistema basado en visión computacional e inteligencia artificial para la academia Corpo e Mente, que entregue corrección biomecánica individualizada sobre ejercicios individuales y prácticas cooperativas en pareja de Brazilian Jiu-Jitsu.
 
 \subsection{Objetivos Específicos}
-\begin{enumerate}
-    \item Analizar y especificar los requerimientos del sistema y casos de uso para el registro de patrones técnicos y la evaluación biomecánica.
-    \item Implementar el módulo de visión por computadora para la detección y extracción de posturas corporales a partir de videos de entrenamiento.
-    \item Desarrollar el algoritmo de comparación biomecánica para computar las diferencias angulares articulares entre la ejecución del alumno y la técnica patrón del profesor.
-    \item Construir el motor de búsqueda semántica para recuperar información explicativa desde literatura especializada de Jiu-Jitsu Brasileño.
-    \item Integrar el modelo de lenguaje generativo para elaborar reportes de retroalimentación pedagógica en análisis postural, riesgo de lesión, guía paso a paso y resumen ejecutivo.
-    \item Desarrollar una interfaz web intuitiva y responsiva que permita la interacción eficiente entre profesores y alumnos.
-    \item Validar la solución mediante pruebas unitarias, de integración y funcionales.
-\end{enumerate}
 
-\newpage
+\begin{itemize}
+    \item Definir el marco cuasi-experimental para contrastar el progreso técnico y la retención de alumnos frente a la enseñanza tradicional.
+    \item Construir el proceso de visión artificial con YOLO26x-Pose y YOLO26x-Depth para codificar los 17 keypoints COCO en coordenadas tridimensionales normalizadas, con soporte para rastreo simultáneo de dos personas en videos de práctica cooperativa y asignación manual de identidad por parte del alumno.
+    \item Implementar el algoritmo de comparación cinemática basado en Dynamic Time Warping (DTW) sobre series angulares articulares, con localización temporal del frame de máxima desviación.
+    \item Diseñar el subsistema de Recuperación Aumentada por Generación (RAG) multimodal en Qdrant con la literatura oficial del Brazilian Jiu-Jitsu.
+    \item Integrar el motor generativo Gemini 2.5 Flash para emitir reportes pedagógicos en cuatro bloques bajo esquema JSON verificado.
+    \item Desarrollar la interfaz PWA móvil con accesibilidad WCAG 2.1 AA, responsiva e intuitiva para la captura y consulta de historial.
+    \item Ejecutar el plan de pruebas y validar la coincidencia entre la inteligencia artificial y el profesor mediante comparación directa en una muestra de 20 videos etiquetados manualmente por el instructor.
+\end{itemize}
 
 \section{Metodología}
 
-\subsection{Ingeniería de Software (Proceso Unificado)}
-Para el desarrollo del software se adopta la metodología del Proceso Unificado (UP), guiada por casos de uso, centrada en la arquitectura de software e iterativa e incremental. Su ciclo de vida comprende cuatro fases:
-
-\begin{enumerate}
-    \item \textbf{Fase de Inicio (Inception):} Definición de los objetivos del proyecto, delimitación del alcance y evaluación de factibilidad.
-    \item \textbf{Fase de Elaboración (Elaboration):} Especificación detallada de casos de uso, diseño de la arquitectura en capas y prototipado del motor biomecánico.
-    \item \textbf{Fase de Construcción (Construction):} Desarrollo iterativo de los componentes del servidor (FastAPI), modelos de inteligencia artificial (YOLO26x en Colab GPU, Qwen3-VL-Embedding-2B, Gemini 2.5 Flash), pipeline RAG (Qdrant + PostgreSQL BCNF) e interfaz web progresiva (PWA).
-    \item \textbf{Fase de Transición (Transition):} Pruebas del sistema, optimización de componentes y despliegue final para la academia \textit{Corpo e Mente}.
-\end{enumerate}
-
-\subsection{Gestión del Proyecto (Scrum)}
-La gestión operativa del proyecto se alinea con el marco ágil \textbf{Scrum}, organizando el trabajo en iteraciones cortas denominadas Sprints:
-
-\begin{itemize}
-    \item \textbf{Planificación Temporal y Cronograma:} El desarrollo del proyecto contempla una duración total de un (1) año, iniciando las actividades de investigación y desarrollo en febrero de 2026 y finalizando con el despliegue y validación en diciembre de 2026.
-    \item \textbf{Product Backlog:} Lista priorizada de requisitos y funcionalidades del sistema.
-    \item \textbf{Sprints:} Ciclos de trabajo de 2 semanas para la entrega de incrementos funcionales probados del software.
-    \item \textbf{Aseguramiento de Calidad:} Desarrollo guiado por pruebas para validar el correcto funcionamiento de la lógica de negocio e interfaces.
-    \item \textbf{Control de Versiones:} Gestión del código fuente mediante control de versiones y gestión de entornos de trabajo.
-\end{itemize}
+El ciclo de vida del software combina el Proceso Unificado Ágil —estructurado en tres macroetapas: Planificación de requisitos, Construcción iterativa e Instalación— con dieciocho ciclos de trabajo de dos semanas bajo Scrum. El proyecto se ejecuta entre febrero y diciembre de 2026. A septiembre de 2026, el proyecto se encuentra en plena fase de construcción.
 
 \clearpage
-
 % Reconfiguración de numeración para el Capítulo II (2.1, 2.1.1, etc.)
 \renewcommand{\thesection}{2.\arabic{section}}
 \renewcommand{\thesubsection}{2.\arabic{section}.\arabic{subsection}}
@@ -387,71 +386,76 @@ La gestión operativa del proyecto se alinea con el marco ágil \textbf{Scrum}, 
 \vspace{1cm}
 
 \section{Antecedentes Institucionales}
-La academia \textit{Corpo e Mente} (asociada al centro de entrenamiento \textit{KnockOut Training Center}) es una institución especializada en la enseñanza y perfeccionamiento de artes marciales y deportes de contacto, destacando principalmente en la disciplina del Jiu-Jitsu Brasileño (BJJ) y Judó. Fundada con el propósito de fomentar la disciplina física, mental y el desarrollo deportivo integral bajo la dirección técnica del maestro Humberto Tavares, la academia ofrece programas de formación orientados a practicantes de diversos niveles de experiencia, desde principiantes hasta competidores de alto rendimiento.
 
-\begin{figure}[htbp]
+La academia Corpo e Mente es una institución deportiva internacional fundada en 2005 en Salvador de Bahía, Brasil. Su fundador es el Gran Maestro Humberto Tavares. La entidad se enfoca en la preservación doctrinal y formación técnica en artes marciales. Pone especial énfasis en el Brazilian Jiu-Jitsu y el Judó. Opera mediante filiales descentralizadas que garantizan la fidelidad a los programas de grado de la IBJJF.
+
+En Santa Cruz de la Sierra, Corpo e Mente cuenta con diversas células de entrenamiento. El alcance del proyecto se circunscribe a la célula ubicada en el gimnasio comercial Knockout Training Center (Knockout Gym). Dicha filial opera en Santa Cruz de la Sierra. La relación comercial se basa en un acuerdo de tercerización y coparticipación de ingresos. Knockout Gym cobra las cuotas de 300 Bs en recepción. Luego retiene un margen por uso de sala y transfiere el saldo neto acordado a Corpo e Mente Bolivia, quien liquida los honorarios del profesor. La academia mantiene una autonomía técnica y doctrinal absoluta e indiscutible frente a los administradores del gimnasio.
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.35\textwidth]{corpo.jpeg}
+    \includegraphics[width=0.35\textwidth]{Figuras/corpo.jpeg}
     \hspace{1cm}
-    \includegraphics[width=0.35\textwidth]{KnockOut.jpg}
+    \includegraphics[width=0.35\textwidth]{Figuras/KnockOut.jpg}
     \caption{Logotipos Institucionales: Academia Corpo e Mente y KnockOut Training Center}
     \label{fig:logotipos_institucionales}
 \end{figure}
 
+\section{Estructura Orgánica (Organigrama Institucional)}
 
-\section{Estructura Orgánica (Organigrama)}
-
-La estructura organizacional que rige el funcionamiento de la academia se presenta en la Figura \ref{fig:organigrama}, detallando la jerarquía internacional de la asociación y su descentralización operativa dentro del territorio boliviano, con especial énfasis en el nodo correspondiente al objeto de estudio.
-
-El modelo responde a una estructura mixta (lineal-funcional) que opera bajo un esquema descentralizado de matriz-filial y alianzas estratégicas de infraestructura corporativa. A continuación, se describen los niveles y componentes que integran esta estructura:
-
-\begin{itemize}
-    \item \textbf{1. Nivel Estratégico Internacional (Sede Matriz - Brasil):} Representa la máxima autoridad doctrinaria y metodológica de la escuela, liderada a nivel global por el fundador Master Humberto Tavares. Este nivel se encarga de emitir los lineamientos técnicos oficiales y validar las certificaciones internacionales de grados ante entes reguladores globales como la International Brazilian Jiu-Jitsu Federation (IBJJF). Su relación con la filial nacional es estrictamente doctrinal y de auditoría técnica, sin interferencia directa en la gestión financiera local.
-    
-    \item \textbf{2. Nivel de Coordinación Nacional (Corpo e Mente - Estructura Central Bolivia):} Estructura encargada de centralizar la personería de la marca en el país. Está dirigida por la Dirección General / Representante Nacional, unidad de la cual dependen las áreas funcionales de Gestión de Afiliaciones e Inscripciones (responsable del ecosistema digital en la plataforma Smoothcomp) y la Coordinación de Eventos y Selectivos (encargada de la logística de torneos inter-academias). Este nivel supervisa de manera directa la Red de Sucursales distribuidas en la ciudad de Santa Cruz de la Sierra (Sucursal UFC Gym, Sucursal 3 Pasos al Frente, Sucursal UAGRM y la célula del Programa en KnockOut).
-    
-    \item \textbf{3. El Gimnasio Independiente (Convenio Proveedor Externo - KnockOut Gym):} KnockOut Gym opera como un ente administrativo y legalmente independiente a Corpo e Mente. La relación institucional se define mediante una Alianza Estratégica de Tercerización de Infraestructura (Outsourcing) bajo un formato horario específico. KnockOut Gym funge como el agente de recaudación y cobro de membresías mensuales de los alumnos de Jiu-Jitsu, asumiendo el riesgo comercial del espacio y ejecutando posteriormente el desembolso económico correspondiente (por horas de clase o porcentaje acordado) hacia el cuerpo docente de la academia. KnockOut Gym no posee participación alguna en la toma de decisiones organizacionales, metodológicas o de graduaciones de Corpo e Mente, limitándose contractualmente al alquiler del espacio físico del tatami.
-    
-    \item \textbf{4. Estructura Operativa Interna (Célula Operativa Nocturna - Sucursal KnockOut):} Representa el alcance físico e institucional donde se acota el despliegue del sistema de software desarrollado. Debido a la naturaleza de la alianza con el gimnasio anfitrión, la operación se simplifica en una estructura lineal de turno único enfocado en el horario nocturno.
-    \begin{itemize}
-        \item \textbf{Profesor Encargado (Prof. Miguel Baigorria - Cinturón Negro):} Unidad responsable del desarrollo técnico, la planificación de las clases, la supervisión de la seguridad y el enlace operativo con la administración de KnockOut Gym. En el contexto del sistema BJJ Biomechanics, este puesto asume de forma exclusiva el rol de Profesor, encargándose de alimentar el catálogo de técnicas patrón, cargar videos de referencia cinemática y gestionar el repositorio semántico del motor RAG.
-        \item \textbf{Alumnos y Atletas de BJJ (Turno Noche):} Usuarios finales del programa de entrenamiento nocturno. Dentro del alcance del software, asumen el rol de Alumno, interactuando con la Aplicación Web Progresiva (PWA) para registrar sus ejecuciones y recibir la retroalimentación biomecánica automatizada orientada a optimizar su curva de aprendizaje.
-    \end{itemize}
-\end{itemize}
-
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{Organigrama.png}
-    \caption{Organigrama Estructural de KnockOut Training Center}
+    \includegraphics[width=0.85\textwidth]{Figuras/Organigrama.png}
+    \caption{Organigrama Estructural de Knockout Training Center y Línea de Mando de Corpo e Mente (Modelo de 4 Niveles). Fuente: Elaboración propia basada en los manuales organizacionales de Corpo e Mente Bolivia (2026).}
     \label{fig:organigrama}
 \end{figure}
 
-\section{Flujo del Negocio y Análisis de Procesos}
-El flujo operativo tradicional para la atención y formación de los alumnos dentro de la academia sigue una serie de pasos secuenciales desde su registro administrativo hasta el entrenamiento en el tatami.
+\section{Flujo del Negocio}
 
-\begin{figure}[htbp]
+El flujo del negocio detalla las interacciones de los alumnos dentro de la academia.
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{Flujo del negocio.png}
-    \caption{Diagrama del Flujo del Negocio de la Academia y Detección del Cuello de Botella}
+    \includegraphics[width=0.95\textwidth]{{Figuras/Flujo del negocio.png}}
+    \caption{Diagrama del Flujo del Negocio de Corpo e Mente en Knockout Training Center. Fuente: Elaboración propia.}
     \label{fig:flujo_negocio}
 \end{figure}
 
-El proceso operativo ilustrado en la Figura~\ref{fig:flujo_negocio} comprende las siguientes etapas:
-\begin{enumerate}
-    \item El alumno se dirige a la administración para solicitar información o renovar su membresía.
-    \item La administración muestra el catálogo de disciplinas disponibles (BJJ, Judó).
-    \item El alumno selecciona la disciplina de su preferencia (foco principal en BJJ).
-    \item El alumno realiza el pago de la disciplina seleccionada en la recepción.
-    \item La administración registra el pago en el sistema contable.
-    \item La administración entrega el recibo o comprobante de inscripción al alumno.
-    \item El alumno ingresa al área de entrenamiento y entrega el comprobante de pago al profesor asignado.
-    \item El profesor imparte la clase técnica y guía el entrenamiento del alumno.
-    \item \textbf{Cuello de Botella Identificado (Evaluación del Practicante):} La evaluación personalizada de posturas y ejecuciones biomecánicas por parte del profesor constituye un punto crítico de estrangulamiento. Debido al número de alumnos por clase y al tiempo limitado del entrenamiento presencial, el profesor no puede realizar una retroalimentación continua e individualizada para cada repetición técnica.
-\end{enumerate}
+\clearpage
+% Reconfiguración de numeración para el Capítulo III
+\renewcommand{\thesection}{3.\arabic{section}}
+\renewcommand{\thesubsection}{3.\arabic{section}.\arabic{subsection}}
+\setcounter{section}{0}
 
-El sistema de software propuesto viene a resolver directamente este cuello de botella, permitiendo que la evaluación técnica sea automatizada mediante visión artificial e inteligencia artificial.
+% ==========================================
+% CAPÍTULO III: MARCO TEÓRICO Y TECNOLÓGICO
+% ==========================================
+\begin{center}
+    {\bfseries\Large CAPÍTULO III: MARCO TEÓRICO Y TECNOLÓGICO \par}
+\end{center}
+\addcontentsline{toc}{section}{\textbf{CAPÍTULO III: MARCO TEÓRICO Y TECNOLÓGICO}}
+\vspace{1cm}
 
-El cuello de botella identificado (evaluación personalizada) es resuelto directamente por el caso de uso CU-02 (Evaluar Ejecución Biomecánica con Síntesis Pedagógica), implementado en el controlador EvaluacionController y expuesto vía POST /api/v1/alumno/evaluaciones.
+\section{Fundamentos Teóricos del Negocio y la Biomecánica}
+
+\subsection{Análisis Postural y Biomecánica en BJJ (Delimitación a Solo Drills y Prácticas Cooperativas en Pareja)}
+
+El Brazilian Jiu-Jitsu basa su eficiencia en principios físicos rigurosos (Craig, 2022; Tavares, 2020). Utiliza palancas, momentos de fuerza y estabilidad rotacional sobre el eje axial. La efectividad de una técnica depende de la correcta alineación de los ejes articulares, la gestión del centro de masa corporal y la optimización del apalancamiento mecánico. Las investigaciones de visión artificial aplicada al deporte (Cust et al., 2019) comprueban la necesidad de aislar los movimientos articulares para poder evaluarlos objetivamente.
+
+El análisis biomecánico en el BJJ estudia el movimiento corporal y las fuerzas involucradas durante la ejecución de las técnicas. La evaluación de los ángulos articulares en puntos críticos (hombros, codos, caderas, rodillas y tobillos) permite determinar cuantitativamente si la ejecución de un alumno coincide con el patrón ideal dictado por el profesor, o si presenta desviaciones que comprometan la eficacia técnica o incrementen el riesgo de lesiones.
+
+\textbf{Justificación de la delimitación:} En el MVP la evaluación se restringe a dos tipos de práctica:
+
+\begin{itemize}
+    \item \textbf{Ejercicios individuales (Solo Drills):} movimientos ejecutados sin compañero.
+    \item \textbf{Prácticas cooperativas en pareja:} dos personas repitiendo una técnica predefinida de forma controlada y predecible (ej. uchi komi, entradas de proyección, transiciones de guardia).
+\end{itemize}
+
+Se excluye el sparring libre y la competencia porque la oclusión mutua y la imprevisibilidad del movimiento impiden la detección confiable con una sola cámara. El sistema rastrea ambos esqueletos con YOLO26x en modo multi-persona, pero solo evalúa el esqueleto del alumno contra el video semilla del profesor.
+
+\subsection{Estimación de Poses 3D y Espacio Canónico Normalizado (\textit{Root-Relative})}
+
+La estimación de pose en video requiere extraer las articulaciones humanas en cada fotograma. El sistema implementa un \textbf{Espacio Cinemático Canónico Normalizado (\textit{Root-Relative})} a partir de la fusión geométrica de dos modelos complementarios: YOLO26x-Pose (detección de keypoints 2D) y YOLO26x-Depth (mapa de profundidad métrica monocular). Este enfoque descarta medir distancias absolutas con una sola cámara por su ambigüedad geométrica. En su lugar, aplica los siguientes tres pasos:
+
 \begin{enumerate}
     \item \textbf{Filtrado Topológico y Selección Articular:} Se detectan los 17 keypoints anatómicos del estándar COCO-Pose (índices 0 a 16). A partir de estos 17 puntos detectados por YOLO26x-Pose, la \texttt{CalculadoraBiomecanica} selecciona los puntos articulares relevantes y evalúa entre 8 y 12 ángulos articulares tridimensionales clave según la técnica monitoreada (codos, hombros, rodillas, caderas, tobillos y eje axial del tronco, en lados izquierdo y derecho).
 
@@ -467,71 +471,62 @@ Z = \text{depth-map}[y_d, x_d]
 \]
 \textit{En palabras simples: esta fórmula centra los 17 keypoints COCO del cuerpo tomando la cadera como punto cero.}
 
-\section{Fundamentos Teóricos}
-
-\subsection{Jiu-Jitsu Brasileño (BJJ) y Análisis Biomecánico Postural}
-El Jiu-Jitsu Brasileño es un deporte de combate y arte marcial centrado en la lucha cuerpo a cuerpo (\textit{grappling}), donde la victoria se logra mediante el dominio de posiciones de control o la aplicación de técnicas de sometimiento (palancas articulares y estrangulamientos). La efectividad de una técnica radica en principios físicos fundamentales: aprovechamiento de palancas cinemáticas, alineación de ejes articulares, gestión del centro de masa corporal y optimización del apalancamiento mecánico.
-
-El análisis biomecánico en el BJJ estudia el movimiento corporal y las fuerzas involucradas durante la ejecución de las técnicas. La evaluación de los ángulos articulares en puntos críticos (hombros, codos, caderas, rodillas y tobillos) permite determinar cuantitativamente si la ejecución de un alumno coincide con el patrón ideal dictado por el profesor o si presenta desviaciones que comprometan la eficacia técnica o incrementen el riesgo de lesiones.
-
-\subsection{Estimación de Pose Corporales y Profundidad Métrica Monocular}
-La estimación de pose es una rama de la visión por computadora encargada de identificar y rastrear la posición espacial de nodos articulares anatómicos (\textit{keypoints}) en fotogramas de video. Combinada con la estimación de profundidad métrica monocular, es posible reconstruir las coordenadas cinemáticas en tres dimensiones $\mathbb{R}^3 (X, Y, Z)$ en metros reales absolutos, sin necesidad de emplear cámaras físicas o sensores infrarrojos RGB-D costosos.
-
-La fusión geométrica se realiza mediante muestreo bilineal: para cada keypoint 2D (x, y) detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad (x\_d, y\_d) y se extrae la componente Z métrica: Z = depth\_map[y\_d, x\_d], expresada en metros reales. La matriz resultante es una MatrizEsqueletica de dominio con puntos Punto3D(x, y, z).
-
-\subsection{Recuperación Aumentada por Generación (RAG)}
-El pipeline RAG implementado consta de 5 etapas:
-\begin{enumerate}
-    \item Fragmentación semántica: ChunkerSemanticoBJJ con RecursiveCharacterTextSplitter (chunk\_size=1000, chunk\_overlap=200).
-    \item Vectorización: Qwen3-VL-Embedding-2B (2048 dimensiones, normalizado).
-    \item Almacenamiento vectorial: Qdrant local (colección 'bjj\_knowledge', métrica Cosine, búsqueda KNN con filtro por id\_tecnica).
-    \item Persistencia relacional: PostgreSQL BCNF (tabla fuentes\_conocimiento con id\_documento para agrupar chunks).
-    \item Generación: Gemini 2.5 Flash con salida JSON estricta (4 claves).
+    \item \textbf{Normalización de Escala por Longitud Anatómica:} Las coordenadas se escalan dividiendo entre la longitud media del torso o distancia pélvica-espinal del propio practicante:
+\[
+\mathbf{\hat{p}}_{k}(t) = \frac{\mathbf{p}'_{k}(t)}{L_{\text{torso}}(t)}
+\]
+\textit{En palabras simples: esta fórmula divide las distancias entre el tamaño del torso para comparar alumnos altos y bajos con la misma medida.}
 \end{enumerate}
 
-\newpage
+Esta formulación confiere invarianza absoluta frente a la estatura del alumno, la distancia a la lente y pequeñas inclinaciones angulares del smartphone.
+
+\subsection{Arquitectura RAG Multimodal Doctrinal}
+
+El patrón RAG (\textit{Retrieval-Augmented Generation}) resuelve el problema de las alucinaciones en modelos de lenguaje. La base vectorial Qdrant aloja fragmentos textuales de manuales de \textit{Corpo e Mente} y de la IBJJF. Al detectar un error articular (ej. flexión deficiente de rodilla), el sistema busca en el espacio de 2048 dimensiones de Qwen3-VL-Embedding-2B (Qwen Team, 2026). Así recupera el párrafo doctrinal exacto que instruye cómo corregir la postura.
+
+\textbf{Pipeline RAG implementado (5 etapas):}
+
+\begin{enumerate}
+    \item \textbf{Fragmentación semántica:} \texttt{Chunker\allowbreak Semantico\allowbreak BJJ} con \texttt{Recursive\allowbreak Character\allowbreak Text\allowbreak Splitter} (chunk size=1000, chunk overlap=200). Encapsula LangChain bajo el patrón Variaciones Protegidas de Larman.
+    \item \textbf{Vectorización:} Qwen3-VL-Embedding-2B (2048 dimensiones, normalizado). Se ejecuta en GPU remota (Google Colab) mediante micro-batching de 32 textos por lote para evitar OOM.
+    \item \textbf{Almacenamiento vectorial:} Qdrant local (colección \texttt{bjj\_\allowbreak knowledge}, métrica Cosine, búsqueda KNN con filtro por \texttt{id\_\allowbreak tecnica}).
+    \item \textbf{Persistencia relacional:} PostgreSQL en BCNF (tabla \texttt{fuentes\_\allowbreak conocimiento} con \texttt{id\_\allowbreak documento} para agrupar chunks).
+    \item \textbf{Generación:} Gemini 2.5 Flash con salida JSON estricta (4 claves obligatorias).
+\end{enumerate}
+
+\textbf{Nota sobre Qwen3-VL:} El modelo se utiliza exclusivamente para vectorizar texto doctrinal (manuales, libros, reglamentos), no para analizar movimiento corporal. La comparación cinemática se realiza mediante series angulares y DTW (ver Sección 3.3).
 
 \section{Selección y Justificación Tecnológica}
 
-En esta sección se describen en detalle las tecnologías seleccionadas para la implementación del sistema informático, presentando el análisis comparativo y la justificación técnica de cada elección frente a otras alternativas existentes en el mercado.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figuras/Arquitectura.png}
+    \caption{Arquitectura de Componentes Híbrida y Topología de Túnel para la Fase de MVP. Fuente: Elaboración propia (2026).}
+    \label{fig:arquitectura}
+\end{figure}
 
-\subsection{Módulo de Visión Artificial: Suite YOLO26x-Pose + YOLO26x-Depth}
+\subsection{Componentes en Entorno Remoto (Análisis automático GPU)}
 
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó la suite combinada de \textbf{YOLO26x-Pose} (detección de 17 articulaciones anatómicas COCO) y \textbf{YOLO26x-Depth} (mapa de profundidad métrica monocular en metros reales absolutos).
-
-\subsubsection{Alternativas Consideradas}
 \begin{itemize}
-    \item \textbf{OpenPose / MediaPipe:} Opciones tradicionales para estimación de pose 2D/3D.
-    \item \textbf{Sensores RGB-D (Kinect / Intel RealSense):} Hardware especializado que captura profundidad.
+    \item \textbf{YOLO26x-Pose (Ultralytics, 2026):} Detector de pose de última generación optimizado para mantener un tracking confiable bajo oclusión moderada. Extrae los 17 keypoints COCO (índices 0 a 16) en cada fotograma a 30 FPS. Posteriormente, la \texttt{CalculadoraBiomecanica} evalúa exactamente 8 ángulos articulares tridimensionales (codos, rodillas, hombros y caderas, en sus lados izquierdo y derecho) a partir de esta topología. En videos de práctica cooperativa, YOLO26x opera en modo multi-persona: detecta dos esqueletos simultáneos, y el sistema asigna el esqueleto del alumno según la posición indicada manualmente en la PWA.
+    \item \textbf{YOLO26x-Depth (Ultralytics, 2026):} Modelo complementario que genera un mapa de profundidad métrica monocular en metros reales absolutos. Se ejecuta de forma sincrónica con YOLO26x-Pose en la misma GPU. Para cada keypoint 2D $(x, y)$ detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad $(x_d, y_d)$ y se extrae la componente Z métrica: $Z = \text{depth-map}[y_d, x_d]$, expresada en metros reales. La fusión geométrica permite obtener coordenadas $(X, Y, Z)$ tridimensionales sin sensores RGB-D costosos.
+    \item \textbf{Qwen3-VL-Embedding-2B (Qwen Team, 2026):} Modelo Vision-Language de 2B parámetros ejecutado mediante \texttt{Sentence\allowbreak Transformer} en GPU. Genera representaciones numéricas de 2048 dimensiones a partir de textos doctrinales de BJJ. \textbf{Nota:} Qwen3-VL se utiliza exclusivamente para vectorizar texto (manuales, libros, reglamentos), no para analizar movimiento corporal.
+    \item \textbf{Topología de Túnel Ngrok en Colab:} El cliente Ngrok se ejecuta en Google Colab para exponer la API de GPU mediante HTTPS. El servidor central local consume esta dirección de forma saliente mediante peticiones web seguras. La URL del túnel se inyecta en el archivo \texttt{.\allowbreak env} como \texttt{COLAB\_\allowbreak TUNNEL\_\allowbreak URL}.
 \end{itemize}
 
-\subsubsection{Justificación de la Selección}
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
-    \hline
-    Criterio & YOLO26x-Pose + Depth & MediaPipe (Google) & OpenPose \\ \hline
-    Contacto Corporal & Alto desempeño en agarres y oclusión. & Falla con solapamiento de dos personas. & Bueno pero muy lento en CPU. \\ \hline
-    Profundidad 3D & Profundidad métrica real $Z$ vía YOLO Depth. & Sin profundidad métrica real absoluta. & Requiere calibración compleja. \\ \hline
-    Velocidad / Latencia & Inferencia sincrónica en tiempo real sobre GPU. & Muy rápida en móvil. & Latencia elevada (baja velocidad). \\ \hline
-\end{tabularx}
-\caption{Cuadro Comparativo de Tecnologías de Estimación de Pose y Profundidad}
-\label{tab:comp_pose}
-\end{table}
+\subsection{Componentes en Entorno Local (Servidor de Control)}
 
-\textbf{YOLO26x-Pose (Ultralytics, 2026):} Detector de pose de última generación optimizado para mantener un tracking confiable bajo oclusión moderada. Extrae los 17 keypoints COCO (índices 0 a 16) en cada fotograma a 30 FPS. Posteriormente, la \texttt{CalculadoraBiomecanica} evalúa exactamente 8 ángulos articulares tridimensionales (codos, rodillas, hombros y caderas, en sus lados izquierdo y derecho) a partir de esta topología. En videos de práctica cooperativa, YOLO26x opera en modo multi-persona: detecta dos esqueletos simultáneos, y el sistema asigna el esqueleto del alumno según la posición indicada manualmente en la PWA.
+\begin{itemize}
+    \item \textbf{FastAPI:} Framework web en Python 3.11+ con validación de tipos mediante Pydantic. Coordina el flujo de análisis, los servicios remotos y la lógica biomecánica. Expone la API REST bajo HTTPS y monta la PWA en \texttt{/\allowbreak static}.
+    \item \textbf{PostgreSQL con JSONB:} Base de datos relacional modelada en BCNF (Mannino, 2021). Custodia los datos de usuarios, historiales y la estructura completa de los reportes generados. La columna \texttt{consejo\_\allowbreak pedagogico} de la tabla \texttt{evaluaciones\_\allowbreak alumno} almacena el objeto estructurado de 4 claves generado por Gemini. La persistencia vectorial se delega íntegramente a Qdrant.
+    \item \textbf{Qdrant Vector Database:} Motor vectorial con una única colección \texttt{bjj\_\allowbreak knowledge} (distancia Cosine, 2048 dimensiones). Almacena los fragmentos doctrinales vectorizados con metadatos relacionales (\texttt{id\_\allowbreak fuente}, \texttt{id\_\allowbreak documento}, \texttt{id\_\allowbreak tecnica}, \texttt{id\_\allowbreak instructor}, \texttt{titulo}, \texttt{chunk\_\allowbreak texto}). Permite búsqueda KNN con filtro por técnica.
+    \item \textbf{API de Gemini 2.5 Flash (Google Cloud, 2026):} Generador de reportes pedagógicos contextualizados. Destaca por su rápido tiempo de respuesta y por su estricto cumplimiento de esquemas JSON. Se utiliza tanto para la validación de contenido BJJ (RF-24) como para la síntesis pedagógica final.
+\end{itemize}
 
-En Jiu-Jitsu Brasileño, dos practicantes interactúan en contacto físico estrecho, generando oclusiones constantes de extremidades. \textbf{MediaPipe} fue descartado debido a su baja tolerancia al solapamiento corporal y pérdida de seguimiento en posiciones de suelo. \textbf{OpenPose} fue descartado por requerir un consumo excesivo de memoria y latencias altas. La combinación de \textbf{YOLO26x-Pose + YOLO26x-Depth} permite obtener coordenadas reales $(X, Y, Z)$ en metros dentro del espacio tridimensional sin requerir sensores hardware RGB-D. La inferencia de YOLO26x-Pose + YOLO26x-Depth se delega a Google Colab Pro (GPU NVIDIA T4/A100) mediante un servidor Flask expuesto por túnel Ngrok. El backend FastAPI local consume el endpoint \texttt{POST /inferir} y recibe \texttt{keypoints\_3d + frame\_base64}. Si el túnel no está disponible, el sistema usa \texttt{AdaptadorYOLO} con \texttt{MockYOLOEngine} como fallback (ver \texttt{src/infrastructure/adapters/yolo\_adapter.py}).
+\subsection{Análisis de Licenciamiento de Software y Viabilidad SaaS Comercial}
 
+Se audita el régimen de licencias de cada tecnología para asegurar su viabilidad comercial (Sección 1.1.5.3). Esto garantiza la protección jurídica de la futura versión SaaS:
 
-\subsection{Infraestructura de Inferencia GPU en la Nube: Google Colab GPU + Ngrok}
-
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó un servidor de inferencia remoto alojado en **Google Colab** respaldado por procesadores GPU (NVIDIA T4 / A100), comunicado con la aplicación backend a través de un túnel seguro **Ngrok**.
-
-\subsubsection{Alternativas Consideradas}
 \begin{table}[htbp]
 \centering
 \footnotesize
@@ -599,35 +594,114 @@ El \textbf{puntaje de coincidencia global} se calcula como el promedio ponderado
 
 \subsection[Localización Temporal del Error mediante Dynamic Time Warping (DTW)]{Localización Temporal del Error mediante Dynamic Time Warping (DTW)\footnote{El algoritmo DTW está especificado formalmente en el diseño (ver SSD CU-02 y Contrato CO-02), estando su implementación en \texttt{src/domain/} planificada para la siguiente iteración de construcción. La versión actual de la solución ejecuta la comparación cinemática angular directa mediante \texttt{CalculadoraBiomecanica.evaluar\_desviaciones()}.}}
 
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó \textbf{PostgreSQL} estructurado en Tercera Forma Normal (3FN / BCNF) con soporte de columnas de tipo \texttt{JSONB}.
+La comparación angular directa (Sección 3.3.1) mide la similitud global entre dos movimientos, pero no determina en qué segundo exacto ocurrió el error biomecánico. Para subsanar esta limitación, el sistema incorpora un proceso por etapas basado en \textbf{Dynamic Time Warping (DTW)} (Müller, 2007). Así se contrasta el momento exacto del error ($t_{\text{error}}$):
 
-\subsubsection{Alternativas Consideradas}
+\begin{enumerate}
+    \item \textbf{Construcción de Series Angulares ($\mathbb{R}^{K}$):} Se construye una serie temporal de $K$ ángulos articulares continuos en cada fotograma $t$ a partir de los keypoints tridimensionales fusionados. Cada serie es un vector de dimensión $K \times T$, donde $T$ es el número de fotogramas y $K$ el número de articulaciones monitoreadas.
+    \item \textbf{Matriz de Costo y Camino Óptimo:} Se construye la matriz de distancias euclidianas locales $D(i, j)$ entre la secuencia del alumno y la del profesor. Mediante programación dinámica, se halla el camino de alineamiento óptimo que minimiza el costo acumulado:
+\[
+\gamma(i, j) = D(i, j) + \min \left\lbrace \gamma(i-1, j), \gamma(i, j-1), \gamma(i-1, j-1) \right\rbrace
+\]
+\textit{En palabras simples: esta fórmula sincroniza paso a paso los movimientos del alumno con los del profesor a pesar de las diferencias de velocidad.}
+    \item \textbf{Detección del Pico de Error Local:} El camino de warping mapea cada fotograma del alumno $t_a$ con el del profesor $\phi(t_a) = t_p$. Luego se calcula la discrepancia articular instantánea $E(t_a)$ como la norma de la diferencia angular entre ambos vectores:
+\[
+E(t_a) = \left\| \boldsymbol{\theta}^{\text{alumno}}(t_a) - \boldsymbol{\theta}^{\text{profesor}}(\phi(t_a)) \right\|_2
+\]
+    \item \textbf{Extracción del Timestamp Exacto:} El segundo del error corresponde al instante de máxima divergencia cinemática que excede el límite de tolerancia angular:
+\[
+t_{\text{error}} = \frac{1}{\text{FPS}} \cdot \arg\max_{t_a} \left\lbrace E(t_a) \mid E(t_a) > \tau_{\text{angular}} \right\rbrace
+\]
+\textit{En palabras simples: esta fórmula encuentra el segundo exacto del video donde ocurrió el error más grande para mostrárselo al alumno.}
+\end{enumerate}
+
+Este segundo exacto se inyecta en el prompt de Gemini y en la API. Esto permite a la PWA reproducir el video sincronizado en ese instante y superponer un círculo rojo sobre la articulación con mayor desviación (RF-10).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figuras/DTW_Align.png}
+    \caption{Alineamiento Temporal Dinámico (DTW) para la Detección del Instante Crítico.}
+    \label{fig:dtw_align}
+\end{figure}
+
+\subsection{Recalibración Automática del Centroide de Referencia}
+
+Para que el sistema aprenda sin intervención humana (requisito del experto del dominio), se implementa un mecanismo de recalibración automática escalonado en tres fases:
+
 \begin{itemize}
-    \item \textbf{MySQL / MariaDB:} Sistema relacional tradicional popular.
-    \item \textbf{MongoDB:} Base de datos orientada a documentos NoSQL.
+    \item \textbf{Fase 0 (Arranque en Frío, $N = 1$):} El Profesor sube obligatoriamente el Video Semilla de la técnica. Su firma cinemática (promedio de los ángulos articulares a lo largo de la secuencia) se convierte en el centroide inicial $\mathbf{C}_0$. Toda evaluación se compara directamente contra $\mathbf{C}_0$.
+    \item \textbf{Fase 1 (Acumulación y Validación, $1 < N < 10$):} Los alumnos envían videos. Las ejecuciones se comparan contra $\mathbf{C}_0$ mediante distancia coseno sobre las series angulares. Los vectores con similitud $\geq 0.88$ quedan registrados en Qdrant, pero no se ejecuta recalibración para evitar la inestabilidad estadística en muestras pequeñas.
+    \item \textbf{Fase 2 (Maduración y Recalibración, $N \ge 10$):} Cuando existen al menos 10 videos con similitud $\geq 0.88$, el proceso daemon nocturno recalcula el centroide como el promedio de esos vectores:
+\[
+\mathbf{C}_{\text{nuevo}} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{v}_i, \quad \text{donde } S_C(\mathbf{v}_i, \mathbf{v}_{\text{semilla}}) \geq 0.88
+\]
+\textit{Criterio de Anclaje Doctrinal:} El nuevo centroide solo reemplaza al anterior si su similitud coseno con el Video Semilla del profesor se mantiene alta:
+\[
+S_C(\mathbf{C}_{\text{nuevo}}, \mathbf{v}_{\text{semilla}}) \geq 0.88
+\]
+\textit{En palabras simples: esta fórmula exige que los movimientos de los alumnos se parezcan al menos 88\% al video del profesor para ser aceptados como nuevo estándar.}
 \end{itemize}
 
-\subsubsection{Justificación de la Selección}
-\textbf{PostgreSQL} proporciona integridad referencial estricta para entidades transaccionales (Usuarios, Profesores, Registro de Pagos, Técnicas Patrón), soportando simultáneamente el tipo de dato nativo \texttt{JSONB} para almacenar las respuestas pedagógicas complejas emitidas por la IA en la tabla de evaluaciones del alumno. PostgreSQL almacena exclusivamente metadatos relacionales (usuarios, profesores, técnicas\_patron, evaluaciones\_alumno, fuentes\_conocimiento). La persistencia vectorial se delega íntegramente a Qdrant. La columna JSONB consejo\_pedagogico en evaluaciones\_alumno almacena el objeto estructurado de 4 claves generado por Gemini.
+Si el nuevo centroide tiene similitud $< 0.88$ con el video semilla, el sistema alerta al profesor de una desviación técnica colectiva y mantiene intacto el centroide anterior. De este modo, el sistema aprende de las ejecuciones correctas de los alumnos sin perder el anclaje doctrinal del maestro.
 
-\subsection{Interfaz de Usuario: Aplicación Web Progresiva (PWA)}
+\textbf{Nota sobre trabajo futuro:} Una versión más avanzada de este mecanismo podría incorporar el algoritmo HDBSCAN (Campello et al., 2013) para agrupar automáticamente las ejecuciones correctas y detectar subgrupos técnicos. Esta capacidad queda documentada como trabajo futuro por requerir muestras más grandes para su estabilidad estadística.
 
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó una **Aplicación Web Progresiva (PWA)** desarrollada con HTML5, JavaScript moderno y CSS3.
+\subsection{Validación de Contenido BJJ con Gemini 2.5 Flash}
 
-\subsubsection{Alternativas Consideradas}
-\begin{itemize}
-    \item \textbf{Desarrollo Nativo Móvil (Swift para iOS / Kotlin para Android):} Aplicaciones compiladas específicas para cada plataforma.
-    \item \textbf{Frameworks Multiplataforma (React Native / Flutter):} Aplicaciones nativas compiladas desde un solo código fuente.
-\end{itemize}
+Para que el sistema pueda diferenciar entre un video de Brazilian Jiu-Jitsu y cualquier otro contenido (requisito del experto del dominio), se implementa un filtro previo al análisis biomecánico:
 
-\subsubsection{Justificación de la Selección}
-Una **PWA** permite a los alumnos y profesores utilizar la aplicación directamente desde el navegador de su teléfono móvil o computadora sin necesidad de descargas ni comisiones en tiendas de aplicaciones (Google Play / App Store). Ofrece acceso directo a la cámara del dispositivo para la grabación de videos, soporte para funcionamiento \textit{offline} mediante Service Workers e instalación directa en la pantalla de inicio, reduciendo significativamente los costos de mantenimiento multiplataforma. La PWA implementa un Service Worker (frontend/service-worker.js) con estrategia NetworkFirst para rutas /api/* y CacheFirst para assets estáticos. El manifest.json permite instalación en pantalla de inicio.
+\begin{enumerate}
+    \item \textbf{Extracción de 3 fotogramas representativos:} Al recibir un video, el sistema extrae el primer fotograma, el fotograma medio y el último fotograma.
+    \item \textbf{Envío multimodal a Gemini 2.5 Flash:} Los 3 frames se envían a Gemini con el siguiente prompt: \textit{"Responde ESTRICTAMENTE con SÍ o NO. ¿Los 3 fotogramas muestran a personas practicando Brazilian Jiu-Jitsu (gi, tatami, contacto corporal, técnica de grappling)?"}
+    \item \textbf{Decisión binaria:} Si la respuesta es NO, se rechaza el video y se notifica al alumno. Si es SÍ, se procede al análisis con YOLO26x.
+\end{enumerate}
+
+Este mecanismo reemplaza a los filtros estadísticos tradicionales (como MAD) y aprovecha la capacidad multimodal de Gemini para validar el contenido visual antes de consumir recursos de GPU en el análisis biomecánico.
+
+\subsection{Filtro de Correspondencia con la Técnica Seleccionada}
+
+Una vez que el video ha sido validado como BJJ por Gemini, el sistema verifica que el movimiento corresponda a la técnica seleccionada por el alumno. Para ello:
+
+\begin{enumerate}
+    \item Se calcula la similitud angular entre la serie temporal del alumno y el centroide de la técnica seleccionada.
+    \item Si la similitud es inferior a un umbral de dominio $\tau_{\text{técnica}}$ (fijado empíricamente en 0.30 para la fase inicial), el video se descarta automáticamente.
+    \item Se notifica al alumno que el video no corresponde a la técnica seleccionada, invitándolo a revisar la técnica del catálogo.
+\end{enumerate}
+
+Este filtro evita diagnósticos incorrectos y preserva la integridad de la base de datos de evaluaciones.
+
+\subsection{Trazabilidad del Frame Exacto con Círculo de Error}
+
+Para que el alumno pueda comprender visualmente su error, el sistema implementa un mecanismo de trazabilidad gráfica:
+
+\begin{enumerate}
+    \item \textbf{Identificación del frame crítico:} DTW determina el fotograma del alumno con mayor divergencia angular respecto al profesor.
+    \item \textbf{Identificación de la articulación crítica:} Se selecciona la articulación con mayor desviación angular en ese fotograma.
+    \item \textbf{Superposición gráfica:} La PWA superpone un círculo rojo sobre la articulación del alumno en el frame crítico, con un texto indicando el valor de la desviación en grados.
+    \item \textbf{Comparación lado a lado:} El video del profesor se reproduce sincronizado en el mismo instante para que el alumno pueda comparar visualmente ambas ejecuciones.
+\end{enumerate}
+
+\section{Matriz de Riesgos Técnicos y Reducciones Formales}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{|>{\bfseries\raggedright\arraybackslash}p{0.22\textwidth}|l|l|>{\raggedright\arraybackslash}p{0.15\textwidth}|>{\raggedright\arraybackslash}X|}
+    \hline
+    Riesgo Técnico Identificado & Severidad & Probabilidad & Cita / Respaldo & Estrategia de Reducción Arquitectónica \\ \hline
+    Interrupción de Sesiones en Google Colab & Alta & Alta & Specs Colab & Arquitectura desacoplada. Se usa el patrón Adapter. El servidor detecta la caída. Permite cambiar la instancia con variable de entorno. \\ \hline
+    Degradación de Confianza por Iluminación & Alta & Media & Pruebas & \textbf{Filtro Estructural:} Si la certeza cae del 85\%, se rechaza el video y se pide más luz. \\ \hline
+    Alucinaciones Doctrinales del LLM & Crítica & Baja & RAG & \textbf{RAG Multimodal:} Gemini opera con temp=0.1. Si no hay contexto en Qdrant, responde con plantilla determinista. \\ \hline
+    Restricciones de Licencia AGPL en YOLO & Media & Baja & Ultralytics & Aislamiento del microservicio de visión tras interfaz REST. Se contempla licencia comercial para producción. \\ \hline
+    Inestabilidad de Conexión en Tatami & Media & Alta & Pruebas & Arquitectura PWA con Service Workers que encola videos localmente y reintenta. \\ \hline
+    Falsos Negativos en Validación BJJ & Media & Baja & Pruebas & \textbf{Ajuste del prompt:} Monitoreo constante de la tasa de acierto para ajustar la prompt de Gemini. \\ \hline
+\end{tabularx}
+\caption{Matriz de Riesgos y Mitigaciones}
+\label{tab:riesgos}
+\end{table}
 
 \clearpage
 
-% Reconfiguración de numeración para el Capítulo IV (4.1, 4.1.1, etc.)
+% Reconfiguración de numeración para el Capítulo IV
 \renewcommand{\thesection}{4.\arabic{section}}
 \renewcommand{\thesubsection}{4.\arabic{section}.\arabic{subsection}}
 \setcounter{section}{0}
@@ -644,145 +718,64 @@ Una **PWA** permite a los alumnos y profesores utilizar la aplicación directame
 \section{Introducción}
 
 \subsection{Propósito}
-El propósito de este capítulo es especificar de manera formal y detallada los requisitos funcionales, no funcionales y de sistema para la Aplicación Web Progresiva (PWA) de análisis biomecánico de Jiu-Jitsu Brasileño para la academia \textit{Corpo e Mente}. Este documento sirve como contrato de requerimientos bajo la norma IEEE 830 y como base para el diseño arquitectónico y desarrollo de los casos de uso bajo el Proceso Unificado (UP).
+El propósito de este capítulo es especificar detalladamente los requisitos del sistema para la academia \textit{Corpo e Mente}. Define las necesidades funcionales y de calidad. Se adoptan las prácticas del \textbf{Proceso Unificado Ágil}. Los requisitos se clasifican bajo el modelo \textbf{FURPS+}. Este documento sirve como guía técnica para los desarrolladores y garantía para el profesor. Además, constituye el marco formal de evaluación para el tribunal.
 
 \subsection{Ámbito del sistema}
-El sistema denominado \textbf{BJJ Biomechanics} es una plataforma de software cliente-servidor orientada al ámbito deportivo y educativo. Permite a la academia \textit{Corpo e Mente} digitalizar el catálogo de técnicas patrón de sus profesores, procesar videos de alumnos mediante inferencia 3D en la nube (YOLO26x Pose + Depth en Google Colab GPU), realizar comparaciones angulares cinemáticas, consultar repositorios de literatura técnica mediante RAG (Qdrant Vector Database) y generar sintetizaciones pedagógicas explicativas utilizando modelos del lenguaje (Gemini 2.5 Flash).
+El producto se denomina formalmente \textbf{SISTEMA DE ANÁLISIS BIOMECÁNICO DE TÉCNICAS DE JIU-JITSU BRASILEÑO MEDIANTE INTELIGENCIA ARTIFICIAL PARA LA ACADEMIA CORPO E MENTE}. El sistema evalúa automáticamente videos de ejercicios individuales (Solo Drills) y prácticas cooperativas en pareja de Brazilian Jiu-Jitsu. La revisión se realiza fuera del horario de clase.
 
-\subsection{Definiciones, acrónimos y abreviaturas}
-\begin{itemize}
-    \item \textbf{BJJ:} \textit{Brazilian Jiu-Jitsu} (Jiu-Jitsu Brasileño).
-    \item \textbf{PWA:} \textit{Progressive Web App} (Aplicación Web Progresiva).
-    \item \textbf{UP:} \textit{Unified Process} (Proceso Unificado).
-    \item \textbf{SRS / ERS:} Especificación de Requisitos de Software (norma IEEE 830).
-    \item \textbf{Keypoint:} Punto de referencia o nodo articular anatómico (hombro, codo, rodilla, etc.).
-    \item \textbf{RAG:} \textit{Retrieval-Augmented Generation} (Generación Aumentada por Recuperación).
-    \item \textbf{LLM:} \textit{Large Language Model} (Gran Modelo de Lenguaje).
-    \item \textbf{Profesor:} Rol del sistema (Instructor). Usuario experto que graba patrones y administra conocimiento.
-    \item \textbf{Alumno:} Rol del sistema (Practicante). Usuario que graba sus ejecuciones para ser evaluado.
-    \item \textbf{Técnica Patrón:} Matriz 3D canónica de la ejecución ideal, procesada y almacenada en base de datos.
-    \item \textbf{Consejo Pedagógico:} Estructura JSONB de 4 claves generada por Gemini con la retroalimentación técnica.
-    \item \textbf{JSONB:} Tipo de dato nativo de PostgreSQL para almacenar documentos JSON binarios.
-\end{itemize}
-
-\subsection{Visión general del documento}
-El resto de este capítulo organiza la descripción general del producto, las características de los usuarios, las restricciones técnicas, la especificación detallada de los requisitos de software/hardware, la identificación formal de los casos de uso y la especificación del diagrama del modelo de dominio.
-
-\newpage
-
-\section{Descripción general}
-
-\subsection{Perspectiva del producto}
-El sistema es una solución independiente de arquitectura desacoplada en 5 capas (Presentación, Aplicación, Servicios, Dominio e Infraestructura). Funciona como un ecosistema donde la interfaz PWA móvil se conecta mediante APIs REST con el servidor backend FastAPI, delegando la inferencia de visión artificial a un cluster GPU en Google Colab a través de un túnel seguro Ngrok.
-
-\subsection{Funciones del Producto}
-Las funciones principales que ofrece el software son:
+El sistema comprende:
 \begin{enumerate}
-    \item \textbf{Gestión de Técnicas Patrón (CU-01):} Carga de videos de profesores, extracción de matriz esquelética $(X, Y, Z)$ y registro de vectores de referencia.
-    \item \textbf{Evaluación Biomecánica Autónoma (CU-02):} Comparación cinemática del alumno frente al patrón, cálculo de desviaciones angulares y generación del reporte pedagógico en 4 áreas (\textit{Análisis Postural}, \textit{Riesgo de Lesión}, \textit{Paso a Paso} y \textit{Resumen Ejecutivo}).
-    \item \textbf{Gestión de Catálogo y Usuarios (CU-03):} Administración de profesores, disciplinas y fuentes bibliográficas de BJJ.
-    \item \textbf{Consulta de Historial y Progreso (CU-04):} Visualización del registro de evaluaciones pasadas del alumno.
+    \item Una aplicación web para celulares (PWA, \textit{Progressive Web App}) de fácil acceso para los estudiantes y el profesor.
+    \item Un servidor central de lógica de negocio (servidor central FastAPI).
+    \item Un almacén relacional para datos de usuarios y reportes (PostgreSQL).
+    \item Una base de datos vectorial para recuperación de literatura y patrones de movimiento (Qdrant).
+    \item Servicios en la nube para detección visual de articulaciones (\textbf{YOLO26x-Pose y YOLO26x-Depth}). Incluyen la redacción de diagnósticos pedagógicos mediante Gemini 2.5 Flash.
 \end{enumerate}
 
-\subsection{Características de los Usuarios}
-\begin{itemize}
-    \item \textbf{Alumno (Usuario Final):} Practicante de BJJ con nivel técnico principiante o intermedio. Requiere una interfaz intuitiva en su teléfono móvil para grabar ejecuciones y recibir explicaciones sencillas sin tecnicismos complejos. Rol en BD: 'alumno'.
-    \item \textbf{Profesor (Usuario Experto):} Maestro encargado de grabar los videos patrones de las técnicas, supervisar el catálogo e interpretar desajustes avanzados. Asume todas las funciones de gestión interna. Rol en BD: 'profesor'.
-    \item \textbf{Administradora:} Rol organizacional EXTERNO al software (inscripciones, cobros). No implementado como rol de sistema. Sus funciones de gestión de catálogo son asumidas por el Profesor.
-\end{itemize}
+Límites de exclusión: El sistema no evalúa sparring libre ni competencia. Solo analiza práctica individual y práctica cooperativa en pareja con técnica predefinida. Tampoco busca sustituir la autoridad presencial del profesor en el tatami.
 
-\subsection{Restricciones}
-\begin{itemize}
-    \item Dependencia de conectividad a Internet para el envío de videos y recepción de análisis.
-    \item Requerimiento de aceleración por GPU (Google Colab) para la ejecución sincrónica de YOLO26x-Pose y YOLO26x-Depth.
-    \item Límite de resolución y formato de video soportado (MP4/WebM hasta 1080p).
-\end{itemize}
-
-\subsection{Suposiciones y Dependencias}
-\begin{itemize}
-    \item Se asume que el alumno graba el video con iluminación adecuada y encuadre completo de su cuerpo.
-    \item Dependencia de la disponibilidad del túnel Ngrok y la instancia activa de Google Colab GPU para la inferencia de visión artificial.
-    \item Dependencia de la API de Google Gemini para la generación de la síntesis pedagógica.
-\end{itemize}
-
-\subsection{Requisitos Futuros}
-\begin{itemize}
-    \item Soporte para análisis biomecánico en tiempo real vía \textit{streaming} de video.
-    \item Módulo de comparación multi-persona para entrenamientos de combate en vivo (\textit{sparring}).
-    \item Integración con dispositivos vestibles (\textit{wearables}) para medición de aceleración e impacto.
-\end{itemize}
-
-\newpage
-
-\section{Requisitos Específicos}
-
-\subsection{Interfaces Externas}
-
-\subsubsection{Interfaces de Software}
-\begin{itemize}
-    \item \textbf{Google Colab GPU / Ngrok Tunnel API:} Interfaz HTTP REST para envío de imágenes/fotogramas y recepción de mapas de pose 3D $(X, Y, Z)$.
-    \item \textbf{Google Gemini API:} API de modelos de lenguaje para síntesis estructurada bajo JSON Schema.
-    \item \textbf{Qdrant Vector DB API:} Interfaz de búsqueda de vecinos más cercanos (HNSW) sobre vectores de 2048d.
-    \item \textbf{PostgreSQL Database Driver:} Conexión relacional SQL vía \texttt{psycopg2} / SQLAlchemy.
-\end{itemize}
-
-\subsubsection{Interfaces de Hardware}
-\begin{itemize}
-    \item \textbf{Cámara del Dispositivo Móvil:} Captura de video a 30 FPS o superior en resolución mínima de 720p.
-    \item \textbf{Servidor GPU Cloud:} Servidor con tarjeta gráfica NVIDIA (T4 o superior) para inferencia de modelos en la nube.
-\end{itemize}
-
-\subsection{Requisitos Funcionales}
-\begin{itemize}
-    \item \textbf{RF-01 (Registro de Patrón):} El sistema debe permitir al Profesor subir un video de demostración técnica y extraer la matriz de articulaciones 3D mediante YOLO26x.
-    \item \textbf{RF-02 (Cálculo de Desviación Angular):} El sistema calcula la diferencia angular entre keypoints del alumno y el patrón usando CalculadoraBiomecanica (producto punto + arcocoseno con clamping numérico). Implementado en src/domain/models.py.
-    \item \textbf{RF-03 (Búsqueda Semántica RAG):} El sistema debe recuperar pasajes relevantes de manuales de BJJ almacenados en Qdrant (vector 2048d) usando Qwen3-VL-Embedding.
-    \item \textbf{RF-04 (Síntesis Pedagógica Structured JSON):} Gemini 2.5 Flash genera un reporte con 4 claves obligatorias. Forzado por prompt estricto en GeminiServiceAdapter.generar\_consejo(). Si el parseo falla, se usa fallback\_dict determinista.
-    \item \textbf{RF-05 (Almacenamiento Histórico):} El diagnóstico se almacena en evaluaciones\_alumno.consejo\_pedagogico (JSONB con 4 claves obligatorias: analisis\_postural, riesgo\_lesion, paso\_a\_paso, resumen\_ejecutivo) usando psycopg2.extras.Json. Implementado en PostgresHistorialRepository.guardar\_evaluacion().
-\end{itemize}
-
-\subsection{Requisitos de Rendimiento}
-\begin{itemize}
-    \item \textbf{RNF-01 (Tiempo de Respuesta):} El análisis completo de un video (inferencia YOLO, embedding Qwen, RAG Qdrant, generación Gemini) debe completarse en menos de 15 segundos asumiendo túnel Ngrok estable.
-    \item \textbf{RNF-02 (Concurrencia):} FastAPI mediante Uvicorn debe soportar 50 solicitudes asíncronas simultáneas, delegando carga de GPU a Colab o encolando peticiones.
-\end{itemize}
-
-\subsection{Restricciones de Diseño}
-\begin{itemize}
-    \item Arquitectura estricta en 5 capas bajo patrones GRASP y principios SOLID.
-    \item Modelo de base de datos relacional normalizado en 3FN/BCNF.
-\end{itemize}
-
-\subsection{Atributos del Sistema}
-\begin{itemize}
-    \item \textbf{Usabilidad:} Interfaz limpia sin tecnicismos complejos para el alumno.
-    \item \textbf{Mantenibilidad:} Cobertura de pruebas unitarias e integración con \texttt{pytest}.
-    \item \textbf{Seguridad:} Autenticación segura y protección de datos personales de los alumnos.
-\end{itemize}
-
-\newpage
-
-\section{Identificación de los casos de uso}
-
-La Tabla \ref{tab:casos_de_uso} resume los casos de uso principales identificados en el sistema bajo la metodología del Proceso Unificado.
+\subsection{Definiciones, acrónimos y abreviaturas}
+A continuación se presentan los doce términos clave más utilizados a lo largo de este capítulo, explicados en un lenguaje directo y accesible:
 
 \begin{table}[htbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|l|>{\bfseries}l|}
+\begin{tabularx}{\textwidth}{|>{\bfseries\raggedright\arraybackslash}p{0.25\textwidth}|>{\raggedright\arraybackslash}X|}
     \hline
-    Código & Nombre del Caso de Uso & Actor Principal & Prioridad \\ \hline
-    CU-01 & Registrar Patrón de Técnica & Profesor & Alta \\ \hline
-    CU-02 & Evaluar Ejecución Biomecánica & Alumno & Alta \\ \hline
-    CU-03 & Gestión de Perfil & Alumno / Profesor & Media \\ \hline
-    CU-04 & Panel de Analítica para el Tatami & Profesor & Alta \\ \hline
-    CU-05 & Alimentar Base de Conocimiento RAG & Profesor & Media \\ \hline
+    Término / Sigla & Significado y Definición Sencilla \\ \hline
+    Actor & Persona o sistema externo que interactúa con la aplicación (por ejemplo, el alumno o el profesor). \\ \hline
+    Caso de Uso (CU) & Secuencia de pasos que un usuario realiza en el sistema para lograr un objetivo concreto del negocio. \\ \hline
+    FURPS+ & Guía de calidad que clasifica los requisitos en Funcionalidad, Usabilidad, Confiabilidad, Rendimiento, Soporte y Restricciones (+). \\ \hline
+    Requisito Funcional (RF) & Función o servicio específico que el software debe ejecutar de manera obligatoria. \\ \hline
+    Requisito No Funcional (RNF) & Cualidad o atributo de calidad del sistema (por ejemplo, qué tan rápido, seguro o fácil de usar debe ser). \\ \hline
+    Gherkin (Given-When-Then) & Estilo estructurado de redacción para describir pruebas y criterios de aceptación ("Dado que... Cuando... Entonces..."). \\ \hline
+    JWT (\textit{JSON Web Token}) & Token seguro que certifica la identidad del usuario una vez que inicia sesión en la aplicación. \\ \hline
+    SSD (\textit{System Sequence Diagram}) & Diagrama visual que muestra los mensajes intercambiados en orden cronológico entre el usuario y el sistema. \\ \hline
+    PWA (\textit{Progressive Web App}) & Aplicación web diseñada para teléfonos celulares que funciona con la agilidad y aspecto de una aplicación nativa. \\ \hline
+    JSONB & Formato de almacenamiento flexible y de alta velocidad para guardar información en la base de datos PostgreSQL. \\ \hline
+    Centroide & Punto central de referencia geométrica, calculado a partir de las coordenadas del cuerpo del practicante, esencial para evaluar el equilibrio. \\ \hline
+    Tatami & Superficie o área acolchada oficial donde se realizan los entrenamientos y combates de Brazilian Jiu-Jitsu. \\ \hline
 \end{tabularx}
-\caption{Identificación de Casos de Uso del Sistema (Alineado con roles de BD)}
-\label{tab:casos_de_uso}
+\caption{Definiciones, acrónimos y abreviaturas}
+\label{tab:definiciones}
 \end{table}
 
-\newpage
+\textit{(Para consultar el glosario técnico y metodológico integral del proyecto de investigación, remitirse a la sección inicial del presente documento).}
+
+\subsection{Visión general del documento}
+El presente capítulo se organiza de acuerdo con el índice oficial de requisitos de la \textit{Guía metodológica institucional para el desarrollo de proyectos de grado en ingeniería de sistemas} de la Universidad Privada de Santa Cruz de la Sierra (UPSA):
+\begin{itemize}
+    \item \textbf{4.1 Introducción:} Delimita el propósito, alcance y vocabulario del sistema.
+    \item \textbf{4.2 Descripción general:} Describe el entorno del producto, sus funciones principales, los perfiles de usuario, las restricciones operativas y su evolución futura.
+    \item \textbf{4.3 Requisitos específicos:} Formaliza las interfaces externas, los requisitos funcionales con criterios de aceptación Gherkin y los atributos de calidad FURPS+.
+    \item \textbf{4.4 Identificación de los casos de uso:} Presenta el catálogo de casos de uso del sistema y su trazabilidad con las necesidades del negocio.
+    \item \textbf{4.5 Diagrama de dominio:} Expone el modelo conceptual de clases del negocio siguiendo con rigor metodológico los principios de Craig Larman.
+\end{itemize}
+
+\section{Descripción general}
+
+\subsection{Perspectiva del producto}
+El sistema opera como un \textbf{asistente tutorial inteligente y autónomo}. No es un software administrativo de gimnasio. Es una herramienta de aprendizaje motriz que complementa las clases del profesor de \textit{Corpo e Mente}. La aplicación permite grabar repeticiones técnicas fuera del aula y recibir correcciones inmediatas. Así resuelve la falta de supervisión individual en clases grupales de 90 minutos.
 
 \subsection{Funciones del Producto Organizadas por Iteraciones UP (Larman Cap. 36)}
 Siguiendo la metodología del Proceso Unificado (UP) de Craig Larman, las funciones del sistema se estructuran formalmente en tres iteraciones evolutivas e incrementales de la fase de Construcción:
@@ -811,61 +804,84 @@ Siguiendo la metodología del Proceso Unificado (UP) de Craig Larman, las funcio
         \item \textit{Recalibración Automática de Centroide:} Recálculo autónomo del estándar técnico con $N \ge 10$ ejecuciones óptimas (CU-08).
     \end{itemize}
 \end{itemize}
-        \begin{itemize}
-            \item \textbf{Profesor} $(1) \longrightarrow (*)$ \textbf{TecnicaPatron}: Registra patrones de movimiento (CU-01).
-            \item \textbf{TecnicaPatron} $(1) \longrightarrow (1)$ \textbf{MatrizEsqueletica}: Estructura de dominio con puntos 3D.
-            \item \textbf{Alumno} $(1) \longrightarrow (*)$ \textbf{EvaluacionAlumno}: Realiza ejecuciones de entrenamiento (CU-02).
-            \item \textbf{EvaluacionAlumno} $(*) \longrightarrow (1)$ \textbf{TecnicaPatron}: Se compara contra el patrón.
-            \item \textbf{EvaluacionAlumno} $(1) \longrightarrow (1)$ \textbf{ConsejoPedagogico}: Estructura JSONB de 4 claves persistida en BD.
-            \item \textbf{FuenteConocimiento} $(*) \longrightarrow (1)$ \textbf{EvaluacionAlumno}: Aporta chunks recuperados vía Qdrant.
-        \end{itemize}
-        \vspace{0.3cm}
-    \end{minipage}%
-    }
-    \caption{Representación Conceptual del Diagrama de Dominio del Sistema}
-    \label{fig:diagrama_dominio}
-\end{figure}
 
-\newpage
+\subsection{Características de los Usuarios}
+El sistema interactúa con tres tipos de usuarios con necesidades y habilidades claramente diferenciadas:
 
-\section{Trazabilidad Arquitectónica (Casos de Uso vs. Controladores)}
-
-La Tabla \ref{tab:trazabilidad} mapea cada caso de uso definido en el modelo del sistema con el controlador FastAPI responsable de su orquestación y el módulo de persistencia/adaptador involucrado.
-
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
-    \hline
-    CU & Controlador & Endpoint API & Repositorio \\ \hline
-    CU-01 & TecnicaController / RegistrarTecnicaController & POST /api/v1/profesor/tecnicas & PostgresTecnicaRepository \\ \hline
-    CU-02 & EvaluacionController & POST /api/v1/alumno/evaluaciones & PostgresHistorialRepository \\ \hline
-    CU-03 & ProfesorController + TecnicaController & GET/POST/PUT/DELETE /api/v1/profesor/profesores & PostgresProfesorRepository \\ \hline
-    CU-04 & — & GET /api/v1/alumno/\{id\}/progreso & PostgresHistorialRepository \\ \hline
-    CU-05 & FuenteController & POST /api/v1/profesor/fuentes & PostgresFuenteConocimientoRepository + QdrantAdapter \\ \hline
-\end{tabularx}
-\caption{Matriz de Trazabilidad: Casos de Uso a Implementación Arquitectónica}
-\label{tab:trazabilidad}
-\end{table}
-
-\newpage
-
-\section{Limitaciones y Trabajo Futuro}
-La implementación actual presenta las siguientes limitaciones documentadas (Deuda Técnica) que quedan fuera del alcance de este proyecto de grado, planteándose como trabajo futuro:
 \begin{itemize}
-    \item Autenticación mediante tokens JWT (actualmente la API asume sesión por ID).
-    \item Soporte para análisis en streaming (WebSockets).
-    \item Doble sistema de embeddings (Gemini 768d legacy + Qwen 2048d canónico). El adaptador Gemini debería removerse de IEmbeddingService.
-    \item Manejo de concurrencia extrema en GPU (requiere balanceador de carga o colas Redis/Celery para escalar).
+    \item \textbf{Profesor (Instructor Cinta Negra):}
+    \begin{itemize}
+        \item \textit{Perfil y Experiencia:} Experto en Brazilian Jiu-Jitsu, con profundo conocimiento técnico pero con escaso tiempo disponible durante las clases.
+        \item \textit{Uso del Sistema:} Requiere una interfaz ágil para registrar videos semilla y manuales oficiales. Permite revisar rápidamente los gráficos de debilidades grupales.
+    \end{itemize}
+    \item \textbf{Alumno (Practicante Novato o Intermedio):}
+    \begin{itemize}
+        \item \textit{Perfil y Experiencia:} Alumno novel que asimila posturas complejas de BJJ. Corre riesgo de frustración o abandono si no recibe guía oportuna fuera de clase.
+        \item \textit{Uso del Sistema:} Utiliza la aplicación desde su teléfono celular. Requiere enviar sus videos en un máximo de tres toques en pantalla y recibir explicaciones amables, claras y libres de jerga matemática confusa.
+    \end{itemize}
+    \item \textbf{Administrador / Técnico del Sistema:}
+    \begin{itemize}
+        \item \textit{Perfil y Experiencia:} Ingeniero o técnico de soporte responsable de la infraestructura.
+        \item \textit{Uso del Sistema:} Supervisa los contenedores Docker y el mantenimiento nocturno. Además, verifica el estado de las copias de seguridad de la base de datos.
+    \end{itemize}
 \end{itemize}
 
-\end{document}
+\subsection{Restricciones}
+El diseño y desarrollo del sistema están condicionados por las siguientes restricciones:
 
-    \item \textbf{RP-03 (Calidad de Detección Articular):} El modelo de visión artificial debe alcanzar una certeza media superior al 85\%. Esta precisión aplica al detectar los 17 keypoints COCO corporales bajo iluminación de gimnasio.
-    \textbf{RF-02} & Extracción y Normalización de Puntos Corporales en 3D. & \textbf{Dado que} se procesa un video de técnica patrón. \textbf{Cuando} la GPU remota ejecuta YOLO26x-Pose + YOLO26x-Depth. \textbf{Entonces} extrae los 17 keypoints COCO en coordenadas (X, Y, Z) centradas en la cadera (\textit{root-relative}) para la evaluación de sus 8 a 12 ángulos articulares y las guarda en la base de datos. & CU-01 \\ \hline
-    \textbf{RF-03} & Envío de Grabaciones de Drills desde la PWA. & \textbf{Dado que} un Alumno está en la aplicación web móvil. \textbf{Cuando} selecciona una técnica del catálogo y sube una grabación de hasta 30 segundos (Solo Drill o práctica en pareja) en formato MP4 o WebM. \textbf{Entonces} el sistema la recibe y le asigna un número de evaluación único. & CU-02 \\ \hline
-    \textbf{RF-04} & Validación de Contenido BJJ con Gemini. & \textbf{Dado que} se recibe un video del alumno. \textbf{Cuando} se extraen 3 fotogramas representativos (inicio, medio, fin) y se envían a Gemini 2.5 Flash. \textbf{Entonces} el modelo responde SÍ o NO sobre si el contenido corresponde a Brazilian Jiu-Jitsu. Si es NO, se rechaza el video. Si es SÍ, se procede al análisis. & CU-02, CU-07 \\ \hline
-    \textbf{RF-05} & Extracción del Esqueleto 3D del Alumno. & \textbf{Dado que} un video fue validado como BJJ. \textbf{Cuando} se envía a la GPU remota. \textbf{Entonces} YOLO26x-Pose + YOLO26x-Depth devuelven los 17 keypoints COCO tridimensionales del alumno (X, Y, Z) normalizados en espacio \textit{root-relative} para su evaluación angular. & CU-02 \\ \hline
+\begin{enumerate}
+    \item \textbf{Restricciones de Dispositivos:} La aplicación debe funcionar fluidamente en teléfonos inteligentes estándar. No requiere la compra de sensores corporales costosos ni cámaras especiales.
+    \item \textbf{Restricciones de Multimedia:} Las grabaciones no deben superar los 30 segundos ni 50 MB. Se aceptan formatos MP4 o WebM a 1080p y 30 cuadros por segundo.
+    \item \textbf{Restricciones del Dominio Deportivo:} La evaluación se circunscribe a ejercicios individuales (Solo Drills) y prácticas cooperativas en pareja con técnica predefinida. Se excluye el sparring libre y la competencia por la oclusión severa ($>60\%$) y la imprevisibilidad del movimiento.
+    \item \textbf{Restricciones Legales:} Cumplimiento estricto de la protección de datos personales de menores (requiere autorización de los padres). Los archivos de video se borran definitivamente a los 30 días.
+    \item \textbf{Restricciones de Recursos:} El proyecto se ejecuta en Google Colab (GPU gratuita) y en una computadora personal con Docker. No requiere inversión en infraestructura durante la fase de MVP.
+\end{enumerate}
+
+\subsection{Suposiciones y Dependencias}
+El correcto funcionamiento de la solución se apoya en los siguientes supuestos operativos:
+
+\begin{itemize}
+    \item \textbf{Conectividad a Internet:} Se asume que los usuarios cuentan con acceso a internet (4G/5G o WiFi). Esto permite transmitir las grabaciones y consultar los reportes.
+    \item \textbf{Condiciones de Grabación:} Se asume que el alumno coloca su teléfono en un soporte a 1.20 metros de altura. Se requiere iluminación suficiente para ver el cuerpo completo.
+    \item \textbf{Disponibilidad de Servicios Externos:} El sistema depende de Google Colab Pro para la GPU. También utiliza la API Gemini 2.5 Flash para generar las explicaciones pedagógicas.
+\end{itemize}
+
+\subsection{Requisitos Futuros}
+De cara a la evolución del sistema más allá de su fase de validación universitaria (MVP), se contemplan las siguientes capacidades:
+
+\begin{enumerate}
+    \item \textbf{Análisis de Sparring Libre y Competencia:} Incorporar algoritmos avanzados de visión multi-persona con modelos de reconstrucción corporal basados en múltiples cámaras sincronizadas para analizar combates completos.
+    \item \textbf{Análisis en Tiempo Real (\textit{Streaming}):} Proveer retroalimentación auditiva y visual inmediata durante la ejecución del movimiento a través de la cámara en vivo del teléfono.
+    \item \textbf{Integración con Dispositivos Vestibles (\textit{Wearables}):} Conectar pulseras o bandas cardíacas. Permitirá cruzar la precisión biomecánica con la fatiga muscular y el esfuerzo del alumno.
+    \item \textbf{Expansión del Catálogo Deportivo:} Adaptar el proceso por etapas para evaluar proyecciones tradicionales de Judo, defensas contra agarres y programas de defensa personal femenina.
+    \item \textbf{Agrupamiento Adaptativo de Ejecuciones (HDBSCAN):} Incorporar el algoritmo HDBSCAN (Campello et al., 2013) para agrupar automáticamente las ejecuciones correctas y detectar subgrupos técnicos cuando la muestra supere los 25 videos por técnica.
+\end{enumerate}
+
+\section{Requisitos Específicos}
+
+\subsection{Interfaces Externas}
+
+\subsubsection{Software}
+\begin{itemize}
+    \item \textbf{API REST del Servidor central (FastAPI):} Expone puntos de entrada seguros bajo HTTPS. Permite autenticar usuarios, subir archivos de video y consultar reportes en formato JSON.
+    \item \textbf{API Gemini 2.5 Flash (Google Cloud):} Servicio de inteligencia artificial generativa. Recibe las desviaciones articulares y los textos de manuales para redactar el informe pedagógico en lenguaje simple.
+    \item \textbf{Base de Datos Vectorial Qdrant:} Servicio para indexar y buscar vectores de movimiento corporal. También gestiona la búsqueda rápida de fragmentos de libros oficiales de BJJ.
+    \item \textbf{Túnel Seguro Ngrok Pro:} Canal cifrado que expone la API de análisis automático de Google Colab. Conecta la GPU remota con el servidor central local de FastAPI.
+    \item \textbf{Base de Datos Relacional PostgreSQL:} Sistema gestor que asegura la consistencia, integridad transaccional y custodia de datos de usuarios, técnicas, evaluaciones y bitácoras.
+\end{itemize}
+
+\subsubsection{Hardware}
+\begin{itemize}
+    \item \textbf{Teléfono Celular Inteligente:} Dispositivo móvil Android o iOS del alumno o profesor. Requiere cámara con grabación a 1080p y 30 cuadros por segundo.
+    \item \textbf{Trípode Físico con Rótula Antivibración:} Soporte mecánico regulable ubicado al borde del tatami a 1.20 metros de altura. Evita movimientos bruscos de cámara durante la grabación.
+    \item \textbf{Servidor con Tarjeta Gráfica en la Nube (Google Colab Pro):} Instancia con GPU dedicada (NVIDIA T4 o V100 con 16 GB de VRAM). Procesa las redes neuronales \textbf{YOLO26x-Pose y YOLO26x-Depth}.
+    \item \textbf{Servidor Local / Computadora de Desarrollo:} Equipo donde se ejecutan los contenedores de Docker con FastAPI, PostgreSQL y Qdrant.
+\end{itemize}
+
+\subsection{Requisitos funcionales}
+
+Los requisitos funcionales detallan las acciones directas que el software debe realizar, estructurados con sus criterios formales de aceptación bajo el estándar Gherkin (Given-When-Then):
+
 \footnotesize
 \begin{xltabular}{\textwidth}{|c|>{\raggedright\arraybackslash}p{0.22\textwidth}|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{0.12\textwidth}|>{\centering\arraybackslash}p{0.1\textwidth}|}
     \caption{Catálogo de Requisitos Funcionales, Criterios de Aceptación y Asignación por Iteración UP}
@@ -907,122 +923,91 @@ La implementación actual presenta las siguientes limitaciones documentadas (Deu
     \textbf{RF-23} & Detección de Videos Duplicados. & \textbf{Dado que} se sube un nuevo archivo de video. \textbf{Cuando} el sistema revisa su firma digital. \textbf{Entonces} evita procesar dos veces el mismo video y descarta intentos de copia entre cuentas distintas. & CU-02 & Iteración 1 \\ \hline
     \textbf{RF-24} & Validación de Contenido BJJ (ver RF-04). & \textit{(Requisito consolidado en RF-04. Se mantiene este identificador para trazabilidad con el Capítulo III).} & CU-07 & Iteración 3 \\ \hline
 \end{xltabular}
-\section{Supplementary Specification (Especificación Suplementaria - Larman Cap. 5)}
-
-El artefacto \textit{Supplementary Specification} captura los requisitos del sistema que no se describen adecuadamente en los casos de uso, incluyendo atributos de calidad FURPS+, restricciones de diseño y reglas de negocio transversales.
-
-\subsection{Modelo de Calidad FURPS+}
-\begin{itemize}
-    \item \textbf{F (Functionality / Funcionalidad):} Cobertura completa de los requisitos funcionales RF-01 a RF-24 expresados bajo el formato Gherkin.
-    \item \textbf{U (Usability / Usabilidad):} Interfaz PWA adaptada a dispositivos móviles, operabilidad con un máximo de 3 toques para el envío de grabaciones y generación de reportes explicables en lenguaje natural libre de jerga matemática confusa.
-    \item \textbf{R (Reliability / Confiabilidad):} Tolerancia a fallos mediante el principio \textit{Fail-Safe} ante retardos en la API de Gemini 2.5 Flash, atomicidad en transacciones PostgreSQL y reintento automático de envíos retenidos por desconexión.
-    \item \textbf{P (Performance / Rendimiento):} Tiempo total de procesamiento $\le 180$ segundos (RP-01), capacidad de encolamiento simultáneo para 5 evaluaciones (RP-02) y certeza de detección de keypoints $\ge 85\%$ en el tatami (RP-03).
-    \item \textbf{S (Supportability / Soportabilidad):} Arquitectura modular desacoplada en 5 capas, empaquetado reproducible en contenedores Docker Compose y esquema de persistencia en 3FN/BCNF.
-    \item \textbf{+ (Plus — Restricciones e Interfaces):} Conexiones cifradas HTTPS TLS 1.3, autenticación mediante JWT de 60 minutos y contraseñas protegidas con PBKDF2-HMAC-SHA256.
-\end{itemize}
-
-\subsection{Reglas de Negocio del Dominio (Business Rules)}
-\begin{itemize}
-    \item \textbf{RULE-01 (Video Semilla Obligatorio):} Una técnica no puede publicarse en el catálogo sin el video patrón del profesor cinta negra.
-    \item \textbf{RULE-02 (Límite Temporal y Formato):} Las grabaciones de los alumnos no deben exceder 30 segundos de duración ni 50 MB en formato MP4/WebM.
-    \item \textbf{RULE-03 (Calidad Mínima Visual):} Se rechazan automáticamente los videos cuyo promedio de certeza en la detección de keypoints por YOLO26x sea $< 85\%$.
-    \item \textbf{RULE-04 (Umbral de Dominio BJJ):} Si el movimiento enviado muestra una similitud angular $< 0.30$ respecto al patrón, se notifica que el video no corresponde a la técnica seleccionada.
-    \item \textbf{RULE-05 (Recalibración de Centroide):} El centroide de referencia solo se recalcula cuando existen $N \ge 10$ ejecuciones con similitud coseno $\ge 0.88$ respecto al video semilla original.
-    \item \textbf{RULE-06 (Purga Automática de Privacidad):} Los archivos de video de los alumnos se eliminan físicamente a los 30 días de antigüedad.
-\end{itemize}
-
-\section{Glosario del Proceso Unificado (Glosario UP - Larman Cap. 5)}
-\end{xltabular}
 
 \clearpage
 
 \subsection{Requisitos de Rendimiento}
-    \caption{Glosario del Proceso Unificado para el Sistema de Análisis Biomecánico}
-    \label{tab:glosario_up} \\
+
+\begin{itemize}
+    \item \textbf{RP-01 (Tiempo de Entrega $\le 180$ s):} El tiempo total entre subir el video y ver el reporte debe ser menor a 180 segundos. Esta meta se exige para el 95\% de los casos.
+    \begin{itemize}
+        \item \textit{Desglose por etapas:} Subida del video y validación ($\le 15$ s). Detección de articulaciones en GPU ($\le 80$ s). Cálculo DTW y búsqueda Qdrant ($\le 25$ s). Redacción por Gemini ($\le 35$ s). Transmisión de red móvil ($\le 25$ s).
+    \end{itemize}
+    \item \textbf{RP-02 (Capacidad de Procesamiento en Fila):} El sistema debe soportar hasta 5 evaluaciones simultáneas en cola. Esto debe lograrse sin colapsar la memoria del servidor local ni perder solicitudes.
+    \item \textbf{RP-03 (Calidad de Detección Articular):} El modelo de visión artificial debe alcanzar una certeza media superior al 85\%. Esta precisión aplica al detectar los 17 keypoints COCO corporales bajo iluminación de gimnasio.
+\end{itemize}
+
+\subsection{Restricciones de Diseño}
+
+\begin{itemize}
+    \item \textbf{Arquitectura Desacoplada en Cinco Capas:} El software se organiza en cinco capas independientes: Presentación, Aplicación, Servicios Transversales (Pure Fabrication), Dominio e Infraestructura. La lógica de negocio no depende de pantallas, servicios remotos ni bases de datos específicas.
+    \item \textbf{Patrones de Asignación GRASP:} Cada clase u objeto se diseña siguiendo los patrones GRASP. Se aplican \textit{Controlador, Creador, Alta Cohesión y Bajo Acoplamiento} para lograr un código ordenado.
+    \item \textbf{Diseño de Base de Datos en Tercera Forma Normal (3FN):} Las tablas de la base de datos relacional se estructuran sin redundancias de información. Se asegura una integridad referencial estricta.
+    \item \textbf{Principio de Fallo Seguro (\textit{Fail-Safe}):} Si Gemini tarda más de 30 segundos, el sistema emite un reporte técnico numérico basado en DTW. Así se evita mostrar pantallas de error rotas al alumno.
+\end{itemize}
+
+\subsection{Atributos del Sistema}
+
+Consolidación de los requisitos de calidad del sistema clasificados bajo el modelo FURPS+:
+
+\subsubsection{Atributos de Usabilidad (U - Usability)}
+\begin{itemize}
+    \item \textbf{RU-01 (Diseño Adaptable a Celulares):} La aplicación web progresiva se adapta a teléfonos de cualquier marca. Permite subir una grabación en un máximo de tres toques sobre la pantalla.
+    \item \textbf{RU-02 (Legibilidad y Alto Contraste):} La interfaz cumple las normas de accesibilidad visual WCAG 2.1 nivel AA. Los textos y botones se leen con claridad bajo iluminación variable de gimnasio.
+    \item \textbf{RU-03 (Facilidad de Aprendizaje en $<5$ minutos):} Un practicante nuevo debe ser capaz de enviar su primera grabación en menos de 5 minutos. El proceso no requiere asistencia técnica de otra persona.
+\end{itemize}
+
+\subsubsection{Atributos de Confiabilidad (R - Reliability)}
+\begin{itemize}
+    \item \textbf{RR-01 (Mecanismo de Respaldo ante Fallas):} Si se pierde la conexión a internet, la aplicación conserva el video en la memoria del teléfono. Luego reintenta el envío de manera automática al recuperar la señal.
+    \item \textbf{RR-02 (Disponibilidad en Entrenamiento):} La aplicación debe operar sin fallas al menos el 98\% del tiempo nocturno (de 19:00 a 23:00 horas).
+    \item \textbf{RR-03 (Consistencia de Datos Transaccionales):} Toda modificación en la base de datos debe ser atómica (se guarda completa o no se guarda nada). Esto evita registros a medias o archivos huérfanos.
+\end{itemize}
+
+\subsubsection{Atributos de Mantenibilidad y Soporte (S - Supportability)}
+\begin{itemize}
+    \item \textbf{RS-01 (Empaquetado en Contenedores Docker):} El servidor central FastAPI, PostgreSQL y Qdrant se ejecutan en contenedores aislados mediante Docker Compose. Esto asegura un entorno reproducible y estable.
+    \item \textbf{RS-02 (Registro de Eventos y Errores):} Cada acción y error del sistema se registra en una bitácora (\textit{log}) en formato JSON. Incluye fecha, hora y código para corregir cualquier falla con rapidez.
+    \item \textbf{RS-03 (Modularidad):} La estructura del código permite sustituir el modelo de lenguaje o la base de datos sin alterar la evaluación biomecánica.
+    \item \textbf{RS-04 (Copias de Seguridad Diarias):} El sistema genera un respaldo automático de la base de datos todas las noches. Esto garantiza no perder más de 24 horas de actividad ante cualquier imprevisto.
+\end{itemize}
+
+\subsubsection{Atributos de Seguridad Integral (+ - Security)}
+\begin{itemize}
+    \item \textbf{RSec-01 (Conexión Cifrada con HTTPS):} La información circula por canales encriptados con certificados vigentes entre el teléfono, el servidor y la nube.
+    \item \textbf{RSec-02 (Protección de Contraseñas con PBKDF2-HMAC-SHA256):} Las contraseñas de los usuarios jamás se guardan en texto claro. Se protegen con la función criptográfica PBKDF2-HMAC-SHA256 con 200,000 iteraciones, implementada en la capa de dominio.
+    \item \textbf{RSec-03 (Inspección de Archivos contra Amenazas):} El servidor analiza el encabezado binario de cada video recibido para comprobar su autenticidad (MP4 o WebM). Descarta de inmediato archivos sospechosos o alterados.
+    \item \textbf{RSec-04 (Límite de Peticiones para Evitar Bloqueos):} El sistema restringe a un máximo de 10 peticiones por minuto por usuario. Esto evita saturaciones del servidor o ataques automáticos de contraseñas.
+\end{itemize}
+
+\section{Identificación de los casos de uso}
+
+Los casos de uso se definen \textbf{pensando en lo que el usuario quiere lograr} (\textit{User-Goal Level}). Capturan las interacciones concretas que aportan valor a la academia \textit{Corpo e Mente}:
+
+\footnotesize
+\begin{xltabular}{\textwidth}{|c|>{\raggedright\arraybackslash}p{0.12\textwidth}|>{\bfseries\raggedright\arraybackslash}p{0.25\textwidth}|>{\raggedright\arraybackslash}p{0.2\textwidth}|>{\raggedright\arraybackslash}X|}
+    \caption{Catálogo de Casos de Uso del Sistema}
+    \label{tab:casos_uso} \\
     \hline
-    \textbf{Término} & \textbf{Definición formal en el Proceso Unificado} \\ \hline
+    \textbf{Código} & \textbf{Actor Primario} & \textbf{Nombre del Caso de Uso} & \textbf{Requisitos Trazados} & \textbf{Objetivo de Negocio y Beneficio} \\ \hline
     \endfirsthead
-    \multicolumn{2}{c}%
+    \multicolumn{5}{c}%
     {\tablename\ \thetable\ -- \textit{Continuación de la página anterior}} \\
     \hline
-    \textbf{Término} & \textbf{Definición formal} \\ \hline
+    \textbf{Código} & \textbf{Actor Primario} & \textbf{Nombre del Caso de Uso} & \textbf{Requisitos Trazados} & \textbf{Objetivo de Negocio} \\ \hline
     \endhead
-    \hline \multicolumn{2}{r}{\textit{Continúa en la siguiente página}} \\
+    \hline \multicolumn{5}{r}{\textit{Continúa en la siguiente página}} \\
     \endfoot
     \hline
     \endlastfoot
-    Actor & Entidad externa al sistema (humana o automatizada) que interactúa directamente con los casos de uso (ej. Alumno, Profesor, Daemon Nocturno). \\ \hline
-    Caso de Uso (CU) & Secuencia de acciones realizadas por el sistema que produce un resultado de valor observable para un actor primario. \\ \hline
-    Keypoint & Punto anatómico de control bidimensional $(x, y)$ o tridimensional $(X, Y, Z)$ detectado en el cuerpo humano por modelos de pose visual (ej. codo, cadera). \\ \hline
-    RAG (Retrieval-Augmented Generation) & Patrón arquitectónico de IA que combina la recuperación de documentos en vectores con modelos generativos de lenguaje para erradicar alucinaciones. \\ \hline
-    SSD (System Sequence Diagram) & Diagrama UML de interacción que ilustra los eventos de entrada/salida y las operaciones del sistema para un escenario de caso de uso. \\ \hline
-    Root-Relative & Espacio cinemático tridimensional cuyo origen de coordenadas $(0,0,0)$ se traslada al centroide pélvico/sacro del esqueleto del practicante. \\ \hline
-    JSONB & Tipo de dato binario en PostgreSQL que permite almacenar, indexar y consultar documentos semiestructurados JSON con alta eficiencia. \\ \hline
-    Centroide de Referencia & Vector cinemático promedio que representa la firma angular patrón ideal para una técnica específica del catálogo. \\ \hline
-    Tatami & Área reglamentaria de práctica y entrenamiento de Jiu-Jitsu Brasileño con piso amortiguado. \\ \hline
-    Solo Drill & Ejercicio cinemático individual de Jiu-Jitsu ejecutado repetidamente sin oponente de práctica. \\ \hline
-    Matriz Esquelética & Entidad de dominio que encapsula la colección de puntos anatómicos 3D y computa los ángulos cinemáticos entre huesos adyacentes. \\ \hline
-\endxltabular}
-
-\clearpage
-    \label{fig:diagrama_dominio}
-\end{figure}
-
-\section{Supplementary Specification (Especificación Suplementaria - Larman Cap. 5)}
-\subsection{Diagrama de Estados del Objeto Evaluación (Statechart Diagram - Larman Cap. 29)}
-
-El diagrama de máquina de estados de UML ilustra el ciclo de vida del objeto de dominio \texttt{EvaluacionBiomecanica}, el cual es un objeto dependiente del estado (\textit{state-dependent}). El objeto transiciona a través de estados bien definidos según los eventos del sistema:
-
-\begin{itemize}
-    \item \textbf{Estado inicial \texttt{Pendiente}:} Alumno sube el video desde la PWA y se asigna un \texttt{id\_evaluacion} UUID.
-    \item \textbf{Transición \texttt{inferirYOLO()}:} El daemon o servicio de inferencia remota procesa la secuencia a través de YOLO26x-Pose + YOLO26x-Depth. Si la certezas $< 85\%$ o la oclusión $> 40\%$, transiciona a \texttt{Rechazada}.
-    \item \textbf{Estado \texttt{Procesando}:} Se calcula la coincidencia angular y la serie temporal contra la \texttt{TecnicaPatron}.
-    \item \textbf{Transición \texttt{generarConsejo()}:} Se ejecuta la búsqueda RAG en Qdrant y la síntesis pedagógica en Gemini 2.5 Flash. Si Gemini excede el timeout de 30 s, se activa el fallback determinísta y transiciona a \texttt{Completada (Fallback)}.
-    \item \textbf{Estado final \texttt{Completada}:} Se persiste el reporte en PostgreSQL en la columna JSONB \texttt{reporte\_json} y se notifica a la PWA.
-    \item \textbf{Estado final \texttt{Fallida}:} Si ocurre un error irrecuperable de infraestructura o archivo corrupto.
-\end{itemize}
-
-\subsection{Diagrama de Actividades del Flujo CU-02 (Activity Diagram - Larman Cap. 38)}
-
-El diagrama de actividades de UML modela el flujo de trabajo lógico y cinemático para la realización del CU-02 (\textit{Evaluar Ejecución Biomecánica}) organizado mediante líneas de responsabilidad (\textit{swimlanes}):
-
-\begin{itemize}
-    \item \textbf{Carril Alumno (PWA):} Selecciona técnica del catálogo $\rightarrow$ Graba o sube video MP4/WebM $\rightarrow$ Realiza polling del estado.
-    \item \textbf{Carril Servidor Central (FastAPI Application Layer):} Valida autenticación JWT $\rightarrow$ Guarda video temporal $\rightarrow$ Encola tarea asíncrona $\rightarrow$ Retorna \texttt{id\_tarea} $\rightarrow$ Construye respuesta final.
-    \item \textbf{Carril Colab GPU (Infraestructura de Inferencia):} Recibe frame array $\rightarrow$ Ejecuta YOLO26x-Pose + YOLO26x-Depth $\rightarrow$ Normaliza coordenadas en espacio \textit{root-relative} $\rightarrow$ Retorna matriz de keypoints $(X, Y, Z)$.
-    \item \textbf{Carril Motor RAG \& LLM (Servicios Transversales):} \texttt{CalculadoraBiomecanica} computa desviaciones angulares $\rightarrow$ \texttt{QdrantAdapter} recupera fragmentos doctrinales $\rightarrow$ \texttt{GeminiServiceAdapter} sintetiza el informe pedagógico en 4 bloques JSON.
-\end{itemize}
-
-\section{Contratos de Operación}
-\subsection{Data Model — Modelo de Datos Relacional (Larman Cap. 34)}
-
-Siguiendo el principio de persistencia de Larman (Cap. 34), la estructura relacional se organiza en scripts SQL ordenados en BCNF/3FN dentro del directorio \texttt{database/}:
-
-\footnotesize
-\begin{xltabular}{\textwidth}{|l|l|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
-    \hline
-    \textbf{Script SQL} & \textbf{Tabla PostgreSQL} & \textbf{Clave Primaria (PK) y Foráneas (FK)} & \textbf{Propósito y Atributos Principales} \\ \hline
-    \texttt{01\_init.sql} & \texttt{tecnicas\_patron} & PK: \texttt{id\_tecnica} & Catálogo de drils y videos semilla. \\ \hline
-    \texttt{02\_historico.sql} & \texttt{evaluaciones\_alumno} & PK: \texttt{id\_evaluacion}, FK: \texttt{id\_tecnica} & Histórico de evaluaciones y \texttt{reporte\_json} (JSONB). \\ \hline
-    \texttt{03\_instructores\_fuentes.sql} & \texttt{fuentes\_conocimiento} & PK: \texttt{id\_fuente}, FK: \texttt{id\_instructor} & Literatura oficial indexada para RAG. \\ \hline
-    \texttt{04\_abm\_bcnf.sql} & \texttt{profesores} & PK: \texttt{id\_profesor} & Registro formal de instructores del tatami. \\ \hline
-    \texttt{05\_usuarios.sql} & \texttt{usuarios} & PK: \texttt{id\_usuario} & Cuentas de acceso con hash PBKDF2-HMAC-SHA256. \\ \hline
-\end{xltabular}
-\normalsize
-
-\section{Consideraciones de Confiabilidad y Fallo Seguro}
-
-El sistema está diseñado bajo el principio \textbf{Fail-Safe} documentado en 4.3.4. Se aplican 5 mecanismos concretos de confiabilidad.
-
-\subsection{Patrón Adapter Fallback (Núcleo del Fail-Safe)}
-
-\textbf{Problema:} Google Colab puede caerse, cerrar la sesión de Ngrok o estar en mantenimiento. Si el sistema depende ciegamente de Colab, la PWA queda inoperable.
-
-\textbf{Solución implementada:} El \texttt{Adaptador\allowbreak YOLO} implementa \textbf{fallback automático} a \texttt{Mock\allowbreak YOLOEngine} cuando detecta que el túnel no está disponible.
-
-\section{Diagrama de dominio}
-
-\end{xltabular}
+    \textbf{CU-01} & Profesor & Registrar Técnica Patrón & RF-01, RF-02, RF-16 & Establecer el video semilla del profesor como estándar oficial de movimiento para un drill. \\ \hline
+    \textbf{CU-02} & Alumno & Evaluar Ejecución Biomecánica & RF-03 a RF-15, RF-18, RF-23 & Analizar el video del alumno, detectar errores articulares y generar el reporte explicable. \\ \hline
+    \textbf{CU-03} & Alumno & Consultar Historial de Progreso & RF-19, RF-16 & Permitir al alumno revisar sus evaluaciones pasadas y comprobar su avance técnico en el tiempo. \\ \hline
+    \textbf{CU-04} & Profesor & Visualizar Analítica de Tatami & RF-20, RF-16 & Descubrir qué movimientos le cuestan más al grupo para planificar mejor las clases presenciales. \\ \hline
+    \textbf{CU-05} & Profesor & Indexar Literatura Oficial al RAG & RF-17, RF-16 & Incorporar manuales oficiales y libros doctrinarios de BJJ a la base de conocimiento de la IA. \\ \hline
+    \textbf{CU-06} & Sistema (Daemon) & Ejecutar Mantenimiento Autónomo & RF-22 & Borrar videos de más de 30 días y liberar espacio en disco. \\ \hline
+    \textbf{CU-07} & Sistema (Automático) & Validar Contenido BJJ & RF-04 & Filtrar videos que no correspondan a Brazilian Jiu-Jitsu antes de consumir recursos de YOLO26x. \\ \hline
+    \textbf{CU-08} & Sistema (Daemon Nocturno) & Recalibrar Centroide Automáticamente & RF-21 & Permitir que el sistema aprenda de las ejecuciones correctas de los alumnos sin intervención humana. \\ \hline
 \end{xltabular}
 \clearpage
 
@@ -1072,18 +1057,6 @@ La Figura \ref{fig:ssd-cu02} presenta el SSD para el escenario principal del cas
 \end{figure}
 
 Como se observa en la Figura \ref{fig:ssd-cu02}, los eventos del sistema identificados (\texttt{subirVideo}, \texttt{consultarEstadoEvaluacion}, \texttt{obtenerResultadoEvaluacion}) se convertirán en las operaciones del sistema que se detallarán en los Contratos de Operación. Estos eventos también servirán como punto de partida para los Diagramas de Interacción de diseño.
-
-\subsection{SSD para el Caso de Uso CU-04: Panel de Analítica}
-\label{subsec:ssd-cu04}
-
-La Figura \ref{fig:ssd-cu04} presenta el SSD para el CU-04, donde el Instructor solicita las métricas y el sistema retorna el análisis grupal.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figuras/SSD_CU04.png}
-    \caption{SSD para CU-04: Panel de Analítica. Fuente: Elaboración propia.}
-    \label{fig:ssd-cu04}
-\end{figure}
 
 \section{Contratos de Operación}
 \label{sec:contratos}
@@ -1152,21 +1125,6 @@ Siguiendo la metodología de Craig Larman (2004, Cap. 13), los Contratos de Oper
 \label{tab:contrato-obtener-resultado}
 \end{table}
 
-\subsection{Contrato CO-03: obtenerDebilidadesGrupales}
-\label{subsec:contrato-co03}
-
-\textbf{Operación:} \texttt{obtenerDebilidadesGrupales(id\_tecnica)} \\
-\textbf{Referencias Cruzadas:} Casos de Uso: CU-04. \\
-\textbf{Precondiciones:} 
-\begin{itemize}
-    \item Existe un historial de evaluaciones almacenadas en el sistema.
-\end{itemize}
-\textbf{Postcondiciones:} 
-\begin{itemize}
-    \item Se han calculado las frecuencias y promedios de desviación por articulación.
-    \item Se ha devuelto un resumen estadístico ordenado por mayor frecuencia de error.
-\end{itemize}
-
 \section{Diagramas de Interacción (Realizaciones de Casos de Uso)}
 \label{sec:interaccion}
 
@@ -1190,12 +1148,8 @@ La Figura \ref{fig:interaccion-cu02} presenta el diagrama de interacción para e
     \caption{Diagrama de Interacción (Realización de Caso de Uso) para el CU-02: Evaluar Ejecución Biomecánica. Fuente: Elaboración propia basada en Larman (2004).}
     \label{fig:interaccion-cu02}
 \end{figure}
+
 Como se observa en la Figura \ref{fig:interaccion-cu02}, la secuencia de mensajes refleja fielmente los Contratos de Operación (Sección 5.3) y prepara el terreno para el Diagrama de Clases de Diseño (Sección 5.5), donde se detallarán los atributos, métodos y relaciones entre estas clases.
-
-\subsection{Realización del CU-04: Panel de Analítica}
-\label{subsec:realizacion-cu04}
-
-La interacción principal para el CU-04 implica que la UI solicita datos al \texttt{AnaliticaController}, el cual obtiene el historial completo del \texttt{IHistorialRepository} y calcula las métricas en memoria.
 
 \section{Diagrama de Clases de Diseño (DCD)}
 \label{sec:dcd}
@@ -1221,19 +1175,6 @@ La Figura \ref{fig:dcd-cu02} presenta el Diagrama de Clases de Diseño para el C
 \end{figure}
 
 Como se observa en la Figura \ref{fig:dcd-cu02}, el DCD evidencia la correcta aplicación de los patrones GRASP y la arquitectura en capas del sistema, garantizando bajo acoplamiento y alta cohesión. Las interfaces (\texttt{IInferenceEngine}, \texttt{IGenerationService}, \texttt{ITecnicaRepository}) permiten que la capa de aplicación sea agnóstica a los detalles de implementación, facilitando la sustitución de adaptadores sin afectar la lógica de negocio (Protected Variations).
-Como se observa en la Figura \ref{fig:dcd-cu02}, el DCD evidencia la correcta aplicación de los patrones GRASP y la arquitectura en capas del sistema, garantizando bajo acoplamiento y alta cohesión. Las interfaces (\texttt{IInferenceEngine}, \texttt{IGenerationService}, \texttt{ITecnicaRepository}) permiten que la capa de aplicación sea agnóstica a los detalles de implementación, facilitando la sustitución de adaptadores sin afectar la lógica de negocio (Protected Variations).
-
-\subsection{DCD para el CU-04: Panel de Analítica}
-\label{subsec:dcd-cu04}
-
-La Figura \ref{fig:dcd-analitica} muestra el DCD que incorpora el \texttt{AnaliticaController} y la actualización del \texttt{IHistorialRepository} para soportar la agregación de métricas.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\textwidth]{Figuras/DCD_Analitica.png}
-    \caption{DCD para CU-04. Fuente: Elaboración propia.}
-    \label{fig:dcd-analitica}
-\end{figure}
 
 \section{Software Architecture Document (SAD)}
 \label{sec:sad}
@@ -1319,11 +1260,13 @@ A continuación se presentan las decisiones arquitectónicas más relevantes, do
 \subsubsection{Technical Memo 3: Uso de Gemini 2.5 Flash para Síntesis Estructurada}
 
 \textbf{Problema}: Se requiere generar reportes pedagógicos estructurados en JSON con 4 claves obligatorias (Análisis Postural, Riesgo de Lesión, Paso a Paso, Resumen Ejecutivo).
+
 \textbf{Solución}: Se seleccionó Gemini 2.5 Flash por su soporte nativo para forzar respuestas bajo esquemas JSON estrictamente estructurados y su excelente relación velocidad/costo.
+
+\textbf{Motivación}: Gemini 2.5 Flash garantiza la estructura JSON requerida, combinado con una velocidad de respuesta superior y costos operativos reducidos en comparación con GPT-4o. El adaptador \texttt{GeminiServiceAdapter} implementa un fallback determinista para evitar alucinaciones.
 
 \end{document}
 
-\subsubsection{Technical Memo 4: Agregación de Métricas en Memoria vs. Base de Datos}
-\textbf{Problema:} ¿Dónde deben calcularse las estadísticas de debilidades (CU-04)? \\
-\textbf{Solución:} Se optó por extraer todas las evaluaciones y calcular los promedios en memoria dentro del \texttt{AnaliticaController}. \\
-\textbf{Justificación (Patrones GRASP/SOLID):} Debido a la estructura de esquemas JSON estrictamente estructurados dentro de PostgreSQL y la necesidad de compatibilidad retroactiva, la lógica compleja en SQL (o \texttt{jsonb\_path\_query}) resultaba frágil. Siguiendo el principio de \textit{Protected Variations}, la base de datos se mantiene simple y la lógica de agregación reside en Python, permitiendo escalar a repositorios NoSQL o archivos estáticos en el futuro sin modificar la lógica de cálculo.
+
+
+

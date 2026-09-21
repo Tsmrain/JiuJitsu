@@ -338,7 +338,7 @@ async function cargarHistorialAlumno() {
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                             <strong>${eval_.id_tecnica || 'Técnica'}</strong>
                             <span style="font-weight:600; color:${eval_.es_valido ? '#28a745' : '#dc3545'};">
-                                ${eval_.es_valido ? '[Aprobado]' : '[Reprobado]'}
+                                ${eval_.es_valido ? '✅ Aprobado' : '❌ Reprobado'}
                             </span>
                         </div>
                         <small style="color:#6c757d;">${eval_.fecha ? new Date(eval_.fecha).toLocaleDateString() : 'Reciente'}</small><br>
@@ -594,11 +594,9 @@ function reiniciar() {
 function mostrarSeccionProfesor(seccion) {
     const secTec = document.getElementById('seccion-tecnicas');
     const secFue = document.getElementById('seccion-fuentes');
-    const secAna = document.getElementById('seccion-analitica');
 
     if (secTec) secTec.style.display = 'none';
     if (secFue) secFue.style.display = 'none';
-    if (secAna) secAna.style.display = 'none';
 
     const target = document.getElementById(`seccion-${seccion}`);
     if (target) target.style.display = 'block';
@@ -607,9 +605,6 @@ function mostrarSeccionProfesor(seccion) {
         cargarTecnicasProfesor();
     } else if (seccion === 'fuentes') {
         cargarFuentesProfesor();
-    } else if (seccion === 'analitica') {
-        cargarFiltrosAnalitica();
-        cargarAnaliticaProfesor();
     }
 }
 
@@ -767,86 +762,6 @@ function cancelarEdicionFuente() {
     if (titulo) titulo.textContent = 'Registrar Nueva Fuente';
     const btnCancel = document.getElementById('btn-cancelar-fuente');
     if (btnCancel) btnCancel.style.display = 'none';
-}
-
-// 5.3 CU-04: Analítica del Tatami
-async function cargarFiltrosAnalitica() {
-    try {
-        const resp = await fetch('/api/v1/instructor/tecnicas');
-        if (!resp.ok) return;
-        const tecnicas = await resp.json();
-        const select = document.getElementById('filtro-tecnica-analitica');
-        if (!select) return;
-        
-        const currentValue = select.value;
-        select.innerHTML = '<option value="">-- Todas las Técnicas --</option>';
-        tecnicas.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id_tecnica || t.id;
-            opt.textContent = t.nombre;
-            select.appendChild(opt);
-        });
-        select.value = currentValue;
-    } catch (err) {
-        console.error('Error cargando filtros analítica:', err);
-    }
-}
-
-async function cargarAnaliticaProfesor() {
-    const select = document.getElementById('filtro-tecnica-analitica');
-    const idTecnica = select ? select.value : '';
-    
-    let url = '/api/v1/instructor/analitica';
-    if (idTecnica) {
-        url += `?id_tecnica=${encodeURIComponent(idTecnica)}`;
-    }
-    
-    try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('Error al consultar analítica');
-        
-        const data = await resp.json();
-        
-        const totalEl = document.getElementById('analitica-total');
-        if (totalEl) totalEl.textContent = data.total_evaluaciones || 0;
-        
-        const tasaEl = document.getElementById('analitica-tasa');
-        if (tasaEl) {
-            const tasa = data.tasa_aprobacion || 0;
-            tasaEl.textContent = `${tasa}%`;
-            tasaEl.style.color = tasa >= 70 ? '#28a745' : tasa >= 50 ? '#fd7e14' : '#dc3545';
-        }
-        
-        const contenedor = document.getElementById('lista-debilidades-profesor');
-        if (!contenedor) return;
-        
-        if (data.debilidades_grupales && data.debilidades_grupales.length > 0) {
-            let html = '<table style="width:100%; border-collapse: collapse; margin-top: 10px;">';
-            html += '<tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6;">';
-            html += '<th style="padding:12px; text-align:left;">Articulación Crítica</th>';
-            html += '<th style="padding:12px; text-align:center;">Frecuencia</th>';
-            html += '<th style="padding:12px; text-align:right;">Desviación Promedio</th>';
-            html += '</tr>';
-            
-            data.debilidades_grupales.forEach((d, index) => {
-                const isTop = index === 0;
-                html += `<tr style="border-bottom:1px solid #dee2e6; ${isTop ? 'background:#fff3cd; font-weight:bold;' : ''}">`;
-                html += `<td style="padding:12px;">${d.articulacion}</td>`;
-                html += `<td style="padding:12px; text-align:center;">${d.frecuencia} incidentes</td>`;
-                html += `<td style="padding:12px; text-align:right;">-${Number(d.promedio_desviacion).toFixed(1)}°</td>`;
-                html += '</tr>';
-            });
-            html += '</table>';
-            contenedor.innerHTML = html;
-        } else {
-            contenedor.innerHTML = '<p style="color:#6c757d; font-style:italic;">No se han detectado debilidades grupales suficientes para esta técnica.</p>';
-        }
-        
-    } catch (err) {
-        console.error('Error cargando analítica:', err);
-        const contenedor = document.getElementById('lista-debilidades-profesor');
-        if (contenedor) contenedor.innerHTML = '<p style="color:#dc3545;">Error al cargar datos analíticos.</p>';
-    }
 }
 
 function inicializarFormulariosProfesor() {

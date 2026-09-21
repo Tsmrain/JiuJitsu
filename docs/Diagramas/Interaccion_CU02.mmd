@@ -1,0 +1,50 @@
+sequenceDiagram
+    autonumber
+    actor Alumno
+    participant API as :EvaluacionController
+    participant YOLO as :AdaptadorYOLO
+    participant DB as :PostgresTecnicaRepository
+    participant Calc as :CalculadoraBiomecanica
+    participant RAG as :SintesisPedagogicaService
+    participant Qdrant as :QdrantAdapter
+    participant Gemini as :GeminiServiceAdapter
+
+    Alumno->>API: subirVideo(file, id_tecnica)
+    activate API
+    
+    Note over API: 1. Delegar extracción de esqueleto (GRASP Controller)
+    API->>YOLO: inferir_esqueleto_3d(video_path)
+    activate YOLO
+    YOLO-->>API: MatrizEsqueletica (alumno)
+    deactivate YOLO
+    
+    Note over API: 2. Recuperar patrón (GRASP Expert)
+    API->>DB: obtener_patron(id_tecnica)
+    activate DB
+    DB-->>API: TecnicaPatron (patrón)
+    deactivate DB
+    
+    Note over API: 3. Evaluar desviaciones (GRASP Expert / Pure Fabrication)
+    API->>Calc: evaluar_desviaciones(alumno, patron)
+    activate Calc
+    Calc-->>API: List~DesviacionArticular~
+    deactivate Calc
+    
+    Note over API: 4. Búsqueda RAG (Pure Fabrication / Protected Variations)
+    API->>RAG: generar_feedback_contextualizado(articulacion, id_tecnica)
+    activate RAG
+    RAG->>Qdrant: buscar(embedding, id_tecnica)
+    activate Qdrant
+    Qdrant-->>RAG: List~FuenteConocimiento~
+    deactivate Qdrant
+    RAG-->>API: contexto_recuperado + score
+    deactivate RAG
+    
+    Note over API: 5. Generar consejo (Protected Variations)
+    API->>Gemini: generar_consejo(tecnica, desviaciones, contexto)
+    activate Gemini
+    Gemini-->>API: ConsejoPedagogico (4 bloques)
+    deactivate Gemini
+    
+    API-->>Alumno: reportePedagogico + frameCritico
+    deactivate API

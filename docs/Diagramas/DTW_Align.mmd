@@ -1,0 +1,16 @@
+flowchart TD
+    subgraph DTW_ALIGN["Alineamiento Temporal Dinámico (DTW)"]
+        A["Serie Angular Alumno A(t)<br/>K Ángulos Articulares x Ta frames"]
+        B["Serie Angular Profesor P(t)<br/>K Ángulos Articulares x Tp frames"]
+        C["Cálculo Matriz de Costo D(i,j)<br/>Distancia Euclidiana Multidimensional"]
+        D["Optimización de Alineamiento<br/>Camino Óptimo de Warping W"]
+        E["Discrepancia Instantánea E(t)"]
+        F["Pico Crítico de Divergencia<br/>t_error = argmax E(t) > tau"]
+    end
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F -->|"Inyección en JSON"| G["Reporte Pedagógico<br/>(URL Video + Timestamp exacto)"]
+    style DTW_ALIGN fill:#2b3a4a,color:#fff

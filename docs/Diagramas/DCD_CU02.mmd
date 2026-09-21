@@ -1,0 +1,129 @@
+classDiagram
+    direction TB
+    
+    class EvaluacionController {
+        -_inference_engine : IInferenceEngine
+        -_generation_service : IGenerationService
+        -_tecnica_repository : ITecnicaRepository
+        -_sintesis : SintesisPedagogicaService
+        -_calculadora : CalculadoraBiomecanica
+        +evaluar_ejecucion(video_path, id_tecnica) Dict
+        +solicitar_evaluacion(video_path, id_tecnica) Dict
+    }
+    
+    class CalculadoraBiomecanica {
+        -articulaciones : List
+        +evaluar_desviaciones(alumno, patron, articulaciones, umbral) List~DesviacionArticular~
+        +evaluar(alumno, patron, umbral) List~DesviacionArticular~
+    }
+    
+    class MatrizEsqueletica {
+        -puntos : Dict
+        -puntos_3d : Dict
+        +agregar_punto(nombre, punto) void
+        +obtener_punto(nombre) Punto3D
+        +calcular_angulo(a, centro, c) Float
+    }
+    
+    class Punto3D {
+        -x : Float
+        -y : Float
+        -z : Float
+        +restar(otro) Punto3D
+        +producto_punto(otro) Float
+        +magnitud() Float
+        +norma() Float
+    }
+    
+    class DesviacionArticular {
+        -nombre_articulacion : String
+        -angulo_esperado : Float
+        -angulo_real : Float
+        -desviacion_grados : Float
+    }
+    
+    class IInferenceEngine {
+        <<interface>>
+        +inferir_esqueleto_3d(video_path) MatrizEsqueletica
+    }
+    
+    class IGenerationService {
+        <<interface>>
+        +generar_consejo(tecnica, desviaciones, contexto) Dict
+    }
+    
+    class ITecnicaRepository {
+        <<interface>>
+        +obtener_patron(id_tecnica) TecnicaPatron
+    }
+    
+    class AdaptadorYOLO {
+        -_engine : IInferenceEngine
+        +inferir_esqueleto_3d(video_path) MatrizEsqueletica
+        +validar_matriz_esqueletica(matriz) Boolean
+        +serializar_para_db(matriz) String
+        +deserializar_desde_db(raw_data) MatrizEsqueletica
+    }
+    
+    class GeminiServiceAdapter {
+        -_client : genai.Client
+        +generar_consejo(tecnica, desviaciones, contexto) Dict
+    }
+    
+    class QdrantAdapter {
+        -_client : QdrantClient
+        -collection_name : String
+        -dimension : Integer
+        +asegurar_coleccion() void
+        +upsert(id_fuente, vector, payload) void
+        +buscar(embedding, limite, umbral, id_tecnica) List
+        +eliminar(id_fuente) Boolean
+    }
+    
+    class PostgresTecnicaRepository {
+        -_db : String
+        -_yolo : AdaptadorYOLO
+        +obtener_patron(id_tecnica) TecnicaPatron
+        +registrar_patron(tecnica) Boolean
+        +listar_por_instructor(id_profesor) List~TecnicaPatron~
+    }
+    
+    class SintesisPedagogicaService {
+        -_repo : IFuenteConocimientoRepository
+        -_config : ConfiguracionRAG
+        +generar_feedback_contextualizado(articulacion, id_tecnica, embedding) Dict
+    }
+    
+    class ConfiguracionRAG {
+        -umbral_similitud_minima : Float
+        -top_k_resultados : Integer
+        -plantilla_fallback : String
+    }
+    
+    class TecnicaPatron {
+        -id_tecnica : String
+        -id_profesor : String
+        -nombre : String
+        -categoria : String
+        -matriz_esqueletica : MatrizEsqueletica
+        -video_url : String
+        -descripcion : String
+    }
+
+    EvaluacionController --> IInferenceEngine : usa
+    EvaluacionController --> IGenerationService : usa
+    EvaluacionController --> ITecnicaRepository : usa
+    EvaluacionController --> CalculadoraBiomecanica : usa
+    EvaluacionController --> SintesisPedagogicaService : usa
+    
+    AdaptadorYOLO ..|> IInferenceEngine : implementa
+    GeminiServiceAdapter ..|> IGenerationService : implementa
+    PostgresTecnicaRepository ..|> ITecnicaRepository : implementa
+    
+    CalculadoraBiomecanica --> MatrizEsqueletica : opera sobre
+    CalculadoraBiomecanica --> DesviacionArticular : produce
+    MatrizEsqueletica *-- Punto3D : compuesta por
+    TecnicaPatron *-- MatrizEsqueletica : contiene
+    
+    SintesisPedagogicaService --> QdrantAdapter : consulta
+    SintesisPedagogicaService --> ConfiguracionRAG : usa

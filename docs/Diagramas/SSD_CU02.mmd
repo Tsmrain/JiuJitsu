@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    actor Alumno
+    participant System as :System
+
+    Alumno->>System: iniciarSesion(email, password)
+    activate System
+    System-->>Alumno: tokenJWT
+    deactivate System
+
+    Alumno->>System: seleccionarTecnica(id_tecnica)
+    activate System
+    System-->>Alumno: datosTecnicaPatron
+    deactivate System
+
+    Alumno->>System: subirVideo(file, id_tecnica)
+    activate System
+    System-->>Alumno: id_evaluacion (en cola)
+    deactivate System
+
+    Alumno->>System: consultarEstadoEvaluacion(id_evaluacion)
+    activate System
+    System-->>Alumno: estado (PROCESANDO | COMPLETADO)
+    deactivate System
+
+    Alumno->>System: obtenerResultadoEvaluacion(id_evaluacion)
+    activate System
+    System-->>Alumno: reportePedagogico (4 bloques) + frameCritico
+    deactivate System

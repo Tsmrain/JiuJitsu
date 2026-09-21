@@ -147,5 +147,17 @@ class IVectorStore(ABC):
         """Elimina todos los vectores asociados a un documento por su id_documento."""
         return False
 
+class IHistorialRepository(ABC):
+    """Contrato para persistencia y consulta del historial de progreso de evaluaciones."""
 
+    @abstractmethod
+    def guardar_evaluacion(self, id_alumno: str, id_tecnica: str, resultado: Dict[str, Any]) -> str:
+        pass
 
+    @abstractmethod
+    def obtener_progreso(self, id_alumno: str) -> List[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    def listar_todas(self, id_tecnica: Optional[str] = None) -> List[Dict[str, Any]]:
+        pass

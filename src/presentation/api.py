@@ -257,6 +257,22 @@ def get_tecnica_controller() -> TecnicaController:
     container["tecnica_controller"] = ctrl
     return ctrl
 
+def get_analitica_controller():
+    from src.application.analitica_controller import AnaliticaController
+    if "analitica_controller" in container and container["analitica_controller"] is not None:
+        return container["analitica_controller"]
+    
+    historial_repo = container.get("historial_repository")
+    if not historial_repo and os.getenv("DATABASE_URL"):
+        from src.infrastructure.persistence.history_repository import PostgresHistorialRepository
+        historial_repo = PostgresHistorialRepository(os.getenv("DATABASE_URL"))
+        container["historial_repository"] = historial_repo
+        
+    ctrl = AnaliticaController(historial_repository=historial_repo)
+    container["analitica_controller"] = ctrl
+    return ctrl
+
+
 def get_fuente_controller():
     if "fuente_controller" in container and container["fuente_controller"] is not None:
         return container["fuente_controller"]
@@ -621,6 +637,14 @@ def obtener_recursos_alumno():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener recursos del alumno: {str(e)}")
+
+@app.get("/api/v1/instructor/analitica", tags=["Instructor", "Analítica"])
+def obtener_analitica_tatami(id_tecnica: str = None, ctrl=Depends(get_analitica_controller)):
+    """Endpoint CU-04: Retorna las métricas grupales de debilidades de la técnica especificada (o todas si no se especifica)."""
+    try:
+        return ctrl.obtener_debilidades_grupales(id_tecnica)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculando métricas de analítica: {str(e)}")
 
 # Endpoint para Registrar Técnica Patrón (CU-01 - Modo Instructor Simplificado)
 @app.post("/api/v1/tecnicas/registrar")

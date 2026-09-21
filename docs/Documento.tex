@@ -25,43 +25,66 @@
 \begin{document}
 
 % ==========================================
-% HOJA 1: PORTADA PRINCIPAL (EXTERIOR)
-% ==========================================
-\begin{titlepage}
-    \centering
-    
-    % Logo UPSA
-    \includegraphics[width=0.48\textwidth]{UpsaLogo.png}
-    
-    \vspace{1.5cm}
-    
-    % Facultad y Carrera
-    {\bfseries\large FACULTAD DE INGENIERÍA \par}
-    \vspace{0.25cm}
+\usepackage{tocloft}
+\usepackage{amsmath,amssymb}
+
+% Configuración de nombres en español e imágenes
+\graphicspath{{docs/}{./}}
+\renewcommand{\figurename}{Figura}
+\renewcommand{\tablename}{Tabla}
+\renewcommand{\contentsname}{ÍNDICE GENERAL}
+
+% Configuración del Índice y Numeración (Ajuste de anchos para 5.10, 5.10.1, etc.)
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftsecnumwidth}{3.0em}
+\setlength{\cftsubsecindent}{3.0em}
+\setlength{\cftsubsecnumwidth}{3.8em}
+\setlength{\cftsubsubsecindent}{6.8em}
+\setlength{\cftsubsubsecnumwidth}{4.5em}
+\setlength{\cftfignumwidth}{3.0em}
+\setlength{\cfttabnumwidth}{3.0em}
     {\bfseries\large CARRERA: INGENIERÍA DE SISTEMAS \par}
     
     \vspace{1.5cm}
+% ==========================================
+% HOJA 1: PORTADA PRINCIPAL (EXTERIOR)
+% ==========================================
+\begin{titlepage}
+    \setlength{\parskip}{0pt}
+    \centering
+    
+    % Logo UPSA
+    \includegraphics[width=0.42\textwidth]{Figuras/UpsaLogo.png}
+    
+    \vspace{1.0cm}
+    
+    % Facultad y Carrera
+    {\bfseries\large FACULTAD DE INGENIERÍA \par}
+    \vspace{0.3cm}
+    {\bfseries\large CARRERA: INGENIERÍA DE SISTEMAS \par}
+    
+    \vspace{1.0cm}
     
     % Modalidad
     {\bfseries\large MODALIDAD DE GRADUACIÓN \par}
-    \vspace{0.25cm}
+    \vspace{0.3cm}
     {\bfseries\large PROYECTO DE GRADO \par}
     
-    \vspace{2.5cm}
+    \vspace{1.2cm}
     
     % Título del Proyecto
-    {\bfseries\Large SISTEMA DE ANÁLISIS BIOMECÁNICO DE APOYO PARA JIUJITSU BRASILEÑO PARA LA ACADEMIA CORPO E MENTE \par}
+    {\bfseries\Large SISTEMA DE ANÁLISIS BIOMECÁNICO DE TÉCNICAS DE JIU-JITSU BRASILEÑO MEDIANTE INTELIGENCIA ARTIFICIAL PARA LA ACADEMIA CORPO E MENTE \par}
     
     \vfill
     
     % Autor
     {\bfseries\large Santiago Borda Zambrana \par}
     
-    \vspace{2cm}
+    \vspace{1.2cm}
     
     % Ciudad y Año
     {\bfseries\large Santa Cruz de la Sierra - Bolivia \par}
-    \vspace{0.25cm}
+    \vspace{0.3cm}
     {\bfseries\large 2026 \par}
 
 \end{titlepage}
@@ -72,31 +95,32 @@
 % HOJA 2: PORTADA INTERIOR (SEGUNDA PORTADA)
 % ==========================================
 \begin{titlepage}
+    \setlength{\parskip}{0pt}
     \centering
     
     % Logo UPSA
-    \includegraphics[width=0.48\textwidth]{UpsaLogo.png}
+    \includegraphics[width=0.42\textwidth]{Figuras/UpsaLogo.png}
     
-    \vspace{1.2cm}
+    \vspace{0.8cm}
     
     % Facultad y Carrera
     {\bfseries\large FACULTAD DE INGENIERÍA \par}
     \vspace{0.2cm}
     {\bfseries\large CARRERA: INGENIERÍA DE SISTEMAS \par}
     
-    \vspace{1.2cm}
+    \vspace{0.8cm}
     
     % Modalidad
     {\bfseries\large MODALIDAD DE GRADUACIÓN \par}
     \vspace{0.2cm}
     {\bfseries\large PROYECTO DE GRADO \par}
     
-    \vspace{1.8cm}
+    \vspace{1.0cm}
     
     % Título del Proyecto
-    {\bfseries\Large SISTEMA DE ANÁLISIS BIOMECÁNICO DE APOYO PARA JIUJITSU BRASILEÑO PARA LA ACADEMIA CORPO E MENTE \par}
+    {\bfseries\Large SISTEMA DE ANÁLISIS BIOMECÁNICO DE TÉCNICAS DE JIU-JITSU BRASILEÑO MEDIANTE INTELIGENCIA ARTIFICIAL PARA LA ACADEMIA CORPO E MENTE \par}
     
-    \vspace{1.5cm}
+    \vspace{0.8cm}
     
     % Grado Académico al que opta
     {\bfseries\large Proyecto de Grado para optar al título de Licenciado(a) \par}
@@ -110,7 +134,7 @@
     \vspace{0.2cm}
     {\bfseries\large Reg.: 2021210057 \par}
     
-    \vspace{1.5cm}
+    \vspace{1.0cm}
     
     % Ciudad y Año
     {\bfseries\large Santa Cruz de la Sierra - Bolivia \par}
@@ -118,24 +142,6 @@
     {\bfseries\large 2026 \par}
 
 \end{titlepage}
-
-\clearpage
-
-% ==========================================
-% HOJA 3: HOJA EN BLANCO
-% ==========================================
-\thispagestyle{empty}
-\null
-\clearpage
-
-% ==========================================
-% HOJA 4: AGRADECIMIENTOS
-% ==========================================
-\thispagestyle{empty}
-\begin{center}
-    {\bfseries\Large AGRADECIMIENTOS \par}
-\end{center}
-
 \vspace{1.5cm}
 
 \begin{spacing}{1.5}
@@ -210,10 +216,9 @@ Al jiujitsu brasileño, por enseñarme a afrontar los miedos, seguir incluso cua
 \end{tabularx}
 
 \clearpage
-
-% ==========================================
-% HOJA 6: RESUMEN (FORMATO APA 7)
-% ==========================================
+\noindent{\bfseries CONTENIDO \par}
+\vspace{0.3cm}
+\noindent El presente trabajo de investigación se ha desarrollado bajo la metodología del Proceso Unificado (UP), siguiendo el enfoque iterativo, incremental y evolutivo propuesto por Craig Larman.
 \thispagestyle{empty}
 \begin{center}
     {\bfseries\large Resumen \par}
@@ -286,16 +291,13 @@ El objeto de investigación es el proceso de evaluación y corrección biomecán
 
 \subsection{Alcance}
 
-\subsubsection{Alcance Funcional}
-\begin{itemize}
-    \item \textbf{Gestión de Usuarios y Roles:} Perfiles para Alumnos (evaluación técnica) y Profesores (administración de técnicas patrón y fuentes de conocimiento). El sistema implementa autenticación con PBKDF2-HMAC-SHA256 y validación de roles contra la tabla usuarios (rol IN ('alumno', 'profesor')).
-    \item \textbf{Registro de Técnicas Patrón:} Carga de videos de referencia del profesor y extracción de posturas corporales patrón.
-    \item \textbf{Evaluación Biomecánica:} Comparación postural entre el video del alumno y el patrón del maestro para calcular desajustes angulares.
-    \item \textbf{Búsqueda en Literatura Técnica:} Procesamiento e ingesta semántica de manuales y libros de BJJ para fundamentar la retroalimentación.
-    \item \textbf{Síntesis Pedagógica Estructurada:} Generación de reportes explicativos organizados en Análisis Postural, Riesgo de Lesión, Guía Paso a Paso y Resumen Ejecutivo.
-    \item \textbf{Interfaz Web de Usuario:} Aplicación accesible para la carga de videos, consulta de resultados e historial de avance.
-\end{itemize}
+\subsection{Situación problemática}
 
+El análisis operativo de la filial revela los siguientes indicadores críticos:
+\begin{itemize}
+    \item \textbf{Dependencia total del profesor:} Durante la clase de 90 minutos, con 15 alumnos y 675 repeticiones totales, el profesor dispone de 8 segundos por repetición para corregir. Esto deja más del 80\% de los errores técnicos sin retroalimentación. Fuera del aula, el alumno no tiene ninguna forma objetiva de saber si está practicando bien.
+    \item \textbf{Frustración al aplicar la técnica:} El alumno que aprende solo con videos replica la forma exterior del movimiento, pero no comprende sus detalles biomecánicos. Cuando intenta ejecutar la técnica durante un combate, esta falla. La repetición del fracaso refuerza la percepción de estancamiento.
+\end{itemize}
 \subsubsection{Alcance Tecnológico}
 \begin{itemize}
     \item \textbf{Aplicación Web y Servidor de Procesamiento:} Arquitectura cliente-servidor orientada a servicios para la captura de video, procesamiento de imágenes y almacenamiento de información.
@@ -311,10 +313,7 @@ El objeto de investigación es el proceso de evaluación y corrección biomecán
 \subsection{Justificación}
 
 \subsubsection{Justificación Técnica y de Diseño del Producto}
-Desde una perspectiva operativa, el proyecto se justifica al diseñar una solución tecnológica modular y optimizada, cuya infraestructura central delega de forma inteligente el procesamiento de datos a la nube. Esto permite que el producto final funcione de manera ágil y fluida en cualquier dispositivo móvil comercial, sin exigir inversiones en equipos o hardware costosos por parte de los alumnos o la academia. Asimismo, el sistema almacena de forma ordenada la información transaccional de los usuarios y las respuestas automatizadas, asegurando la integridad, confidencialidad y consistencia de los datos para futuras auditorías o reportes administrativos de desempeño.
-
-\subsubsection{Justificación Práctica, Social y de Retención de Clientes}
-El análisis comercial de la sucursal revela un problema crítico de pérdida de clientes activos (Churn Rate). La comunidad digital de la sucursal registra una base histórica latente de 79 miembros, pero el tatami sostiene una asistencia promedio real de solo 15 alumnos. Esta brecha expone una tasa de inactividad o abandono del 81\%, provocada por la frustración de los principiantes al no recibir atención individualizada en clases masivas (el cuello de botella operativo), el estancamiento fuera del aula y el temor a sufrir lesiones por malas posturas. La implementación de esta plataforma actúa directamente como una estrategia de fidelización y retención de clientes. Al proveer al cliente un asistente de entrenamiento virtual disponible las 24 horas para corregir sus errores basándose en las guías oficiales de la escuela, se elimina la barrera de la frustración inicial. Esto democratiza la atención personalizada, acelera el progreso del practicante y mitiga los riesgos de abandono, incentivando a que la masa de clientes inactivos regrese a consumir el servicio presencial de forma recurrente.
+\textbf{Alcance funcional:} El sistema incluye autenticación por roles (Profesor y Alumno), registro obligatorio del video semilla del profesor, carga de videos cortos (hasta 30 segundos) de ejercicios individuales (Solo Drills), detección de 17 keypoints COCO-Pose en 3D y evaluación biomecánica de 8 a 12 ángulos articulares clave, comparación cinemática con el patrón del profesor mediante DTW, generación de reportes pedagógicos en cuatro bloques (Análisis Postural, Alertas, Guía Paso a Paso y Resumen), historial de progreso del alumno, panel analítico del profesor y mantenimiento nocturno autónomo.
 
 \subsubsection{Justificación Económica, Institucional y de Negocio}
 Actualmente, el principal generador de ingresos de la sucursal anfitriona (Knockout Gym) es un modelo paquetizado de 300 Bs mensuales por acceso ilimitado, donde el Jiu-Jitsu interactúa con otras disciplinas de manera indirecta dentro de un control de accesos centralizado (administrado mediante sistemas tradicionales como Microsoft Access y lectores de huella locales). Dado que Knockout controla el flujo de caja global y Corpo e Mente no tiene injerencia en la cobranza diaria de este punto, la academia necesita consolidar un factor de valor agregado y diferenciación comercial exclusiva para justificar su permanencia, aumentar su poder de negociación frente al gimnasio y captar un mayor porcentaje de los ingresos del paquete.
@@ -453,22 +452,20 @@ El proceso operativo ilustrado en la Figura~\ref{fig:flujo_negocio} comprende la
 El sistema de software propuesto viene a resolver directamente este cuello de botella, permitiendo que la evaluación técnica sea automatizada mediante visión artificial e inteligencia artificial.
 
 El cuello de botella identificado (evaluación personalizada) es resuelto directamente por el caso de uso CU-02 (Evaluar Ejecución Biomecánica con Síntesis Pedagógica), implementado en el controlador EvaluacionController y expuesto vía POST /api/v1/alumno/evaluaciones.
+\begin{enumerate}
+    \item \textbf{Filtrado Topológico y Selección Articular:} Se detectan los 17 keypoints anatómicos del estándar COCO-Pose (índices 0 a 16). A partir de estos 17 puntos detectados por YOLO26x-Pose, la \texttt{CalculadoraBiomecanica} selecciona los puntos articulares relevantes y evalúa entre 8 y 12 ángulos articulares tridimensionales clave según la técnica monitoreada (codos, hombros, rodillas, caderas, tobillos y eje axial del tronco, en lados izquierdo y derecho).
 
-\clearpage
+    \item \textbf{Fusión Geométrica 3D (YOLO26x-Pose + YOLO26x-Depth):} Para cada keypoint 2D $(x, y)$ detectado por YOLO26x-Pose, se escala a las coordenadas del mapa de profundidad $(x_d, y_d)$ generado por YOLO26x-Depth y se extrae la componente Z métrica en metros reales:
+\[
+Z = \text{depth-map}[y_d, x_d]
+\]
+\textit{En palabras simples: esta fórmula asigna a cada articulación su profundidad en metros reales, sin necesidad de sensores RGB-D costosos.}
 
-% Reconfiguración de numeración para el Capítulo III (3.1, 3.1.1, etc.)
-\renewcommand{\thesection}{3.\arabic{section}}
-\renewcommand{\thesubsection}{3.\arabic{section}.\arabic{subsection}}
-\setcounter{section}{0}
-
-% ==========================================
-% CAPÍTULO III: MARCO TEÓRICO Y TECNOLÓGICO
-% ==========================================
-\begin{center}
-    {\bfseries\Large CAPÍTULO III: MARCO TEÓRICO Y TECNOLÓGICO \par}
-\end{center}
-\addcontentsline{toc}{section}{\textbf{CAPÍTULO III: MARCO TEÓRICO Y TECNOLÓGICO}}
-\vspace{1cm}
+    \item \textbf{Traslación de Origen al Sacro:} Se toma el punto medio de las caderas (pelvis/sacro) como el origen de coordenadas $\mathbf{p}_{\text{root}} = (0,0,0)$:
+\[
+\mathbf{p}'_{k}(t) = \mathbf{p}_{k}(t) - \mathbf{p}_{\text{root}}(t), \quad \forall k \in \{0, \dots, 16\}
+\]
+\textit{En palabras simples: esta fórmula centra los 17 keypoints COCO del cuerpo tomando la cadera como punto cero.}
 
 \section{Fundamentos Teóricos}
 
@@ -501,12 +498,12 @@ En esta sección se describen en detalle las tecnologías seleccionadas para la 
 \subsection{Módulo de Visión Artificial: Suite YOLO26x-Pose + YOLO26x-Depth}
 
 \subsubsection{Tecnología Seleccionada}
-Se seleccionó la suite combinada de **YOLO26x-Pose** (detección de 17 articulaciones anatómicas COCO) y **YOLO26x-Depth** (mapa de profundidad métrica monocular en metros reales absolutos).
+Se seleccionó la suite combinada de \textbf{YOLO26x-Pose} (detección de 17 articulaciones anatómicas COCO) y \textbf{YOLO26x-Depth} (mapa de profundidad métrica monocular en metros reales absolutos).
 
 \subsubsection{Alternativas Consideradas}
 \begin{itemize}
-    \item \textbf{MediaPipe Pose (Google):} Modelo liviano optimizado para dispositivos móviles y detección de personas individuales.
-    \item \textbf{OpenPose:} Framework académico de alta precisión para detección multipersona basado en campos de afinidad corporal (PAFs).
+    \item \textbf{OpenPose / MediaPipe:} Opciones tradicionales para estimación de pose 2D/3D.
+    \item \textbf{Sensores RGB-D (Kinect / Intel RealSense):} Hardware especializado que captura profundidad.
 \end{itemize}
 
 \subsubsection{Justificación de la Selección}
@@ -515,7 +512,7 @@ Se seleccionó la suite combinada de **YOLO26x-Pose** (detección de 17 articula
 \small
 \begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
     \hline
-    Criterio & YOLO26x Pose + Depth (Elegido) & MediaPipe Pose & OpenPose \\ \hline
+    Criterio & YOLO26x-Pose + Depth & MediaPipe (Google) & OpenPose \\ \hline
     Contacto Corporal & Alto desempeño en agarres y oclusión. & Falla con solapamiento de dos personas. & Bueno pero muy lento en CPU. \\ \hline
     Profundidad 3D & Profundidad métrica real $Z$ vía YOLO Depth. & Sin profundidad métrica real absoluta. & Requiere calibración compleja. \\ \hline
     Velocidad / Latencia & Inferencia sincrónica en tiempo real sobre GPU. & Muy rápida en móvil. & Latencia elevada (baja velocidad). \\ \hline
@@ -524,7 +521,10 @@ Se seleccionó la suite combinada de **YOLO26x-Pose** (detección de 17 articula
 \label{tab:comp_pose}
 \end{table}
 
-En Jiu-Jitsu Brasileño, dos practicantes interactúan en contacto físico estrecho, generando oclusiones constantes de extremidades. \textbf{MediaPipe} fue descartado debido a su baja tolerancia al solapamiento corporal y pérdida de seguimiento en posiciones de suelo. \textbf{OpenPose} fue descartado por requerir un consumo excesivo de memoria y latencias altas. La combinación de **YOLO26x-Pose + YOLO26x-Depth** permite obtener coordenadas reales $(X, Y, Z)$ en metros dentro del espacio tridimensional sin requerir sensores hardware RGB-D. La inferencia de YOLO26x-Pose + YOLO26x-Depth se delega a Google Colab Pro (GPU NVIDIA T4/A100) mediante un servidor Flask expuesto por túnel Ngrok. El backend FastAPI local consume el endpoint POST /inferir y recibe keypoints\_3d + frame\_base64. Si el túnel no está disponible, el sistema usa AdaptadorYOLO con MockYOLOEngine como fallback (ver src/infrastructure/adapters/yolo\_adapter.py).
+\textbf{YOLO26x-Pose (Ultralytics, 2026):} Detector de pose de última generación optimizado para mantener un tracking confiable bajo oclusión moderada. Extrae los 17 keypoints COCO (índices 0 a 16) en cada fotograma a 30 FPS. Posteriormente, la \texttt{CalculadoraBiomecanica} evalúa exactamente 8 ángulos articulares tridimensionales (codos, rodillas, hombros y caderas, en sus lados izquierdo y derecho) a partir de esta topología. En videos de práctica cooperativa, YOLO26x opera en modo multi-persona: detecta dos esqueletos simultáneos, y el sistema asigna el esqueleto del alumno según la posición indicada manualmente en la PWA.
+
+En Jiu-Jitsu Brasileño, dos practicantes interactúan en contacto físico estrecho, generando oclusiones constantes de extremidades. \textbf{MediaPipe} fue descartado debido a su baja tolerancia al solapamiento corporal y pérdida de seguimiento en posiciones de suelo. \textbf{OpenPose} fue descartado por requerir un consumo excesivo de memoria y latencias altas. La combinación de \textbf{YOLO26x-Pose + YOLO26x-Depth} permite obtener coordenadas reales $(X, Y, Z)$ en metros dentro del espacio tridimensional sin requerir sensores hardware RGB-D. La inferencia de YOLO26x-Pose + YOLO26x-Depth se delega a Google Colab Pro (GPU NVIDIA T4/A100) mediante un servidor Flask expuesto por túnel Ngrok. El backend FastAPI local consume el endpoint \texttt{POST /inferir} y recibe \texttt{keypoints\_3d + frame\_base64}. Si el túnel no está disponible, el sistema usa \texttt{AdaptadorYOLO} con \texttt{MockYOLOEngine} como fallback (ver \texttt{src/infrastructure/adapters/yolo\_adapter.py}).
+
 
 \subsection{Infraestructura de Inferencia GPU en la Nube: Google Colab GPU + Ngrok}
 
@@ -532,78 +532,72 @@ En Jiu-Jitsu Brasileño, dos practicantes interactúan en contacto físico estre
 Se seleccionó un servidor de inferencia remoto alojado en **Google Colab** respaldado por procesadores GPU (NVIDIA T4 / A100), comunicado con la aplicación backend a través de un túnel seguro **Ngrok**.
 
 \subsubsection{Alternativas Consideradas}
-\begin{itemize}
-    \item \textbf{Procesamiento Local en CPU/GPU del Servidor Backend:} Ejecutar los modelos de visión artificial en la misma máquina que aloja la base de datos y la API.
-    \item \textbf{Servicios Cloud Pagos Dedicados (AWS SageMaker / GCP Vertex AI):} Instancias de inferencia de modelos en la nube con costos por hora elevados.
-\end{itemize}
+\begin{table}[htbp]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{|>{\bfseries\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+    \hline
+    Componente / Modelo & Autor / Proveedor & Tipo de Licencia & Compatibilidad con SaaS Comercial Propietario & Plan de Mitigación Legal \\ \hline
+    YOLO26x-Pose + YOLO26x-Depth & Ultralytics (2026) & AGPL-3.0 / Comercial & Condicional. AGPL exige abrir el código fuente si se expone vía red como servicio SaaS cerrado. & Se utilizará bajo AGPL para validar el MVP. Para el ámbito comercial B2B, se adquirirá una licencia corporativa o se sustituirá por modelos Apache 2.0. \\ \hline
+    Qwen3-VL-Embedding-2B & Qwen Team / Alibaba (2026) & Apache 2.0 & Totalmente compatible para uso y análisis automático comercial. & Ninguna requerida; cumplimiento de licencia Apache. \\ \hline
+    Gemini 2.5 Flash & Google Cloud (2026) & Términos Comerciales de API & Totalmente compatible bajo el modelo de pago por consumo de tokens. & Registro de cuenta corporativa de facturación en GCP. \\ \hline
+    Ngrok Tunnel & Ngrok Inc. (2026) & Comercial / Freemium & Compatible en MVP. Expone endpoints remotos de Colab bajo túneles HTTPS de 256 bits. & Plan gratuito para fase de desarrollo MVP; reemplazable por Cloudflare Tunnels. \\ \hline
+    FastAPI, PostgreSQL, Qdrant & Comunidades Open Source & MIT, PostgreSQL, Apache 2.0 & Compatibilidad total sin restricciones para uso empresarial. & Conservación de licencias estándar. \\ \hline
+\end{tabularx}
+\caption{Análisis de Licenciamiento de Componentes del Sistema}
+\label{tab:licencias}
+\end{table}
 
-\subsubsection{Justificación de la Selección}
-La inferencia sincrónica de YOLO26x-Pose y YOLO26x-Depth requiere aceleración GPU intensiva. El uso de **Google Colab GPU** permite delegar la carga pesada de cálculo a la nube sin incurrir en los costos fijos de servidores locales con tarjetas gráficas costosas ni en la facturación de servicios como AWS SageMaker. El túnel **Ngrok** garantiza la comunicación cifrada y transparente con la API REST principal en FastAPI. El túnel Ngrok se configura en \texttt{colab\_backend.ipynb} celda 5, y su URL se inyecta en \texttt{.env} como \texttt{COLAB\_TUNNEL\_URL}.
+\section{Lógica Espacial Latente y Algoritmos Biomecánicos}
 
-\subsection{Modelo de Lenguaje Generativo: Gemini 2.5 Flash}
+\subsection{Comparación Angular Directa entre Esqueletos}
 
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó el modelo de lenguaje generativo \textbf{Gemini 2.5 Flash} de Google.
+El sistema compara la ejecución del alumno con el patrón del profesor mediante el cálculo de ángulos articulares en cada fotograma. Para cada una de las 8-12 articulaciones monitoreadas (codos, hombros, rodillas, caderas, izquierda y derecha, más ángulos axiales de tronco y pelvis), se calcula el ángulo formado por los vectores de los huesos adyacentes:
 
-\subsubsection{Alternativas Consideradas}
-\begin{itemize}
-    \item \textbf{OpenAI GPT-4o / GPT-3.5 Turbo:} Modelos comerciales de lenguaje de alto uso general.
-    \item \textbf{Anthropic Claude 3.5 Sonnet:} Modelo enfocado en razonamiento lógico y código.
-    \item \textbf{Modelos Locales (Llama 3 / Qwen):} Modelos de código abierto ejecutados en servidores propios.
-\end{itemize}
+\[
+\theta_k(t) = \arccos \left( \frac{\mathbf{u}_k(t) \cdot \mathbf{w}_k(t)}{\|\mathbf{u}_k(t)\| \|\mathbf{w}_k(t)\|} \right)
+\]
 
-\subsubsection{Justificación de la Selección}
+\textit{En palabras simples: esta fórmula calcula el ángulo de flexión de una articulación en grados usando las líneas de los huesos adyacentes.}
+
+Donde $\mathbf{u}_k(t)$ y $\mathbf{w}_k(t)$ son los vectores anatómicos que confluyen en la articulación $k$ en el fotograma $t$. El argumento del arcocoseno se clampa numéricamente al intervalo $[-1.0, 1.0]$ para prevenir errores de dominio por imprecisión de punto flotante.
+
+La \textbf{desviación angular instantánea} se define como:
+
+\[
+E_k(t) = \left| \theta_k^{\text{alumno}}(t) - \theta_k^{\text{profesor}}(t) \right|
+\]
+
+El \textbf{puntaje de coincidencia global} se calcula como el promedio ponderado de las desviaciones en todos los fotogramas y articulaciones:
+
+\[
+\text{Score} = 100 \times \left( 1 - \frac{1}{T \cdot K} \sum_{t=1}^{T} \sum_{k=1}^{K} \frac{E_k(t)}{\pi} \right)
+\]
+
+\textit{En palabras simples: esta fórmula mide qué tan parecidos son dos movimientos comparando sus ángulos articulares. El resultado va de 0 (nada parecido) a 100 (idéntico).}
+
+\textbf{Articulaciones monitoreadas por defecto (tripletes anatómicos):}
+
 \begin{table}[htbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|X|X|}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
     \hline
-    Criterio & Gemini 2.5 Flash (Elegido) & GPT-4o & Modelos Locales (Llama 3) \\ \hline
-    Latencia y Costo & Excelente relación velocidad/costo. & Costo por token elevado. & Requiere GPUs de gran memoria. \\ \hline
-    Salida Estructurada & Garantía estricta de JSON Schema. & Soporta JSON pero mayor latencia. & Inestable en esquemas JSON complejos. \\ \hline
-    Ventana de Contexto & Muy amplia para ingesta RAG. & Adecuada. & Limitada según hardware. \\ \hline
+    \textbf{Articulación} & \textbf{Punto A} & \textbf{Centro (vértice)} & \textbf{Punto C} \\ \hline
+    Codo izquierdo & Hombro izq. & Codo izq. & Muñeca izq. \\ \hline
+    Codo derecho & Hombro der. & Codo der. & Muñeca der. \\ \hline
+    Rodilla izquierda & Cadera izq. & Rodilla izq. & Tobillo izq. \\ \hline
+    Rodilla derecha & Cadera der. & Rodilla der. & Tobillo der. \\ \hline
+    Hombro izquierdo & Cadera izq. & Hombro izq. & Codo izq. \\ \hline
+    Hombro derecho & Cadera der. & Hombro der. & Codo der. \\ \hline
+    Cadera izquierda & Hombro izq. & Cadera izq. & Rodilla izq. \\ \hline
+    Cadera derecha & Hombro der. & Cadera der. & Rodilla der. \\ \hline
 \end{tabularx}
-\caption{Cuadro Comparativo de Modelos del Lenguaje (LLM)}
-\label{tab:comp_llm}
+\caption{Definición de Ángulos Articulares Biomecánicos}
+\label{tab:articulaciones}
 \end{table}
 
-Se seleccionó \textbf{Gemini 2.5 Flash} debido a su soporte nativo para forzar respuestas bajo esquemas JSON estrictos (garantizando los cuatro bloques pedagógicos requeridos: Análisis Postural, Riesgo de Lesión, Paso a Paso y Resumen Ejecutivo), combinado con una velocidad de respuesta superior y costos operativos reducidos en comparación con GPT-4o. El adaptador GeminiServiceAdapter (src/infrastructure/adapters/gemini\_adapter.py) fuerza la respuesta mediante un prompt que exige JSON válido con 4 claves exactas. Si el parseo falla, se usa un fallback\_dict determinista para evitar alucinaciones.
-
-\subsection{Base de Datos Vectorial para RAG: Qdrant Vector Database}
-
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó la base de datos vectorial especializada **Qdrant**.
-
-\subsubsection{Alternativas Consideradas}
-\begin{itemize}
-    \item \textbf{pgvector (Extensión PostgreSQL):} Extensión relacional para vectores.
-    \item \textbf{Pinecone:} Servicio de base de datos vectorial 100\% gestionado en la nube.
-    \item \textbf{ChromaDB / FAISS (Meta):} Almacenes de vectores embebidos en memoria.
-\end{itemize}
-
-\subsubsection{Justificación de la Selección}
-Tecnología seleccionada: Qdrant Vector Database (contenedor Docker bjj\_qdrant, puerto 6333).
-
-Frente a pgvector: la extensión pgvector restringe los índices HNSW/IVFFlat a un máximo de 2000 dimensiones. Dado que Qwen3-VL-Embedding-2B produce vectores de 2048 dimensiones, Qdrant es la única alternativa que permite indexación eficiente con filtros de metadatos (id\_tecnica, id\_documento).
-
-Frente a Pinecone: Qdrant se ejecuta on-premise vía Docker, garantizando soberanía de datos y costo cero operativo.
-
-\subsection{Framework Backend: FastAPI (Python 3.11+)}
-
-\subsubsection{Tecnología Seleccionada}
-Se seleccionó el framework \textbf{FastAPI} en lenguaje Python 3.11+.
-
-\subsubsection{Alternativas Consideradas}
-\begin{itemize}
-    \item \textbf{Django:} Framework Web monolítico "baterías incluidas".
-    \item \textbf{Flask:} Microframework minimalista para Python.
-    \item \textbf{Node.js (Express.js):} Entorno de ejecución en JavaScript asíncrono.
-\end{itemize}
-
-\subsubsection{Justificación de la Selección}
-\textbf{FastAPI} se eligió por su alto rendimiento basado en \texttt{asyncio} y \texttt{Starlette} (comparable a Node.js), su validación automática de datos con \texttt{Pydantic} y la generación automática de documentación interactiva (OpenAPI/Swagger). Frente a Django, FastAPI es infinitamente más ligero para construir arquitecturas de microservicios y APIs REST limpias en capas. Frente a Node.js, permite integrar directamente las bibliotecas nativas de inteligencia artificial y ciencia de datos de Python. El servidor se expone vía uvicorn en el puerto 8000 (configurable vía API\_PORT). Monta la PWA en /static y sirve el index.html en /.
-
-\subsection{Base de Datos Relacional: PostgreSQL en BCNF con JSONB}
+\subsection[Localización Temporal del Error mediante Dynamic Time Warping (DTW)]{Localización Temporal del Error mediante Dynamic Time Warping (DTW)\footnote{El algoritmo DTW está especificado formalmente en el diseño (ver SSD CU-02 y Contrato CO-02), estando su implementación en \texttt{src/domain/} planificada para la siguiente iteración de construcción. La versión actual de la solución ejecuta la comparación cinemática angular directa mediante \texttt{CalculadoraBiomecanica.evaluar\_desviaciones()}.}}
 
 \subsubsection{Tecnología Seleccionada}
 Se seleccionó \textbf{PostgreSQL} estructurado en Tercera Forma Normal (3FN / BCNF) con soporte de columnas de tipo \texttt{JSONB}.
@@ -779,10 +773,10 @@ La Tabla \ref{tab:casos_de_uso} resume los casos de uso principales identificado
     \hline
     Código & Nombre del Caso de Uso & Actor Principal & Prioridad \\ \hline
     CU-01 & Registrar Patrón de Técnica & Profesor & Alta \\ \hline
-    CU-02 & Evaluar Ejecución Biomecánica con Síntesis Pedagógica & Alumno & Alta \\ \hline
-    CU-03 & Gestionar Catálogo de Técnicas y Profesores & Profesor & Media \\ \hline
-    CU-04 & Consultar Historial de Evaluaciones y Progreso & Alumno & Media \\ \hline
-    CU-05 & Ingestar Literatura Técnica en Base de Datos Vectorial & Profesor & Baja \\ \hline
+    CU-02 & Evaluar Ejecución Biomecánica & Alumno & Alta \\ \hline
+    CU-03 & Gestión de Perfil & Alumno / Profesor & Media \\ \hline
+    CU-04 & Panel de Analítica para el Tatami & Profesor & Alta \\ \hline
+    CU-05 & Alimentar Base de Conocimiento RAG & Profesor & Media \\ \hline
 \end{tabularx}
 \caption{Identificación de Casos de Uso del Sistema (Alineado con roles de BD)}
 \label{tab:casos_de_uso}
@@ -790,19 +784,33 @@ La Tabla \ref{tab:casos_de_uso} resume los casos de uso principales identificado
 
 \newpage
 
-\section{Diagrama de dominio}
+\subsection{Funciones del Producto Organizadas por Iteraciones UP (Larman Cap. 36)}
+Siguiendo la metodología del Proceso Unificado (UP) de Craig Larman, las funciones del sistema se estructuran formalmente en tres iteraciones evolutivas e incrementales de la fase de Construcción:
 
-El Modelo de Dominio ilustrado en la Figura \ref{fig:diagrama_dominio} representa las entidades conceptuales del negocio y sus relaciones fundamentales.
+\begin{itemize}
+    \item \textbf{Iteración 1 (Elaboración 1 — CU-01, CU-02 núcleo):}
+    \begin{itemize}
+        \item \textit{Gestión de Cuentas y Seguridad:} Autenticación segura de usuarios (JWT + PBKDF2).
+        \item \textit{Registro de Técnica Patrón:} Carga obligatoria del video semilla del profesor cinta negra.
+        \item \textit{Envío de Grabaciones de Drills:} Carga desde el teléfono celular de videos de hasta 30 segundos.
+        \item \textit{Evaluación Biomecánica Automática:} Detección de los 17 keypoints COCO en 3D (YOLO26x-Pose + YOLO26x-Depth) y evaluación de 8 a 12 ángulos articulares clave mediante la \texttt{CalculadoraBiomecanica}.
+        \item \textit{Generación de Reportes Explicables:} Informe pedagógico en 4 bloques generado por Gemini 2.5 Flash.
+    \end{itemize}
 
-\begin{figure}[htbp]
-    \centering
-    \fbox{%
-    \begin{minipage}{0.92\textwidth}
-        \vspace{0.3cm}
-        \centering
-        \textbf{DIAGRAMA DEL MODELO DE DOMINIO DEL NEGOCIO} \par
-        \vspace{0.3cm}
-        \raggedright
+    \item \textbf{Iteración 2 (Elaboración 2 — CU-03, CU-04, CU-05):}
+    \begin{itemize}
+        \item \textit{Historial de Progreso Individual:} Visualización cronológica de calificaciones y avance técnico para el alumno.
+        \item \textit{Panel de Analítica para el Tatami:} Tablero del profesor con resumen visual de debilidades grupales.
+        \item \textit{Ingesta Doctrinal RAG:} Indexación de manuales en PDF en Qdrant con embeddings Qwen3-VL de 2048 dimensiones.
+    \end{itemize}
+
+    \item \textbf{Iteración 3 (Elaboración 3 — CU-06, CU-07, CU-08):}
+    \begin{itemize}
+        \item \textit{Validación Multimodal BJJ:} Filtro binario de contenido de Jiu-Jitsu mediante Gemini 2.5 Flash (RF-04/RF-24).
+        \item \textit{Mantenimiento Autónomo Nocturno:} Purga en segundo plano de videos antiguos a los 30 días (CU-06).
+        \item \textit{Recalibración Automática de Centroide:} Recálculo autónomo del estándar técnico con $N \ge 10$ ejecuciones óptimas (CU-08).
+    \end{itemize}
+\end{itemize}
         \begin{itemize}
             \item \textbf{Profesor} $(1) \longrightarrow (*)$ \textbf{TecnicaPatron}: Registra patrones de movimiento (CU-01).
             \item \textbf{TecnicaPatron} $(1) \longrightarrow (1)$ \textbf{MatrizEsqueletica}: Estructura de dominio con puntos 3D.
@@ -852,3 +860,470 @@ La implementación actual presenta las siguientes limitaciones documentadas (Deu
 \end{itemize}
 
 \end{document}
+
+    \item \textbf{RP-03 (Calidad de Detección Articular):} El modelo de visión artificial debe alcanzar una certeza media superior al 85\%. Esta precisión aplica al detectar los 17 keypoints COCO corporales bajo iluminación de gimnasio.
+    \textbf{RF-02} & Extracción y Normalización de Puntos Corporales en 3D. & \textbf{Dado que} se procesa un video de técnica patrón. \textbf{Cuando} la GPU remota ejecuta YOLO26x-Pose + YOLO26x-Depth. \textbf{Entonces} extrae los 17 keypoints COCO en coordenadas (X, Y, Z) centradas en la cadera (\textit{root-relative}) para la evaluación de sus 8 a 12 ángulos articulares y las guarda en la base de datos. & CU-01 \\ \hline
+    \textbf{RF-03} & Envío de Grabaciones de Drills desde la PWA. & \textbf{Dado que} un Alumno está en la aplicación web móvil. \textbf{Cuando} selecciona una técnica del catálogo y sube una grabación de hasta 30 segundos (Solo Drill o práctica en pareja) en formato MP4 o WebM. \textbf{Entonces} el sistema la recibe y le asigna un número de evaluación único. & CU-02 \\ \hline
+    \textbf{RF-04} & Validación de Contenido BJJ con Gemini. & \textbf{Dado que} se recibe un video del alumno. \textbf{Cuando} se extraen 3 fotogramas representativos (inicio, medio, fin) y se envían a Gemini 2.5 Flash. \textbf{Entonces} el modelo responde SÍ o NO sobre si el contenido corresponde a Brazilian Jiu-Jitsu. Si es NO, se rechaza el video. Si es SÍ, se procede al análisis. & CU-02, CU-07 \\ \hline
+    \textbf{RF-05} & Extracción del Esqueleto 3D del Alumno. & \textbf{Dado que} un video fue validado como BJJ. \textbf{Cuando} se envía a la GPU remota. \textbf{Entonces} YOLO26x-Pose + YOLO26x-Depth devuelven los 17 keypoints COCO tridimensionales del alumno (X, Y, Z) normalizados en espacio \textit{root-relative} para su evaluación angular. & CU-02 \\ \hline
+\footnotesize
+\begin{xltabular}{\textwidth}{|c|>{\raggedright\arraybackslash}p{0.22\textwidth}|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{0.12\textwidth}|>{\centering\arraybackslash}p{0.1\textwidth}|}
+    \caption{Catálogo de Requisitos Funcionales, Criterios de Aceptación y Asignación por Iteración UP}
+    \label{tab:requisitos_funcionales} \\
+    \hline
+    \textbf{ID} & \textbf{Requisito Funcional} & \textbf{Criterio de Aceptación Formal (Gherkin / Given-When-Then)} & \textbf{Trazabilidad} & \textbf{Iteración UP} \\ \hline
+    \endfirsthead
+    \multicolumn{5}{c}%
+    {\tablename\ \thetable\ -- \textit{Continuación de la página anterior}} \\
+    \hline
+    \textbf{ID} & \textbf{Requisito Funcional} & \textbf{Criterio de Aceptación Formal} & \textbf{Trazabilidad} & \textbf{Iteración UP} \\ \hline
+    \endhead
+    \hline \multicolumn{5}{r}{\textit{Continúa en la siguiente página}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+    \textbf{RF-01} & Inicializar Técnica Patrón con Video Semilla Obligatorio. & \textbf{Dado que} un Profesor está autenticado en el sistema. \textbf{Cuando} registra una nueva técnica en el catálogo. \textbf{Entonces} el sistema exige adjuntar obligatoriamente el video semilla del profesor antes de permitir guardar la técnica. & CU-01 & Iteración 1 \\ \hline
+    \textbf{RF-02} & Extracción y Normalización de Puntos Corporales en 3D. & \textbf{Dado que} se procesa un video de técnica patrón. \textbf{Cuando} la GPU remota ejecuta YOLO26x-Pose + YOLO26x-Depth. \textbf{Entonces} extrae los 17 keypoints COCO en coordenadas (X, Y, Z) centradas en la cadera (\textit{root-relative}) para la evaluación de sus 8 a 12 ángulos articulares y las guarda en la base de datos. & CU-01 & Iteración 1 \\ \hline
+    \textbf{RF-03} & Envío de Grabaciones de Drills desde la PWA. & \textbf{Dado que} un Alumno está en la aplicación web móvil. \textbf{Cuando} selecciona una técnica del catálogo y sube una grabación de hasta 30 segundos (Solo Drill o práctica en pareja) en formato MP4 o WebM. \textbf{Entonces} el sistema la recibe y le asigna un número de evaluación único. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-04} & Validación de Contenido BJJ con Gemini. & \textbf{Dado que} se recibe un video del alumno. \textbf{Cuando} se extraen 3 fotogramas representativos (inicio, medio, fin) y se envían a Gemini 2.5 Flash. \textbf{Entonces} el modelo responde SÍ o NO sobre si el contenido corresponde a Brazilian Jiu-Jitsu. Si es NO, se rechaza el video. Si es SÍ, se procede al análisis. & CU-02, CU-07 & Iteración 3 \\ \hline
+    \textbf{RF-05} & Extracción del Esqueleto 3D del Alumno. & \textbf{Dado que} un video fue validado como BJJ. \textbf{Cuando} se envía a la GPU remota. \textbf{Entonces} YOLO26x-Pose + YOLO26x-Depth devuelven los 17 keypoints COCO tridimensionales del alumno (X, Y, Z) normalizados en espacio \textit{root-relative} para su evaluación angular. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-06} & Cálculo de Coincidencia Angular. & \textbf{Dado que} se tienen las series angulares del alumno y del profesor. \textbf{Cuando} se comparan matemáticamente. \textbf{Entonces} el sistema calcula el porcentaje exacto de coincidencia técnica (de 0 a 100\%) mediante promedio ponderado de desviaciones angulares. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-07} & Búsqueda de Consejos Doctrinales ante Errores. & \textbf{Dado que} el puntaje del alumno no alcanza el nivel de aprobación. \textbf{Cuando} se detectan las articulaciones mal colocadas. \textbf{Entonces} el sistema busca en Qdrant los textos del manual oficial que enseñan a corregir esa falla. & CU-02 & Iteración 2 \\ \hline
+    \textbf{RF-08} & Redacción del Reporte Pedagógico en 4 Bloques. & \textbf{Dado que} se conocen las articulaciones con error y los textos del manual oficial. \textbf{Cuando} Gemini redacta el informe. \textbf{Entonces} genera un texto claro en 4 bloques (Análisis Postural, Riesgo de Lesión, Guía Paso a Paso, Resumen) con esquema JSON verificado. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-09} & Identificación del Fotograma con Mayor Error (DTW). & \textbf{Dado que} el algoritmo DTW compara la serie angular del alumno con la del profesor. \textbf{Cuando} encuentra el punto de mayor diferencia angular. \textbf{Entonces} extrae el segundo exacto ($t_{\text{error}}$) para mostrarlo en el video. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-10} & Visualización Gráfica del Error con Círculo. & \textbf{Dado que} se identificó el frame crítico. \textbf{Cuando} el sistema genera el reporte. \textbf{Entonces} la PWA superpone un círculo rojo sobre la articulación del alumno con mayor desviación y muestra el video del profesor sincronizado en ese mismo frame. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-11} & Selección Manual de Rol en Video en Pareja. & \textbf{Dado que} un Alumno sube un video con dos personas. \textbf{Cuando} YOLO26x detecta dos esqueletos. \textbf{Entonces} la PWA muestra el primer fotograma con ambos esqueletos numerados (Persona 1 y Persona 2) y solicita al alumno seleccionar cuál es él. El sistema rastrea ese esqueleto durante todo el video. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-12} & Rechazo por Oclusión Excesiva en Pareja. & \textbf{Dado que} se procesa un video en pareja. \textbf{Cuando} más del 40\% de los puntos del alumno quedan ocluidos durante más del 30\% de la secuencia. \textbf{Entonces} el sistema rechaza el video y solicita regrabarlo en otro ángulo. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-13} & Filtro de Correspondencia con la Técnica Seleccionada. & \textbf{Dado que} un video ya fue validado como BJJ por Gemini. \textbf{Cuando} el movimiento tiene una similitud angular con el video semilla inferior al umbral de dominio (0.30 en fase inicial). \textbf{Entonces} se descarta automáticamente y se notifica al alumno que el video no corresponde a la técnica seleccionada. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-14} & Control de Calidad Visual del Video ($\ge 85\%$). & \textbf{Dado que} la GPU analiza el video del alumno. \textbf{Cuando} la certeza promedio al detectar los keypoints es inferior al 85\%. \textbf{Entonces} se rechaza la evaluación solicitando al usuario grabar con mejor luz. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-15} & Respuesta Directa ante Ejecución Excelente. & \textbf{Dado que} el alumno ejecuta el movimiento de forma óptima superando el límite de aprobación. \textbf{Cuando} se confirma la buena técnica. \textbf{Entonces} el sistema omite búsquedas complejas y entrega una felicitación formal inmediata. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-16} & Control de Acceso Seguro mediante Tokens JWT. & \textbf{Dado que} un usuario ingresa su correo y contraseña correctos. \textbf{Cuando} el sistema valida su cuenta. \textbf{Entonces} le entrega un token seguro que le permite usar la aplicación durante 60 minutos sin reescribir su clave. & CU-01, CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-17} & Incorporación de Libros y Manuales Oficiales al Sistema. & \textbf{Dado que} el Profesor cuenta con permisos de administrador. \textbf{Cuando} sube un libro o reglamento en PDF. \textbf{Entonces} el sistema divide el texto en fragmentos con solapamiento, los convierte en vectores de 2048 dimensiones con Qwen3-VL-Embedding-2B y los guarda en Qdrant. & CU-05 & Iteración 2 \\ \hline
+    \textbf{RF-18} & Control de Fila para Evaluaciones Simultáneas. & \textbf{Dado que} varios alumnos suben videos al mismo tiempo. \textbf{Cuando} se alcanzan 5 evaluaciones simultáneas en proceso. \textbf{Entonces} las siguientes se colocan en una lista de espera ordenada sin saturar el servidor. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-19} & Consulta de Historial de Alumno. & \textbf{Dado que} un Alumno inicia sesión en la aplicación. \textbf{Cuando} ingresa a su perfil personal. \textbf{Entonces} puede ver la lista ordenada de sus evaluaciones pasadas, sus calificaciones y gráficos de mejora técnica. & CU-03 & Iteración 2 \\ \hline
+    \textbf{RF-20} & Panel de Analítica para el Profesor. & \textbf{Dado que} un Profesor accede a su panel de control. \textbf{Cuando} selecciona una técnica del catálogo. \textbf{Entonces} observa un mapa visual con los errores corporales más comunes de sus alumnos y estadísticas de asistencia. & CU-04 & Iteración 2 \\ \hline
+    \textbf{RF-21} & Recalibración Automática del Centroide de Referencia. & \textbf{Dado que} existen al menos 10 videos de alumnos con similitud $\geq 0.88$ respecto al video semilla. \textbf{Cuando} se ejecuta el mantenimiento nocturno. \textbf{Entonces} el sistema recalcula el centroide como el promedio de esos vectores y lo usa como nuevo estándar de comparación. Si la similitud del nuevo centroide con el video semilla cae por debajo de 0.88, mantiene el centroide anterior y alerta al profesor. & CU-08 & Iteración 3 \\ \hline
+    \textbf{RF-22} & Eliminación Automática de Videos a los 30 Días. & \textbf{Dado que} los videos de los alumnos cumplen 30 días de antigüedad en el servidor. \textbf{Cuando} se ejecuta el mantenimiento nocturno. \textbf{Entonces} se borran físicamente los archivos de video conservando solo las calificaciones y notas. & CU-06 & Iteración 3 \\ \hline
+    \textbf{RF-23} & Detección de Videos Duplicados. & \textbf{Dado que} se sube un nuevo archivo de video. \textbf{Cuando} el sistema revisa su firma digital. \textbf{Entonces} evita procesar dos veces el mismo video y descarta intentos de copia entre cuentas distintas. & CU-02 & Iteración 1 \\ \hline
+    \textbf{RF-24} & Validación de Contenido BJJ (ver RF-04). & \textit{(Requisito consolidado en RF-04. Se mantiene este identificador para trazabilidad con el Capítulo III).} & CU-07 & Iteración 3 \\ \hline
+\end{xltabular}
+\section{Supplementary Specification (Especificación Suplementaria - Larman Cap. 5)}
+
+El artefacto \textit{Supplementary Specification} captura los requisitos del sistema que no se describen adecuadamente en los casos de uso, incluyendo atributos de calidad FURPS+, restricciones de diseño y reglas de negocio transversales.
+
+\subsection{Modelo de Calidad FURPS+}
+\begin{itemize}
+    \item \textbf{F (Functionality / Funcionalidad):} Cobertura completa de los requisitos funcionales RF-01 a RF-24 expresados bajo el formato Gherkin.
+    \item \textbf{U (Usability / Usabilidad):} Interfaz PWA adaptada a dispositivos móviles, operabilidad con un máximo de 3 toques para el envío de grabaciones y generación de reportes explicables en lenguaje natural libre de jerga matemática confusa.
+    \item \textbf{R (Reliability / Confiabilidad):} Tolerancia a fallos mediante el principio \textit{Fail-Safe} ante retardos en la API de Gemini 2.5 Flash, atomicidad en transacciones PostgreSQL y reintento automático de envíos retenidos por desconexión.
+    \item \textbf{P (Performance / Rendimiento):} Tiempo total de procesamiento $\le 180$ segundos (RP-01), capacidad de encolamiento simultáneo para 5 evaluaciones (RP-02) y certeza de detección de keypoints $\ge 85\%$ en el tatami (RP-03).
+    \item \textbf{S (Supportability / Soportabilidad):} Arquitectura modular desacoplada en 5 capas, empaquetado reproducible en contenedores Docker Compose y esquema de persistencia en 3FN/BCNF.
+    \item \textbf{+ (Plus — Restricciones e Interfaces):} Conexiones cifradas HTTPS TLS 1.3, autenticación mediante JWT de 60 minutos y contraseñas protegidas con PBKDF2-HMAC-SHA256.
+\end{itemize}
+
+\subsection{Reglas de Negocio del Dominio (Business Rules)}
+\begin{itemize}
+    \item \textbf{RULE-01 (Video Semilla Obligatorio):} Una técnica no puede publicarse en el catálogo sin el video patrón del profesor cinta negra.
+    \item \textbf{RULE-02 (Límite Temporal y Formato):} Las grabaciones de los alumnos no deben exceder 30 segundos de duración ni 50 MB en formato MP4/WebM.
+    \item \textbf{RULE-03 (Calidad Mínima Visual):} Se rechazan automáticamente los videos cuyo promedio de certeza en la detección de keypoints por YOLO26x sea $< 85\%$.
+    \item \textbf{RULE-04 (Umbral de Dominio BJJ):} Si el movimiento enviado muestra una similitud angular $< 0.30$ respecto al patrón, se notifica que el video no corresponde a la técnica seleccionada.
+    \item \textbf{RULE-05 (Recalibración de Centroide):} El centroide de referencia solo se recalcula cuando existen $N \ge 10$ ejecuciones con similitud coseno $\ge 0.88$ respecto al video semilla original.
+    \item \textbf{RULE-06 (Purga Automática de Privacidad):} Los archivos de video de los alumnos se eliminan físicamente a los 30 días de antigüedad.
+\end{itemize}
+
+\section{Glosario del Proceso Unificado (Glosario UP - Larman Cap. 5)}
+\end{xltabular}
+
+\clearpage
+
+\subsection{Requisitos de Rendimiento}
+    \caption{Glosario del Proceso Unificado para el Sistema de Análisis Biomecánico}
+    \label{tab:glosario_up} \\
+    \hline
+    \textbf{Término} & \textbf{Definición formal en el Proceso Unificado} \\ \hline
+    \endfirsthead
+    \multicolumn{2}{c}%
+    {\tablename\ \thetable\ -- \textit{Continuación de la página anterior}} \\
+    \hline
+    \textbf{Término} & \textbf{Definición formal} \\ \hline
+    \endhead
+    \hline \multicolumn{2}{r}{\textit{Continúa en la siguiente página}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+    Actor & Entidad externa al sistema (humana o automatizada) que interactúa directamente con los casos de uso (ej. Alumno, Profesor, Daemon Nocturno). \\ \hline
+    Caso de Uso (CU) & Secuencia de acciones realizadas por el sistema que produce un resultado de valor observable para un actor primario. \\ \hline
+    Keypoint & Punto anatómico de control bidimensional $(x, y)$ o tridimensional $(X, Y, Z)$ detectado en el cuerpo humano por modelos de pose visual (ej. codo, cadera). \\ \hline
+    RAG (Retrieval-Augmented Generation) & Patrón arquitectónico de IA que combina la recuperación de documentos en vectores con modelos generativos de lenguaje para erradicar alucinaciones. \\ \hline
+    SSD (System Sequence Diagram) & Diagrama UML de interacción que ilustra los eventos de entrada/salida y las operaciones del sistema para un escenario de caso de uso. \\ \hline
+    Root-Relative & Espacio cinemático tridimensional cuyo origen de coordenadas $(0,0,0)$ se traslada al centroide pélvico/sacro del esqueleto del practicante. \\ \hline
+    JSONB & Tipo de dato binario en PostgreSQL que permite almacenar, indexar y consultar documentos semiestructurados JSON con alta eficiencia. \\ \hline
+    Centroide de Referencia & Vector cinemático promedio que representa la firma angular patrón ideal para una técnica específica del catálogo. \\ \hline
+    Tatami & Área reglamentaria de práctica y entrenamiento de Jiu-Jitsu Brasileño con piso amortiguado. \\ \hline
+    Solo Drill & Ejercicio cinemático individual de Jiu-Jitsu ejecutado repetidamente sin oponente de práctica. \\ \hline
+    Matriz Esquelética & Entidad de dominio que encapsula la colección de puntos anatómicos 3D y computa los ángulos cinemáticos entre huesos adyacentes. \\ \hline
+\endxltabular}
+
+\clearpage
+    \label{fig:diagrama_dominio}
+\end{figure}
+
+\section{Supplementary Specification (Especificación Suplementaria - Larman Cap. 5)}
+\subsection{Diagrama de Estados del Objeto Evaluación (Statechart Diagram - Larman Cap. 29)}
+
+El diagrama de máquina de estados de UML ilustra el ciclo de vida del objeto de dominio \texttt{EvaluacionBiomecanica}, el cual es un objeto dependiente del estado (\textit{state-dependent}). El objeto transiciona a través de estados bien definidos según los eventos del sistema:
+
+\begin{itemize}
+    \item \textbf{Estado inicial \texttt{Pendiente}:} Alumno sube el video desde la PWA y se asigna un \texttt{id\_evaluacion} UUID.
+    \item \textbf{Transición \texttt{inferirYOLO()}:} El daemon o servicio de inferencia remota procesa la secuencia a través de YOLO26x-Pose + YOLO26x-Depth. Si la certezas $< 85\%$ o la oclusión $> 40\%$, transiciona a \texttt{Rechazada}.
+    \item \textbf{Estado \texttt{Procesando}:} Se calcula la coincidencia angular y la serie temporal contra la \texttt{TecnicaPatron}.
+    \item \textbf{Transición \texttt{generarConsejo()}:} Se ejecuta la búsqueda RAG en Qdrant y la síntesis pedagógica en Gemini 2.5 Flash. Si Gemini excede el timeout de 30 s, se activa el fallback determinísta y transiciona a \texttt{Completada (Fallback)}.
+    \item \textbf{Estado final \texttt{Completada}:} Se persiste el reporte en PostgreSQL en la columna JSONB \texttt{reporte\_json} y se notifica a la PWA.
+    \item \textbf{Estado final \texttt{Fallida}:} Si ocurre un error irrecuperable de infraestructura o archivo corrupto.
+\end{itemize}
+
+\subsection{Diagrama de Actividades del Flujo CU-02 (Activity Diagram - Larman Cap. 38)}
+
+El diagrama de actividades de UML modela el flujo de trabajo lógico y cinemático para la realización del CU-02 (\textit{Evaluar Ejecución Biomecánica}) organizado mediante líneas de responsabilidad (\textit{swimlanes}):
+
+\begin{itemize}
+    \item \textbf{Carril Alumno (PWA):} Selecciona técnica del catálogo $\rightarrow$ Graba o sube video MP4/WebM $\rightarrow$ Realiza polling del estado.
+    \item \textbf{Carril Servidor Central (FastAPI Application Layer):} Valida autenticación JWT $\rightarrow$ Guarda video temporal $\rightarrow$ Encola tarea asíncrona $\rightarrow$ Retorna \texttt{id\_tarea} $\rightarrow$ Construye respuesta final.
+    \item \textbf{Carril Colab GPU (Infraestructura de Inferencia):} Recibe frame array $\rightarrow$ Ejecuta YOLO26x-Pose + YOLO26x-Depth $\rightarrow$ Normaliza coordenadas en espacio \textit{root-relative} $\rightarrow$ Retorna matriz de keypoints $(X, Y, Z)$.
+    \item \textbf{Carril Motor RAG \& LLM (Servicios Transversales):} \texttt{CalculadoraBiomecanica} computa desviaciones angulares $\rightarrow$ \texttt{QdrantAdapter} recupera fragmentos doctrinales $\rightarrow$ \texttt{GeminiServiceAdapter} sintetiza el informe pedagógico en 4 bloques JSON.
+\end{itemize}
+
+\section{Contratos de Operación}
+\subsection{Data Model — Modelo de Datos Relacional (Larman Cap. 34)}
+
+Siguiendo el principio de persistencia de Larman (Cap. 34), la estructura relacional se organiza en scripts SQL ordenados en BCNF/3FN dentro del directorio \texttt{database/}:
+
+\footnotesize
+\begin{xltabular}{\textwidth}{|l|l|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+    \hline
+    \textbf{Script SQL} & \textbf{Tabla PostgreSQL} & \textbf{Clave Primaria (PK) y Foráneas (FK)} & \textbf{Propósito y Atributos Principales} \\ \hline
+    \texttt{01\_init.sql} & \texttt{tecnicas\_patron} & PK: \texttt{id\_tecnica} & Catálogo de drils y videos semilla. \\ \hline
+    \texttt{02\_historico.sql} & \texttt{evaluaciones\_alumno} & PK: \texttt{id\_evaluacion}, FK: \texttt{id\_tecnica} & Histórico de evaluaciones y \texttt{reporte\_json} (JSONB). \\ \hline
+    \texttt{03\_instructores\_fuentes.sql} & \texttt{fuentes\_conocimiento} & PK: \texttt{id\_fuente}, FK: \texttt{id\_instructor} & Literatura oficial indexada para RAG. \\ \hline
+    \texttt{04\_abm\_bcnf.sql} & \texttt{profesores} & PK: \texttt{id\_profesor} & Registro formal de instructores del tatami. \\ \hline
+    \texttt{05\_usuarios.sql} & \texttt{usuarios} & PK: \texttt{id\_usuario} & Cuentas de acceso con hash PBKDF2-HMAC-SHA256. \\ \hline
+\end{xltabular}
+\normalsize
+
+\section{Consideraciones de Confiabilidad y Fallo Seguro}
+
+El sistema está diseñado bajo el principio \textbf{Fail-Safe} documentado en 4.3.4. Se aplican 5 mecanismos concretos de confiabilidad.
+
+\subsection{Patrón Adapter Fallback (Núcleo del Fail-Safe)}
+
+\textbf{Problema:} Google Colab puede caerse, cerrar la sesión de Ngrok o estar en mantenimiento. Si el sistema depende ciegamente de Colab, la PWA queda inoperable.
+
+\textbf{Solución implementada:} El \texttt{Adaptador\allowbreak YOLO} implementa \textbf{fallback automático} a \texttt{Mock\allowbreak YOLOEngine} cuando detecta que el túnel no está disponible.
+
+\section{Diagrama de dominio}
+
+\end{xltabular}
+\end{xltabular}
+\clearpage
+
+% Reconfiguración de numeración para el Capítulo V
+\renewcommand{\thesection}{5.\arabic{section}}
+\renewcommand{\thesubsection}{5.\arabic{section}.\arabic{subsection}}
+\setcounter{section}{0}
+
+% ==========================================
+% CAPÍTULO V: ANÁLISIS Y DISEÑO (ITERACIÓN 1)
+% ==========================================
+\begin{center}
+    {\bfseries\Large CAPÍTULO V: ANÁLISIS Y DISEÑO (ITERACIÓN 1) \par}
+\end{center}
+\addcontentsline{toc}{section}{\textbf{CAPÍTULO V: ANÁLISIS Y DISEÑO (ITERACIÓN 1)}}
+\vspace{1cm}
+
+\section{Modelo de Dominio}
+\label{sec:modelo-dominio}
+
+El Modelo de Dominio es una representación visual de las clases conceptuales del mundo real del negocio (Larman, 2004). No contiene métodos ni lógica de software, sino que captura el vocabulario esencial y las relaciones entre las entidades del Sistema de Análisis Biomecánico de BJJ. Este modelo sirve como base para inspirar el diseño de las clases de software en las capas de Dominio y Aplicación.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth,height=0.65\textheight,keepaspectratio]{Figuras/Dominio.png}
+    \caption{Modelo de Dominio del Sistema de Análisis Biomecánico BJJ. Fuente: Elaboración propia basada en Larman (2004).}
+    \label{fig:modelo-dominio}
+\end{figure}
+
+Como se observa en la Figura \ref{fig:modelo-dominio}, el núcleo del dominio se centra en la entidad \texttt{EvaluacionAlumno}, la cual actúa como el vínculo entre el \texttt{Alumno} que realiza la práctica y la \texttt{TecnicaPatron} registrada por el \texttt{Profesor}. La \texttt{MatrizEsqueletica} se compone de 17 objetos \texttt{Punto3D} (keypoints COCO), reflejando la estructura tridimensional extraída por YOLO26x. Además, el \texttt{ConsejoPedagogico} se modela como una entidad dependiente de la evaluación, encapsulando los cuatro bloques de retroalimentación generados por Gemini 2.5 Flash. Las \texttt{FuenteConocimiento} representan los manuales doctrinales que alimentan el motor RAG, estableciendo una relación de referencia doctrinal con las técnicas evaluadas.
+
+\section{Diagramas de Secuencia de Sistema (SSD)}
+\label{sec:ssd}
+
+Siguiendo la metodología de Craig Larman (2004), un Diagrama de Secuencia de Sistema (SSD) ilustra el comportamiento de un sistema como una caja negra, mostrando los eventos externos que los actores generan hacia el sistema. Este artefacto es fundamental para identificar las operaciones del sistema que la API REST debe exponer.
+
+\subsection{SSD para el Caso de Uso CU-02: Evaluar Ejecución Biomecánica}
+\label{subsec:ssd-cu02}
+
+La Figura \ref{fig:ssd-cu02} presenta el SSD para el escenario principal del caso de uso CU-02. El Alumno interactúa con el Sistema mediante cinco eventos principales: autenticación, selección de técnica, carga de video, consulta de estado y obtención del reporte pedagógico. Nótese que el Sistema se representa como una caja negra (\texttt{:System}), sin revelar los componentes internos que procesan la solicitud, en estricto apego al principio de abstracción de Larman.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/SSD_CU02.png}
+    \caption{Diagrama de Secuencia de Sistema (SSD) para el CU-02: Evaluar Ejecución Biomecánica. Fuente: Elaboración propia basada en Larman (2004).}
+    \label{fig:ssd-cu02}
+\end{figure}
+
+Como se observa en la Figura \ref{fig:ssd-cu02}, los eventos del sistema identificados (\texttt{subirVideo}, \texttt{consultarEstadoEvaluacion}, \texttt{obtenerResultadoEvaluacion}) se convertirán en las operaciones del sistema que se detallarán en los Contratos de Operación. Estos eventos también servirán como punto de partida para los Diagramas de Interacción de diseño.
+
+\subsection{SSD para el Caso de Uso CU-04: Panel de Analítica}
+\label{subsec:ssd-cu04}
+
+La Figura \ref{fig:ssd-cu04} presenta el SSD para el CU-04, donde el Instructor solicita las métricas y el sistema retorna el análisis grupal.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figuras/SSD_CU04.png}
+    \caption{SSD para CU-04: Panel de Analítica. Fuente: Elaboración propia.}
+    \label{fig:ssd-cu04}
+\end{figure}
+
+\section{Contratos de Operación}
+\label{sec:contratos}
+
+Siguiendo la metodología de Craig Larman (2004, Cap. 13), los Contratos de Operación especifican el comportamiento de las operaciones del sistema en términos de precondiciones y postcondiciones, sin detallar cómo se implementan. Estos contratos se derivan directamente de los SSDs y son un insumo fundamental para el diseño de los Diagramas de Interacción.
+
+\subsection{Contrato CO-01: subirVideo}
+\label{subsec:contrato-subir-video}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|p{3cm}|p{11cm}|}
+\hline
+\textbf{Operación} & \texttt{subirVideo(file: Video, id\_tecnica: String)} \\
+\hline
+\textbf{Referencias} & CU-02: Evaluar Ejecución Biomecánica \\
+\hline
+\textbf{Precondiciones} & \begin{itemize}
+    \item El Alumno está autenticado en el sistema.
+    \item La \texttt{TecnicaPatron} con el \texttt{id\_tecnica} especificado existe en el catálogo.
+    \item El video cumple con los formatos permitidos (MP4/WebM) y no excede los 50 MB.
+\end{itemize} \\
+\hline
+\textbf{Postcondiciones} & \begin{itemize}
+    \item Se creó una instancia \texttt{ev} de \texttt{EvaluacionAlumno} (creación de instancia).
+    \item \texttt{ev} se asoció con el \texttt{Alumno} (asociación formada).
+    \item \texttt{ev} se asoció con la \texttt{TecnicaPatron} (asociación formada).
+    \item \texttt{ev} se asoció con un \texttt{Video} (asociación formada).
+    \item El atributo \texttt{estado} de \texttt{ev} se inicializó en "PROCESANDO" (modificación de atributo).
+    \item Se asignó un \texttt{id\_evaluacion} único a \texttt{ev} (modificación de atributo).
+\end{itemize} \\
+\hline
+\end{tabular}
+\caption{Contrato de Operación CO-01: subirVideo.}
+\label{tab:contrato-subir-video}
+\end{table}
+
+\subsection{Contrato CO-02: obtenerResultadoEvaluacion}
+\label{subsec:contrato-obtener-resultado}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|p{3cm}|p{11cm}|}
+\hline
+\textbf{Operación} & \texttt{obtenerResultadoEvaluacion(id\_evaluacion: String)} \\
+\hline
+\textbf{Referencias} & CU-02: Evaluar Ejecución Biomecánica \\
+\hline
+\textbf{Precondiciones} & \begin{itemize}
+    \item El Alumno está autenticado en el sistema.
+    \item Existe una \texttt{EvaluacionAlumno} con el \texttt{id\_evaluacion} especificado.
+    \item El estado de la \texttt{EvaluacionAlumno} es "COMPLETADO".
+\end{itemize} \\
+\hline
+\textbf{Postcondiciones} & \begin{itemize}
+    \item Se recuperó la instancia \texttt{ev} de \texttt{EvaluacionAlumno} (consulta de instancia).
+    \item Se recuperó el \texttt{ConsejoPedagogico} asociado a \texttt{ev} (consulta de asociación).
+    \item Se recuperó la \texttt{TecnicaPatron} asociada a \texttt{ev} (consulta de asociación).
+    \item Se recuperó el \texttt{Video} y el \texttt{frameCritico} asociado a \texttt{ev} (consulta de asociación).
+\end{itemize} \\
+\hline
+\end{tabular}
+\caption{Contrato de Operación CO-02: obtenerResultadoEvaluacion.}
+\label{tab:contrato-obtener-resultado}
+\end{table}
+
+\subsection{Contrato CO-03: obtenerDebilidadesGrupales}
+\label{subsec:contrato-co03}
+
+\textbf{Operación:} \texttt{obtenerDebilidadesGrupales(id\_tecnica)} \\
+\textbf{Referencias Cruzadas:} Casos de Uso: CU-04. \\
+\textbf{Precondiciones:} 
+\begin{itemize}
+    \item Existe un historial de evaluaciones almacenadas en el sistema.
+\end{itemize}
+\textbf{Postcondiciones:} 
+\begin{itemize}
+    \item Se han calculado las frecuencias y promedios de desviación por articulación.
+    \item Se ha devuelto un resumen estadístico ordenado por mayor frecuencia de error.
+\end{itemize}
+
+\section{Diagramas de Interacción (Realizaciones de Casos de Uso)}
+\label{sec:interaccion}
+
+Siguiendo la metodología de Craig Larman (2004, Cap. 16-17), un Diagrama de Interacción (también llamado Realización de Caso de Uso) muestra cómo los objetos de software colaboran para llevar a cabo el comportamiento especificado en un caso de uso. Estos diagramas aplican los patrones GRASP (Controller, Expert, Creator, Low Coupling, Protected Variations) para asignar responsabilidades a los objetos.
+
+\subsection{Realización del CU-02: Evaluar Ejecución Biomecánica}
+\label{subsec:interaccion-cu02}
+
+La Figura \ref{fig:interaccion-cu02} presenta el diagrama de interacción para el escenario principal del caso de uso CU-02. El \texttt{EvaluacionController} actúa como un Controlador (GRASP Controller) que delega las responsabilidades a los objetos expertos:
+\begin{itemize}
+    \item \texttt{AdaptadorYOLO} se encarga de la inferencia de visión artificial (Protected Variations).
+    \item \texttt{PostgresTecnicaRepository} recupera el patrón esquelético (Expert).
+    \item \texttt{CalculadoraBiomecanica} computa las desviaciones angulares (Expert / Pure Fabrication).
+    \item \texttt{SintesisPedagogicaService} orquesta la búsqueda RAG (Pure Fabrication).
+    \item \texttt{QdrantAdapter} y \texttt{GeminiServiceAdapter} son adaptadores de infraestructura (Protected Variations).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Figuras/Interaccion_CU02.png}
+    \caption{Diagrama de Interacción (Realización de Caso de Uso) para el CU-02: Evaluar Ejecución Biomecánica. Fuente: Elaboración propia basada en Larman (2004).}
+    \label{fig:interaccion-cu02}
+\end{figure}
+Como se observa en la Figura \ref{fig:interaccion-cu02}, la secuencia de mensajes refleja fielmente los Contratos de Operación (Sección 5.3) y prepara el terreno para el Diagrama de Clases de Diseño (Sección 5.5), donde se detallarán los atributos, métodos y relaciones entre estas clases.
+
+\subsection{Realización del CU-04: Panel de Analítica}
+\label{subsec:realizacion-cu04}
+
+La interacción principal para el CU-04 implica que la UI solicita datos al \texttt{AnaliticaController}, el cual obtiene el historial completo del \texttt{IHistorialRepository} y calcula las métricas en memoria.
+
+\section{Diagrama de Clases de Diseño (DCD)}
+\label{sec:dcd}
+
+Siguiendo la metodología de Craig Larman (2004, Cap. 19), el Diagrama de Clases de Diseño (DCD) consolida las decisiones estáticas tomadas durante el diseño de las interacciones. Mientras que el Modelo de Dominio (Sección 5.1) representa conceptos del mundo real, el DCD muestra las clases de software reales que participan en la solución, con sus atributos tipados, métodos y relaciones de navegabilidad.
+
+\subsection{DCD para el CU-02: Evaluar Ejecución Biomecánica}
+\label{subsec:dcd-cu02}
+
+La Figura \ref{fig:dcd-cu02} presenta el Diagrama de Clases de Diseño para el CU-02. Este diagrama refleja la separación de capas y la aplicación de los patrones GRASP:
+\begin{itemize}
+    \item \texttt{EvaluacionController} (Capa de Aplicación) actúa como Session Facade (GRASP Controller).
+    \item \texttt{CalculadoraBiomecanica}, \texttt{MatrizEsqueletica}, \texttt{Punto3D} y \texttt{DesviacionArticular} (Capa de Dominio) aplican Expert y Pure Fabrication.
+    \item \texttt{AdaptadorYOLO}, \texttt{GeminiServiceAdapter}, \texttt{QdrantAdapter} y \texttt{PostgresTecnicaRepository} (Capa de Infraestructura) implementan las interfaces de dominio aplicando Protected Variations.
+    \item \texttt{SintesisPedagogicaService} (Capa de Servicios) es una Pure Fabrication que orquesta el RAG.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Figuras/DCD_CU02.png}
+    \caption{Diagrama de Clases de Diseño (DCD) para el CU-02: Evaluar Ejecución Biomecánica. Fuente: Elaboración propia basada en Larman (2004).}
+    \label{fig:dcd-cu02}
+\end{figure}
+
+Como se observa en la Figura \ref{fig:dcd-cu02}, el DCD evidencia la correcta aplicación de los patrones GRASP y la arquitectura en capas del sistema, garantizando bajo acoplamiento y alta cohesión. Las interfaces (\texttt{IInferenceEngine}, \texttt{IGenerationService}, \texttt{ITecnicaRepository}) permiten que la capa de aplicación sea agnóstica a los detalles de implementación, facilitando la sustitución de adaptadores sin afectar la lógica de negocio (Protected Variations).
+Como se observa en la Figura \ref{fig:dcd-cu02}, el DCD evidencia la correcta aplicación de los patrones GRASP y la arquitectura en capas del sistema, garantizando bajo acoplamiento y alta cohesión. Las interfaces (\texttt{IInferenceEngine}, \texttt{IGenerationService}, \texttt{ITecnicaRepository}) permiten que la capa de aplicación sea agnóstica a los detalles de implementación, facilitando la sustitución de adaptadores sin afectar la lógica de negocio (Protected Variations).
+
+\subsection{DCD para el CU-04: Panel de Analítica}
+\label{subsec:dcd-cu04}
+
+La Figura \ref{fig:dcd-analitica} muestra el DCD que incorpora el \texttt{AnaliticaController} y la actualización del \texttt{IHistorialRepository} para soportar la agregación de métricas.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Figuras/DCD_Analitica.png}
+    \caption{DCD para CU-04. Fuente: Elaboración propia.}
+    \label{fig:dcd-analitica}
+\end{figure}
+
+\section{Software Architecture Document (SAD)}
+\label{sec:sad}
+
+Siguiendo la metodología de Craig Larman (2004, Cap. 32), el Software Architecture Document (SAD) es un artefacto que consolida las decisiones arquitectónicas, las vistas de arquitectura y los factores que influyen en el diseño del sistema. Este documento sirve como una guía de aprendizaje para desarrolladores futuros y como evidencia de la correcta aplicación de los patrones arquitectónicos.
+
+\subsection{Vista Lógica (Logical View)}
+\label{subsec:vista-logica}
+
+La Vista Lógica describe la organización conceptual del software en capas, paquetes y subsistemas. El sistema BJJ Biomechanics se organiza en 5 capas siguiendo el patrón \textit{Layers} de Larman:
+
+\begin{itemize}
+    \item \textbf{Presentation Layer}: PWA (HTML/JS/CSS) y API REST FastAPI.
+    \item \textbf{Application Layer}: Controladores (Session Facades) que orquestan los casos de uso.
+    \item \textbf{Services Layer}: Pure Fabrications (Chunker, SintesisPedagogicaService).
+    \item \textbf{Domain Layer}: Entidades puras (MatrizEsqueletica, CalculadoraBiomecanica, Punto3D).
+    \item \textbf{Infrastructure Layer}: Adaptadores (YOLO, Gemini, Qwen, Qdrant) y Repositorios PostgreSQL.
+\end{itemize}
+
+La Figura \ref{fig:arquitectura-capas} ilustra la organización de las capas y sus dependencias.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Figuras/Arquitectura.png}
+    \caption{Vista Lógica de la Arquitectura: Patrón Layers. Fuente: Elaboración propia basada en Larman (2004).}
+    \label{fig:arquitectura-capas}
+\end{figure}
+
+\subsection{Vista de Procesos (Process View)}
+\label{subsec:vista-procesos}
+
+La Vista de Procesos describe los procesos, hilos y la comunicación entre ellos. En el sistema BJJ Biomechanics, los procesos principales son:
+
+\begin{itemize}
+    \item \textbf{Proceso Local (FastAPI + Uvicorn)}: Ejecuta la API REST, los controladores y la lógica de dominio. Se comunica con PostgreSQL y Qdrant.
+    \item \textbf{Proceso Remoto (Google Colab GPU)}: Ejecuta la inferencia de YOLO26x-Pose + YOLO26x-Depth. Se comunica con el proceso local mediante túnel Ngrok (HTTPS).
+    \item \textbf{Proceso Externo (Gemini API)}: Ejecuta la síntesis pedagógica. Se comunica con el proceso local mediante HTTPS.
+\end{itemize}
+
+\subsection{Vista de Despliegue (Deployment View)}
+\label{subsec:vista-despliegue}
+
+La Vista de Despliegue describe la asignación de procesos a nodos de procesamiento. La Figura \ref{fig:despliegue} presenta la topología de despliegue del sistema.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Figuras/Despliegue.png}
+    \caption{Vista de Despliegue: Topología de Nodos y Túnel Ngrok. Fuente: Elaboración propia basada en Larman (2004).}
+    \label{fig:despliegue}
+\end{figure}
+
+\subsection{Vista de Datos (Data View)}
+\label{subsec:vista-datos}
+
+La Vista de Datos describe el esquema de persistencia. El sistema utiliza una arquitectura híbrida:
+
+\begin{itemize}
+    \item \textbf{PostgreSQL (BCNF)}: Almacena metadatos relacionales (usuarios, profesores, técnicas, evaluaciones, fuentes). La columna JSONB \texttt{consejo\_pedagogico} almacena el reporte estructurado de 4 claves.
+    \item \textbf{Qdrant (Vector Store)}: Almacena los embeddings de 2048 dimensiones de los manuales doctrinales, con metadatos relacionales (id\_tecnica, id\_documento) para filtrado semántico.
+\end{itemize}
+
+\subsection{Technical Memos: Decisiones Arquitectónicas Clave}
+\label{subsec:technical-memos}
+
+A continuación se presentan las decisiones arquitectónicas más relevantes, documentadas según el formato de Technical Memos de Larman (Cap. 32).
+
+\subsubsection{Technical Memo 1: Uso de Qdrant en lugar de pgvector}
+
+\textbf{Problema}: pgvector limita los índices HNSW/IVFFlat a un máximo de 2000 dimensiones. Qwen3-VL-Embedding-2B produce vectores de 2048 dimensiones.
+
+\textbf{Solución}: Se seleccionó Qdrant como base de datos vectorial especializada, ejecutada on-premise vía Docker.
+
+\textbf{Motivación}: Qdrant permite indexación eficiente con filtros de metadatos (id\_tecnica, id\_documento) sin restricciones de dimensionalidad, garantizando soberanía de datos y costo cero operativo.
+
+\subsubsection{Technical Memo 2: Uso de Google Colab GPU + Ngrok}
+
+\textbf{Problema}: La inferencia sincrónica de YOLO26x-Pose + YOLO26x-Depth requiere aceleración GPU intensiva. Los servidores locales con GPU tienen costos fijos elevados.
+
+\textbf{Solución}: Se delegó la inferencia a Google Colab Pro (GPU NVIDIA T4/A100), comunicado mediante túnel Ngrok.
+
+\textbf{Motivación}: Esta arquitectura desacoplada permite ejecutar el análisis pesado en servidores remotos sin costo de infraestructura durante la fase de MVP, siguiendo el patrón Adapter para proteger el núcleo del sistema.
+
+\subsubsection{Technical Memo 3: Uso de Gemini 2.5 Flash para Síntesis Estructurada}
+
+\textbf{Problema}: Se requiere generar reportes pedagógicos estructurados en JSON con 4 claves obligatorias (Análisis Postural, Riesgo de Lesión, Paso a Paso, Resumen Ejecutivo).
+\textbf{Solución}: Se seleccionó Gemini 2.5 Flash por su soporte nativo para forzar respuestas bajo esquemas JSON estrictamente estructurados y su excelente relación velocidad/costo.
+
+\end{document}
+
+\subsubsection{Technical Memo 4: Agregación de Métricas en Memoria vs. Base de Datos}
+\textbf{Problema:} ¿Dónde deben calcularse las estadísticas de debilidades (CU-04)? \\
+\textbf{Solución:} Se optó por extraer todas las evaluaciones y calcular los promedios en memoria dentro del \texttt{AnaliticaController}. \\
+\textbf{Justificación (Patrones GRASP/SOLID):} Debido a la estructura de esquemas JSON estrictamente estructurados dentro de PostgreSQL y la necesidad de compatibilidad retroactiva, la lógica compleja en SQL (o \texttt{jsonb\_path\_query}) resultaba frágil. Siguiendo el principio de \textit{Protected Variations}, la base de datos se mantiene simple y la lógica de agregación reside en Python, permitiendo escalar a repositorios NoSQL o archivos estáticos en el futuro sin modificar la lógica de cálculo.

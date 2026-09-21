@@ -1,43 +1,49 @@
-# Python virtual environment
+# Python
 .venv/
 env/
 venv/
-
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*.pyc
 *.pyo
 *$py.class
-
-# Pytest cache and test artifacts
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Environment variables
+# Entorno
 .env
 .env.*
 !.env.example
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
 
-# Compressed build artifacts (no rastro en repo)
+# Artefactos de build
 *.gz
 *.zip
 
-# Carpetas de datos volátiles (no versionadas)
-uploads/
+# Datos volátiles
+uploads/*
+!uploads/.gitkeep
 videos/
-data/media/
+data/media/patron_videos/tec_*.mp4
 
-# Archivos de vídeo grandes (no versionar)
+# Videos grandes
 *.mp4
-*.mov
-*.avi
+!frontend/videos_patron/*.mp4
+!data/media/patron_videos/*.mp4
 
-# Contexto generado automáticamente (herramienta de desarrollo)
+# LaTeX auxiliares
+docs/*.aux
+docs/*.fls
+docs/*.fdb_latexmk
+docs/*.log
+docs/*.toc
+
+# Contexto generado por herramienta
 docs/CONTEXTO_ARQUITECTURA_QWEN.md
+
+# Symlink obsoleto
+/static

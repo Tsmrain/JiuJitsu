@@ -1,0 +1,60 @@
+classDiagram
+    class Profesor {
+        -id_profesor
+        -nombre
+        -email
+        -fecha_registro
+    }
+    class TecnicaPatron {
+        -id_tecnica
+        -nombre
+        -categoria
+        -descripcion
+        -video_url
+    }
+    class MatrizEsqueletica {
+        -puntos_3d
+    }
+    class Punto3D {
+        -x
+        -y
+        -z
+    }
+    class Alumno {
+        -id_alumno
+        -nombre
+        -email
+    }
+    class EvaluacionAlumno {
+        -id_evaluacion
+        -fecha_evaluacion
+        -es_valido
+        -total_desviaciones
+        -desviacion_promedio_grados
+    }
+    class ConsejoPedagogico {
+        -analisis_postural
+        -riesgo_lesion
+        -paso_a_paso
+        -resumen_ejecutivo
+    }
+    class FuenteConocimiento {
+        -id_fuente
+        -titulo
+        -tipo_recurso
+        -chunk_texto
+    }
+    class Video {
+        -id_video
+        -url
+        -fecha_subida
+    }
+
+    Profesor "1" -- "*" TecnicaPatron : Registra
+    TecnicaPatron "1" *-- "1" MatrizEsqueletica : Contiene
+    MatrizEsqueletica "1" *-- "17" Punto3D : Compuesta por
+    Alumno "1" -- "*" EvaluacionAlumno : Realiza
+    EvaluacionAlumno "*" -- "1" TecnicaPatron : Evalúa contra
+    EvaluacionAlumno "1" *-- "1" ConsejoPedagogico : Genera
+    EvaluacionAlumno "1" -- "1" Video : Analiza
+    TecnicaPatron "*" -- "*" FuenteConocimiento : Referencia Doctrinal

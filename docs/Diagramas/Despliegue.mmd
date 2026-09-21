@@ -1,0 +1,26 @@
+flowchart TB
+    subgraph CLIENT_NODE["Dispositivo Cliente (Navegador Web / PWA)"]
+        CLIENT_APP["PWA (HTML5 / JS / CSS3)<br/>Interfaz de Usuario"]
+    end
+
+    subgraph LOCAL_NODE["Server Node Local (FastAPI + Docker)"]
+        FASTAPI["FastAPI Server (Python 3.11+)<br/>Controladores y Dominio"]
+        POSTGRES[("PostgreSQL DB<br/>Persistencia Relacional BCNF")]
+        QDRANT[("Qdrant Vector DB<br/>Vector Store 2048d")]
+    end
+
+    subgraph COLAB_NODE["GPU Node Remoto (Google Colab Pro)"]
+        YOLO_MODEL["YOLO26x-Pose + Depth<br/>Inferencia Esquelética 3D"]
+        NGROK["Túnel HTTPS Ngrok"]
+    end
+
+    subgraph GEMINI_CLOUD["External AI Cloud (Google Cloud)"]
+        GEMINI_API["Gemini 2.5 Flash API<br/>Síntesis Pedagógica JSON"]
+    end
+
+    CLIENT_APP -->|"HTTP / REST API"| FASTAPI
+    FASTAPI -->|"SQL / AsyncPG"| POSTGRES
+    FASTAPI -->|"HTTP / REST"| QDRANT
+    FASTAPI -->|"HTTPS Request"| NGROK
+    NGROK --> YOLO_MODEL
+    FASTAPI -->|"HTTPS / REST"| GEMINI_API

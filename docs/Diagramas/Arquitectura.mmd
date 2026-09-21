@@ -1,0 +1,25 @@
+flowchart LR
+    subgraph REMOTO["☁️ ENTORNO REMOTO MVP (Google Colab GPU - Costo Cero)"]
+        YOLO["YOLO26x-Pose + YOLO26x-Depth<br/>(Fusión Geométrica 3D)"]
+        QWEN["Qwen3-VL-Embedding-2B<br/>(Embeddings Doctrinales 2048d)"]
+        NGROK_TUNNEL["Túnel Ngrok (Exposición HTTPS de API Colab)"]
+    end
+
+    subgraph LOCAL["💻 ENTORNO LOCAL (FastAPI + Docker)"]
+        API["FastAPI (Python 3.11+)<br/>Controlador Transaccional"]
+        PG["PostgreSQL<br/>Persistencia Relacional BCNF / JSONB"]
+        QDRANT["Qdrant Vector DB<br/>Colección bjj_knowledge"]
+        GEMINI["API Gemini 2.5 Flash<br/>(Google Cloud, 2026)"]
+    end
+
+    YOLO --> NGROK_TUNNEL
+    NGROK_TUNNEL -->|"Keypoints 3D + Frame"| API
+    API --> QDRANT
+    API --> PG
+    QWEN -->|"Indexación 2048d"| QDRANT
+    QDRANT -->|"Chunks Doctrinales"| API
+    API --> GEMINI
+    GEMINI -->|"Reporte Pedagógico JSON"| API
+
+    style REMOTO fill:#1f3a5f,color:#fff
+    style LOCAL fill:#2e5a88,color:#fff

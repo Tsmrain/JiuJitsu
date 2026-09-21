@@ -21,6 +21,7 @@ from pathlib import Path
 
 # --- Configuración ---------------------------------------------------------
 
+# Directorios que NUNCA se recorren (ni se listan)
 EXCLUDE_DIRS = {
     "__pycache__",
     ".git",
@@ -33,7 +34,25 @@ EXCLUDE_DIRS = {
     "env",
     ".idea",
     ".vscode",
-    "tools",  # <-- evita volcar el propio script y su docs/
+    # --- Específicos de este proyecto ---
+    "uploads",              # vídeos subidos por usuarios
+    "fixtures",             # tests/fixtures (vídeos de prueba)
+    "patron_videos",        # data/media/patron_videos
+    "videos_patron",        # frontend/videos_patron
+    "Figuras",              # docs/Figuras (imágenes PNG/JPG)
+    "Diagramas",            # docs/Diagramas (Mermaid .mmd) -> si quieres volcarlos, quita esta línea
+    "tools",                # el propio script y su README
+}
+
+# Archivos que NUNCA se vuelcan (aunque estén en dirs permitidos)
+EXCLUDE_FILES = {
+    "CONTEXTO_ARQUITECTURA_QWEN.md",
+    "Documento.aux",
+    "Documento.log",
+    "Documento.toc",
+    "Documento.pdf",
+    "Documento.tex",        # si quieres volcar el .tex, quita esta línea
+    "tree.txt",
 }
 
 TEXT_EXTS = {
@@ -60,6 +79,10 @@ TEXT_EXTS = {
     ".r", ".R", ".jl",
     # Docker / env
     ".dockerfile", ".env",
+    # Diagramas Mermaid (texto)
+    ".mmd",
+    # LaTeX (texto)
+    ".tex",
 }
 
 INCLUDE_NAMES = {
@@ -70,12 +93,6 @@ INCLUDE_NAMES = {
     "requirements.txt", "Pipfile", "pyproject.toml", "setup.py", "setup.cfg",
     "package.json", "package-lock.json", "yarn.lock",
     "pytest.ini", "tox.ini", "mypy.ini",
-}
-
-# Archivos que NO se vuelcan (el propio output se auto-excluye)
-EXCLUDE_FILES = {
-    "CONTEXTO_ARQUITECTURA_QWEN.md",
-    "tree.txt",
 }
 
 BIN_EXTS = {
@@ -145,6 +162,8 @@ def fence_para(path: Path) -> str:
         "c": "c", "h": "c", "cpp": "cpp", "hpp": "cpp",
         "swift": "swift", "m": "objectivec", "mm": "objectivec",
         "r": "r", "jl": "julia",
+        "mmd": "mermaid",
+        "tex": "latex",
     }
     if path.name in ("Dockerfile", "dockerfile"):
         return "dockerfile"

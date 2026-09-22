@@ -1,0 +1,21 @@
+classDiagram
+    class EvaluacionAlumno {
+        +id_evaluacion: UUID
+        +id_alumno: String
+        +id_tecnica: String
+        +video_url: String
+        +es_valido: Boolean
+        +desviacion_promedio_grados: Float
+        +total_desviaciones: Integer
+        +consejo_pedagogico: String
+        +desviaciones_detalle: List_DesviacionArticular
+        +fecha: DateTime
+    }
+    class DesviacionArticular {
+        <<dataclass>>
+        +articulacion: String
+        +desviacion_grados: Float
+        +x: Float
+        +y: Float
+    }
+    EvaluacionAlumno "1" *-- "*" DesviacionArticular : contiene

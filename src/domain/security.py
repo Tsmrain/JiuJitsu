@@ -7,12 +7,17 @@ no de los controladores ni de la infraestructura.
 import hashlib
 import hmac
 import os
-from typing import Tuple
-
+import time
+from typing import Tuple, Dict, Any
+import jwt
 
 _ALGORITMO = "pbkdf2_sha256"
 _ITERACIONES = 200_000
 _SALT_BYTES = 16
+_JWT_ALGORITHM = "HS256"
+
+def _get_secret_key() -> str:
+    return os.getenv("SECRET_KEY", "super-secret-default-key-for-dev")
 
 
 def hash_password(password: str) -> str:
@@ -39,3 +44,21 @@ def verify_password(password: str, stored: str) -> bool:
         return hmac.compare_digest(dk, expected)
     except (ValueError, AttributeError):
         return False
+
+def create_access_token(data: dict, expires_minutes: int = 60) -> str:
+    """Genera un token JWT para la sesión de usuario."""
+    to_encode = data.copy()
+    expire = time.time() + (expires_minutes * 60)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, _get_secret_key(), algorithm=_JWT_ALGORITHM)
+    return encoded_jwt
+
+def verify_token(token: str) -> dict:
+    """Verifica y decodifica el token JWT."""
+    try:
+        payload = jwt.decode(token, _get_secret_key(), algorithms=[_JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise ValueError("El token ha expirado.")
+    except jwt.PyJWTError:
+        raise ValueError("Token inválido.")

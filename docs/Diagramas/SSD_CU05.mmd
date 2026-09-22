@@ -1,0 +1,8 @@
+sequenceDiagram
+    actor P as Profesor
+    participant S as System
+
+    P->>S: subirManual(id_instructor, titulo, archivo)
+    S-->>P: confirmacionIndexacion (chunks_indexados)
+    P->>S: listarFuentes()
+    S-->>P: listaFuentes (documentos consolidados)

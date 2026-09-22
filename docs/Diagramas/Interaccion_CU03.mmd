@@ -1,0 +1,19 @@
+sequenceDiagram
+    autonumber
+    actor A as Alumno
+    participant PV as :ProgresoView
+    participant HC as :AnaliticaController
+    participant PR as :PostgresHistorialRepository
+    participant DB as PostgreSQL
+
+    A->>PV: consultarHistorial(id_alumno)
+    PV->>HC: obtener_progreso(id_alumno)
+    Note right of HC: GRASP Controller<br>(Session Facade)
+    HC->>PR: obtener_progreso(id_alumno)
+    Note right of PR: GRASP Information Expert<br>(el repositorio tiene los datos)
+    PR->>DB: SELECT ... FROM evaluaciones_alumno
+    DB-->>PR: rows
+    PR-->>HC: List[EvaluacionAlumno]
+    Note right of PR: Deserialización JSONB<br>→ consejo_estructurado (4 claves)
+    HC-->>PV: ReporteProgreso DTO
+    PV-->>A: historial renderizado

@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor P as Profesor
+    participant C as AnaliticaController
+    participant R as PostgresHistorialRepository
+    
+    P->>C: obtenerAnaliticaTecnica(id_tecnica)
+    activate C
+    C->>R: obtener_analitica(id_tecnica)
+    activate R
+    Note over R: Information Expert: Calcula AVG, SUM, COUNT extrayendo datos de desviaciones_detalle (JSONB)
+    R-->>C: ReporteAnalitica
+    deactivate R
+    C-->>P: ReporteAnalitica
+    deactivate C

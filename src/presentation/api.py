@@ -8,6 +8,7 @@ from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Form, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from src.application.controllers import EvaluacionController
 from src.application.pattern_controller import RegistrarTecnicaController
@@ -33,6 +34,18 @@ class LoginDTO(BaseModel):
     password: str
 
 app = FastAPI(title="API Biomecánica BJJ", version="1.0.0")
+
+security = HTTPBearer(auto_error=False)
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    from src.domain.security import verify_token
+    try:
+        payload = verify_token(credentials.credentials)
+        return payload
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
 def get_auth_controller():
     if "auth_controller" in container and container["auth_controller"] is not None:

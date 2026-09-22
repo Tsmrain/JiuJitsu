@@ -1,0 +1,32 @@
+sequenceDiagram
+    autonumber
+    actor P as Profesor
+    participant FV as :FuentesView
+    participant FC as :FuenteController
+    participant PR as :PipelineIngestaRAG
+    participant CH as :ChunkerSemanticoBJJ
+    participant QE as :QwenEmbeddingAdapter
+    participant QA as :QdrantAdapter
+    participant PF as :PostgresFuenteRepo
+    participant DB as PostgreSQL
+    participant QD as Qdrant
+
+    P->>FV: subirManual(titulo, archivo)
+    FV->>FC: indexarManual(id_instructor, titulo, texto)
+    Note right of FC: GRASP Controller<br>(Session Facade)
+    FC->>PR: indexar_manual(id_tecnica, titulo, texto)
+    Note right of PR: Pure Fabrication<br>(orquesta RAG)
+    PR->>CH: fragmentar(texto)
+    CH-->>PR: chunks (1000/200)
+    PR->>QE: generar_embeddings_batch(chunks)
+    Note right of QE: 2048 dimensiones<br>(Colab remoto + fallback)
+    QE-->>PR: vectores
+    loop por cada chunk
+        PR->>PF: INSERT INTO fuentes_conocimiento
+        PF->>DB: ...
+        PR->>QA: upsert(id_fuente, vector, payload)
+        QA->>QD: ...
+    end
+    PR-->>FC: ids_chunks
+    FC-->>FV: confirmacion (chunks_indexados)
+    FV-->>P: notificacion

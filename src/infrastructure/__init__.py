@@ -14,7 +14,6 @@ from src.infrastructure.adapters import (
     ColabYOLOAdapter,
     GeminiServiceAdapter,
     AdaptadorYOLO,
-    AdaptadorGemini,
     QwenEmbeddingAdapter,
     QdrantAdapter,
 )
@@ -33,7 +32,6 @@ __all__ = [
     "ColabYOLOAdapter",
     "GeminiServiceAdapter",
     "AdaptadorYOLO",
-    "AdaptadorGemini",
     "QwenEmbeddingAdapter",
     "QdrantAdapter",
     # Persistence

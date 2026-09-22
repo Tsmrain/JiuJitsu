@@ -31,6 +31,18 @@ function selectRole(role) {
     return seleccionarRol(role);
 }
 
+function getHeaders(isFormData = false) {
+    const token = localStorage.getItem('token_bjj');
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
+    if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+}
+
 function seleccionarRol(rol) {
     localStorage.setItem('rol_usuario', rol);
     const pantallaLogin = document.getElementById('pantalla-login');
@@ -138,6 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('rol_usuario', rol);
                     localStorage.setItem('usuario_actual', data.id_usuario);
                     localStorage.setItem('user_role', rol); // compatibilidad
+                    if (data.access_token) {
+                        localStorage.setItem('token_bjj', data.access_token);
+                    }
 
                     if (pantallaLogin) pantallaLogin.style.display = 'none';
                     if (errorLogin) errorLogin.style.display = 'none';
@@ -465,6 +480,7 @@ async function enviarAnalisis() {
     try {
         const res = await fetch('/api/v1/evaluaciones/evaluar', {
             method: 'POST',
+            headers: getHeaders(true),
             body: formData
         });
 
@@ -663,7 +679,7 @@ async function editarTecnica(id) {
 async function eliminarTecnica(id) {
     if (confirm('¿Estás seguro de eliminar esta técnica?')) {
         try {
-            const resp = await fetch(`/api/v1/instructor/tecnicas/${id}`, { method: 'DELETE' });
+            const resp = await fetch(`/api/v1/instructor/tecnicas/${id}`, { method: 'DELETE', headers: getHeaders() });
             if (resp.ok) {
                 alert('Técnica eliminada');
                 cargarTecnicasProfesor();
@@ -745,7 +761,7 @@ async function editarFuente(id, titulo) {
 async function eliminarFuente(id) {
     if (confirm('¿Estás seguro de eliminar esta fuente didáctica?')) {
         try {
-            const resp = await fetch(`/api/v1/instructor/fuentes/${id}`, { method: 'DELETE' });
+            const resp = await fetch(`/api/v1/instructor/fuentes/${id}`, { method: 'DELETE', headers: getHeaders() });
             if (resp.ok) {
                 cargarFuentesProfesor();
             } else {
@@ -793,11 +809,13 @@ function inicializarFormulariosProfesor() {
                 if (idEditar) {
                     resp = await fetch(`/api/v1/instructor/tecnicas/${idEditar}`, {
                         method: 'PUT',
+                        headers: getHeaders(),
                         body: formData
                     });
                 } else {
                     resp = await fetch('/api/v1/instructor/tecnicas', {
                         method: 'POST',
+                        headers: getHeaders(),
                         body: formData
                     });
                 }
@@ -837,11 +855,13 @@ function inicializarFormulariosProfesor() {
                 if (idEditar) {
                     resp = await fetch(`/api/v1/instructor/fuentes/${idEditar}`, {
                         method: 'PUT',
+                        headers: getHeaders(),
                         body: formData
                     });
                 } else {
                     resp = await fetch('/api/v1/instructor/fuentes', {
                         method: 'POST',
+                        headers: getHeaders(),
                         body: formData
                     });
                 }

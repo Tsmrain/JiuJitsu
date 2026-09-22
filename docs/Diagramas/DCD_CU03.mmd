@@ -1,0 +1,30 @@
+classDiagram
+    class AnaliticaController {
+        -historial_repo : IHistorialRepository
+        +obtener_progreso(id_alumno) ReporteProgreso
+        +generar_panel_tecnica(id_tecnica) ReporteAnalitica
+        +listar_tecnicas_mas_evaluadas(limite) List
+    }
+
+    class IHistorialRepository {
+        <<interface>>
+        +obtener_progreso(id_alumno) List
+        +obtener_analitica_por_tecnica(id_tecnica) ReporteAnalitica
+    }
+
+    class PostgresHistorialRepository {
+        -db_url : String
+        +obtener_progreso(id_alumno) List
+        +guardar_evaluacion(args) String
+    }
+
+    class ReporteProgreso {
+        +id_alumno : String
+        +total_evaluaciones : int
+        +tasa_aprobacion : float
+        +historial : List~EvaluacionAlumno~
+    }
+
+    AnaliticaController --> IHistorialRepository : usa
+    PostgresHistorialRepository ..|> IHistorialRepository : implementa
+    AnaliticaController ..> ReporteProgreso : retorna

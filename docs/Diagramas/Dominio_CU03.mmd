@@ -1,0 +1,16 @@
+classDiagram
+    class Alumno {
+        +id_alumno: String
+        +nombre: String
+        +cinturon: String
+    }
+    
+    class EvaluacionAlumno {
+        +id_evaluacion: String
+        +fecha: Date
+        +puntaje: float
+        +consejo_pedagogico: JSONB
+        +id_tecnica: String
+    }
+
+    Alumno "1" --> "*" EvaluacionAlumno : posee

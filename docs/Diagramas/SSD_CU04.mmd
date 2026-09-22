@@ -1,0 +1,9 @@
+sequenceDiagram
+    actor P as Profesor
+    participant S as :System
+    
+    P->>S: listarTecnicasMasPracticadas(limite)
+    S-->>P: rankingTecnicas
+    
+    P->>S: obtenerAnaliticaTecnica(id_tecnica)
+    S-->>P: ReporteAnalitica

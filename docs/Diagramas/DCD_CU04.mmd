@@ -1,0 +1,39 @@
+classDiagram
+    class AnaliticaController {
+        -historial_repo: IHistorialRepository
+        -tecnica_repo: ITecnicaRepository
+        +listar_tecnicas_mas_evaluadas(limite: int): List
+        +generar_panel_tecnica(id_tecnica: str): ReporteAnalitica
+    }
+    
+    class IHistorialRepository {
+        <<interface>>
+        +obtener_analitica(id_tecnica: str): ReporteAnalitica
+        +obtener_top_tecnicas(limite: int): List
+    }
+    
+    class PostgresHistorialRepository {
+        +obtener_analitica(id_tecnica: str): ReporteAnalitica
+        +obtener_top_tecnicas(limite: int): List
+    }
+    
+    class ReporteAnalitica {
+        <<dataclass>>
+        +id_tecnica: str
+        +total_evaluaciones: int
+        +total_evaluaciones_aprobadas: int
+        +tasa_aprobacion: float
+        +articulaciones_criticas: List_EstadisticaArticular
+    }
+    
+    class EstadisticaArticular {
+        <<dataclass>>
+        +articulacion: str
+        +total_detecciones: int
+        +desviacion_promedio_grados: float
+    }
+    
+    AnaliticaController --> IHistorialRepository : usa
+    PostgresHistorialRepository ..|> IHistorialRepository : implementa
+    IHistorialRepository --> ReporteAnalitica : retorna
+    ReporteAnalitica *-- EstadisticaArticular : contiene

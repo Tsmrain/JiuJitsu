@@ -1269,33 +1269,293 @@ A continuación se presentan las decisiones arquitectónicas más relevantes, do
 \section{Iteración 2 (Elaboración 2 — CU-04 Analítica de Tatami)}
 \label{sec:iteracion-2}
 
+Esta sección documenta la Iteración 2 de Elaboración. Según la Sección 4.2.2, esta iteración comprende los CU-03, CU-04 y CU-05. El diseño del CU-04 (Panel de Analítica de Tatami) se documenta en la presente sección por ser el primer caso de uso de analítica agregada del sistema. Los diseños detallados de los CU-03 (Consultar Historial de Progreso) y CU-05 (Indexar Literatura Oficial al RAG) se documentan en las secciones \ref{sec:cu03} y \ref{sec:cu05}, respectivamente, manteniendo la trazabilidad completa de los artefactos del Proceso Unificado.
+
 \subsection{Modelo de Dominio Refinado}
 En esta iteración se incorporó la necesidad de almacenar el detalle angular por cada articulación evaluada (\texttt{desviaciones\_detalle} en formato JSONB) en lugar de solo el promedio global. Esto es fundamental porque el CU-04 (Analítica de Tatami) requiere graficar barras de errores cuyo ancho sea directamente proporcional a la cantidad total de fallas (\texttt{total\_detecciones}) de cada articulación en una técnica específica.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/Dominio_Refinado.png}
+    \caption{Modelo de Dominio Refinado para la Analítica de Tatami. Fuente: Elaboración propia.}
+    \label{fig:dominio-refinado}
+\end{figure}
+
 \subsection{Diagramas de Secuencia del Sistema (SSD)}
-\textbf{CU-04: Visualizar Analítica de Tatami (Profesor)}
-\begin{enumerate}
-    \item El \textbf{Profesor} solicita listar las técnicas más practicadas.
-    \item El \textbf{Sistema} retorna el top de técnicas con más evaluaciones.
-    \item El \textbf{Profesor} selecciona una técnica específica.
-    \item El \textbf{Sistema} consolida las evaluaciones históricas y devuelve el total, porcentaje de aprobación y un detalle con la cantidad de fallas por articulación (\texttt{total\_detecciones}) y su desvío promedio.
-\end{enumerate}
+La Figura \ref{fig:ssd-cu04} detalla la secuencia del sistema para el CU-04.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figuras/SSD_CU04.png}
+    \caption{SSD para el Caso de Uso CU-04: Visualizar Analítica de Tatami. Fuente: Elaboración propia.}
+    \label{fig:ssd-cu04}
+\end{figure}
 
 \subsection{Contratos de Operación}
-\begin{itemize}
-    \item \textbf{Operación}: \texttt{obtenerAnaliticaTecnica(id\_tecnica)}
-    \item \textbf{Referencias Cruzadas}: CU-04 (RF-20).
-    \item \textbf{Precondiciones}: Existen evaluaciones guardadas para la técnica.
-    \item \textbf{Postcondiciones}: Se retornó un resumen estadístico consolidando todas las instancias de \texttt{EvaluacionAlumno} asociadas a \texttt{id\_tecnica}, agrupando las fallas de \texttt{desviaciones\_detalle} por nombre de articulación.
-\end{itemize}
+A continuación se definen los contratos para las operaciones del sistema derivadas del SSD.
+
+\begin{table}[H]
+\centering
+\caption{Contrato de Operación CO-03: obtenerAnaliticaTecnica.}
+\label{tab:co-03}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Operación}      & \texttt{obtenerAnaliticaTecnica(id\_tecnica: String)} \\ \hline
+\textbf{Referencias}    & CU-04: Visualizar Analítica de Tatami (RF-20) \\ \hline
+\textbf{Precondiciones} & Existe la \texttt{TecnicaPatron} con el \texttt{id\_tecnica} especificado. \\ \hline
+\textbf{Postcondiciones} & Se recuperó la instancia \textit{t} de \texttt{TecnicaPatron} (consulta de instancia). \newline 
+Se recuperaron las evaluaciones \textit{ev\_1..ev\_n} asociadas a \textit{t} (consulta de asociación). \newline
+Se calculó el total de evaluaciones (attribute derivation). \newline
+Se calculó la tasa de aprobación (attribute derivation). \newline
+Se agruparon las fallas por articulación extrayendo de \texttt{desviaciones\_detalle} (attribute derivation). \newline
+Se retornó un \texttt{ReporteAnalitica} con la lista de \texttt{EstadisticaArticular} ordenada por \texttt{total\_detecciones} DESC. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Contrato de Operación CO-04: listarTecnicasMasPracticadas.}
+\label{tab:co-04}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Operación}      & \texttt{listarTecnicasMasPracticadas(limite: Integer)} \\ \hline
+\textbf{Referencias}    & CU-04: Visualizar Analítica de Tatami (RF-20) \\ \hline
+\textbf{Precondiciones} & Existen evaluaciones registradas en el sistema. \\ \hline
+\textbf{Postcondiciones} & Se recuperaron las técnicas ordenadas por número de evaluaciones descendente. \\ \hline
+\end{tabularx}
+\end{table}
 
 \subsection{Modelo de Diseño (Interacciones y DCD)}
-Para soportar el CU-04, se aplicaron los patrones GRASP y la arquitectura en 5 capas:
-\begin{itemize}
-    \item \textbf{Controller}: Se creó \texttt{AnaliticaController} que recibe los pedidos de analítica de la API y orquesta la consulta de datos.
-    \item \textbf{Pure Fabrication / Repository}: Se definió la interfaz \texttt{IHistorialRepository} y su implementación concreta con la responsabilidad cohesiva de ejecutar la agregación de datos y cálculos estadísticos en la base de datos.
-    \item \textbf{Information Expert}: El repositorio cuenta con la información para desdoblar el JSONB (\texttt{jsonb\_array\_elements}) y sumar las \texttt{total\_detecciones} para retornarlas estructuradas al controlador y de ahí al Frontend PWA.
-\end{itemize}
+Para soportar el CU-04, se aplicaron los patrones GRASP y la arquitectura en 5 capas. La Figura \ref{fig:interaccion-cu04} muestra la realización del caso de uso, donde el \texttt{AnaliticaController} actúa como Session Facade y el \texttt{PostgresHistorialRepository} como Information Expert.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/Interaccion_CU04.png}
+    \caption{Diagrama de Interacción para la obtención de analítica. Fuente: Elaboración propia.}
+    \label{fig:interaccion-cu04}
+\end{figure}
+
+Las decisiones estructurales se consolidan en el Diagrama de Clases de Diseño (DCD) mostrado en la Figura \ref{fig:dcd-cu04}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/DCD_CU04.png}
+    \caption{Diagrama de Clases de Diseño (DCD) para el subsistema de Analítica. Fuente: Elaboración propia.}
+    \label{fig:dcd-cu04}
+\end{figure}
+
+\subsection{Technical Memos: Decisiones Arquitectónicas Clave}
+
+\subsubsection{Technical Memo 4: Persistencia Detallada de Desviaciones por Articulación}
+\textbf{Problema}: El CU-04 requiere estadísticas por articulación, pero la tabla \texttt{evaluaciones\_alumno} solo almacenaba \texttt{desviacion\_promedio\_grados} global.
+
+\textbf{Solución}: Añadir columna \texttt{desviaciones\_detalle} de tipo JSONB (migración \texttt{06\_analitica.sql}).
+
+\textbf{Motivación}: Permite agregaciones SQL nativas (\texttt{jsonb\_array\_elements}) sin desnormalización, manteniendo BCNF en PostgreSQL.
+
+\subsubsection{Technical Memo 5: Cálculo de Analítica en el Repositorio (Information Expert)}
+\textbf{Problema}: ¿Dónde computar las agregaciones estadísticas (SUM, AVG, GROUP BY)?
+
+\textbf{Solución}: En \texttt{PostgresHistorialRepository}, aplicando GRASP Information Expert (el repositorio tiene los datos) en lugar de en \texttt{AnaliticaController}.
+
+\textbf{Motivación}: Evita transferir $N$ evaluaciones por la red y carga el motor relacional con la agregación. Preserva Alta Cohesión del controlador.
+
+% ==========================================
+% SECCIÓN 5.8: CU-03
+% ==========================================
+\newpage
+\section{Iteración 2 (Continuación) — CU-03: Consultar Historial de Progreso}
+\label{sec:cu03}
+
+Esta sección documenta el diseño detallado del caso de uso CU-03 (Consultar Historial de Progreso), implementado en la Iteración 2 de Elaboración. Permite al Alumno revisar sus evaluaciones pasadas y comprobar su avance técnico en el tiempo.
+
+\subsection{Modelo de Dominio Refinado para Historial}
+Se reutilizan las entidades \texttt{EvaluacionAlumno} y \texttt{Alumno} del modelo original. No hay cambios estructurales sustanciales ya que la persistencia se apoya en los atributos existentes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/Dominio_CU03.png}
+    \caption{Modelo de Dominio Refinado para el Historial de Progreso. Fuente: Elaboración propia.}
+    \label{fig:dominio-cu03}
+\end{figure}
+
+\subsection{Diagramas de Secuencia del Sistema (SSD)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/SSD_CU03.png}
+    \caption{SSD para el Caso de Uso CU-03: Consultar Historial de Progreso. Fuente: Elaboración propia.}
+    \label{fig:ssd-cu03}
+\end{figure}
+
+\subsection{Contratos de Operación}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Operación} & \texttt{consultarHistorial(id\_alumno: String)} \\
+\hline
+\textbf{Referencias} & CU-03: Consultar Historial de Progreso (RF-19) \\
+\hline
+\textbf{Precondiciones} & El Alumno está autenticado en el sistema. \newline
+Existe al menos una \texttt{EvaluacionAlumno} asociada al \texttt{id\_alumno}. \\
+\hline
+\textbf{Postcondiciones} & Se recuperó la lista ordenada de \texttt{EvaluacionAlumno} del alumno (consulta de asociación). \newline
+Se deserializó el campo JSONB \texttt{consejo\_pedagogico} a objeto estructurado (modificación de atributo). \newline
+Se calculó la tasa de aprobación histórica (attribute derivation). \\
+\hline
+\end{tabularx}
+\caption{Contrato de Operación CO-05: consultarHistorial.}
+\label{tab:co-05}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Operación} & \texttt{obtenerDetalleEvaluacion(id\_evaluacion: String)} \\
+\hline
+\textbf{Referencias} & CU-03: Consultar Historial de Progreso (RF-19) \\
+\hline
+\textbf{Precondiciones} & El Alumno está autenticado. \newline
+Existe la \texttt{EvaluacionAlumno} con el \texttt{id\_evaluacion} especificado y pertenece al alumno autenticado. \\
+\hline
+\textbf{Postcondiciones} & Se recuperó la instancia \texttt{ev} (consulta de instancia). \newline
+Se recuperó el \texttt{consejo\_estructurado} con las 4 claves JSONB (consulta de atributo). \newline
+Se recuperaron las \texttt{desviaciones\_detalle} por articulación (consulta de atributo). \\
+\hline
+\end{tabularx}
+\caption{Contrato de Operación CO-06: obtenerDetalleEvaluacion.}
+\label{tab:co-06}
+\end{table}
+
+\subsection{Diagrama de Interacción (Realización de Caso de Uso)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/Interaccion_CU03.png}
+    \caption{Diagrama de Interacción para Consultar Historial. Fuente: Elaboración propia.}
+    \label{fig:interaccion-cu03}
+\end{figure}
+
+\subsection{Diagrama de Clases de Diseño (DCD)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/DCD_CU03.png}
+    \caption{Diagrama de Clases de Diseño (DCD) para Consultar Historial. Fuente: Elaboración propia.}
+    \label{fig:dcd-cu03}
+\end{figure}
+
+\subsection{Technical Memo 6: Deserialización de JSONB en Capa de Infraestructura}
+\textbf{Problema}: ¿Dónde transformar el campo JSONB \texttt{consejo\_pedagogico} a objeto estructurado para la PWA?
+
+\textbf{Solución}: En \texttt{PostgresHistorialRepository.obtener\_progreso()}, aplicando GRASP Information Expert (el repositorio tiene los datos).
+
+\textbf{Motivación}: Evita acoplar la capa de aplicación a \texttt{psycopg2} y mantiene el \texttt{AnaliticaController} con Alta Cohesión. Además, permite que el mismo DTO sea consumido tanto por la PWA como por reportes analíticos.
+
+% ==========================================
+% SECCIÓN 5.9: CU-05
+% ==========================================
+\newpage
+\section{Iteración 2 (Continuación) — CU-05: Indexar Literatura Oficial al RAG}
+\label{sec:cu05}
+
+Esta sección documenta el diseño detallado del caso de uso CU-05 (Indexar Literatura Oficial al RAG), que permite al Profesor incorporar manuales doctrinales de BJJ al acervo semántico de la IA para fundamentar pedagógicamente las correcciones.
+
+\subsection{Modelo de Dominio Refinado para RAG}
+Se añaden las entidades \texttt{FuenteConocimiento}, \texttt{Documento} (como agrupador de chunks) e \texttt{Instructor}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth, height=0.85\textheight, keepaspectratio]{Figuras/Dominio_CU05.png}
+    \caption{Modelo de Dominio Refinado para la Ingesta RAG. Fuente: Elaboración propia.}
+    \label{fig:dominio-cu05}
+\end{figure}
+
+\subsection{Diagramas de Secuencia del Sistema (SSD)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/SSD_CU05.png}
+    \caption{SSD para el Caso de Uso CU-05: Indexar Literatura Oficial al RAG. Fuente: Elaboración propia.}
+    \label{fig:ssd-cu05}
+\end{figure}
+
+\subsection{Contratos de Operación}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Operación} & \texttt{subirManual(id\_instructor: String, titulo: String, archivo: PDF)} \\
+\hline
+\textbf{Referencias} & CU-05: Indexar Literatura Oficial al RAG (RF-17) \\
+\hline
+\textbf{Precondiciones} & El Profesor está autenticado con permisos de administrador. \newline
+El archivo es un PDF válido con texto extraíble ($\geq 50$ caracteres). \newline
+El título no es vacío. \\
+\hline
+\textbf{Postcondiciones} & Se extrajo el texto completo del PDF con \texttt{pypdf} (consulta de instancia). \newline
+Se fragmentó el texto en chunks con \texttt{ChunkerSemanticoBJJ} (1000/200) (attribute derivation). \newline
+Se generaron embeddings de 2048 dimensiones con \texttt{QwenEmbeddingAdapter} (attribute derivation). \newline
+Se almacenaron los vectores en Qdrant (colección \texttt{bjj\_knowledge}) (asociación formada). \newline
+Se persistieron los metadatos en PostgreSQL (tabla \texttt{fuentes\_conocimiento}) (asociación formada). \newline
+Se asignó un \texttt{id\_documento} único para agrupar los chunks (modificación de atributo). \\
+\hline
+\end{tabularx}
+\caption{Contrato de Operación CO-07: subirManual.}
+\label{tab:co-07}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Operación} & \texttt{listarFuentes(id\_tecnica: Optional[String])} \\
+\hline
+\textbf{Referencias} & CU-05: Indexar Literatura Oficial al RAG (RF-17) \\
+\hline
+\textbf{Precondiciones} & El Profesor está autenticado. \\
+\hline
+\textbf{Postcondiciones} & Se recuperaron los documentos consolidados agrupados por \texttt{id\_documento} (consulta de asociación). \newline
+Se calculó el \texttt{total\_chunks} por documento (attribute derivation). \newline
+Se retornó la lista ordenada por fecha de carga descendente. \\
+\hline
+\end{tabularx}
+\caption{Contrato de Operación CO-08: listarFuentes.}
+\label{tab:co-08}
+\end{table}
+
+\subsection{Diagrama de Interacción (Realización de Caso de Uso)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/Interaccion_CU05.png}
+    \caption{Diagrama de Interacción para Indexar Literatura al RAG. Fuente: Elaboración propia.}
+    \label{fig:interaccion-cu05}
+\end{figure}
+
+\subsection{Diagrama de Clases de Diseño (DCD)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figuras/DCD_CU05.png}
+    \caption{Diagrama de Clases de Diseño (DCD) para Indexar Literatura al RAG. Fuente: Elaboración propia.}
+    \label{fig:dcd-cu05}
+\end{figure}
+
+\subsection{Technical Memo 7: Chunking Semántico con Solapamiento 1000/200}
+\textbf{Problema}: ¿Cómo fragmentar manuales doctrinales sin perder coherencia contextual entre fragmentos adyacentes?
+
+\textbf{Solución}: \texttt{RecursiveCharacterTextSplitter} de LangChain con \texttt{chunk\_size=1000} y \texttt{chunk\_overlap=200}, encapsulado en \texttt{ChunkerSemanticoBJJ} (Pure Fabrication).
+
+\textbf{Motivación}: Los 200 caracteres de solapamiento preservan la continuidad semántica y evitan cortar instrucciones biomecánicas a mitad de frase. La encapsulación bajo el patrón Variaciones Protegidas de Larman aísla a la capa de dominio de cambios en la librería LangChain.
 
 \end{document}
 

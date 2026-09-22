@@ -9,7 +9,7 @@ import uuid
 from typing import Optional, Dict, Any
 from src.domain.models import Usuario
 from src.domain.interfaces import IUsuarioRepository
-from src.domain.security import hash_password, verify_password
+from src.domain.security import hash_password, verify_password, create_access_token
 
 class AuthController:
     """Session Facade (Larman) para orquestar registro y login."""
@@ -53,7 +53,15 @@ class AuthController:
         if not verify_password(password, usuario.password_hash):
             raise ValueError("Credenciales inválidas (contraseña incorrecta).")
             
+        payload = {
+            "id_usuario": usuario.id_usuario,
+            "rol": usuario.rol
+        }
+        token = create_access_token(payload)
+
         return {
+            "access_token": token,
+            "token_type": "bearer",
             "id_usuario": usuario.id_usuario,
             "email": usuario.email,
             "nombre_completo": usuario.nombre_completo,

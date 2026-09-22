@@ -1,0 +1,8 @@
+sequenceDiagram
+    actor A as Alumno
+    participant S as System
+
+    A->>S: consultarHistorial(id_alumno)
+    S-->>A: listaEvaluaciones (con consejo_pedagogico)
+    A->>S: obtenerDetalleEvaluacion(id_evaluacion)
+    S-->>A: evaluacionDetalle (4 claves JSONB)

@@ -1,0 +1,58 @@
+classDiagram
+    class FuenteController {
+        -repository : IFuenteConocimientoRepository
+        -embedding_service : IEmbeddingService
+        -qdrant_adapter : IVectorStore
+        +indexar_manual(id_instructor, titulo, texto) Dict
+        +listar_fuentes(id_tecnica) List
+    }
+
+    class PipelineIngestaRAG {
+        -db : Connection
+        -embedding : IEmbeddingService
+        -chunker : ChunkerSemanticoBJJ
+        -qdrant : IVectorStore
+        +indexar_manual(args) List~String~
+    }
+
+    class ChunkerSemanticoBJJ {
+        -_splitter : RecursiveCharacterTextSplitter
+        +fragmentar(texto) List~String~
+    }
+
+    class IEmbeddingService {
+        <<interface>>
+        +generar_embedding(texto) List~float~
+    }
+
+    class IVectorStore {
+        <<interface>>
+        +upsert(id_fuente, vector, payload)
+        +buscar(embedding, limite, id_tecnica) List
+    }
+
+    class IFuenteConocimientoRepository {
+        <<interface>>
+        +indexar_documento(fuente) String
+        +buscar_contexto(embedding, limite) List
+        +listar_fuentes(id_tecnica) List
+    }
+
+    class QwenEmbeddingAdapter {
+        +generar_embedding(texto) List~float~
+        +generar_embeddings_batch(textos) List~List~
+    }
+
+    class QdrantAdapter {
+        +upsert(id_fuente, vector, payload)
+        +buscar(args) List
+    }
+
+    FuenteController --> IFuenteConocimientoRepository : usa
+    FuenteController --> IEmbeddingService : usa
+    FuenteController --> IVectorStore : usa
+    PipelineIngestaRAG ..> ChunkerSemanticoBJJ : usa
+    PipelineIngestaRAG ..> IEmbeddingService : usa
+    PipelineIngestaRAG ..> IVectorStore : usa
+    QwenEmbeddingAdapter ..|> IEmbeddingService : implementa
+    QdrantAdapter ..|> IVectorStore : implementa

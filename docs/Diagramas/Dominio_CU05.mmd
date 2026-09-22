@@ -1,0 +1,23 @@
+classDiagram
+    class Instructor {
+        +id_instructor: String
+        +nombre: String
+        +grado: String
+    }
+
+    class Documento {
+        +id_documento: String
+        +titulo: String
+        +fecha_indexacion: Date
+        +total_chunks: int
+    }
+
+    class FuenteConocimiento {
+        +id_fuente: String
+        +texto_chunk: String
+        +embedding: Vector[2048]
+        +metadatos: JSONB
+    }
+
+    Instructor "1" --> "*" Documento : sube
+    Documento "1" *-- "*" FuenteConocimiento : contiene

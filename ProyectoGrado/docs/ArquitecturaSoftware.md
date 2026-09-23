@@ -15,7 +15,9 @@ Identificación de los requisitos no funcionales (NFRs) críticos y las solucion
 | :--- | :--- | :--- |
 | **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Procesamiento Asíncrono en Google Colab Pro:** El backend delega la inferencia de YOLO y Qwen3-VL a un Worker ejecutado en Colab Pro. |
 | **Límite de Cuota (Gemini API)** | Nivel Gratuito de Gemini API impone cuotas estrictas de solicitudes por minuto (RPM). | **Patrón Message Queue (Cola de Tareas):** Encolado de tareas asíncronas con reintentos para no saturar las llamadas a Gemini. |
-| **Búsqueda Vectorial Rápida** | Búsqueda por similitud de 133 keypoints de esqueleto biomecánico. | **Qdrant Vector DB:** Almacenamiento especializado con índice HNSW y métrica de distancia de Coseno. |
+| **Estimación 3D / Profundidad** | Capturar la profundidad espacial ($Z$) en llaves y agarres complejos. | **Ultralytics Pose & Depth Tasks:** Estimación de profundidad y keypoints tridimensionales ($X, Y, Z$). |
+| **RAG Multimodal (Visión)** | Filtrado y ordenamiento fino de fotogramas candidatos con contexto visual. | **Qdrant + Qwen3-VL-Reranker-2B:** Recuperación vectorial (Retrieval) en Qdrant seguida de Re-ranking visual con Qwen3-VL. |
+| **Cerebro Pedagógico** | Generación de retroalimentación cualitativa comprensible y estructurada. | **Google Gemini API (Strategy Pattern):** Asume el rol pedagógico del Maestro Cinturón Negro (ES/PT). |
 | **Internacionalización (i18n)** | Soporte fluído para alumnos y profesores en Portugués y Español. | **Patrón Strategy (GoF):** Algoritmos de construcción de prompts encapsulados en estrategias polimórficas por idioma. |
 | **Multi-Tenancy / Privacidad** | Múltiples sucursales internacionales de la academia "Corpo e Mente". | **Row Level Security (RLS) en PostgreSQL:** Aislamiento de datos por sucursal a nivel de motor de base de datos. |
 

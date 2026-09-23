@@ -47,6 +47,6 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
 
 | Iteración | Enfoque Principal | Riesgos / Objetivos a Resolver | Artefactos Impactados |
 | :--- | :--- | :--- | :--- |
-| **C4-B** | Worker de IA en Colab Pro | Integrar `QwenRerankerAdapter` (Qwen3-VL-Reranker-2B) y orquestar el script de cola `worker.py`. | `adapters.py`, `worker.py`, `ArquitecturaSoftware.md` |
+| **C4-B** | Worker de IA en Colab Pro (RAG Multimodal + Depth) | Implementar **YOLO (Pose 3D + Depth Tasks)** para coordenadas ($X, Y, Z$), conectar **Qwen3-VL-Reranker-2B** como Re-ranker del RAG Multimodal y **Gemini API** como Cerebro Pedagógico en `worker.py`. | `adapters.py`, `worker.py`, `ArquitecturaSoftware.md` |
 | **C5** | Integración Full-Stack | Reemplazar simulaciones con persistencia real (PostgREST + PostgreSQL) y polling de estado. | `routes.py`, `App.jsx`, `AnalisiDiseno.md` |
 | **Transición** | Pruebas Beta y Despliegue | Generación del cuaderno `.ipynb` listo para Colab Pro y pruebas de campo en academias. | `Colab_Worker.ipynb`, `Manual_Usuario.md` |

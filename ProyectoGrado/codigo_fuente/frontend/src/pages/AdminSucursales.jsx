@@ -5,19 +5,26 @@ function parseGoogleMapsUrl(input) {
   if (!input) return null;
   const str = input.trim();
 
-  // 1. Coordenadas en formato @lat,lng (Formato estándar Google Maps Web: https://www.google.com/maps/place/.../@-22.9711,-43.1822,15z)
+  // 1. PRIORIDAD MÁXIMA: Coordenadas exactas del PIN del lugar (!3dLatitud!4dLongitud)
+  // Ejemplo: !8m2!3d-17.7530773!4d-63.1993584 (UFC GYM Santa Cruz)
+  const pinMatch = str.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (pinMatch) {
+    return { lat: parseFloat(pinMatch[1]), lng: parseFloat(pinMatch[2]) };
+  }
+
+  // 2. Coordenadas en parametros query q=lat,lng, query=lat,lng o ll=lat,lng
+  const queryMatch = str.match(/(?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (queryMatch) {
+    return { lat: parseFloat(queryMatch[1]), lng: parseFloat(queryMatch[2]) };
+  }
+
+  // 3. Coordenadas del centro de la camara / encuadre visual (@lat,lng)
   const atMatch = str.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (atMatch) {
     return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
   }
 
-  // 2. Coordenadas en parametros q=lat,lng o query=lat,lng
-  const queryMatch = str.match(/(?:q|query)=(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (queryMatch) {
-    return { lat: parseFloat(queryMatch[1]), lng: parseFloat(queryMatch[2]) };
-  }
-
-  // 3. Coordenadas brutas separadas por coma (Ej. "-22.9711, -43.1822")
+  // 4. Coordenadas brutas separadas por coma (Ej. "-17.7530773, -63.1993584")
   const plainMatch = str.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
   if (plainMatch) {
     return { lat: parseFloat(plainMatch[1]), lng: parseFloat(plainMatch[2]) };

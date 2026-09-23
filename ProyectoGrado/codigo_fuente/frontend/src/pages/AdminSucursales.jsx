@@ -1,44 +1,61 @@
 import { useState, useEffect, useRef } from 'react';
 
-// Función para extraer Latitud, Longitud y Nombre del lugar desde cualquier URL de Google Maps o formato de texto
+// Función para extraer Latitud, Longitud, Nombre y Código de Plus Code desde cualquier URL de Google Maps o texto
 function parseGoogleMapsUrl(input) {
   if (!input) return null;
   const str = input.trim();
 
   let placeName = null;
+  let plusCode = null;
+
+  // Extraer Plus Code si existe (ej. 6RW2+Q64, Santa Cruz de la Sierra)
+  const plusMatch = str.match(/([2-9A-Z]{4,8}(?:\+|\%2[bB])[2-9A-Z]{2,4}(?:,\s*[^&/]+)?)/i);
+  if (plusMatch) {
+    try {
+      plusCode = decodeURIComponent(plusMatch[1].replace(/\+/g, ' '));
+    } catch (e) {
+      plusCode = plusMatch[1];
+    }
+  }
+
   // Extraer el nombre del lugar del path /place/NOMBRE_DEL_LUGAR/
   const placeMatch = str.match(/\/place\/([^/@]+)/);
   if (placeMatch) {
     try {
-      placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+      const decoded = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+      // Si el decoded contiene un Plus Code (tiene signo + o código), guardarlo en plusCode y no como nombre comercial
+      if (/[2-9A-Z]{4,8}\+[2-9A-Z]{2,4}/i.test(decoded)) {
+        plusCode = decoded;
+      } else {
+        placeName = decoded;
+      }
     } catch (e) {
       placeName = placeMatch[1].replace(/\+/g, ' ');
     }
   }
 
   // 1. PRIORIDAD MÁXIMA: Coordenadas exactas del PIN del lugar (!3dLatitud!4dLongitud)
-  // Ejemplo: !8m2!3d-17.7530773!4d-63.1993584 (UFC GYM Santa Cruz)
   const pinMatch = str.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
   if (pinMatch) {
-    return { lat: parseFloat(pinMatch[1]), lng: parseFloat(pinMatch[2]), placeName };
+    return { lat: parseFloat(pinMatch[1]), lng: parseFloat(pinMatch[2]), placeName, plusCode };
   }
 
   // 2. Coordenadas en parametros query q=lat,lng, query=lat,lng o ll=lat,lng
   const queryMatch = str.match(/(?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (queryMatch) {
-    return { lat: parseFloat(queryMatch[1]), lng: parseFloat(queryMatch[2]), placeName };
+    return { lat: parseFloat(queryMatch[1]), lng: parseFloat(queryMatch[2]), placeName, plusCode };
   }
 
   // 3. Coordenadas del centro de la camara / encuadre visual (@lat,lng)
   const atMatch = str.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (atMatch) {
-    return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]), placeName };
+    return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]), placeName, plusCode };
   }
 
   // 4. Coordenadas brutas separadas por coma (Ej. "-17.7530773, -63.1993584")
   const plainMatch = str.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
   if (plainMatch) {
-    return { lat: parseFloat(plainMatch[1]), lng: parseFloat(plainMatch[2]), placeName };
+    return { lat: parseFloat(plainMatch[1]), lng: parseFloat(plainMatch[2]), placeName, plusCode };
   }
 
   return null;
@@ -64,36 +81,46 @@ export default function AdminSucursales({ onClose }) {
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
 
-  // Geocodificación inversa con Nominatim (OpenStreetMap - 100% Gratis)
-  const reverseGeocode = async (lat, lng, fallbackName = null) => {
+  // Geocodificación inversa inteligente (OpenStreetMap + Soporte de Plus Codes)
+  const reverseGeocode = async (lat, lng, fallbackName = null, urlPlusCode = null) => {
     try {
-      setMapsFeedback('⏳ Buscando dirección exacta en OpenStreetMap...');
+      setMapsFeedback('⏳ Cargando dirección de la ubicación...');
+      
+      // Si se extrajo un Plus Code de la URL de Google Maps (ej. "6RW2+Q64, Santa Cruz de la Sierra"), asignarlo directamente
+      if (urlPlusCode) {
+        setDireccion(urlPlusCode);
+      }
+
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.address) {
           const addr = data.address;
           
-          // Extraer componentes de dirección
-          const road = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || addr.amenity || '';
+          // Solo usar calle real (road, pedestrian, building), ignorar barrios o zonas imprecisas como "Piraí"
+          const road = addr.road || addr.pedestrian || addr.building || addr.amenity || '';
           const houseNumber = addr.house_number ? ` #${addr.house_number}` : '';
-          const fullRoad = road ? `${road}${houseNumber}` : (data.display_name ? data.display_name.split(',')[0] : '');
+          const fullRoad = road ? `${road}${houseNumber}` : '';
 
           const city = addr.city || addr.town || addr.village || addr.municipality || addr.state || '';
           const country = addr.country || '';
 
-          if (fullRoad) setDireccion(fullRoad);
+          // Si hay calle real y no se extrajo plus code, usar la calle real
+          if (fullRoad && !urlPlusCode) {
+            setDireccion(fullRoad);
+          }
           if (city) setCiudad(city);
           if (country) setPais(country);
           if (fallbackName && !nombre) setNombre(fallbackName);
 
-          setMapsFeedback(`✅ Dirección y Coordenadas autocompletadas: ${city}, ${country}`);
+          setMapsFeedback(`✅ Dirección cargada: ${city}, ${country}`);
           return;
         }
       }
     } catch (e) {
       console.error("Error obteniendo dirección inversa:", e);
     }
+    if (urlPlusCode) setDireccion(urlPlusCode);
     setMapsFeedback(`✅ Coordenadas extraídas: (${lat}, ${lng})`);
   };
 
@@ -202,8 +229,11 @@ export default function AdminSucursales({ onClose }) {
       if (coords.placeName && !nombre) {
         setNombre(coords.placeName);
       }
+      if (coords.plusCode) {
+        setDireccion(coords.plusCode);
+      }
       updateMapPosition(coords.lat, coords.lng);
-      reverseGeocode(coords.lat, coords.lng, coords.placeName);
+      reverseGeocode(coords.lat, coords.lng, coords.placeName, coords.plusCode);
     } else if (val.trim() !== '') {
       setMapsFeedback('⚠️ No se detectó un formato válido de latitud y longitud en el enlace.');
     } else {

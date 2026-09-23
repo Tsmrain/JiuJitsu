@@ -57,6 +57,24 @@ SUCURSALES_DB: List[SucursalResponse] = [
         longitud=-43.1822
     ),
     SucursalResponse(
+        id=UUID("44444444-4444-4444-4444-444444444444"),
+        nombre="Corpo e Mente - Sede Santa Cruz",
+        pais="Bolivia",
+        ciudad="Santa Cruz de la Sierra",
+        direccion="Av. San Martín, Equipetrol Norte #450",
+        latitud=-17.7833,
+        longitud=-63.1821
+    ),
+    SucursalResponse(
+        id=UUID("55555555-5555-5555-5555-555555555555"),
+        nombre="Corpo e Mente - Sede La Paz",
+        pais="Bolivia",
+        ciudad="La Paz",
+        direccion="Av. 16 de Julio (El Prado) #1420",
+        latitud=-16.5000,
+        longitud=-68.1500
+    ),
+    SucursalResponse(
         id=UUID("22222222-2222-2222-2222-222222222222"),
         nombre="Corpo e Mente - Sede Bogotá",
         pais="Colombia",

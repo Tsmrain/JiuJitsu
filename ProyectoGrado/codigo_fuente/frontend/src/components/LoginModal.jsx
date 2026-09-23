@@ -138,13 +138,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)',
+      background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000
+      zIndex: 1000, padding: '1rem', boxSizing: 'border-box'
     }}>
       <div className="glass-panel" style={{
-        width: '90%', maxWidth: '440px', padding: '2rem', borderRadius: '16px',
-        border: '1px solid rgba(208, 17, 24, 0.3)', position: 'relative'
+        width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '16px',
+        border: '1px solid rgba(208, 17, 24, 0.3)', position: 'relative',
+        maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box'
       }}>
         <button 
           onClick={onClose}

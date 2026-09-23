@@ -239,8 +239,8 @@ export default function AdminSucursales({ onClose }) {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto', color: 'white' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
             📍 Gestión Multi-Tenant de Sucursales Globales
@@ -254,9 +254,9 @@ export default function AdminSucursales({ onClose }) {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Formulario de registro/modificación */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>
               {editingId ? "✏️ Modificar Sucursal" : "➕ Registrar Nueva Sucursal"}
@@ -274,7 +274,7 @@ export default function AdminSucursales({ onClose }) {
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {/* Parser de Enlace de Google Maps */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', boxSizing: 'border-box' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: '#4da6ff', marginBottom: '0.25rem' }}>
                 🔗 Extraer Coordenadas desde Link de Google Maps:
               </label>
@@ -283,7 +283,7 @@ export default function AdminSucursales({ onClose }) {
                 value={googleMapsUrl} 
                 onChange={e => handleGoogleMapsUrlChange(e.target.value)}
                 placeholder="Pega aquí el enlace de Google Maps (Ej. https://www.google.com/maps/...)"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(77,166,255,0.4)', color: 'white', fontSize: '0.8rem' }}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(77,166,255,0.4)', color: 'white', fontSize: '0.8rem', boxSizing: 'border-box' }}
               />
               {mapsFeedback && (
                 <div style={{ fontSize: '0.75rem', marginTop: '0.3rem', color: mapsFeedback.startsWith('✅') ? '#69db7c' : '#ff8787' }}>
@@ -298,26 +298,26 @@ export default function AdminSucursales({ onClose }) {
               </label>
               <input 
                 type="text" required value={nombre} onChange={e => setNombre(e.target.value)}
-                placeholder="Ej. Corpo e Mente - Sede Tokio"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                placeholder="Ej. Corpo e Mente - Sede La Paz"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>País *</label>
                 <input 
                   type="text" required value={pais} onChange={e => setPais(e.target.value)}
-                  placeholder="Ej. Japón"
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                  placeholder="Ej. Bolivia"
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Ciudad *</label>
                 <input 
                   type="text" required value={ciudad} onChange={e => setCiudad(e.target.value)}
-                  placeholder="Ej. Shibuya"
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                  placeholder="Ej. Santa Cruz de la Sierra"
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -326,44 +326,44 @@ export default function AdminSucursales({ onClose }) {
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Dirección</label>
               <input 
                 type="text" value={direccion} onChange={e => setDireccion(e.target.value)}
-                placeholder="Ej. Dogenzaka 2-24-1"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                placeholder="Ej. Equipetrol Norte #450"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'rgba(208,17,24,0.1)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(208,17,24,0.3)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'rgba(208,17,24,0.1)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(208,17,24,0.3)', boxSizing: 'border-box' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)' }}>Latitud Capturada</label>
-                <input type="text" readOnly value={latitud} style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold' }} />
+                <input type="text" readOnly value={latitud} style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)' }}>Longitud Capturada</label>
-                <input type="text" readOnly value={longitud} style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold' }} />
+                <input type="text" readOnly value={longitud} style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold', boxSizing: 'border-box' }} />
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '0.5rem', padding: '0.75rem' }}>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '0.5rem', padding: '0.75rem', width: '100%' }}>
               {loading ? "Procesando..." : (editingId ? "Actualizar Sucursal" : "Guardar Sucursal Global")}
             </button>
           </form>
         </div>
 
         {/* Contenedor del Mapa OpenStreetMap */}
-        <div className="glass-panel" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
+        <div className="glass-panel" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '0.5rem', opacity: 0.85 }}>
             🗺️ MAPA MUNDIAL INTERACTIVO (OPENSTREETMAP - GRATIS)
           </span>
           <div 
             ref={mapRef} 
-            style={{ width: '100%', height: '400px', borderRadius: '8px', overflow: 'hidden', background: '#222' }} 
+            style={{ width: '100%', height: '380px', borderRadius: '8px', overflow: 'hidden', background: '#222' }} 
           />
         </div>
       </div>
 
       {/* Lista de Sucursales Registradas con opciones de CRUD */}
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
+      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>🌐 Sucursales Registradas ({sucursales.length})</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
           {sucursales.map((s) => (
             <div 
               key={s.id} 
@@ -371,7 +371,8 @@ export default function AdminSucursales({ onClose }) {
                 background: editingId === s.id ? 'rgba(208,17,24,0.15)' : 'rgba(255,255,255,0.04)', 
                 padding: '1rem', borderRadius: '8px', 
                 border: editingId === s.id ? '2px solid var(--brand-red)' : '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                boxSizing: 'border-box'
               }}
             >
               <div>

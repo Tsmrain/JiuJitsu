@@ -262,3 +262,11 @@ class IntelligenceAnalysisFacade:
 Con la publicación de este documento (**SAD**), la especificación del **DCD**, el **Diagrama de Paquetes** y la **Vista de Despliegue**, se da por concluida satisfactoriamente la **Fase de Elaboración del Proceso Unificado (Craig Larman)**.
 
 Todos los riesgos principales (Rate Limits de Gemini, Inferencia pesada sin GPU local, Búsqueda Vectorial, Soporte Multilingüe e Integridad de BD Híbrida) quedan arquitectónicamente mitigados y listos para la **Fase de Construcción**.
+
+---
+
+## 7. ANEXO: MATERIALIZACIÓN FASE DE CONSTRUCCIÓN (Iteraciones C1 y C2)
+
+Conforme a la metodología iterativa, la arquitectura lógica fue llevada a código físico:
+- **Separación de SQL:** El esquema lógico de la base de datos se desacopló físicamente en scripts dedicados (`01_schema_3nf.sql`, `02_auth_jwt.sql` y `03_rls_policies.sql`) dentro del directorio `database/`, garantizando una evolución controlada de la capa operacional y su RLS.
+- **Implementación del Adaptador YOLO:** La clase `YOLOPoseAdapter` se instanció exitosamente usando la librería `ultralytics` aislando la complejidad vectorial de PyTorch en la capa de Infraestructura, respetando el DCD propuesto.

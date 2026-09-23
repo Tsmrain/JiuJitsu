@@ -75,3 +75,30 @@ async def analizar_video(
         # Limpieza del archivo temporal local
         if os.path.exists(temp_video_path):
             os.remove(temp_video_path)
+
+@router.post("/validar-spam", status_code=status.HTTP_200_OK)
+async def validar_spam(video: UploadFile = File(...)):
+    """
+    Endpoint HTTP aislado para validar tempranamente si un video es de Jiu-Jitsu (SPAM filter).
+    """
+    if not video.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de archivo no soportado."
+        )
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+        shutil.copyfileobj(video.file, temp_video)
+        temp_video_path = temp_video.name
+
+    try:
+        es_valido = gemini_adapter.validar_es_jiujitsu(temp_video_path)
+        if not es_valido:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="El video proporcionado no parece estar relacionado con Jiu-Jitsu o Grappling."
+            )
+        return {"status": "ok", "message": "El video es válido."}
+    finally:
+        if os.path.exists(temp_video_path):
+            os.remove(temp_video_path)

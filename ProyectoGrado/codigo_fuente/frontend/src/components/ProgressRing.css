@@ -1,0 +1,95 @@
+@property --value {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.ring-wrapper {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* Hide native bars */
+progress.progress-ring::-webkit-progress-bar {
+  display: none;
+  background: none;
+}
+progress.progress-ring::-webkit-progress-value {
+  display: none;
+  background: none;
+}
+progress.progress-ring::-moz-progress-bar {
+  display: none;
+  background: none;
+}
+
+progress.progress-ring {
+  --size: 150px;
+  --thickness: 12px;
+  --track-color: rgba(255, 255, 255, 0.1);
+  --fill-color: var(--brand-red);
+  --value: attr(value type(<number>));
+  
+  width: var(--size);
+  height: var(--size);
+  appearance: none;
+  border-radius: 50%;
+  
+  transition: --value 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  background: conic-gradient(
+    var(--fill-color) calc(var(--value) * 1%),
+    var(--track-color) 0
+  );
+
+  /* Clip the background to the border-area for modern browsers */
+  background-clip: border-area;
+  border: var(--thickness) solid transparent;
+  background-origin: border-box;
+}
+
+/* Fallback for browsers that don't support border-area */
+@supports not (background-clip: border-area) {
+  progress.progress-ring {
+    mask-image: radial-gradient(
+      transparent calc(50% - var(--thickness)),
+      black calc(50% - var(--thickness) + 0.5px)
+    );
+    -webkit-mask-image: radial-gradient(
+      transparent calc(50% - var(--thickness)),
+      black calc(50% - var(--thickness) + 0.5px)
+    );
+    border: 0;
+  }
+}
+
+/* Respect user's motion preference */
+@media (prefers-reduced-motion: reduce) {
+  progress.progress-ring {
+    transition: none;
+  }
+}
+
+.ring-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ring-percentage {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ring-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}

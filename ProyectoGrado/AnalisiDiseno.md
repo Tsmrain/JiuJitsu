@@ -195,4 +195,25 @@ El Nivel Gratuito de la API de Gemini impone límites estrictos (RPM/RPD). Larma
 * **Datos Vectoriales (Qdrant):** El objeto `EsqueletoBiomecanico` y su estado trigonométrico se guarda como un arreglo de punto flotante indexado por HNSW en Qdrant, vinculado a la BD transaccional por un `UUID`. *(Ver detalles técnicos en el documento de Diseño de Base de Datos).*
 
 ---
-*(La fase de **Construcción** abarcará la codificación iterativa de pantallas secundarias y reportes, y la fase de **Transición** contemplará el despliegue a los servidores de Corpo e Mente).*
+
+## FASE 3: CONSTRUCCIÓN - ITERACIÓN C1 y C2 (Núcleo Operacional)
+
+La Fase de Construcción se enfoca en implementar el diseño robusto definido en la Elaboración, escribiendo el código ejecutable y las pruebas automatizadas (TDD).
+
+### 5.1 Iteración C1: Infraestructura de API y Mocks
+- **Objetivo:** Codificar el núcleo de FastAPI, Controladores (`VideoAnalysisController`) y Fachadas (`IntelligenceAnalysisFacade`).
+- **Logros:** Implementación de enrutamiento REST, validación con Pydantic, y pruebas unitarias aisladas (`test_intelligence_facade.py`) usando inyección de dependencias y objetos Mock, cumpliendo el principio de *Test-First Programming* de Larman.
+
+### 5.2 Iteración C2: Seguridad (RLS/JWT) y Extracción Biomecánica (YOLO)
+- **Caso de Uso Adicional (UC2 - Autenticación y Privacidad):**
+  - **Actores:** Alumno / Profesor
+  - **Flujo:** El usuario se autentica y el sistema garantiza, mediante **Row Level Security (RLS)** en PostgreSQL, que un Alumno solo acceda a sus propias evaluaciones y un Profesor a las de su academia.
+- **Implementación de YOLOPoseAdapter:**
+  - Se materializó el *Experto de Información (Information Expert)* para la extracción vectorial de la pose usando `ultralytics` (`yolo11n-pose.pt`).
+  - Aplicación efectiva del patrón *Adapter (GoF)* para encapsular el aplanamiento de tensores de 133 dimensiones y su mapeo al modelo conceptual `EsqueletoBiomecanico`.
+- **Capa de Datos Transaccional (Mannino):**
+  - Esquema en **Tercera Forma Normal (3NF)** y Boyce-Codd (BCNF) implementado en SQL puro (`01_schema_3nf.sql`).
+  - Funciones nativas de base de datos (`pgcrypto`) delegando la autenticación a PostgREST (`02_auth_jwt.sql`).
+
+---
+*(La fase de **Transición** contemplará la corrección de errores finales, pruebas beta en las sedes de Corpo e Mente, y el despliegue en producción).*

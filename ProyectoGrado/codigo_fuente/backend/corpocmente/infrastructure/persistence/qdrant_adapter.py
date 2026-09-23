@@ -28,9 +28,13 @@ class QdrantVectorAdapter:
         self.host = host or settings.QDRANT_HOST
         self.port = port or settings.QDRANT_PORT
         self.collection_name = collection_name or settings.QDRANT_COLLECTION
-        
-        # Inyección de cliente o instanciación por defecto
-        self.client = client or QdrantClient(host=self.host, port=self.port)
+        self._client = client
+
+    @property
+    def client(self) -> QdrantClient:
+        if self._client is None:
+            self._client = QdrantClient(host=self.host, port=self.port)
+        return self._client
 
     def asegurar_coleccion(self, vector_size: int = 133) -> None:
         """Crea la colección en Qdrant con métrica de Coseno si no existe previamente."""

@@ -201,3 +201,44 @@ async def crear_sucursal(nueva: SucursalCreate):
     )
     SUCURSALES_DB.append(sucursal)
     return sucursal
+
+@router.put("/sucursales/{sucursal_id}", response_model=SucursalResponse, status_code=status.HTTP_200_OK)
+async def actualizar_sucursal(sucursal_id: UUID, req: SucursalCreate):
+    """
+    Permite al Administrador modificar los datos o coordenadas de una sucursal existente.
+    """
+    for index, s in enumerate(SUCURSALES_DB):
+        if s.id == sucursal_id:
+            updated = SucursalResponse(
+                id=sucursal_id,
+                nombre=req.nombre,
+                pais=req.pais,
+                ciudad=req.ciudad,
+                direccion=req.direccion,
+                latitud=req.latitud,
+                longitud=req.longitud
+            )
+            SUCURSALES_DB[index] = updated
+            return updated
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Sucursal no encontrada."
+    )
+
+@router.delete("/sucursales/{sucursal_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_sucursal(sucursal_id: UUID):
+    """
+    Permite al Administrador eliminar una sucursal del sistema.
+    """
+    global SUCURSALES_DB
+    initial_count = len(SUCURSALES_DB)
+    SUCURSALES_DB = [s for s in SUCURSALES_DB if s.id != sucursal_id]
+
+    if len(SUCURSALES_DB) == initial_count:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sucursal no encontrada."
+        )
+    return None
+

@@ -9,13 +9,19 @@ function App() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState(null);
 
-  const handleUploadStart = async (file) => {
-    console.log("Iniciando subida de:", file.name);
+  const [selectedTecnica, setSelectedTecnica] = useState(null);
+
+  const handleUploadStart = async (file, tecnica) => {
+    console.log("Iniciando subida de:", file.name, "para técnica:", tecnica?.nombre);
+    if (tecnica) setSelectedTecnica(tecnica);
     setAppState('UPLOADING');
     setUploadProgress(10); // Show initial progress
 
     const formData = new FormData();
     formData.append("video", file);
+    if (tecnica) {
+      formData.append("tecnica_id", tecnica.id);
+    }
 
     try {
       // 1. Llamada real al backend para validar SPAM
@@ -113,7 +119,7 @@ function App() {
         )}
 
         {appState === 'FEEDBACK' && (
-          <FeedbackView result={result} onReset={handleReset} />
+          <FeedbackView result={result} tecnica={selectedTecnica} onReset={handleReset} />
         )}
       </main>
     </div>

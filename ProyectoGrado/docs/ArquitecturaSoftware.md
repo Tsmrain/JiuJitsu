@@ -154,41 +154,38 @@ classDiagram
 
 ## 4. VISTA DE DESPLIEGUE (DEPLOYMENT VIEW)
 
-Ilustra la distribución física de los componentes de software en los nodos de ejecución distribuidos.
+Ilustra la distribución física híbrida: la máquina local mantiene la persistencia de datos (PostgreSQL 3NF) y vectores (Qdrant Local) de forma permanente sin riesgo de desconexión, mientras que Google Colab Pro proporciona la potencia GPU para la inferencia pesada (YOLO Pose/Depth + Qwen3-VL Reranker).
 
 ```mermaid
 graph LR
-    subgraph Client_Device ["Dispositivo Cliente (Móvil / Web)"]
-        UI_App["App Frontend (React / Flutter)"]
-    end
-
-    subgraph Cloud_Backend ["Servidor Backend (Cloud Provider)"]
+    subgraph Local_Machine ["Máquina Local (Persistencia & Servidores)"]
+        UI_App["App Frontend (React + Vite)"]
+        FastAPI_Node["FastAPI Backend Server"]
         PostgREST_Node["PostgREST API Engine"]
-        PostgreSQL_Node[("PostgreSQL DB (Operational)")]
-        Queue_Node[("Redis Message Queue")]
+        PostgreSQL_Node[("PostgreSQL DB (3NF + RLS)")]
+        Qdrant_Local[("Qdrant Vector DB (Persistente)")]
     end
 
     subgraph Colab_Worker ["Google Colab Pro (GPU Worker)"]
         Python_Worker["PyTorch Worker Script"]
-        YOLO_Engine["YOLO v11/26 Pose"]
-        Qwen_Engine["Qwen3-VL-Reranker"]
+        YOLO_Engine["YOLO v11/26 (Pose 3D + Depth)"]
+        Qwen_Engine["Qwen3-VL-Reranker-2B (Multimodal RAG)"]
     end
 
-    subgraph External_Services ["Servicios SaaS / Nube"]
-        Qdrant_Cloud[("Qdrant Vector DB")]
-        Gemini_SaaS["Google Gemini API"]
+    subgraph External_SaaS ["Servicios Cloud SaaS"]
+        Gemini_SaaS["Google Gemini API (Cerebro Pedagógico)"]
     end
 
-    UI_App -->|HTTPS / REST| PostgREST_Node
+    UI_App -->|HTTP REST| FastAPI_Node
+    UI_App -->|REST / JWT| PostgREST_Node
     PostgREST_Node -->|SQL / RLS| PostgreSQL_Node
-    PostgREST_Node -->|Encola Tareas| Queue_Node
 
-    Python_Worker -->|Polls Tareas| Queue_Node
-    Python_Worker -->|Ejecuta Inferencia| YOLO_Engine
-    Python_Worker -->|Re-ranking| Qwen_Engine
-    Python_Worker -->|gRPC / Vector Search| Qdrant_Cloud
-    Python_Worker -->|HTTPS / GenAI| Gemini_SaaS
-    Python_Worker -->|Actualiza Estado| PostgREST_Node
+    Python_Worker -->|Lee Tareas / HTTP| FastAPI_Node
+    Python_Worker -->|Pose 3D + Depth| YOLO_Engine
+    Python_Worker -->|gRPC / REST Search| Qdrant_Local
+    Python_Worker -->|Re-ranking Visual| Qwen_Engine
+    Python_Worker -->|GenAI Feedback| Gemini_SaaS
+    Python_Worker -->|Actualiza Evaluación| PostgREST_Node
 ```
 
 ---

@@ -1,9 +1,34 @@
 import { useState } from 'react';
 import './VideoUpload.css';
 
+const TECNICAS_DISPONIBLES = [
+  {
+    id: "11111111-1111-1111-1111-111111111111",
+    nombre: "Armbar desde Guardia Cerrada",
+    categoria: "Finalizaciones",
+    profesorRef: "Mestre Humberto Tavares",
+    descripcion: "Palanca de brazo clásica aplicando control hip-control y rotación de muñeca."
+  },
+  {
+    id: "22222222-2222-2222-2222-222222222222",
+    nombre: "Estrangulamiento Triángulo (Sankaku-Jime)",
+    categoria: "Finalizaciones",
+    profesorRef: "Mestre Humberto Tavares",
+    descripcion: "Cierre de piernas envolviendo cuello y brazo del oponente con presión de aductores."
+  },
+  {
+    id: "33333333-3333-3333-3333-333333333333",
+    nombre: "Pase de Guardia Torreando (Passagem Torreadora)",
+    categoria: "Pases de Guardia",
+    profesorRef: "Mestre Humberto Tavares",
+    descripcion: "Control de pantorrillas con desplazamiento lateral rápido y fijación de cadera."
+  }
+];
+
 export default function VideoUpload({ onUploadStart }) {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
+  const [selectedTecnica, setSelectedTecnica] = useState(TECNICAS_DISPONIBLES[0]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -32,7 +57,6 @@ export default function VideoUpload({ onUploadStart }) {
   };
 
   const handleFile = (selectedFile) => {
-    // Aceptamos video/mp4, video/quicktime, etc.
     if (selectedFile.type.startsWith('video/')) {
       setFile(selectedFile);
     } else {
@@ -41,8 +65,8 @@ export default function VideoUpload({ onUploadStart }) {
   };
 
   const handleSubmit = () => {
-    if (file) {
-      onUploadStart(file);
+    if (file && selectedTecnica) {
+      onUploadStart(file, selectedTecnica);
     }
   };
 
@@ -50,7 +74,41 @@ export default function VideoUpload({ onUploadStart }) {
     <div className="upload-container">
       <div className="upload-header">
         <h2>Sube tu ejecución</h2>
-        <p>Nuestro modelo biomecánico YOLO evaluará tu técnica.</p>
+        <p>Selecciona la técnica que deseas practicar y compara tu movimiento contra el patrón del profesor.</p>
+      </div>
+
+      {/* Selector de Técnica */}
+      <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
+          1. SELECCIONA LA TÉCNICA A EVALUAR:
+        </label>
+        <select 
+          value={selectedTecnica.id}
+          onChange={(e) => setSelectedTecnica(TECNICAS_DISPONIBLES.find(t => t.id === e.target.value))}
+          style={{
+            width: '100%',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            background: 'rgba(255, 255, 255, 0.05)',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            fontSize: '1rem',
+            cursor: 'pointer'
+          }}
+        >
+          {TECNICAS_DISPONIBLES.map(t => (
+            <option key={t.id} value={t.id} style={{ background: '#111', color: 'white' }}>
+              {t.nombre} ({t.categoria})
+            </option>
+          ))}
+        </select>
+        
+        <div className="profesor-ref-info" style={{ marginTop: '0.75rem', fontSize: '0.85rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ background: 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>
+            PATRÓN PROFESOR
+          </span>
+          <span>{selectedTecnica.profesorRef} - {selectedTecnica.descripcion}</span>
+        </div>
       </div>
 
       <div 

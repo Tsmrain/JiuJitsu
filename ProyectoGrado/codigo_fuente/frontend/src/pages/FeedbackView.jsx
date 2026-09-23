@@ -1,6 +1,6 @@
 import './FeedbackView.css';
 
-export default function FeedbackView({ result, onReset }) {
+export default function FeedbackView({ result, tecnica, onReset }) {
   if (!result) return null;
 
   const isExcellent = result.similitud >= 90;
@@ -13,9 +13,21 @@ export default function FeedbackView({ result, onReset }) {
   return (
     <div className="feedback-container">
       <div className="feedback-header">
-        <h2>Resultados del Análisis</h2>
-        <p>Comparación biomecánica completada exitosamente.</p>
+        <h2>Resultados del Análisis Biomecánico</h2>
+        <p>Comparación completada contra el patrón oficial del profesor.</p>
       </div>
+
+      {tecnica && (
+        <div className="tecnica-comparison-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px', borderLeft: '4px solid var(--brand-red)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)', letterSpacing: '1px' }}>
+            TÉCNICA EVALUADA
+          </span>
+          <h3 style={{ margin: '0.25rem 0', fontSize: '1.25rem' }}>{tecnica.nombre}</h3>
+          <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.8 }}>
+            <strong>Patrón de Referencia:</strong> {tecnica.profesorRef} ({tecnica.categoria})
+          </p>
+        </div>
+      )}
 
       <div className="score-card glass-panel">
         <div className="score-circle">

@@ -298,9 +298,9 @@ async def parse_gmaps_link(req: ParseGmapsRequest):
         final_url = url_input
 
     # 2. Extraer Coordenadas (Prioridad: !3dLat!4dLng > query > @camera)
-    pin_match = re.search(r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)", final_url)
-    if pin_match:
-        lat, lng = float(pin_match.group(1)), float(pin_match.group(2))
+    pin_matches = re.findall(r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)", final_url)
+    if pin_matches:
+        lat, lng = float(pin_matches[-1][0]), float(pin_matches[-1][1])
     else:
         query_match = re.search(r"(?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)", final_url)
         if query_match:
@@ -342,9 +342,23 @@ async def parse_gmaps_link(req: ParseGmapsRequest):
             if road:
                 direccion = f"{road}{house_str}"
             else:
-                disp = nom_data.get("display_name", "")
-                if disp:
-                    direccion = disp.split(",")[0]
+                # If no road is found, try to use the Plus Code as fallback (like Google Maps does)
+                try:
+                    import openlocationcode.openlocationcode as olc
+                    # generate full code with precision 11
+                    full_code = olc.encode(lat, lng, 11)
+                    # Strip the first 4 characters (region code) to get the short code
+                    short_code = full_code[4:12] # e.g. 6RW2+Q76
+                    city_str = addr.get("city") or addr.get("town") or addr.get("municipality") or ""
+                    if city_str:
+                        direccion = f"{short_code}, {city_str}"
+                    else:
+                        direccion = short_code
+                except ImportError:
+                    # Fallback to display name if openlocationcode is not installed
+                    disp = nom_data.get("display_name", "")
+                    if disp:
+                        direccion = disp.split(",")[0]
             
             ciudad = addr.get("city") or addr.get("town") or addr.get("municipality") or addr.get("state_district") or addr.get("state")
             pais = addr.get("country")

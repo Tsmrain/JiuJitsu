@@ -24,6 +24,7 @@ CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sucursal_id UUID NOT NULL REFERENCES sucursales(id) ON DELETE CASCADE,
     nombre_completo VARCHAR(150) NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'profesor', 'alumno')),

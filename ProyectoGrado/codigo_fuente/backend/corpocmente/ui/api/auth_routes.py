@@ -45,6 +45,18 @@ class SucursalResponse(BaseModel):
     latitud: float
     longitud: float
 
+class ParseGmapsRequest(BaseModel):
+    url: str
+
+class ParseGmapsResponse(BaseModel):
+    nombre: Optional[str] = None
+    pais: Optional[str] = None
+    ciudad: Optional[str] = None
+    direccion: Optional[str] = None
+    latitud: float
+    longitud: float
+
+
 # Datos en memoria
 SUCURSALES_DB: List[SucursalResponse] = [
     SucursalResponse(
@@ -259,4 +271,93 @@ async def eliminar_sucursal(sucursal_id: UUID):
             detail="Sucursal no encontrada."
         )
     return None
+
+import urllib.request
+import urllib.parse
+import json
+import re
+
+@router.post("/sucursales/parse-gmaps-link", response_model=ParseGmapsResponse, status_code=status.HTTP_200_OK)
+async def parse_gmaps_link(req: ParseGmapsRequest):
+    """
+    Servicio backend de scraping y geocodificación para enlaces de Google Maps.
+    Resuelve acortadores de URL, extrae coordenadas exactas (!3d/!4d) y autocompleta
+    nombre, dirección, ciudad y país mediante OpenStreetMap.
+    """
+    url_input = req.url.strip()
+
+    # 1. Resolver redirecciones de acortadores si es necesario
+    try:
+        http_req = urllib.request.Request(
+            url_input,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        )
+        with urllib.request.urlopen(http_req) as resp:
+            final_url = resp.geturl()
+    except Exception:
+        final_url = url_input
+
+    # 2. Extraer Coordenadas (Prioridad: !3dLat!4dLng > query > @camera)
+    pin_match = re.search(r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)", final_url)
+    if pin_match:
+        lat, lng = float(pin_match.group(1)), float(pin_match.group(2))
+    else:
+        query_match = re.search(r"(?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)", final_url)
+        if query_match:
+            lat, lng = float(query_match.group(1)), float(query_match.group(2))
+        else:
+            at_match = re.search(r"@(-?\d+\.\d+),(-?\d+\.\d+)", final_url)
+            if at_match:
+                lat, lng = float(at_match.group(1)), float(at_match.group(2))
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No se encontraron coordenadas válidas en el enlace proporcionado."
+                )
+
+    # 3. Extraer Nombre comercial o del establecimiento
+    place_name = None
+    place_match = re.search(r"\/place\/([^\/@]+)", final_url)
+    if place_match:
+        raw_name = urllib.parse.unquote(place_match.group(1)).replace("+", " ")
+        if not re.search(r"[2-9A-Z]{4,8}\+[2-9A-Z]{2,4}", raw_name, re.I):
+            place_name = raw_name
+
+    # 4. Geocodificación Inversa con OpenStreetMap (Nominatim)
+    nom_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&addressdetails=1"
+    nom_req = urllib.request.Request(
+        nom_url,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+    )
+    
+    direccion, ciudad, pais = None, None, None
+    try:
+        with urllib.request.urlopen(nom_req) as nom_resp:
+            nom_data = json.loads(nom_resp.read().decode("utf-8"))
+            addr = nom_data.get("address", {})
+            
+            road = addr.get("road") or addr.get("pedestrian") or addr.get("building") or addr.get("amenity") or addr.get("university") or ""
+            hn = addr.get("house_number")
+            house_str = f" #{hn}" if hn else ""
+            if road:
+                direccion = f"{road}{house_str}"
+            else:
+                disp = nom_data.get("display_name", "")
+                if disp:
+                    direccion = disp.split(",")[0]
+            
+            ciudad = addr.get("city") or addr.get("town") or addr.get("municipality") or addr.get("state_district") or addr.get("state")
+            pais = addr.get("country")
+    except Exception as e:
+        pass
+
+    return ParseGmapsResponse(
+        nombre=place_name,
+        direccion=direccion,
+        ciudad=ciudad,
+        pais=pais,
+        latitud=lat,
+        longitud=lng
+    )
+
 

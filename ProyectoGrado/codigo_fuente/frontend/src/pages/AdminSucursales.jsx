@@ -219,25 +219,52 @@ export default function AdminSucursales({ onClose }) {
     }
   };
 
-  // Manejar pegado de enlace de Google Maps
-  const handleGoogleMapsUrlChange = (val) => {
+  // Manejar pegado de enlace de Google Maps con Backend Scraping + Geocoding
+  const handleGoogleMapsUrlChange = async (val) => {
     setGoogleMapsUrl(val);
+    if (!val || val.trim() === '') {
+      setMapsFeedback('');
+      return;
+    }
+
+    setMapsFeedback('⏳ Analizando enlace de Google Maps...');
+    
+    try {
+      // 1. Intentar analizar con el backend scraper / geocoder
+      const res = await fetch("http://localhost:8000/api/v1/sucursales/parse-gmaps-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: val.trim() })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setLatitud(data.latitud);
+        setLongitud(data.longitud);
+        if (data.nombre) setNombre(data.nombre);
+        if (data.direccion) setDireccion(data.direccion);
+        if (data.ciudad) setCiudad(data.ciudad);
+        if (data.pais) setPais(data.pais);
+
+        updateMapPosition(data.latitud, data.longitud);
+        setMapsFeedback(`✅ ¡Ubicación obtenida con precisión! ${data.ciudad || ''}, ${data.pais || ''}`);
+        return;
+      }
+    } catch (e) {
+      console.warn("Backend parser no disponible, usando fallback cliente:", e);
+    }
+
+    // 2. Fallback a parser cliente si falla la conexión
     const coords = parseGoogleMapsUrl(val);
     if (coords) {
       setLatitud(coords.lat);
       setLongitud(coords.lng);
-      if (coords.placeName && !nombre) {
-        setNombre(coords.placeName);
-      }
-      if (coords.plusCode) {
-        setDireccion(coords.plusCode);
-      }
+      if (coords.placeName) setNombre(coords.placeName);
+      if (coords.plusCode) setDireccion(coords.plusCode);
       updateMapPosition(coords.lat, coords.lng);
       reverseGeocode(coords.lat, coords.lng, coords.placeName, coords.plusCode);
-    } else if (val.trim() !== '') {
-      setMapsFeedback('⚠️ No se detectó un formato válido de latitud y longitud en el enlace.');
     } else {
-      setMapsFeedback('');
+      setMapsFeedback('⚠️ No se detectó un formato válido de latitud y longitud en el enlace.');
     }
   };
 

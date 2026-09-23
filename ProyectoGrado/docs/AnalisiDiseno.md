@@ -235,13 +235,14 @@ La Fase de Construcción sigue el Proceso Unificado (UP) de Craig Larman, constr
   - Aplicación del patrón *Lazy Loading* en `YOLOPoseAdapter` y `QdrantVectorAdapter` para desacoplar el arranque del servidor HTTP de la disponibilidad de modelos pesados o BDs externas.
   - Endpoint REST expuesto en `/api/v1/evaluaciones/validar-spam` devolviendo HTTP 422 si el contenido es rechazado.
 
-### 5.5 Iteración C5: Autenticación por Roles y Gestión de Sucursales (OpenStreetMap)
+### 5.5 Iteración C5: Autenticación por Roles y Gestión de Sucursales (OpenStreetMap + Scraper)
 - **Caso de Uso (UC5 - Autenticación y Cambio de Perfil por Roles):**
   - **Actores:** Alumno / Profesor / Administrador
-  - **Flujo:** El modal de inicio de sesión (`LoginModal.jsx`) permite conmutar entre roles (`alumno`, `profesor`, `admin`) ajustando dinámicamente los privilegios de la interfaz y enviando la solicitud a `/api/v1/auth/login`.
+  - **Flujo:** El modal de inicio de sesión (`LoginModal.jsx`) permite conmutar entre roles (`alumno`, `profesor`, `admin`) ajustando dinámicamente los privilegios de la interfaz. Los alumnos y profesores pueden registrarse libremente, pero la cuenta de **Administrador General** es pre-creada por defecto con credenciales estáticas (`admin / admin123`) para asegurar el sistema.
 - **Caso de Uso (UC6 - Gestión Multi-Tenant de Sucursales Globales):**
   - **Actores:** Administrador
-  - **Flujo:** El panel de administración (`AdminSucursales.jsx`) integra un mapa mundial interactivo **100% Gratuito y Libre (Leaflet.js + OpenStreetMap)**. Al hacer clic en cualquier país/ciudad, se fijan las coordenadas de `latitud` y `longitud`, registrando la sucursal en el esquema relacional (`01_schema_3nf.sql`) sin costo de API keys.
+  - **Flujo:** El panel de administración (`AdminSucursales.jsx`) permite el registro CRUD de sedes físicas con un mapa mundial interactivo **100% Gratuito y Libre (Leaflet.js + OpenStreetMap)**.
+  - **Resolución Analítica de Coordenadas (Web Scraping & Plus Codes):** El administrador puede pegar un enlace de Google Maps. El sistema extrae en el backend las coordenadas exactas de la URI (`!3d / !4d`), realiza *Reverse Geocoding* gratuito con Nominatim y, si la ubicación carece de calle registrada, aplica un algoritmo compensatorio usando la librería de Google `openlocationcode` para generar matemáticamente el identificador de área exacto (Plus Code) evitando imprecisiones de barrio.
 
 ---
 *(La fase de **Transición** contemplará la corrección de errores finales, pruebas beta en las sedes de Corpo e Mente, y el despliegue en producción).*

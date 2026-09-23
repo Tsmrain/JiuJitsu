@@ -235,5 +235,13 @@ La Fase de Construcción sigue el Proceso Unificado (UP) de Craig Larman, constr
   - Aplicación del patrón *Lazy Loading* en `YOLOPoseAdapter` y `QdrantVectorAdapter` para desacoplar el arranque del servidor HTTP de la disponibilidad de modelos pesados o BDs externas.
   - Endpoint REST expuesto en `/api/v1/evaluaciones/validar-spam` devolviendo HTTP 422 si el contenido es rechazado.
 
+### 5.5 Iteración C5: Autenticación por Roles y Gestión de Sucursales (OpenStreetMap)
+- **Caso de Uso (UC5 - Autenticación y Cambio de Perfil por Roles):**
+  - **Actores:** Alumno / Profesor / Administrador
+  - **Flujo:** El modal de inicio de sesión (`LoginModal.jsx`) permite conmutar entre roles (`alumno`, `profesor`, `admin`) ajustando dinámicamente los privilegios de la interfaz y enviando la solicitud a `/api/v1/auth/login`.
+- **Caso de Uso (UC6 - Gestión Multi-Tenant de Sucursales Globales):**
+  - **Actores:** Administrador
+  - **Flujo:** El panel de administración (`AdminSucursales.jsx`) integra un mapa mundial interactivo **100% Gratuito y Libre (Leaflet.js + OpenStreetMap)**. Al hacer clic en cualquier país/ciudad, se fijan las coordenadas de `latitud` y `longitud`, registrando la sucursal en el esquema relacional (`01_schema_3nf.sql`) sin costo de API keys.
+
 ---
 *(La fase de **Transición** contemplará la corrección de errores finales, pruebas beta en las sedes de Corpo e Mente, y el despliegue en producción).*

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from corpocmente.config import settings
 from corpocmente.ui.api.routes import router as evaluaciones_router
+from corpocmente.ui.api.auth_routes import router as auth_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -20,6 +21,7 @@ app.add_middleware(
 
 # Registrar rutas del dominio
 app.include_router(evaluaciones_router)
+app.include_router(auth_router)
 
 @app.get("/health", tags=["Health"])
 def health_check():

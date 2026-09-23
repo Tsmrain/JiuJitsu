@@ -1,21 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './App.css'
 import VideoUpload from './pages/VideoUpload'
 import FeedbackView from './pages/FeedbackView'
+import AdminSucursales from './pages/AdminSucursales'
 import ProgressRing from './components/ProgressRing'
+import LoginModal from './components/LoginModal'
 
 function App() {
-  const [appState, setAppState] = useState('IDLE'); // IDLE, UPLOADING, PROCESSING, FEEDBACK
+  const [appState, setAppState] = useState('IDLE'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState(null);
-
   const [selectedTecnica, setSelectedTecnica] = useState(null);
+
+  // Estado de Autenticación / Roles (Default: Alumno)
+  const [user, setUser] = useState({
+    nombre_completo: "Alumno Santiago",
+    rol: "alumno", // 'alumno', 'profesor', 'admin'
+    email: "santiago@corpocmente.com",
+    sucursal_nombre: "Corpo e Mente - Sede Principal"
+  });
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const handleUploadStart = async (file, tecnica) => {
     console.log("Iniciando subida de:", file.name, "para técnica:", tecnica?.nombre);
     if (tecnica) setSelectedTecnica(tecnica);
     setAppState('UPLOADING');
-    setUploadProgress(10); // Show initial progress
+    setUploadProgress(10);
 
     const formData = new FormData();
     formData.append("video", file);
@@ -24,7 +34,6 @@ function App() {
     }
 
     try {
-      // 1. Llamada real al backend para validar SPAM
       const response = await fetch("http://localhost:8000/api/v1/evaluaciones/validar-spam", {
         method: "POST",
         body: formData,
@@ -35,10 +44,9 @@ function App() {
         alert(`Error: ${errorData.detail || 'El video fue rechazado por la IA.'}`);
         setAppState('IDLE');
         setUploadProgress(0);
-        return; // Detener flujo
+        return;
       }
 
-      // Si es válido, simulamos el resto del proceso por ahora
       const uploadInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 100) {
@@ -61,7 +69,6 @@ function App() {
   const startProcessing = () => {
     setAppState('PROCESSING');
     
-    // Simular el tiempo de inferencia de YOLO y Gemini
     setTimeout(() => {
       setResult({
         similitud: 88.5,
@@ -80,26 +87,55 @@ function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <div className="brand">
+        <div className="brand" onClick={() => setAppState('IDLE')} style={{ cursor: 'pointer' }}>
           <img src="/logo.jpeg" alt="Corpo e Mente Logo" className="brand-logo" />
           <span className="brand-text">
             Corpo e Mente <span className="brand-accent">IA</span>
           </span>
         </div>
-        <div className="user-nav">
-          <span style={{color: 'var(--text-secondary)', fontSize: '0.9rem'}}>Humberto Tavares Academy</span>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '50%', 
-            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 'bold'
-          }}>
-            A
+
+        <div className="user-nav" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Botón exclusivo para Admin */}
+          {user.rol === 'admin' && (
+            <button 
+              className="btn-secondary"
+              onClick={() => setAppState(appState === 'ADMIN_PANEL' ? 'IDLE' : 'ADMIN_PANEL')}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
+            >
+              🗺️ Gestionar Sucursales (Admin)
+            </button>
+          )}
+
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold' }}>
+              {user.nombre_completo}
+            </span>
+            <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              {user.rol} • {user.sucursal_nombre}
+            </span>
+          </div>
+
+          <div 
+            onClick={() => setIsLoginOpen(true)}
+            title="Cambiar de Rol / Iniciar Sesión"
+            style={{
+              width: '36px', height: '36px', borderRadius: '50%', 
+              background: user.rol === 'admin' ? 'var(--brand-red)' : 'var(--glass-bg)', 
+              border: '2px solid var(--brand-red)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 'bold', cursor: 'pointer', color: 'white'
+            }}
+          >
+            {user.rol[0].toUpperCase()}
           </div>
         </div>
       </header>
 
       <main style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        {appState === 'ADMIN_PANEL' && (
+          <AdminSucursales onClose={() => setAppState('IDLE')} />
+        )}
+
         {appState === 'IDLE' && (
           <VideoUpload onUploadStart={handleUploadStart} />
         )}
@@ -122,6 +158,13 @@ function App() {
           <FeedbackView result={result} tecnica={selectedTecnica} onReset={handleReset} />
         )}
       </main>
+
+      {/* Modal de Cambio de Rol / Login */}
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+        onLoginSuccess={(userData) => setUser(userData)} 
+      />
     </div>
   )
 }

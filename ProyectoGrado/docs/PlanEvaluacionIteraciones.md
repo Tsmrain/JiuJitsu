@@ -41,12 +41,20 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - **Desacoplamiento (Resiliencia):** Aplicación de *Lazy Loading* en los adaptadores pesados (`YOLOPoseAdapter` y `QdrantVectorAdapter`) para evitar fallos durante el arranque de FastAPI.
 - **Verificación:** Probado y confirmado en vivo por el cliente rechazando videos ajenos a Jiu-Jitsu (HTTP 422) y dejando pasar ejecuciones válidas (HTTP 200).
 
+### 🔹 Iteración C5 (Fase de Construcción): Autenticación por Roles y Sucursales con Mapa Gratuito
+- **Objetivo:** Implementar la autenticación de roles (`alumno`, `profesor`, `admin`) y permitir al administrador crear sucursales mundiales fijando coordenadas mediante un mapa interactivo **100% gratuito (sin Google Maps API keys)**.
+- **Entregables:**
+  - Componente modal de autenticación (`LoginModal.jsx`) conectando con el backend `/api/v1/auth/login`.
+  - Panel de Administración Multi-Tenant (`AdminSucursales.jsx`) integrado con **Leaflet.js + OpenStreetMap** para capturar `latitud` y `longitud` al hacer clic en cualquier lugar del mundo.
+  - Actualización del esquema 3NF (`01_schema_3nf.sql`) añadiendo columnas de latitud y longitud.
+  - Endpoints REST en FastAPI (`auth_routes.py`) para `/auth/login` y `/sucursales`.
+- **Verificación:** Funciona en la interfaz web cambiando de perfil a Administrador y marcando cualquier sucursal en el mapa de OpenStreetMap.
+
 ---
 
 ## 🚀 Plan para las Próximas Iteraciones
 
 | Iteración | Enfoque Principal | Riesgos / Objetivos a Resolver | Artefactos Impactados |
 | :--- | :--- | :--- | :--- |
-| **C4-B** | Worker de IA en Colab Pro (RAG Multimodal + Depth) | Implementar **YOLO (Pose 3D + Depth Tasks)** para coordenadas ($X, Y, Z$), conectar **Qwen3-VL-Reranker-2B** como Re-ranker del RAG Multimodal y **Gemini API** como Cerebro Pedagógico en `worker.py`. | `adapters.py`, `worker.py`, `ArquitecturaSoftware.md` |
-| **C5** | Integración Full-Stack | Reemplazar simulaciones con persistencia real (PostgREST + PostgreSQL) y polling de estado. | `routes.py`, `App.jsx`, `AnalisiDiseno.md` |
+| **C6** | Integración Full-Stack con BD Persistente | Conectar PostgREST / PostgreSQL local con la interfaz y el Worker de Colab para completar el ciclo de evaluación. | `routes.py`, `App.jsx`, `AnalisiDiseno.md` |
 | **Transición** | Pruebas Beta y Despliegue | Generación del cuaderno `.ipynb` listo para Colab Pro y pruebas de campo en academias. | `Colab_Worker.ipynb`, `Manual_Usuario.md` |

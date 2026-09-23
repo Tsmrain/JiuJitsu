@@ -13,6 +13,8 @@ CREATE TABLE sucursales (
     pais VARCHAR(50) NOT NULL,
     ciudad VARCHAR(50) NOT NULL,
     direccion VARCHAR(200),
+    latitud NUMERIC(10, 7),
+    longitud NUMERIC(10, 7),
     idioma_predeterminado VARCHAR(10) DEFAULT 'es',
     fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

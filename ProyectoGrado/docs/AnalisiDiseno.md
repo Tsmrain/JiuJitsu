@@ -235,14 +235,31 @@ La Fase de Construcción sigue el Proceso Unificado (UP) de Craig Larman, constr
   - Aplicación del patrón *Lazy Loading* en `YOLOPoseAdapter` y `QdrantVectorAdapter` para desacoplar el arranque del servidor HTTP de la disponibilidad de modelos pesados o BDs externas.
   - Endpoint REST expuesto en `/api/v1/evaluaciones/validar-spam` devolviendo HTTP 422 si el contenido es rechazado.
 
-### 5.5 Iteración C5: Autenticación por Roles y Gestión de Sucursales (OpenStreetMap + Scraper)
-- **Caso de Uso (UC5 - Autenticación y Cambio de Perfil por Roles):**
+### 5.5 Iteración C5: Autenticación por Roles, Impersonalización y Perfil
+- **Caso de Uso (UC5 - Autenticación, Gestión de Perfil y Cambio de Roles):**
   - **Actores:** Alumno / Profesor / Administrador
-  - **Flujo:** El modal de inicio de sesión (`LoginModal.jsx`) permite conmutar entre roles (`alumno`, `profesor`, `admin`) ajustando dinámicamente los privilegios de la interfaz. Los alumnos y profesores pueden registrarse libremente, pero la cuenta de **Administrador General** es pre-creada por defecto con credenciales estáticas (`admin / admin123`) para asegurar el sistema.
+  - **Flujo:** El modal de inicio de sesión (`LoginModal.jsx`) permite conmutar entre roles. Los usuarios pueden actualizar su perfil (`UserProfileModal.jsx`), incluyendo la carga de una foto de perfil (`avatar_url`) procesada en Base64 para persistencia de sesión.
+  - **Patrón Impersonalización (Admin Proxy):** Se implementó un flujo avanzado para control de calidad donde el Administrador General puede "impersonalizar" cualquier cuenta de usuario o profesor (`/api/v1/auth/impersonate/{user_id}`). El sistema utiliza un banner persistente en la aplicación React para advertir el estado de impersonificación y ofrecer una vía de escape al perfil administrador original.
+  - **Patrón Singleton y Controlador MOCK (Backend):** Toda la lógica de roles interactúa con un estado persistente simulado (`USUARIOS_DB` y `SUCURSALES_DB` en `auth_routes.py`) siguiendo el patrón **Controller** y preservando las reglas de normalización (Mannino) al hacer referencias mutuas por `sucursal_id` (UUID).
 - **Caso de Uso (UC6 - Gestión Multi-Tenant de Sucursales Globales):**
   - **Actores:** Administrador
   - **Flujo:** El panel de administración (`AdminSucursales.jsx`) permite el registro CRUD de sedes físicas con un mapa mundial interactivo **100% Gratuito y Libre (Leaflet.js + OpenStreetMap)**.
   - **Resolución Analítica de Coordenadas (Web Scraping & Plus Codes):** El administrador puede pegar un enlace de Google Maps. El sistema extrae en el backend las coordenadas exactas de la URI (`!3d / !4d`), realiza *Reverse Geocoding* gratuito con Nominatim y, si la ubicación carece de calle registrada, aplica un algoritmo compensatorio usando la librería de Google `openlocationcode` para generar matemáticamente el identificador de área exacto (Plus Code) evitando imprecisiones de barrio.
+
+### 5.6 Iteración C6: Gestión de Técnicas y Referencias (Profesor)
+- **Caso de Uso (UC7 - Gestión del Catálogo de Técnicas y Videos de Referencia):**
+  - **Actores:** Profesor
+  - **Flujo:** Desde su panel exclusivo (`ProfesorTecnicas.jsx`), un profesor puede poblar el catálogo global de técnicas creando, editando y eliminando elementos especificando únicamente el `nombre` propio universal de la técnica y su nivel de cinturón (`nivel_cinturon`), además de adjuntar sus propios videos de demostración (previsualización interactiva con `URL.createObjectURL`).
+  - **Refinamiento del Modelo y Nombres Propios:** Siguiendo las directrices del dominio del Jiu-Jitsu, las técnicas (ej. *Armbar*, *Kimura*, *Triângulo*, *De la Riva*) se tratan como **nombres propios universales**, por lo que se consolidaron los campos bilingües en una única propiedad `nombre`. Asimismo, se eliminaron los campos redundantes `categoria` y `descripcion`. Los campos dinámicos traducibles (como el nivel de cinturón) son adaptados automáticamente por la interfaz según el idioma preferido del usuario.
+  - **Justificación de Diseño (Mannino 3NF):** Las Técnicas (`tecnicas`) son tratadas como entidades fuertes (catálogo global universal) independientes del profesor que las crea para evitar anomalías de inserción y redundancia. La relación de pertenencia se establece de manera M:N (muchos profesores pueden subir su versión de una misma técnica) mediante la entidad asociativa `videos_referencia`.
+
+### 5.7 Iteración C7: Selección de Profesor de Sucursal y Evaluación de Alumno
+- **Caso de Uso (UC8 - Evaluación Biomecánica basada en Selección de Profesor y Técnica):**
+  - **Actores:** Alumno / Atleta
+  - **Flujo:** Al ingresar a la vista de carga de ejecuciones (`VideoUpload.jsx`), el alumno primero selecciona el **Profesor registrado en su Sucursal** (`GET /api/v1/profesores?sucursal_id=...`). A continuación, el sistema filtra dinámicamente el catálogo mostrando únicamente las **Técnicas que dicho profesor ha demostrado y subido como patrón de referencia** (`GET /api/v1/tecnicas?profesor_id=...`). El alumno carga su video y el sistema realiza la inferencia comparativa biomecánica contra la referencia vectorial en Qdrant registrada por ese profesor específico.
+  - **Justificación de Diseño (Mannino 3NF & Relaciones Relacionales):**
+    - `sucursales (1) -> (N) usuarios (profesores)`: Garantiza el aislamiento multi-tenant por sede.
+    - `profesores (M) <-> (N) tecnicas`: Resuelto mediante la entidad asociativa `videos_referencia`. Esto permite que un alumno evalúe su técnica con el patrón exacto asignado por los instructores de su propia academia, preservando la normalización 3NF en el modelo transaccional.
 
 ---
 *(La fase de **Transición** contemplará la corrección de errores finales, pruebas beta en las sedes de Corpo e Mente, y el despliegue en producción).*

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '../i18n/translations';
 
-export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
+export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
+
+  const { t } = useTranslation(user?.idioma_preferido);
 
   // Login form state
   const [loginUserOrEmail, setLoginUserOrEmail] = useState('admin');
@@ -10,7 +13,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   // Signup form state
   const [signupNombre, setSignupNombre] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupRol, setSignupRol] = useState('alumno');
   const [signupSucursalId, setSignupSucursalId] = useState('');
@@ -59,21 +61,26 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       }
 
       const userData = await response.json();
-      onLoginSuccess(userData);
+      onLoginSuccess({
+        ...userData,
+        idioma_preferido: user?.idioma_preferido || 'es'
+      });
       onClose();
     } catch (err) {
       console.error("Error conectando con la API de Auth:", err);
       // Mock Fallback para pruebas sin servidor
       const isMockAdmin = loginUserOrEmail.toLowerCase() === 'admin';
+      const isMockProfesor = loginUserOrEmail.toLowerCase() === 'profesor';
       onLoginSuccess({
-        token: `mock-jwt-${isMockAdmin ? 'admin' : 'user'}`,
-        user_id: "00000000-0000-0000-0000-000000000000",
-        nombre_completo: isMockAdmin ? "Administrador General" : "Usuario Demostración",
+        token: `mock-jwt-${isMockAdmin ? 'admin' : (isMockProfesor ? 'profesor' : 'user')}`,
+        user_id: isMockProfesor ? "prof-123" : "00000000-0000-0000-0000-000000000000",
+        nombre_completo: isMockAdmin ? "Administrador General" : (isMockProfesor ? "Mestre Humberto Tavares" : "Alumno Santiago"),
         username: loginUserOrEmail,
-        email: isMockAdmin ? "admin@corpocmente.com" : `${loginUserOrEmail}@corpocmente.com`,
-        rol: isMockAdmin ? 'admin' : 'alumno',
+        email: `${loginUserOrEmail}@corpocmente.com`,
+        rol: isMockAdmin ? 'admin' : (isMockProfesor ? 'profesor' : 'alumno'),
         sucursal_id: "11111111-1111-1111-1111-111111111111",
-        sucursal_nombre: "Corpo e Mente - Sede Principal Rio de Janeiro"
+        sucursal_nombre: "Corpo e Mente - Sede Principal Rio de Janeiro",
+        idioma_preferido: user?.idioma_preferido || 'es'
       });
       onClose();
     } finally {
@@ -87,7 +94,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     setErrorMsg('');
 
     if (signupRol === 'admin') {
-      setErrorMsg('El rol de Administrador es exclusivo y reservado.');
+      setErrorMsg(user?.idioma_preferido === 'pt' ? 'A função de Administrador é reservada.' : 'El rol de Administrador es exclusivo y reservado.');
       setLoading(false);
       return;
     }
@@ -99,7 +106,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         body: JSON.stringify({
           nombre_completo: signupNombre,
           username: signupUsername,
-          email: signupEmail,
           password: signupPassword,
           rol: signupRol,
           sucursal_id: signupSucursalId || null,
@@ -114,22 +120,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       }
 
       const userData = await response.json();
-      onLoginSuccess(userData);
+      onLoginSuccess({
+        ...userData,
+        idioma_preferido: user?.idioma_preferido || 'es'
+      });
       onClose();
     } catch (err) {
       console.error("Error al registrar cuenta en backend:", err);
-      // Fallback
-      onLoginSuccess({
-        token: `mock-jwt-${signupRol}-${signupUsername}`,
-        user_id: "user-new-123",
-        nombre_completo: signupNombre,
-        username: signupUsername,
-        email: signupEmail,
-        rol: signupRol,
-        sucursal_id: signupSucursalId || "11111111-1111-1111-1111-111111111111",
-        sucursal_nombre: "Corpo e Mente Sede Central"
-      });
-      onClose();
+      alert(err.message || "Error al registrarse");
     } finally {
       setLoading(false);
     }
@@ -165,7 +163,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            Iniciar Sesión
+            {t.tabLogin}
           </button>
           <button
             onClick={() => { setTab('signup'); setErrorMsg(''); }}
@@ -176,7 +174,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            Crear Cuenta
+            {t.tabSignup}
           </button>
         </div>
 
@@ -186,7 +184,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             color: '#ff6b6b', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem',
             marginBottom: '1rem', textAlign: 'center'
           }}>
-            ⚠️ {errorMsg}
+             {errorMsg}
           </div>
         )}
 
@@ -195,18 +193,18 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Usuario o Correo Electrónico
+                {t.labelUserOrEmail}
               </label>
               <input 
                 type="text" required value={loginUserOrEmail} onChange={e => setLoginUserOrEmail(e.target.value)}
-                placeholder="Ej. admin o usuario@ejemplo.com"
+                placeholder={t.placeholderUserOrEmail}
                 style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
               />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Contraseña
+                {t.labelPassword}
               </label>
               <input 
                 type="password" required value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
@@ -219,7 +217,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               type="submit" disabled={loading}
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
             >
-              {loading ? "Verificando..." : "Ingresar"}
+              {loading ? t.btnLoggingIn : t.btnLogin}
             </button>
           </form>
         )}
@@ -229,19 +227,19 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                Nombre Completo
+                {t.labelNombreCompleto}
               </label>
               <input 
                 type="text" required value={signupNombre} onChange={e => setSignupNombre(e.target.value)}
-                placeholder="Ej. Lucas Lepri"
+                placeholder={t.placeholderNombreCompleto}
                 style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  Usuario
+                  {t.labelUsername}
                 </label>
                 <input 
                   type="text" required value={signupUsername} onChange={e => setSignupUsername(e.target.value)}
@@ -249,21 +247,11 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  Correo
-                </label>
-                <input 
-                  type="email" required value={signupEmail} onChange={e => setSignupEmail(e.target.value)}
-                  placeholder="lucas@bjj.com"
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
-                />
-              </div>
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                Contraseña
+                {t.labelPassword}
               </label>
               <input 
                 type="password" required value={signupPassword} onChange={e => setSignupPassword(e.target.value)}
@@ -274,7 +262,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.3rem' }}>
-                ROL DE USUARIO:
+                {t.labelUserRole}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {['alumno', 'profesor'].map((r) => (
@@ -289,7 +277,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                       color: 'white', cursor: 'pointer', fontWeight: signupRol === r ? 'bold' : 'normal'
                     }}
                   >
-                    {r}
+                    {r === 'alumno' ? t.roleAlumno : t.roleProfesor}
                   </button>
                 ))}
               </div>
@@ -297,7 +285,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                Sucursal / Academia
+                {t.labelSucursal}
               </label>
               <select
                 value={signupSucursalId}
@@ -316,7 +304,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               type="submit" disabled={loading}
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
             >
-              {loading ? "Creando cuenta..." : "Crear mi Cuenta"}
+              {loading ? t.btnSigningUp : t.btnSignupSubmit}
             </button>
           </form>
         )}
@@ -324,4 +312,3 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     </div>
   );
 }
-

@@ -68,12 +68,8 @@ erDiagram
 
     TECNICAS {
         uuid id PK
-        string nombre_es
-        string nombre_pt
-        string descripcion_es
-        string descripcion_pt
+        string nombre
         string nivel_cinturon
-        string categoria
     }
 
     VIDEOS_REFERENCIA {
@@ -135,12 +131,8 @@ CREATE TABLE usuarios (
 -- 3. TABLA TÉCNICAS DE JIU-JITSU
 CREATE TABLE tecnicas (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nombre_es VARCHAR(100) NOT NULL,
-    nombre_pt VARCHAR(100) NOT NULL,
-    descripcion_es TEXT,
-    descripcion_pt TEXT,
-    nivel_cinturon VARCHAR(20) DEFAULT 'blanco' CHECK (nivel_cinturon IN ('blanco', 'azul', 'morado', 'marron', 'negro')),
-    categoria VARCHAR(50) NOT NULL -- Ej: 'Pasaje de Guardia', 'Finalización', 'Derribo'
+    nombre VARCHAR(100) NOT NULL,
+    nivel_cinturon VARCHAR(20) DEFAULT 'blanco' CHECK (nivel_cinturon IN ('blanco', 'azul', 'morado', 'marron', 'negro'))
 );
 
 -- 4. TABLA VIDEOS DE REFERENCIA (PATRÓN DE PROFESORES)

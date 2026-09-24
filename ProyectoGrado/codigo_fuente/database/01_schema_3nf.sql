@@ -22,25 +22,22 @@ CREATE TABLE sucursales (
 -- 2. Tabla: usuarios (Contiene alumnos, profesores y admins)
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sucursal_id UUID NOT NULL REFERENCES sucursales(id) ON DELETE CASCADE,
+    sucursal_id UUID NOT NULL REFERENCES sucursales(id) ON DELETE RESTRICT,
     nombre_completo VARCHAR(150) NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'profesor', 'alumno')),
     idioma_preferido VARCHAR(10) DEFAULT 'es',
+    avatar_url TEXT,
     fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 3. Tabla: tecnicas
 CREATE TABLE tecnicas (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nombre_es VARCHAR(100) NOT NULL,
-    nombre_pt VARCHAR(100) NOT NULL,
-    descripcion_es TEXT,
-    descripcion_pt TEXT,
-    nivel_cinturon VARCHAR(20) NOT NULL,
-    categoria VARCHAR(50) NOT NULL
+    nombre VARCHAR(100) NOT NULL,
+    nivel_cinturon VARCHAR(20) NOT NULL
 );
 
 -- 4. Tabla: videos_referencia (Videos base para comparar)

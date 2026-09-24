@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '../i18n/translations';
 
 // Función para extraer Latitud, Longitud, Nombre y Código de Plus Code desde cualquier URL de Google Maps o texto
 function parseGoogleMapsUrl(input) {
@@ -61,9 +62,17 @@ function parseGoogleMapsUrl(input) {
   return null;
 }
 
-export default function AdminSucursales({ onClose }) {
+export default function AdminSucursales({ user, onClose, onImpersonate }) {
+  const [activeTab, setActiveTab] = useState('sucursales'); // 'sucursales' | 'usuarios'
+  
+  // -- ESTADOS PARA SUCURSALES --
   const [sucursales, setSucursales] = useState([]);
   const [editingId, setEditingId] = useState(null); // null = Modo Crear, UUID = Modo Editar
+  const { t } = useTranslation(user?.idioma_preferido);
+  
+  // -- ESTADOS PARA USUARIOS --
+  const [usuarios, setUsuarios] = useState([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
   
   // Campos del formulario
   const [nombre, setNombre] = useState('');
@@ -84,7 +93,7 @@ export default function AdminSucursales({ onClose }) {
   // Geocodificación inversa inteligente (OpenStreetMap + Soporte de Plus Codes)
   const reverseGeocode = async (lat, lng, fallbackName = null, urlPlusCode = null) => {
     try {
-      setMapsFeedback('⏳ Cargando dirección de la ubicación...');
+      setMapsFeedback(' Cargando dirección de la ubicación...');
       
       // Si se extrajo un Plus Code de la URL de Google Maps (ej. "6RW2+Q64, Santa Cruz de la Sierra"), asignarlo directamente
       if (urlPlusCode) {
@@ -113,7 +122,7 @@ export default function AdminSucursales({ onClose }) {
           if (country) setPais(country);
           if (fallbackName && !nombre) setNombre(fallbackName);
 
-          setMapsFeedback(`✅ Dirección cargada: ${city}, ${country}`);
+          setMapsFeedback(` Dirección cargada: ${city}, ${country}`);
           return;
         }
       }
@@ -121,25 +130,33 @@ export default function AdminSucursales({ onClose }) {
       console.error("Error obteniendo dirección inversa:", e);
     }
     if (urlPlusCode) setDireccion(urlPlusCode);
-    setMapsFeedback(`✅ Coordenadas extraídas: (${lat}, ${lng})`);
+    setMapsFeedback(` Coordenadas extraídas: (${lat}, ${lng})`);
   };
 
-  // 1. Cargar sucursales existentes del backend
+  // 1. Cargar datos del backend
   const fetchSucursales = async () => {
     try {
       const res = await fetch("http://localhost:8000/api/v1/sucursales");
-      if (res.ok) {
-        const data = await res.json();
-        setSucursales(data);
-      }
+      if (res.ok) setSucursales(await res.json());
+    } catch (e) { console.error("Error cargando sucursales:", e); }
+  };
+
+  const fetchUsuarios = async () => {
+    setLoadingUsuarios(true);
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/auth/usuarios");
+      if (res.ok) setUsuarios(await res.json());
     } catch (e) {
-      console.error("Error cargando sucursales:", e);
+      console.error("Error cargando usuarios:", e);
+    } finally {
+      setLoadingUsuarios(false);
     }
   };
 
   useEffect(() => {
-    fetchSucursales();
-  }, []);
+    if (activeTab === 'sucursales') fetchSucursales();
+    if (activeTab === 'usuarios') fetchUsuarios();
+  }, [activeTab]);
 
   // 2. Inyección dinámica de Leaflet (OpenStreetMap 100% Gratis sin API Key)
   useEffect(() => {
@@ -227,7 +244,7 @@ export default function AdminSucursales({ onClose }) {
       return;
     }
 
-    setMapsFeedback('⏳ Analizando enlace de Google Maps...');
+    setMapsFeedback(' Analizando enlace de Google Maps...');
     
     try {
       // 1. Intentar analizar con el backend scraper / geocoder
@@ -247,7 +264,7 @@ export default function AdminSucursales({ onClose }) {
         if (data.pais) setPais(data.pais);
 
         updateMapPosition(data.latitud, data.longitud);
-        setMapsFeedback(`✅ ¡Ubicación obtenida con precisión! ${data.ciudad || ''}, ${data.pais || ''}`);
+        setMapsFeedback(` ¡Ubicación obtenida con precisión! ${data.ciudad || ''}, ${data.pais || ''}`);
         return;
       }
     } catch (e) {
@@ -264,7 +281,7 @@ export default function AdminSucursales({ onClose }) {
       updateMapPosition(coords.lat, coords.lng);
       reverseGeocode(coords.lat, coords.lng, coords.placeName, coords.plusCode);
     } else {
-      setMapsFeedback('⚠️ No se detectó un formato válido de latitud y longitud en el enlace.');
+      setMapsFeedback(' No se detectó un formato válido de latitud y longitud en el enlace.');
     }
   };
 
@@ -355,28 +372,64 @@ export default function AdminSucursales({ onClose }) {
     }
   };
 
+  const handleImpersonate = async (targetUserId) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/auth/impersonate/${targetUserId}`, { method: 'POST' });
+      if (res.ok) {
+        const targetUser = await res.json();
+        if (onImpersonate) onImpersonate(targetUser, user);
+      } else {
+        alert("Error al intentar impersonalizar al usuario.");
+      }
+    } catch (e) {
+      console.error("Error de impersonalización:", e);
+      alert("Error de conexión al servidor.");
+    }
+  };
+
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
-            📍 Gestión Multi-Tenant de Sucursales Globales
-          </h2>
-          <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
-            Crear, editar y eliminar sucursales. Puedes hacer clic en el mapa o pegar un enlace de Google Maps para obtener latitud y longitud automáticamente.
-          </p>
+          <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>{t.adminTitle}</h2>
         </div>
         <button className="btn-secondary" onClick={onClose} style={{ padding: '0.5rem 1rem' }}>
-          Volver a la App
+          {t.btnClose}
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
+        <button
+          onClick={() => setActiveTab('sucursales')}
+          style={{
+            flex: 1, padding: '0.75rem', background: 'none', border: 'none',
+            borderBottom: activeTab === 'sucursales' ? '3px solid var(--brand-red)' : '3px solid transparent',
+            color: activeTab === 'sucursales' ? 'white' : 'var(--text-secondary)',
+            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
+          }}
+        >
+          Gestión de Sucursales
+        </button>
+        <button
+          onClick={() => setActiveTab('usuarios')}
+          style={{
+            flex: 1, padding: '0.75rem', background: 'none', border: 'none',
+            borderBottom: activeTab === 'usuarios' ? '3px solid var(--brand-red)' : '3px solid transparent',
+            color: activeTab === 'usuarios' ? 'white' : 'var(--text-secondary)',
+            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
+          }}
+        >
+          Gestión de Usuarios
+        </button>
+      </div>
+
+      <div style={{ display: activeTab === 'sucursales' ? 'block' : 'none' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Formulario de registro/modificación */}
         <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>
-              {editingId ? "✏️ Modificar Sucursal" : "➕ Registrar Nueva Sucursal"}
+              {editingId ? " Modificar Sucursal" : " Registrar Nueva Sucursal"}
             </h3>
             {editingId && (
               <button 
@@ -393,7 +446,7 @@ export default function AdminSucursales({ onClose }) {
             {/* Parser de Enlace de Google Maps */}
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', boxSizing: 'border-box' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: '#4da6ff', marginBottom: '0.25rem' }}>
-                🔗 Extraer Coordenadas desde Link de Google Maps:
+                 Extraer Coordenadas desde Link de Google Maps:
               </label>
               <input 
                 type="text" 
@@ -403,7 +456,7 @@ export default function AdminSucursales({ onClose }) {
                 style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(77,166,255,0.4)', color: 'white', fontSize: '0.8rem', boxSizing: 'border-box' }}
               />
               {mapsFeedback && (
-                <div style={{ fontSize: '0.75rem', marginTop: '0.3rem', color: mapsFeedback.startsWith('✅') ? '#69db7c' : '#ff8787' }}>
+                <div style={{ fontSize: '0.75rem', marginTop: '0.3rem', color: mapsFeedback.startsWith('') ? '#69db7c' : '#ff8787' }}>
                   {mapsFeedback}
                 </div>
               )}
@@ -468,7 +521,7 @@ export default function AdminSucursales({ onClose }) {
         {/* Contenedor del Mapa OpenStreetMap */}
         <div className="glass-panel" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '0.5rem', opacity: 0.85 }}>
-            🗺️ MAPA MUNDIAL INTERACTIVO (OPENSTREETMAP - GRATIS)
+             MAPA MUNDIAL INTERACTIVO (OPENSTREETMAP - GRATIS)
           </span>
           <div 
             ref={mapRef} 
@@ -479,7 +532,7 @@ export default function AdminSucursales({ onClose }) {
 
       {/* Lista de Sucursales Registradas con opciones de CRUD */}
       <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>🌐 Sucursales Registradas ({sucursales.length})</h3>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}> Sucursales Registradas ({sucursales.length})</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
           {sucursales.map((s) => (
             <div 
@@ -494,9 +547,9 @@ export default function AdminSucursales({ onClose }) {
             >
               <div>
                 <h4 style={{ margin: '0 0 0.3rem 0', color: 'var(--brand-red)' }}>{s.nombre}</h4>
-                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>📍 {s.ciudad}, {s.pais}</p>
-                {s.direccion && <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', opacity: 0.7 }}>🏠 {s.direccion}</p>}
-                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', opacity: 0.6 }}>🌐 Coordenadas: {s.latitud}, {s.longitud}</p>
+                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}> {s.ciudad}, {s.pais}</p>
+                {s.direccion && <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', opacity: 0.7 }}> {s.direccion}</p>}
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', opacity: 0.6 }}> Coordenadas: {s.latitud}, {s.longitud}</p>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.75rem' }}>
@@ -504,19 +557,63 @@ export default function AdminSucursales({ onClose }) {
                   onClick={() => handleStartEdit(s)}
                   style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(77,166,255,0.2)', border: '1px solid #4da6ff', color: '#4da6ff', fontSize: '0.8rem', cursor: 'pointer' }}
                 >
-                  ✏️ Editar
+                   Editar
                 </button>
                 <button
                   onClick={() => handleDelete(s.id, s.nombre)}
                   style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(208,17,24,0.2)', border: '1px solid var(--brand-red)', color: '#ff6b6b', fontSize: '0.8rem', cursor: 'pointer' }}
                 >
-                  🗑️ Eliminar
+                   Eliminar
                 </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+      </div>
+
+      {activeTab === 'usuarios' && (
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Usuarios Registrados ({usuarios.length})</h3>
+          {loadingUsuarios ? (
+            <p>Cargando usuarios...</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+              {usuarios.map(u => (
+                <div key={u.user_id} style={{
+                  background: 'rgba(255,255,255,0.04)', padding: '1rem', borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem'
+                }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{u.nombre_completo}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{u.username}</div>
+                  <div style={{ fontSize: '0.85rem' }}>
+                    <span style={{ 
+                      padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase',
+                      background: u.rol === 'admin' ? 'rgba(208,17,24,0.2)' : (u.rol === 'profesor' ? 'rgba(77,166,255,0.2)' : 'rgba(255,255,255,0.1)'),
+                      color: u.rol === 'admin' ? '#ff6b6b' : (u.rol === 'profesor' ? '#4da6ff' : 'white')
+                    }}>
+                      {u.rol}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    Sucursal: {u.sucursal_nombre}
+                  </div>
+                  
+                  {u.rol !== 'admin' && (
+                    <button 
+                      onClick={() => handleImpersonate(u.user_id)}
+                      className="btn-primary"
+                      style={{ marginTop: '0.5rem', padding: '0.5rem', fontSize: '0.8rem', background: 'var(--brand-red)', border: 'none' }}
+                    >
+                      Impersonalizar (Entrar como)
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

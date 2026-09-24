@@ -1,34 +1,92 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './VideoUpload.css';
+import { useTranslation } from '../i18n/translations';
 
-const TECNICAS_DISPONIBLES = [
-  {
-    id: "11111111-1111-1111-1111-111111111111",
-    nombre: "Armbar desde Guardia Cerrada",
-    categoria: "Finalizaciones",
-    profesorRef: "Mestre Humberto Tavares",
-    descripcion: "Palanca de brazo clásica aplicando control hip-control y rotación de muñeca."
-  },
-  {
-    id: "22222222-2222-2222-2222-222222222222",
-    nombre: "Estrangulamiento Triángulo (Sankaku-Jime)",
-    categoria: "Finalizaciones",
-    profesorRef: "Mestre Humberto Tavares",
-    descripcion: "Cierre de piernas envolviendo cuello y brazo del oponente con presión de aductores."
-  },
-  {
-    id: "33333333-3333-3333-3333-333333333333",
-    nombre: "Pase de Guardia Torreando (Passagem Torreadora)",
-    categoria: "Pases de Guardia",
-    profesorRef: "Mestre Humberto Tavares",
-    descripcion: "Control de pantorrillas con desplazamiento lateral rápido y fijación de cadera."
-  }
-];
+export default function VideoUpload({ user, onUploadStart }) {
+  const { t } = useTranslation(user?.idioma_preferido);
 
-export default function VideoUpload({ onUploadStart }) {
+  const [profesores, setProfesores] = useState([]);
+  const [selectedProfesor, setSelectedProfesor] = useState(null);
+  const [tecnicas, setTecnicas] = useState([]);
+  const [selectedTecnica, setSelectedTecnica] = useState(null);
+  const [loadingProfesores, setLoadingProfesores] = useState(true);
+  const [loadingTecnicas, setLoadingTecnicas] = useState(false);
+
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
-  const [selectedTecnica, setSelectedTecnica] = useState(TECNICAS_DISPONIBLES[0]);
+
+  // 1. Cargar profesores de la sucursal del alumno
+  useEffect(() => {
+    fetchProfesores();
+  }, [user?.sucursal_id]);
+
+  const fetchProfesores = async () => {
+    setLoadingProfesores(true);
+    try {
+      const sucursalQuery = user?.sucursal_id ? `?sucursal_id=${user.sucursal_id}` : '';
+      const res = await fetch(`http://localhost:8000/api/v1/profesores${sucursalQuery}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setProfesores(data);
+          setSelectedProfesor(data[0]);
+        } else {
+          // Fallback a todos los profesores si no hay en la sucursal específica
+          const resAll = await fetch(`http://localhost:8000/api/v1/profesores`);
+          if (resAll.ok) {
+            const dataAll = await resAll.json();
+            setProfesores(dataAll);
+            if (dataAll.length > 0) setSelectedProfesor(dataAll[0]);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error cargando profesores:", err);
+    } finally {
+      setLoadingProfesores(false);
+    }
+  };
+
+  // 2. Cargar técnicas cuando cambia el profesor seleccionado
+  useEffect(() => {
+    if (selectedProfesor?.user_id) {
+      fetchTecnicasDelProfesor(selectedProfesor.user_id);
+    }
+  }, [selectedProfesor]);
+
+  const fetchTecnicasDelProfesor = async (profesorId) => {
+    setLoadingTecnicas(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${profesorId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTecnicas(data);
+        if (data && data.length > 0) {
+          // Priorizar seleccionar una técnica que tenga video de referencia
+          const conVideo = data.find(t => t.tiene_video);
+          setSelectedTecnica(conVideo || data[0]);
+        } else {
+          setSelectedTecnica(null);
+        }
+      }
+    } catch (err) {
+      console.error("Error cargando técnicas del profesor:", err);
+    } finally {
+      setLoadingTecnicas(false);
+    }
+  };
+
+  const handleProfesorChange = (e) => {
+    const profId = e.target.value;
+    const found = profesores.find(p => p.user_id === profId);
+    if (found) setSelectedProfesor(found);
+  };
+
+  const handleTecnicaChange = (e) => {
+    const techId = e.target.value;
+    const found = tecnicas.find(t => t.id === techId);
+    if (found) setSelectedTecnica(found);
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -60,57 +118,102 @@ export default function VideoUpload({ onUploadStart }) {
     if (selectedFile.type.startsWith('video/')) {
       setFile(selectedFile);
     } else {
-      alert("Por favor selecciona un archivo de video válido.");
+      alert(t.alertValidVideo);
     }
   };
 
   const handleSubmit = () => {
     if (file && selectedTecnica) {
-      onUploadStart(file, selectedTecnica);
+      onUploadStart(file, {
+        ...selectedTecnica,
+        profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Mestre Oficial"
+      });
     }
   };
 
   return (
     <div className="upload-container">
       <div className="upload-header">
-        <h2>Sube tu ejecución</h2>
-        <p>Selecciona la técnica que deseas practicar y compara tu movimiento contra el patrón del profesor.</p>
+        <h2>{t.uploadTitle}</h2>
+        <p>{t.uploadSubtitle}</p>
       </div>
 
-      {/* Selector de Técnica */}
-      <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
-          1. SELECCIONA LA TÉCNICA A EVALUAR:
+      {/* Paso 1: Selección de Profesor de la Sucursal */}
+      <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1rem', borderRadius: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
+          {t.selectProfesorLabel}
         </label>
-        <select 
-          value={selectedTecnica.id}
-          onChange={(e) => setSelectedTecnica(TECNICAS_DISPONIBLES.find(t => t.id === e.target.value))}
-          style={{
-            width: '100%',
-            padding: '0.75rem 1rem',
-            borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            color: 'white',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            fontSize: '1rem',
-            cursor: 'pointer'
-          }}
-        >
-          {TECNICAS_DISPONIBLES.map(t => (
-            <option key={t.id} value={t.id} style={{ background: '#111', color: 'white' }}>
-              {t.nombre} ({t.categoria})
-            </option>
-          ))}
-        </select>
         
-        <div className="profesor-ref-info" style={{ marginTop: '0.75rem', fontSize: '0.85rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ background: 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>
-            PATRÓN PROFESOR
-          </span>
-          <span>{selectedTecnica.profesorRef} - {selectedTecnica.descripcion}</span>
-        </div>
+        {loadingProfesores ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.noProfessorsFound}</p> : (
+          <select 
+            value={selectedProfesor?.user_id || ''}
+            onChange={handleProfesorChange}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              fontSize: '1rem',
+              cursor: 'pointer'
+            }}
+          >
+            {profesores.map(p => (
+              <option key={p.user_id} value={p.user_id} style={{ background: '#111', color: 'white' }}>
+                 {p.nombre_completo} ({p.sucursal_nombre})
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
+      {/* Paso 2: Selección de Técnica enseñada por el Profesor */}
+      <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
+          {t.selectTecnicaLabelStep}
+        </label>
+
+        {loadingTecnicas ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.loadingTecnicas}</p> : (
+          <>
+            {tecnicas.length === 0 ? (
+              <p style={{ fontSize: '0.9rem', color: '#ff8787' }}>{t.noTecnicasFound}</p>
+            ) : (
+              <select 
+                value={selectedTecnica?.id || ''}
+                onChange={handleTecnicaChange}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {tecnicas.map(tech => (
+                  <option key={tech.id} value={tech.id} style={{ background: '#111', color: 'white' }}>
+                    {tech.nombre} {tech.tiene_video ? '' : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {selectedTecnica && (
+              <div className="profesor-ref-info" style={{ marginTop: '0.75rem', fontSize: '0.85rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ background: selectedTecnica.tiene_video ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
+                  {selectedTecnica.tiene_video ? t.hasVideoTag : t.noVideoTag}
+                </span>
+                <span>{selectedProfesor ? selectedProfesor.nombre_completo : ''} - {selectedTecnica.nombre}</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Paso 3: Carga del Video del Alumno */}
       <div 
         className={`drop-zone glass-panel ${dragActive ? 'active' : ''}`}
         onDragEnter={handleDrag}
@@ -135,8 +238,8 @@ export default function VideoUpload({ onUploadStart }) {
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
             </div>
-            <span className="drop-text">Arrastra tu video aquí o <strong>haz clic para explorar</strong></span>
-            <span className="drop-hint">MP4, MOV o WebM (Máx 50MB)</span>
+            <span className="drop-text">{t.dropText} <strong>{t.dropClick}</strong></span>
+            <span className="drop-hint">{t.dropHint}</span>
           </label>
         ) : (
           <div className="file-preview" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
@@ -151,8 +254,8 @@ export default function VideoUpload({ onUploadStart }) {
               <span className="file-size" style={{ fontSize: '0.875rem', opacity: 0.7 }}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
             </div>
             <div className="file-actions" style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-              <button type="button" className="btn-secondary" onClick={() => setFile(null)}>Cambiar</button>
-              <button type="button" className="btn-primary" onClick={handleSubmit}>Analizar Técnica</button>
+              <button type="button" className="btn-secondary" onClick={() => setFile(null)}>{t.btnChange}</button>
+              <button type="button" className="btn-primary" onClick={handleSubmit}>{t.btnAnalyze}</button>
             </div>
           </div>
         )}

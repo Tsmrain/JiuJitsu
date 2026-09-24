@@ -13,7 +13,6 @@ class LoginRequest(BaseModel):
 class SignupRequest(BaseModel):
     nombre_completo: str
     username: str
-    email: str
     password: str
     rol: str = "alumno" # Solo 'alumno' o 'profesor'
     sucursal_id: Optional[UUID] = None
@@ -25,7 +24,8 @@ class LoginResponse(BaseModel):
     username: str
     email: str
     rol: str
-    sucursal_id: UUID
+    avatar_url: Optional[str] = None
+    sucursal_id: Optional[UUID] = None
     sucursal_nombre: str
 
 class SucursalCreate(BaseModel):
@@ -45,6 +45,15 @@ class SucursalResponse(BaseModel):
     latitud: float
     longitud: float
 
+class ProfesorResponse(BaseModel):
+    user_id: UUID
+    nombre_completo: str
+    username: str
+    email: str
+    avatar_url: Optional[str] = None
+    sucursal_id: Optional[UUID] = None
+    sucursal_nombre: str
+
 class ParseGmapsRequest(BaseModel):
     url: str
 
@@ -56,53 +65,22 @@ class ParseGmapsResponse(BaseModel):
     latitud: float
     longitud: float
 
+class UserUpdateRequest(BaseModel):
+    nombre_completo: Optional[str] = None
+    password: Optional[str] = None
+    avatar_url: Optional[str] = None
+
 
 # Datos en memoria
 SUCURSALES_DB: List[SucursalResponse] = [
     SucursalResponse(
-        id=UUID("11111111-1111-1111-1111-111111111111"),
-        nombre="Corpo e Mente - Sede Principal Rio de Janeiro",
-        pais="Brasil",
-        ciudad="Rio de Janeiro",
-        direccion="Av. Atlântica 1200, Copacabana",
-        latitud=-22.9711,
-        longitud=-43.1822
-    ),
-    SucursalResponse(
-        id=UUID("44444444-4444-4444-4444-444444444444"),
-        nombre="Corpo e Mente - Sede Santa Cruz",
-        pais="Bolivia",
-        ciudad="Santa Cruz de la Sierra",
-        direccion="Av. San Martín, Equipetrol Norte #450",
-        latitud=-17.7833,
-        longitud=-63.1821
-    ),
-    SucursalResponse(
-        id=UUID("55555555-5555-5555-5555-555555555555"),
-        nombre="Corpo e Mente - Sede La Paz",
-        pais="Bolivia",
-        ciudad="La Paz",
-        direccion="Av. 16 de Julio (El Prado) #1420",
-        latitud=-16.5000,
-        longitud=-68.1500
-    ),
-    SucursalResponse(
-        id=UUID("22222222-2222-2222-2222-222222222222"),
-        nombre="Corpo e Mente - Sede Bogotá",
-        pais="Colombia",
-        ciudad="Bogotá",
-        direccion="Calle 93 # 12-40, Zona T",
-        latitud=4.6761,
-        longitud=-74.0486
-    ),
-    SucursalResponse(
-        id=UUID("33333333-3333-3333-3333-333333333333"),
-        nombre="Corpo e Mente - Sede Tokyo",
-        pais="Japón",
-        ciudad="Tokyo",
-        direccion="Shibuya City, Dogenzaka 2-24-1",
-        latitud=35.6580,
-        longitud=139.7016
+        id=UUID('8b315b4e-43f2-4ca1-904d-dec87242f347'),
+        nombre='JIU JITSU CORPO E MENTE MIGUEL BAIGORRIA',
+        pais='Bolivia',
+        ciudad='Municipio Santa Cruz de la Sierra',
+        direccion='Avenida Cristóbal de Mendoza',
+        latitud=-17.7702061,
+        longitud=-63.1699065
     )
 ]
 
@@ -115,8 +93,28 @@ USUARIOS_DB = [
         "email": "admin@corpocmente.com",
         "password": "admin123",
         "rol": "admin",
-        "sucursal_id": SUCURSALES_DB[0].id,
-        "sucursal_nombre": SUCURSALES_DB[0].nombre
+        "avatar_url": None,
+        "sucursal_id": None
+    },
+    {
+        'user_id': UUID('7e455a7d-cbc8-4190-9a10-3b959f6425fc'),
+        'nombre_completo': 'mike',
+        'username': 'mike',
+        'email': 'mike@mock.com',
+        'password': 'password123',
+        'rol': 'profesor',
+        'avatar_url': None,
+        'sucursal_id': UUID('8b315b4e-43f2-4ca1-904d-dec87242f347')
+    },
+    {
+        'user_id': UUID('bce12c1c-91f1-4bfb-813b-a18c5426b51e'),
+        'nombre_completo': 'santi',
+        'username': 'santi',
+        'email': 'santi@mock.com',
+        'password': 'password123',
+        'rol': 'alumno',
+        'avatar_url': None,
+        'sucursal_id': UUID('8b315b4e-43f2-4ca1-904d-dec87242f347')
     }
 ]
 
@@ -137,6 +135,9 @@ async def login(req: LoginRequest):
             detail="Nombre de usuario o contraseña incorrectos."
         )
 
+    sucursal = next((s for s in SUCURSALES_DB if s.id == user["sucursal_id"]), None)
+    sucursal_nombre = sucursal.nombre if sucursal else "Sucursal Eliminada"
+
     return LoginResponse(
         token=f"jwt-token-{user['rol']}-{user['username']}",
         user_id=user["user_id"],
@@ -145,7 +146,7 @@ async def login(req: LoginRequest):
         email=user["email"],
         rol=user["rol"],
         sucursal_id=user["sucursal_id"],
-        sucursal_nombre=user["sucursal_nombre"]
+        sucursal_nombre=sucursal_nombre
     )
 
 @router.post("/auth/signup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
@@ -168,7 +169,6 @@ async def signup(req: SignupRequest):
         )
 
     usr_clean = req.username.strip().lower()
-    email_clean = req.email.strip().lower()
 
     if any(u["username"].lower() == usr_clean for u in USUARIOS_DB):
         raise HTTPException(
@@ -176,23 +176,27 @@ async def signup(req: SignupRequest):
             detail=f"El nombre de usuario '{req.username}' ya está registrado."
         )
 
-    if any(u["email"].lower() == email_clean for u in USUARIOS_DB):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El correo electrónico '{req.email}' ya está registrado."
-        )
-
-    sucursal = next((s for s in SUCURSALES_DB if s.id == req.sucursal_id), SUCURSALES_DB[0])
+    sucursal = next((s for s in SUCURSALES_DB if s.id == req.sucursal_id), None)
+    
+    # Prevenir registro si no hay sucursales disponibles
+    if not sucursal:
+        if len(SUCURSALES_DB) > 0:
+            sucursal = SUCURSALES_DB[0]
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No hay sucursales registradas en el sistema para asociar al usuario. Por favor, crea una sucursal primero."
+            )
 
     new_user = {
         "user_id": uuid4(),
         "nombre_completo": req.nombre_completo,
         "username": req.username.strip(),
-        "email": req.email.strip(),
+        "email": f"{usr_clean}@mock.com", # Auto-generado para cumplir con base de datos
         "password": req.password,
         "rol": rol_solicitado,
-        "sucursal_id": sucursal.id,
-        "sucursal_nombre": sucursal.nombre
+        "avatar_url": None,
+        "sucursal_id": sucursal.id
     }
     
     USUARIOS_DB.append(new_user)
@@ -204,8 +208,85 @@ async def signup(req: SignupRequest):
         username=new_user["username"],
         email=new_user["email"],
         rol=new_user["rol"],
+        avatar_url=new_user.get("avatar_url"),
         sucursal_id=new_user["sucursal_id"],
-        sucursal_nombre=new_user["sucursal_nombre"]
+        sucursal_nombre=sucursal.nombre
+    )
+
+@router.get("/auth/usuarios", response_model=List[LoginResponse], status_code=status.HTTP_200_OK)
+async def listar_usuarios():
+    """
+    Lista todos los usuarios (para vista de administrador).
+    """
+    resultado = []
+    for u in USUARIOS_DB:
+        sucursal = next((s for s in SUCURSALES_DB if s.id == u["sucursal_id"]), None)
+        resultado.append(LoginResponse(
+            token="dummy-token",
+            user_id=u["user_id"],
+            nombre_completo=u["nombre_completo"],
+            username=u["username"],
+            email=u["email"],
+            rol=u["rol"],
+            avatar_url=u.get("avatar_url"),
+            sucursal_id=u["sucursal_id"],
+            sucursal_nombre=sucursal.nombre if sucursal else "Sucursal Eliminada"
+        ))
+    return resultado
+
+@router.put("/auth/usuarios/{user_id}", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def update_usuario(user_id: UUID, req: UserUpdateRequest):
+    """
+    Actualizar perfil de usuario (nombre, contraseña, foto base64).
+    """
+    user = next((u for u in USUARIOS_DB if u["user_id"] == user_id), None)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+
+    if req.nombre_completo is not None:
+        user["nombre_completo"] = req.nombre_completo
+    if req.password is not None and req.password.strip() != "":
+        user["password"] = req.password
+    if req.avatar_url is not None:
+        user["avatar_url"] = req.avatar_url
+
+    sucursal = next((s for s in SUCURSALES_DB if s.id == user["sucursal_id"]), None)
+    sucursal_nombre = sucursal.nombre if sucursal else "Sucursal Eliminada"
+
+    return LoginResponse(
+        token=f"jwt-token-{user['rol']}-{user['username']}",
+        user_id=user["user_id"],
+        nombre_completo=user["nombre_completo"],
+        username=user["username"],
+        email=user["email"],
+        rol=user["rol"],
+        avatar_url=user.get("avatar_url"),
+        sucursal_id=user["sucursal_id"],
+        sucursal_nombre=sucursal_nombre
+    )
+
+@router.post("/auth/impersonate/{user_id}", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def impersonate_user(user_id: UUID):
+    """
+    Permite a un administrador tomar la sesión de cualquier usuario por ID sin contraseña.
+    """
+    user = next((u for u in USUARIOS_DB if u["user_id"] == user_id), None)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+        
+    sucursal = next((s for s in SUCURSALES_DB if s.id == user["sucursal_id"]), None)
+    sucursal_nombre = sucursal.nombre if sucursal else "Sucursal Eliminada"
+
+    return LoginResponse(
+        token=f"jwt-token-{user['rol']}-{user['username']}",
+        user_id=user["user_id"],
+        nombre_completo=user["nombre_completo"],
+        username=user["username"],
+        email=user["email"],
+        rol=user["rol"],
+        avatar_url=user.get("avatar_url"),
+        sucursal_id=user["sucursal_id"],
+        sucursal_nombre=sucursal_nombre
     )
 
 @router.get("/sucursales", response_model=List[SucursalResponse], status_code=status.HTTP_200_OK)
@@ -214,6 +295,30 @@ async def listar_sucursales():
     Lista todas las sucursales globales registradas con sus coordenadas geográficas.
     """
     return SUCURSALES_DB
+
+@router.get("/profesores", response_model=List[ProfesorResponse], status_code=status.HTTP_200_OK)
+async def listar_profesores(sucursal_id: Optional[UUID] = None):
+    """
+    Lista los profesores registrados en el sistema, opcionalmente filtrados por sucursal.
+    """
+    profesores = [u for u in USUARIOS_DB if u["rol"] == "profesor"]
+    if sucursal_id:
+        profesores = [p for p in profesores if p["sucursal_id"] == sucursal_id]
+        
+    resultado = []
+    for p in profesores:
+        sucursal = next((s for s in SUCURSALES_DB if s.id == p["sucursal_id"]), None)
+        resultado.append(ProfesorResponse(
+            user_id=p["user_id"],
+            nombre_completo=p["nombre_completo"],
+            username=p["username"],
+            email=p["email"],
+            avatar_url=p.get("avatar_url"),
+            sucursal_id=p["sucursal_id"],
+            sucursal_nombre=sucursal.nombre if sucursal else "Sucursal Eliminada"
+        ))
+        
+    return resultado
 
 @router.post("/sucursales", response_model=SucursalResponse, status_code=status.HTTP_201_CREATED)
 async def crear_sucursal(nueva: SucursalCreate):
@@ -262,6 +367,14 @@ async def eliminar_sucursal(sucursal_id: UUID):
     Permite al Administrador eliminar una sucursal del sistema.
     """
     global SUCURSALES_DB
+    
+    # Restricción de Integridad Referencial (Mannino 3NF - ON DELETE RESTRICT)
+    if any(u["sucursal_id"] == sucursal_id for u in USUARIOS_DB):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar esta sucursal porque tiene usuarios (profesores o alumnos) vinculados. Reasigna o elimina los usuarios primero."
+        )
+
     initial_count = len(SUCURSALES_DB)
     SUCURSALES_DB = [s for s in SUCURSALES_DB if s.id != sucursal_id]
 

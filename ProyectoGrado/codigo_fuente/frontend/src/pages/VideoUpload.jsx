@@ -16,10 +16,6 @@ export default function VideoUpload({ user, onUploadStart }) {
   const [file, setFile] = useState(null);
 
   // 1. Cargar profesores de la sucursal del alumno
-  useEffect(() => {
-    fetchProfesores();
-  }, [user?.sucursal_id]);
-
   const fetchProfesores = async () => {
     setLoadingProfesores(true);
     try {
@@ -47,13 +43,6 @@ export default function VideoUpload({ user, onUploadStart }) {
     }
   };
 
-  // 2. Cargar técnicas cuando cambia el profesor seleccionado
-  useEffect(() => {
-    if (selectedProfesor?.user_id) {
-      fetchTecnicasDelProfesor(selectedProfesor.user_id);
-    }
-  }, [selectedProfesor]);
-
   const fetchTecnicasDelProfesor = async (profesorId) => {
     setLoadingTecnicas(true);
     try {
@@ -75,6 +64,16 @@ export default function VideoUpload({ user, onUploadStart }) {
       setLoadingTecnicas(false);
     }
   };
+
+  useEffect(() => {
+    fetchProfesores();
+  }, [user?.sucursal_id]);
+
+  useEffect(() => {
+    if (selectedProfesor?.user_id) {
+      fetchTecnicasDelProfesor(selectedProfesor.user_id);
+    }
+  }, [selectedProfesor]);
 
   const handleProfesorChange = (e) => {
     const profId = e.target.value;
@@ -139,32 +138,113 @@ export default function VideoUpload({ user, onUploadStart }) {
       </div>
 
       {/* Paso 1: Selección de Profesor de la Sucursal */}
-      <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1rem', borderRadius: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
+      <div className="tecnica-selector-card glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1rem', borderRadius: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           {t.selectProfesorLabel}
         </label>
         
-        {loadingProfesores ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.noProfessorsFound}</p> : (
-          <select 
-            value={selectedProfesor?.user_id || ''}
-            onChange={handleProfesorChange}
-            style={{
-              width: '100%',
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              fontSize: '1rem',
-              cursor: 'pointer'
-            }}
-          >
-            {profesores.map(p => (
-              <option key={p.user_id} value={p.user_id} style={{ background: '#111', color: 'white' }}>
-                 {p.nombre_completo} ({p.sucursal_nombre})
-              </option>
-            ))}
-          </select>
+        {loadingProfesores ? (
+          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.noProfessorsFound}</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            {/* Grid de Tarjetas de Profesores con Foto Arriba y Nombre Abajo */}
+            <div className="profesores-container" style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+              {profesores.map(p => {
+                const isSelected = selectedProfesor?.user_id === p.user_id;
+                return (
+                  <div 
+                    key={p.user_id}
+                    onClick={() => setSelectedProfesor(p)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '1.25rem 1.5rem',
+                      borderRadius: '16px',
+                      background: isSelected ? 'rgba(208, 17, 24, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                      border: isSelected ? '2px solid var(--brand-red)' : '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: isSelected ? '0 0 20px rgba(208, 17, 24, 0.35)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      minWidth: '160px',
+                      textAlign: 'center',
+                      transform: isSelected ? 'scale(1.02)' : 'scale(1)'
+                    }}
+                  >
+                    {/* Foto del Perfil del Profesor */}
+                    <div style={{
+                      width: '90px',
+                      height: '90px',
+                      borderRadius: '50%',
+                      border: isSelected ? '3px solid var(--brand-red)' : '2px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: isSelected ? '0 0 15px rgba(208, 17, 24, 0.5)' : 'none',
+                      overflow: 'hidden',
+                      background: 'linear-gradient(135deg, rgba(208,17,24,0.3) 0%, rgba(20,20,20,0.9) 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      fontWeight: 'bold',
+                      color: 'white',
+                      marginBottom: '0.75rem'
+                    }}>
+                      {p.avatar_url ? (
+                        <img 
+                          src={p.avatar_url} 
+                          alt={p.nombre_completo} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <span>{p.nombre_completo ? p.nombre_completo.charAt(0).toUpperCase() : 'P'}</span>
+                      )}
+                    </div>
+
+                    {/* Nombre del Profesor debajo de la Foto */}
+                    <span style={{ 
+                      fontWeight: 'bold', 
+                      fontSize: '1rem', 
+                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                      marginTop: '0.25rem'
+                    }}>
+                      {p.nombre_completo}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.2rem' }}>
+                      {p.sucursal_nombre}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Select alternativo cuando hay varios profesores */}
+            {profesores.length > 2 && (
+              <select 
+                value={selectedProfesor?.user_id || ''}
+                onChange={handleProfesorChange}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 1rem',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  marginTop: '0.5rem'
+                }}
+              >
+                {profesores.map(p => (
+                  <option key={p.user_id} value={p.user_id} style={{ background: '#111', color: 'white' }}>
+                    {p.nombre_completo} ({p.sucursal_nombre})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         )}
       </div>
 
@@ -202,11 +282,23 @@ export default function VideoUpload({ user, onUploadStart }) {
             )}
 
             {selectedTecnica && (
-              <div className="profesor-ref-info" style={{ marginTop: '0.75rem', fontSize: '0.85rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ background: selectedTecnica.tiene_video ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
+              <div className="profesor-ref-info" style={{ marginTop: '0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
+                {selectedProfesor && (
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5 solid var(--brand-red)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(208,17,24,0.3)' }}>
+                    {selectedProfesor.avatar_url ? (
+                      <img src={selectedProfesor.avatar_url} alt={selectedProfesor.nombre_completo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{selectedProfesor.nombre_completo.charAt(0)}</span>
+                    )}
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: 'bold', color: 'white' }}>{selectedProfesor ? selectedProfesor.nombre_completo : ''}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>{selectedTecnica.nombre}</span>
+                </div>
+                <span style={{ marginLeft: 'auto', background: selectedTecnica.tiene_video ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
                   {selectedTecnica.tiene_video ? t.hasVideoTag : t.noVideoTag}
                 </span>
-                <span>{selectedProfesor ? selectedProfesor.nombre_completo : ''} - {selectedTecnica.nombre}</span>
               </div>
             )}
           </>

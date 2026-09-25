@@ -91,3 +91,30 @@ class QdrantVectorAdapter:
             frame_path=payload.get("frame_path", ""),
             discrepancias=payload.get("discrepancias", [])
         )
+
+    def buscar_maxima_diferencia(self, esqueletos_alumno: List['EsqueletoBiomecanico'], tecnica_id: UUID) -> VectorSearchResultDTO:
+        """
+        Itera sobre los vectores del alumno y los compara matemáticamente contra la base de Qdrant.
+        Devuelve el fotograma (VectorSearchResultDTO) con la menor similitud (mayor diferencia).
+        """
+        if not esqueletos_alumno:
+            raise ValueError("La lista de esqueletos del alumno está vacía.")
+            
+        peor_similitud = 100.0
+        peor_resultado = None
+        
+        for esqueleto in esqueletos_alumno:
+            vector_actual = esqueleto.to_vector_array()
+            # Búsqueda matemática pura
+            resultado_actual = self.buscar_similitud_pose(vector_actual, tecnica_id)
+            
+            if resultado_actual.score < peor_similitud:
+                peor_similitud = resultado_actual.score
+                peor_resultado = resultado_actual
+                
+        if not peor_resultado:
+            # Fallback seguro
+            return self.buscar_similitud_pose(esqueletos_alumno[0].to_vector_array(), tecnica_id)
+            
+        logger.info(f"Búsqueda matemática (YOLO + Qdrant) completada. Mayor diferencia encontrada: {peor_resultado.score}% de similitud.")
+        return peor_resultado

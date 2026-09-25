@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useTranslation } from '../i18n/translations';
 
 export default function UserProfileModal({ isOpen, user, onClose, onUpdateSuccess, onLogout }) {
-  if (!isOpen || !user) return null;
-
-  const { t } = useTranslation(user.idioma_preferido || 'es');
+  const { t } = useTranslation(user?.idioma_preferido || 'es');
   
-  const [nombre, setNombre] = useState(user.nombre_completo || '');
+  const [nombre, setNombre] = useState(user?.nombre_completo || '');
   const [password, setPassword] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState(user.avatar_url || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [loading, setLoading] = useState(false);
+
+  if (!isOpen || !user) return null;
 
   // Convertir archivo a base64
   const handleFileChange = (e) => {

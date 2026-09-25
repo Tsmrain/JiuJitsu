@@ -98,12 +98,12 @@ USUARIOS_DB = [
     },
     {
         'user_id': UUID('7e455a7d-cbc8-4190-9a10-3b959f6425fc'),
-        'nombre_completo': 'mike',
+        'nombre_completo': 'Mestre Mike Baigorria',
         'username': 'mike',
         'email': 'mike@mock.com',
         'password': 'password123',
         'rol': 'profesor',
-        'avatar_url': None,
+        'avatar_url': '/mike.png',
         'sucursal_id': UUID('8b315b4e-43f2-4ca1-904d-dec87242f347')
     },
     {

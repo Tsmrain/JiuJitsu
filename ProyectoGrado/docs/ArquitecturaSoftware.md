@@ -16,8 +16,8 @@ Identificación de los requisitos no funcionales (NFRs) críticos y las solucion
 | **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Procesamiento Asíncrono en Google Colab Pro:** El backend delega la inferencia de YOLO y Qwen3-VL a un Worker ejecutado en Colab Pro. |
 | **Límite de Cuota (Gemini API)** | Nivel Gratuito de Gemini API impone cuotas estrictas de solicitudes por minuto (RPM). | **Patrón Message Queue (Cola de Tareas):** Encolado de tareas asíncronas con reintentos para no saturar las llamadas a Gemini. |
 | **Estimación 3D / Profundidad** | Capturar la profundidad espacial ($Z$) en llaves y agarres complejos. | **Ultralytics Pose & Depth Tasks:** Estimación de profundidad y keypoints tridimensionales ($X, Y, Z$). |
-| **RAG Multimodal (Visión)** | Filtrado y ordenamiento fino de fotogramas candidatos con contexto visual. | **Qdrant + Qwen3-VL-Reranker-2B:** Recuperación vectorial (Retrieval) en Qdrant seguida de Re-ranking visual con Qwen3-VL. |
-| **Cerebro Pedagógico** | Generación de retroalimentación cualitativa comprensible y estructurada. | **Google Gemini API (Strategy Pattern):** Asume el rol pedagógico del Maestro Cinturón Negro (ES/PT). |
+| **Identificación de Error** | Encontrar el momento exacto donde el alumno falla en la técnica. | **YOLO + Distancia Coseno:** Comparación matemática de vectores frame a frame para hallar la diferencia máxima. |
+| **Cerebro Pedagógico** | Generación de retroalimentación cualitativa comprensible y estructurada. | **Google Gemini API (Condicional):** Solo se invoca si hay errores, asumiendo el rol del Maestro (ES/PT). |
 | **Internacionalización (i18n)** | Soporte fluído para alumnos y profesores en Portugués y Español. | **Patrón Strategy (GoF):** Algoritmos de construcción de prompts encapsulados en estrategias polimórficas por idioma. |
 | **Multi-Tenancy / Privacidad** | Múltiples sucursales internacionales de la academia "Corpo e Mente". | **Row Level Security (RLS) en PostgreSQL:** Aislamiento de datos por sucursal a nivel de motor de base de datos. |
 
@@ -83,9 +83,8 @@ classDiagram
         <<Facade>>
         -YOLOPoseAdapter yoloAdapter
         -QdrantVectorAdapter qdrantAdapter
-        -QwenRerankerAdapter qwenAdapter
         -GeminiApiAdapter geminiAdapter
-        +ejecutarAnalisisCompleto(videoPath: String, tecnicaId: UUID, idioma: String) AnalisisResultDTO
+        +ejecutarAnalisisCompleto(videoPath: String, tecnicaId: UUID, tecnicaNombre: String, idioma: String) AnalisisResultDTO
     }
 
     class IPromptStrategy {
@@ -118,7 +117,7 @@ classDiagram
         <<Adapter>>
         -String apiKey
         +validarEsJiuJitsu(videoPath: String) Boolean
-        +generarTextoFeedback(prompt: String, frameImage: String) String
+        +generarTextoFeedback(prompt: String, frameImage: String, tecnicaNombre: String) String
     }
 
     class EsqueletoBiomecanico {
@@ -169,7 +168,6 @@ graph LR
     subgraph Colab_Worker ["Google Colab Pro (GPU Worker)"]
         Python_Worker["PyTorch Worker Script"]
         YOLO_Engine["YOLO v11/26 (Pose 3D + Depth)"]
-        Qwen_Engine["Qwen3-VL-Reranker-2B (Multimodal RAG)"]
     end
 
     subgraph External_SaaS ["Servicios Cloud SaaS"]
@@ -182,8 +180,7 @@ graph LR
 
     Python_Worker -->|Lee Tareas / HTTP| FastAPI_Node
     Python_Worker -->|Pose 3D + Depth| YOLO_Engine
-    Python_Worker -->|gRPC / REST Search| Qdrant_Local
-    Python_Worker -->|Re-ranking Visual| Qwen_Engine
+    Python_Worker -->|Matemática Vectorial| Qdrant_Local
     Python_Worker -->|GenAI Feedback| Gemini_SaaS
     Python_Worker -->|Actualiza Evaluación| PostgREST_Node
 ```
@@ -233,23 +230,33 @@ class IntelligenceAnalysisFacade:
         self.qdrant = qdrant_adapter
         self.gemini = gemini_adapter
 
-    def ejecutar_analisis_completo(self, video_path: str, tecnica_id: str, idioma: str) -> dict:
-        # 1. Extraer esqueleto con YOLO
-        esqueletos = self.yolo.extraer_keypoints(video_path)
-        vector_alumno = esqueletos[0].to_vector_array()
+    def ejecutar_analisis_completo(self, video_path: str, tecnica_id: str, tecnica_nombre: str, idioma: str) -> dict:
+        # 1. Extraer esqueleto con YOLO26
+        esqueletos_frames = self.yolo.extraer_keypoints(video_path)
+        
+        # 2. Búsqueda matemática del fotograma con mayor diferencia
+        # (Se compara contra la base de referencia en Qdrant)
+        resultado_comparacion = self.qdrant.buscar_maxima_diferencia(esqueletos_frames, tecnica_id)
+        
+        # 3. Dibujar/Resaltar el error en el fotograma (YOLO26)
+        frame_resaltado = self.yolo.dibujar_error_en_frame(resultado_comparacion.frame_path, resultado_comparacion.discrepancias)
+        
+        similitud = resultado_comparacion.score
+        UMBRAL_ACEPTABLE = 0.85 # 85% de similitud mínima
 
-        # 2. Buscar similitud en Qdrant
-        resultado_vector = self.qdrant.buscar_similitud_pose(vector_alumno, tecnica_id)
-
-        # 3. Seleccionar estrategia de idioma
-        strategy = PortuguesePromptStrategy() if idioma == 'pt' else SpanishPromptStrategy()
-        prompt = strategy.construir_prompt_evaluacion(resultado_vector.discrepancias)
-
-        # 4. Generar feedback con Gemini API
-        feedback_texto = self.gemini.generar_texto_feedback(prompt, resultado_vector.frame_path)
+        # 4. Lógica Condicional para Gemini
+        if similitud >= UMBRAL_ACEPTABLE:
+            feedback_texto = "Técnica executada corretamente. Excelente trabalho!" if idioma == 'pt' else "¡Técnica ejecutada correctamente. Excelente trabajo!"
+        else:
+            # Seleccionar estrategia de idioma y pasar el nombre de la técnica
+            strategy = PortuguesePromptStrategy() if idioma == 'pt' else SpanishPromptStrategy()
+            prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, resultado_comparacion.discrepancias)
+            
+            # Generar feedback pedagógico solo para el frame con error resaltado
+            feedback_texto = self.gemini.generar_texto_feedback(prompt, frame_resaltado)
 
         return {
-            "similitud": resultado_vector.score,
+            "similitud": similitud,
             "feedback": feedback_texto
         }
 ```

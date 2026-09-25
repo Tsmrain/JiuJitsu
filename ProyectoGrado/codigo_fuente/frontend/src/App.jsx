@@ -10,7 +10,7 @@ import UserProfileModal from './components/UserProfileModal'
 import { useTranslation } from './i18n/translations'
 
 function App() {
-  const [appState, setAppState] = useState('IDLE'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL, PROFESOR_PANEL
+  const [appState, setAppState] = useState('ADMIN_PANEL'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL, PROFESOR_PANEL
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [selectedTecnica, setSelectedTecnica] = useState(null);
@@ -102,7 +102,7 @@ function App() {
         </div>
       )}
       <header className="header">
-        <div className="brand" onClick={() => setAppState('IDLE')} style={{ cursor: 'pointer' }}>
+        <div className="brand" onClick={() => setAppState('ADMIN_PANEL')} style={{ cursor: 'pointer' }}>
           <img src="/logo.jpeg" alt="Corpo e Mente Logo" className="brand-logo" />
           <span className="brand-text">
           </span>
@@ -131,6 +131,16 @@ function App() {
             <option value="es" style={{ background: '#111', color: 'white' }}>ES</option>
             <option value="pt" style={{ background: '#111', color: 'white' }}>PT</option>
           </select>
+
+          {user && user.rol !== 'profesor' && (
+            <button 
+              className="btn-secondary"
+              onClick={() => setAppState('IDLE')}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
+            >
+              Analizar Video
+            </button>
+          )}
 
           {/* Botón exclusivo para Admin */}
           {user?.rol === 'admin' && (
@@ -187,25 +197,42 @@ function App() {
         </div>
       </header>
 
-      <main style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+      <main style={{flex: 1, display: 'flex', alignItems: appState === 'ADMIN_PANEL' || appState === 'PROFESOR_PANEL' ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
         {appState === 'ADMIN_PANEL' && (
           <AdminSucursales 
             user={user} 
-            onClose={() => setAppState('IDLE')} 
+            onClose={() => {
+              if (user?.rol === 'profesor') {
+                setAppState('PROFESOR_PANEL');
+              } else {
+                setAppState('IDLE');
+              }
+            }} 
             onImpersonate={(newUser, currentAdmin) => { 
               setOriginalAdminUser(currentAdmin); 
               setUser(newUser); 
-              setAppState('IDLE'); 
+              if (newUser?.rol === 'profesor') {
+                setAppState('PROFESOR_PANEL');
+              } else {
+                setAppState('IDLE');
+              }
             }} 
           />
         )}
 
-        {appState === 'PROFESOR_PANEL' && (
-          <ProfesorTecnicas user={user} onClose={() => setAppState('IDLE')} />
+        {(appState === 'PROFESOR_PANEL' || (appState === 'IDLE' && user?.rol === 'profesor')) && (
+          <ProfesorTecnicas user={user} onClose={() => setAppState('ADMIN_PANEL')} />
         )}
 
-        {appState === 'IDLE' && (
+        {appState === 'IDLE' && user && user.rol !== 'profesor' && (
           <VideoUpload user={user} onUploadStart={handleUploadStart} />
+        )}
+        {appState === 'IDLE' && !user && (
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+             <h2>Acceso Restringido</h2>
+             <p>Debes iniciar sesión para poder analizar videos con inteligencia artificial.</p>
+             <button className="btn-primary" onClick={() => setIsLoginOpen(true)} style={{ marginTop: '1rem' }}>Iniciar Sesión</button>
+          </div>
         )}
 
         {(appState === 'UPLOADING' || appState === 'PROCESSING') && (
@@ -232,7 +259,12 @@ function App() {
         isOpen={isLoginOpen} 
         user={user}
         onClose={() => setIsLoginOpen(false)} 
-        onLoginSuccess={(userData) => setUser(userData)} 
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          if (userData.rol === 'profesor') {
+            setAppState('PROFESOR_PANEL');
+          }
+        }} 
       />
 
       {/* Modal de Perfil de Usuario */}

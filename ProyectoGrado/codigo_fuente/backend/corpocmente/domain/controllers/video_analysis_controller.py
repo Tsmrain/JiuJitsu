@@ -18,7 +18,8 @@ class VideoAnalysisController:
 
     def procesar_evaluacion_video(self, 
                                    video_path: str, 
-                                   tecnica_id: UUID, 
+                                   tecnica_id: UUID,
+                                   tecnica_nombre: str, 
                                    idioma: str = "es") -> AnalisisResultDTO:
         """
         Orquesta la ejecución del Caso de Uso UC1: 'Analizar Técnica y Generar Feedback'.
@@ -33,10 +34,11 @@ class VideoAnalysisController:
         if not es_valido:
             raise ValueError("El video proporcionado no corresponde a la ejecución de una técnica de Jiu-Jitsu válida.")
 
-        # 2. Inferencia Completa (YOLO + Qdrant + Gemini Strategy)
+        # 2. Inferencia Completa (YOLO + Qdrant + Gemini Strategy Condicional)
         resultado = self.facade.ejecutar_analisis_completo(
             video_path=video_path,
             tecnica_id=tecnica_id,
+            tecnica_nombre=tecnica_nombre,
             idioma=idioma
         )
 

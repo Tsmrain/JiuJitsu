@@ -388,13 +388,32 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
   };
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
+    <div style={{ padding: '1.5rem', width: '100%', maxWidth: '100%', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>{t.adminTitle}</h2>
+          <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
+            {user?.rol === 'admin' ? t.adminTitle : 'Catálogo de Sucursales'}
+          </h2>
         </div>
-        <button className="btn-secondary" onClick={onClose} style={{ padding: '0.5rem 1rem' }}>
-          {t.btnClose}
+        <button 
+          className="btn-primary" 
+          onClick={onClose} 
+          style={{ 
+            padding: '0.75rem 1.6rem', 
+            fontSize: '1rem', 
+            fontWeight: 'bold', 
+            borderRadius: '30px', 
+            boxShadow: '0 0 20px rgba(208,17,24,0.7)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1.0)'}
+        >
+          Empieza a Entrenar
         </button>
       </div>
 
@@ -408,25 +427,27 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
             fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
           }}
         >
-          Gestión de Sucursales
+          {user?.rol === 'admin' ? 'Gestión de Sucursales' : 'Nuestras Sucursales'}
         </button>
-        <button
-          onClick={() => setActiveTab('usuarios')}
-          style={{
-            flex: 1, padding: '0.75rem', background: 'none', border: 'none',
-            borderBottom: activeTab === 'usuarios' ? '3px solid var(--brand-red)' : '3px solid transparent',
-            color: activeTab === 'usuarios' ? 'white' : 'var(--text-secondary)',
-            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
-          }}
-        >
-          Gestión de Usuarios
-        </button>
+        {user?.rol === 'admin' && (
+          <button
+            onClick={() => setActiveTab('usuarios')}
+            style={{
+              flex: 1, padding: '0.75rem', background: 'none', border: 'none',
+              borderBottom: activeTab === 'usuarios' ? '3px solid var(--brand-red)' : '3px solid transparent',
+              color: activeTab === 'usuarios' ? 'white' : 'var(--text-secondary)',
+              fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
+            }}
+          >
+            Gestión de Usuarios
+          </button>
+        )}
       </div>
 
       <div style={{ display: activeTab === 'sucursales' ? 'block' : 'none' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Formulario de registro/modificación */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+        {user?.rol === 'admin' && (
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>
               {editingId ? " Modificar Sucursal" : " Registrar Nueva Sucursal"}
@@ -512,27 +533,18 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '0.5rem', padding: '0.75rem', width: '100%' }}>
-              {loading ? "Procesando..." : (editingId ? "Actualizar Sucursal" : "Guardar Sucursal Global")}
-            </button>
-          </form>
-        </div>
-
-        {/* Contenedor del Mapa OpenStreetMap */}
-        <div className="glass-panel" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '0.5rem', opacity: 0.85 }}>
-             MAPA MUNDIAL INTERACTIVO (OPENSTREETMAP - GRATIS)
-          </span>
-          <div 
-            ref={mapRef} 
-            style={{ width: '100%', height: '380px', borderRadius: '8px', overflow: 'hidden', background: '#222' }} 
-          />
-        </div>
-      </div>
+              <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '0.5rem', padding: '0.75rem', width: '100%' }}>
+                {loading ? "Procesando..." : (editingId ? "Actualizar Sucursal" : "Guardar Sucursal Global")}
+              </button>
+            </form>
+          </div>
+        )}
 
       {/* Lista de Sucursales Registradas con opciones de CRUD */}
       <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}> Sucursales Registradas ({sucursales.length})</h3>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>
+          {user?.rol === 'admin' ? `Sucursales Registradas (${sucursales.length})` : `Explora Nuestras Sucursales (${sucursales.length})`}
+        </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
           {sucursales.map((s) => (
             <div 
@@ -550,22 +562,37 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
                 <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}> {s.ciudad}, {s.pais}</p>
                 {s.direccion && <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', opacity: 0.7 }}> {s.direccion}</p>}
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', opacity: 0.6 }}> Coordenadas: {s.latitud}, {s.longitud}</p>
+
+                <div style={{ marginTop: '1rem', borderRadius: '8px', overflow: 'hidden' }}>
+                  <iframe 
+                    width="100%" 
+                    height="180" 
+                    frameBorder="0" 
+                    scrolling="no" 
+                    marginHeight="0" 
+                    marginWidth="0" 
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${s.longitud-0.005},${s.latitud-0.005},${s.longitud+0.005},${s.latitud+0.005}&layer=mapnik&marker=${s.latitud},${s.longitud}`} 
+                    style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                  ></iframe>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.75rem' }}>
-                <button
-                  onClick={() => handleStartEdit(s)}
-                  style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(77,166,255,0.2)', border: '1px solid #4da6ff', color: '#4da6ff', fontSize: '0.8rem', cursor: 'pointer' }}
-                >
-                   Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(s.id, s.nombre)}
-                  style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(208,17,24,0.2)', border: '1px solid var(--brand-red)', color: '#ff6b6b', fontSize: '0.8rem', cursor: 'pointer' }}
-                >
-                   Eliminar
-                </button>
-              </div>
+              {user?.rol === 'admin' && (
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.75rem' }}>
+                  <button
+                    onClick={() => handleStartEdit(s)}
+                    style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(77,166,255,0.2)', border: '1px solid #4da6ff', color: '#4da6ff', fontSize: '0.8rem', cursor: 'pointer' }}
+                  >
+                     Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(s.id, s.nombre)}
+                    style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(208,17,24,0.2)', border: '1px solid var(--brand-red)', color: '#ff6b6b', fontSize: '0.8rem', cursor: 'pointer' }}
+                  >
+                     Eliminar
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

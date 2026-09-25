@@ -142,41 +142,45 @@ Asignación de responsabilidades mediante patrones GRASP.
 
 ---
 
-## FASE 2: ELABORACIÓN - ITERACIÓN 2 (Comparación IA y RAG Multimodal)
+## FASE 2: ELABORACIÓN - ITERACIÓN 2 (Pipeline Biomecánico YOLO -> Gemini)
 
-La iteración 2 aborda el riesgo tecnológico de la integración de Inteligencia Artificial (YOLO, Qdrant, Qwen3-VL, Gemini).
+La iteración 2 aborda la lógica central de la IA: comparación biomecánica matemática y retroalimentación pedagógica condicional.
 
-### 3.1 Diseño de Objetos y Patrones GoF
-Para mantener el bajo acoplamiento con servicios externos (API de Gemini, Qdrant DB), se aplican Patrones GoF:
+### 3.1 Lógica del Pipeline y Optimización de Recursos
+Para minimizar costos y maximizar la precisión, el flujo se define de la siguiente manera:
+1. **YOLO26 (Pose Estimation):** Extrae los vectores (keypoints) del video del alumno frame a frame.
+2. **Comparación Matemática (Qdrant/Similitud Coseno):** Se compara cada frame del alumno contra la técnica de referencia. Se busca el fotograma exacto con la mayor diferencia (distancia vectorial).
+3. **Resaltado Visual del Error:** El sistema utiliza YOLO26 para **dibujar con precisión** sobre la imagen del fotograma qué articulación o parte del cuerpo específica tiene la mayor diferencia respecto al profesor.
+4. **Validación de Umbral (Tolerancia):** 
+   - Si la diferencia máxima está dentro de un rango aceptable (ej. > 85% de similitud), la técnica se considera **correcta**. NO se invoca a la IA generativa (Gemini).
+   - Si la diferencia supera el umbral, la técnica es **incorrecta**. Se extrae el fotograma crítico (keyframe) ya marcado/dibujado.
+5. **Cerebro Pedagógico (Gemini):** Solo si la técnica es incorrecta, se envía a Gemini el **nombre de la técnica** (para dar contexto exacto de lo que se evalúa) y el fotograma con el error resaltado. Gemini genera la corrección pedagógica textual.
 
-* **Adapter (GoF):** `QdrantVectorAdapter` traduce los requerimientos del dominio (búsqueda por similitud de pose) a la sintaxis HNSW de Qdrant. `GeminiApiAdapter` encapsula la lógica de red para consultar a Google.
-* **Strategy (GoF):** Para soportar la internacionalización sin bucles condicionales (`if idioma == 'pt'`), se instancian clases polimórficas `PortuguesePromptStrategy` y `SpanishPromptStrategy` que construyen el texto inyectado en la IA.
-* **Facade (GoF):** `IntelligenceAnalysisFacade` proporciona una interfaz unificada (`generarAnalisis(video, idioma)`) ocultando la orquestación compleja entre YOLO, Qdrant y Qwen3-VL.
+*Nota sobre Qwen-VL:* Inicialmente se contempló usar Qwen para un "re-ranking visual" de los fotogramas. Sin embargo, dado que YOLO y el cálculo de distancia matemática ya nos devuelven el fotograma exacto con mayor diferencia de forma precisa y determinista, el paso de Qwen resulta redundante y ha sido eliminado de la arquitectura para optimizar la velocidad y consumo de VRAM.
 
 ### 3.2 Diagrama de Interacción de Software (Secuencia UML)
 
 ```mermaid
 sequenceDiagram
     participant Worker as WorkerColabPro
-    participant YOLO as YOLO26Extractor
-    participant Qdrant as QdrantAdapter
-    participant Qwen as Qwen3Reranker
+    participant YOLO as YOLO_Extractor
+    participant Math as ComparadorMatematico
     participant Gemini as GeminiApiAdapter
     participant DB as PostgresDB
 
     Worker->>YOLO: extraerVectoresPose(videoAlumno)
-    YOLO-->>Worker: vectoresBiomecanicos (133 keypoints)
+    YOLO-->>Worker: vectoresBiomecanicos (133 keypoints por frame)
     
-    Worker->>Qdrant: buscarSimilitud(vectoresBiomecanicos)
-    Qdrant-->>Worker: framesCandidatos (Video Profesor)
+    Worker->>Math: buscarFotogramaMaxDiferencia(vectoresAlumno, referenciaQdrant)
+    Math-->>Worker: frameErrorCritico, porcentajeSimilitud
     
-    Worker->>Qwen: rerankVisual(framesCandidatos, videoAlumno)
-    Qwen-->>Worker: frameErrorCritico
-    
-    Worker->>Gemini: generarFeedbackBiomecanico(frameErrorCritico, PromptStrategy)
-    Gemini-->>Worker: textoExplicativo (ES/PT)
-    
-    Worker->>DB: actualizarEvaluacion(textoExplicativo, estado='completado')
+    alt Similitud > Umbral Aceptable (Técnica Correcta)
+        Worker->>DB: actualizarEvaluacion("¡Técnica Excelente!", estado='completado')
+    else Similitud < Umbral Aceptable (Técnica Incorrecta)
+        Worker->>Gemini: generarFeedbackBiomecanico(frameErrorCritico, PromptStrategy)
+        Gemini-->>Worker: textoExplicativoCorreccion (ES/PT)
+        Worker->>DB: actualizarEvaluacion(textoExplicativoCorreccion, estado='completado')
+    end
 ```
 
 ---
@@ -224,7 +228,9 @@ La Fase de Construcción sigue el Proceso Unificado (UP) de Craig Larman, constr
 - **Componentes Creados:**
   - `ProgressRing.jsx`: Anillo de progreso biomecánico mediante `<progress>` nativo animado con `conic-gradient` CSS.
   - `VideoUpload.jsx`: Módulo de carga mediante *Drag & Drop* con previsualización del archivo de video (`URL.createObjectURL`).
-  - `FeedbackView.jsx`: Tarjeta de resultados cualitativos y cuantitativos que utiliza `<details>` y `<summary>` semánticos.
+  - `FeedbackReport.jsx` (Vista de Resultados): Interfaz estructurada donde:
+    - **Sección Superior (Visual):** Muestra el **Video Original del Maestro** (en bucle/reproducción) lado a lado con el **Fotograma del Alumno** (que tiene el área del cuerpo incorrecta dibujada/resaltada por YOLO26).
+    - **Sección Inferior (Texto):** Muestra el texto explicativo generado por Gemini detallando el error y cómo corregirlo (solo si hubo error). Si no hubo error, muestra un mensaje de felicitación.
 
 ### 5.4 Iteración C4: Filtro Inteligente Anti-SPAM (Gemini Multimodal API)
 - **Caso de Uso (UC4 - Prevenir Contenido No Relacionado / SPAM):**

@@ -1,0 +1,4 @@
+# Documentos de grado generados
+docs/TFGdocsLatex/
+*.docx
+!requirements.txt

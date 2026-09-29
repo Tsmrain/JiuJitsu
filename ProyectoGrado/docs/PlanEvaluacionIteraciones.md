@@ -571,9 +571,11 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
 - **Lecciones aprendidas:**
   - VRAM real mucho menor al reiniciar el runtime limpio (4.26 GB vs 8.55 GB previos). Confirma que el consumo de Qwen fluctúa según el estado del runtime de Colab.
   - El header `ngrok-skip-browser-warning: 1` es obligatorio en el tier gratuito de ngrok a partir de 2026.
+  - **Observación de calidad de datos:** El primer frame del video (`frame_idx=0`) contiene una intro/fondo, lo que genera keypoints con baja confianza inicial. El análisis de la distribución global en los 777 frames muestra que los keypoints son de alta calidad (mediana global de confianza: 0.82, p95: 1.00, con 67.1% de keypoints con conf > 0.5).
 
 - **Deuda registrada:**
   - C12.6 extenderá este endpoint para devolver también `keyframe_indices`.
+  - En una iteración futura (C12.x), añadir filtrado de keypoints por umbral de confianza (`conf > 0.3`) directamente en el endpoint para robustecer la salida frente a frames de transición o intros.
 
 
 

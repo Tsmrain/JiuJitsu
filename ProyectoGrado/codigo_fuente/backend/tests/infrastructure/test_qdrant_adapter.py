@@ -53,3 +53,61 @@ def test_buscar_similitud_pose_retorna_dto(mock_qdrant_client):
     assert resultado.frame_path == "/tmp/maestro_pasaje.jpg"
     assert "Base de sustentación estrecha" in resultado.discrepancias
     mock_qdrant_client.search.assert_called_once()
+
+def test_recuperar_contexto_rag_exitoso():
+    from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
+    import uuid
+    from unittest.mock import MagicMock
+    
+    mock_client = MagicMock()
+    mock_result = MagicMock()
+    mock_result.payload = {"contenido_texto": "El Jiu-Jitsu es un arte marcial..."}
+    mock_client.search.return_value = [mock_result]
+    
+    adapter = QdrantVectorAdapter(client=mock_client)
+    tecnica_id = uuid.uuid4()
+    
+    # Act
+    texto = adapter.recuperar_contexto_rag([0.5]*2048, tecnica_id)
+    
+    # Assert
+    assert texto == "El Jiu-Jitsu es un arte marcial..."
+    mock_client.search.assert_called_once()
+
+def test_recuperar_contexto_rag_usa_named_vector_y_concatena():
+    """
+    Regression test C11.4: recuperar_contexto_rag debe:
+    1. Usar query_vector=("dense", vector) — named vector de la colección rag_knowledge.
+    2. Solicitar limit=3 (top-3).
+    3. Concatenar los chunks con el separador '\n\n---\n\n'.
+    """
+    from unittest.mock import MagicMock
+    import uuid
+
+    mock_client = MagicMock()
+    # Simular 3 resultados con contenido
+    r1 = MagicMock(); r1.payload = {"contenido_texto": "Chunk A sobre control de cadera."}
+    r2 = MagicMock(); r2.payload = {"contenido_texto": "Chunk B sobre agarre del brazo."}
+    r3 = MagicMock(); r3.payload = {"contenido_texto": "Chunk C sobre peso del cuerpo."}
+    mock_client.search.return_value = [r1, r2, r3]
+
+    adapter = QdrantVectorAdapter(client=mock_client)
+    tecnica_id = uuid.uuid4()
+
+    # Act
+    texto = adapter.recuperar_contexto_rag([0.5] * 2048, tecnica_id)
+
+    # Assert
+    # 1. Debe llamar con named vector ("dense", ...) y limit=3
+    call_kwargs = mock_client.search.call_args.kwargs
+    assert call_kwargs["query_vector"] == ("dense", [0.5] * 2048), \
+        "Debe usar named vector ('dense', vector) — fix C11.4"
+    assert call_kwargs["limit"] == 3, "Debe solicitar top-3 (fix C11.4)"
+    assert call_kwargs["collection_name"] == "rag_knowledge"
+
+    # 2. Debe concatenar los 3 chunks
+    assert "Chunk A" in texto
+    assert "Chunk B" in texto
+    assert "Chunk C" in texto
+    assert "\n\n---\n\n" in texto, "Debe usar el separador '---' entre chunks"
+

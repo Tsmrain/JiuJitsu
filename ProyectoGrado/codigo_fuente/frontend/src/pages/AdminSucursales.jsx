@@ -144,7 +144,9 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
   const fetchUsuarios = async () => {
     setLoadingUsuarios(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/usuarios");
+      const res = await fetch("http://localhost:8000/api/v1/auth/usuarios", {
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
       if (res.ok) setUsuarios(await res.json());
     } catch (e) {
       console.error("Error cargando usuarios:", e);
@@ -331,7 +333,10 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
     try {
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
         body: JSON.stringify(payload)
       });
 
@@ -356,7 +361,8 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
     try {
       const res = await fetch(`http://localhost:8000/api/v1/sucursales/${sucursalId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${user.token}` }
       });
 
       if (res.ok) {
@@ -374,7 +380,10 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
   const handleImpersonate = async (targetUserId) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/auth/impersonate/${targetUserId}`, { method: 'POST' });
+      const res = await fetch(`http://localhost:8000/api/v1/auth/impersonate/${targetUserId}`, {
+        method: 'POST',
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
       if (res.ok) {
         const targetUser = await res.json();
         if (onImpersonate) onImpersonate(targetUser, user);

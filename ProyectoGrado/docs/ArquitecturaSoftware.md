@@ -13,7 +13,7 @@ Identificación de los requisitos no funcionales (NFRs) críticos y las solucion
 
 | Factor Arquitectónico | Restricción / Desafío | Solución de Diseño / Patrón Adoptado |
 | :--- | :--- | :--- |
-| **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Procesamiento Asíncrono en Google Colab Pro:** El backend delega la inferencia de YOLO y Qwen3-VL a un Worker ejecutado en Colab Pro. |
+| **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Procesamiento Asíncrono en Google Colab Web:** El backend delega la inferencia de YOLO y Qwen3-VL a un Worker ejecutado como un notebook en Google Colab Web (runtime T4 GPU). |
 | **Límite de Cuota (Gemini API)** | Nivel Gratuito de Gemini API impone cuotas estrictas de solicitudes por minuto (RPM). | **Patrón Message Queue (Cola de Tareas):** Encolado de tareas asíncronas con reintentos para no saturar las llamadas a Gemini. |
 | **Estimación 3D / Profundidad** | Capturar la profundidad espacial ($Z$) en llaves y agarres complejos. | **Ultralytics Pose & Depth Tasks:** Estimación de profundidad y keypoints tridimensionales ($X, Y, Z$). |
 | **Identificación de Error** | Encontrar el momento exacto donde el alumno falla en la técnica. | **YOLO + Distancia Coseno:** Comparación matemática de vectores frame a frame para hallar la diferencia máxima. |
@@ -154,6 +154,8 @@ classDiagram
 ## 4. VISTA DE DESPLIEGUE (DEPLOYMENT VIEW)
 
 Ilustra la distribución física híbrida: la máquina local mantiene la persistencia de datos (PostgreSQL 3NF) y vectores (Qdrant Local) de forma permanente sin riesgo de desconexión, mientras que Google Colab Pro proporciona la potencia GPU para la inferencia pesada (YOLO Pose/Depth + Qwen3-VL Reranker).
+
+**Nota importante sobre el Worker Remoto:** El Worker de cómputo pesado se ejecuta en Google Colab Web. El usuario sube el notebook `colab_worker.template.ipynb` a colab.research.google.com, selecciona un runtime T4 GPU, y expone los endpoints FastAPI mediante túnel ngrok. La URL pública se configura en la variable de entorno `COLAB_TUNNEL_URL` del backend local.
 
 ```mermaid
 graph LR

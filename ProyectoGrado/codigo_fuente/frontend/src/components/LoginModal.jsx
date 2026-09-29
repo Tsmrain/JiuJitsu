@@ -68,21 +68,8 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       onClose();
     } catch (err) {
       console.error("Error conectando con la API de Auth:", err);
-      // Mock Fallback para pruebas sin servidor
-      const isMockAdmin = loginUserOrEmail.toLowerCase() === 'admin';
-      const isMockProfesor = loginUserOrEmail.toLowerCase() === 'profesor';
-      onLoginSuccess({
-        token: `mock-jwt-${isMockAdmin ? 'admin' : (isMockProfesor ? 'profesor' : 'user')}`,
-        user_id: isMockProfesor ? "prof-123" : "00000000-0000-0000-0000-000000000000",
-        nombre_completo: isMockAdmin ? "Administrador General" : (isMockProfesor ? "Mestre Humberto Tavares" : "Alumno Santiago"),
-        username: loginUserOrEmail,
-        email: `${loginUserOrEmail}@corpocmente.com`,
-        rol: isMockAdmin ? 'admin' : (isMockProfesor ? 'profesor' : 'alumno'),
-        sucursal_id: "11111111-1111-1111-1111-111111111111",
-        sucursal_nombre: "Corpo e Mente - Sede Principal Rio de Janeiro",
-        idioma_preferido: user?.idioma_preferido || 'es'
-      });
-      onClose();
+      setErrorMsg("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
+      setLoading(false);
     } finally {
       setLoading(false);
     }

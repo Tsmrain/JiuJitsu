@@ -43,7 +43,10 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
 
       const res = await fetch(`http://localhost:8000/api/v1/auth/usuarios/${user.user_id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
         body: JSON.stringify(payload)
       });
 

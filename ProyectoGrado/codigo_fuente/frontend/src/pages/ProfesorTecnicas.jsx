@@ -1,43 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import './ProfesorTecnicas.css';
 import { useTranslation } from '../i18n/translations';
+import TheoryManagerModal from '../components/TheoryManagerModal';
 
 const OPACIONES_CINTURON = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
-
-// Datos simulados de progreso biomecánico de alumnos para las técnicas del profesor
-const MOCK_PROGRESO_ALUMNOS = {
-  "bce12c1c-91f1-4bfb-813b-a18c5426b51e": { // Santi
-    nombre_completo: "Santi",
-    username: "santi",
-    cinturon: "Blanco",
-    evaluaciones: [
-      {
-        tecnica_nombre: "Salir de 100 kilos",
-        similitud: 88.5,
-        estado: "Excelente",
-        fecha: "Hoy, 14:30",
-        feedback: "Tu postura base es excelente y los keypoints de tu cadera coinciden con el patrón. El ángulo del brazo derecho está 15° más abierto.",
-        keypoints_coincidencia: { Cadera: "98%", Hombros: "92%", Brazos: "82%" }
-      },
-      {
-        tecnica_nombre: "Armbar (Llave de Brazo)",
-        similitud: 92.0,
-        estado: "Sobresaliente",
-        fecha: "Ayer, 18:15",
-        feedback: "Gran palanca y extensión de cadera. El cierre con los aductores fijó perfectamente el codo del oponente.",
-        keypoints_coincidencia: { Codo: "95%", CierrePiernas: "96%", ExtensionCadera: "90%" }
-      },
-      {
-        tecnica_nombre: "Triângulo",
-        similitud: 74.0,
-        estado: "Requiere Ajuste",
-        fecha: "Hace 3 días",
-        feedback: "Falta ajustar el ángulo del pie detrás de la rodilla para cerrar la arteria carótida de forma eficiente.",
-        keypoints_coincidencia: { Pantorrilla: "70%", PresionCuello: "75%", AnguloCadera: "77%" }
-      }
-    ]
-  }
-};
 
 export default function ProfesorTecnicas({ user, onClose }) {
   const [activeTab, setActiveTab] = useState('alumnos'); // 'alumnos' (default) | 'tecnicas'
@@ -47,11 +13,14 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const [loadingAlumnos, setLoadingAlumnos] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [theoryModalTecnica, setTheoryModalTecnica] = useState(null);
   const [selectedAlumnoDetail, setSelectedAlumnoDetail] = useState(null);
+  const [evaluacionesPorAlumno, setEvaluacionesPorAlumno] = useState({}); // { alumno_id: [...] }
   
   const [formData, setFormData] = useState({
     nombre: '',
-    nivel_cinturon: 'Blanco'
+    nivel_cinturon: 'Blanco',
+    teoria: ''
   });
   const [editingId, setEditingId] = useState(null);
 
@@ -64,7 +33,9 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
   const fetchTecnicas = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${user?.user_id}`);
+      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${user?.user_id}`, {
+        headers: { "Authorization": `Bearer ${user?.token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setTecnicas(data);
@@ -79,12 +50,16 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const fetchAlumnos = async () => {
     setLoadingAlumnos(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/usuarios");
+      // Profesor ve solo alumnos de su sucursal; admin ve todos
+      const sucursalQuery = user?.rol === 'profesor' && user?.sucursal_id
+        ? `?p_sucursal_id=${user.sucursal_id}`
+        : '';
+      const res = await fetch(`http://localhost:8000/api/v1/auth/alumnos${sucursalQuery}`, {
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
       if (res.ok) {
         const data = await res.json();
-        // Filtrar usuarios con rol 'alumno'
-        const listaAlumnos = data.filter(u => u.rol === 'alumno');
-        setAlumnos(listaAlumnos);
+        setAlumnos(data);
       }
     } catch (e) {
       console.error("Error cargando alumnos:", e);
@@ -93,14 +68,40 @@ export default function ProfesorTecnicas({ user, onClose }) {
     }
   };
 
+  const fetchEvaluacionesAlumno = async (alumnoId) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/auth/alumnos/${alumnoId}/evaluaciones`, {
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEvaluacionesPorAlumno(prev => ({ ...prev, [alumnoId]: data }));
+      }
+    } catch (e) {
+      console.error("Error cargando evaluaciones del alumno:", e);
+    }
+  };
+
   useEffect(() => {
-    fetchTecnicas();
-    fetchAlumnos();
+    const load = async () => {
+      await fetchTecnicas();
+      await fetchAlumnos();
+    };
+    load();
   }, [user?.user_id]);
+
+  // Nuevo useEffect: cuando cambia la lista de alumnos, cargar sus evaluaciones
+  useEffect(() => {
+    alumnos.forEach(a => {
+      if (!evaluacionesPorAlumno[a.user_id]) {
+        fetchEvaluacionesAlumno(a.user_id);
+      }
+    });
+  }, [alumnos]);
 
   const handleOpenNewModal = () => {
     setEditingId(null);
-    setFormData({ nombre: '', nivel_cinturon: 'Blanco' });
+    setFormData({ nombre: '', nivel_cinturon: 'Blanco', teoria: '' });
     setSelectedFile(null);
     setPreviewUrl(null);
     setShowModal(true);
@@ -110,7 +111,8 @@ export default function ProfesorTecnicas({ user, onClose }) {
     setEditingId(tech.id);
     setFormData({
       nombre: tech.nombre,
-      nivel_cinturon: tech.nivel_cinturon
+      nivel_cinturon: tech.nivel_cinturon,
+      teoria: '' // Usually theory is fetched, but keeping it simple for now
     });
     setSelectedFile(null);
     setPreviewUrl(tech.video_url || null);
@@ -145,7 +147,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
     try {
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
         body: JSON.stringify(formData)
       });
 
@@ -164,6 +169,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
         const videoRes = await fetch(`http://localhost:8000/api/v1/tecnicas/${savedTecnica.id}/video`, {
           method: "POST",
+          headers: { "Authorization": `Bearer ${user.token}` },
           body: videoData
         });
 
@@ -172,7 +178,29 @@ export default function ProfesorTecnicas({ user, onClose }) {
         }
       }
 
-      alert("¡Técnica y video de referencia guardados con éxito!");
+      // RAG Multimodal: Ingest theory if provided
+      if (formData.teoria.trim() !== '') {
+        try {
+          const teoriaRes = await fetch(`http://localhost:8000/api/v1/conocimiento/teoria`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${user.token}`
+            },
+            body: JSON.stringify({
+              tecnica_id: savedTecnica.id,
+              contenido_texto: formData.teoria
+            })
+          });
+          if (!teoriaRes.ok) {
+            console.error("Error al indexar la teoría en RAG Qdrant");
+          }
+        } catch (e) {
+          console.error("No se pudo conectar al endpoint RAG", e);
+        }
+      }
+
+      alert("¡Técnica, conocimiento RAG y video guardados con éxito!");
       setShowModal(false);
       fetchTecnicas();
 
@@ -187,7 +215,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const handleDelete = async (id) => {
     if (!confirm(t.confirmDeleteTecnica)) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/tecnicas/${id}`, { method: 'DELETE' });
+      const res = await fetch(`http://localhost:8000/api/v1/tecnicas/${id}`, {
+        method: 'DELETE',
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
       if (res.ok) fetchTecnicas();
     } catch (err) {
       console.error(err);
@@ -262,20 +293,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {alumnos.map(alumno => {
-                const progreso = MOCK_PROGRESO_ALUMNOS[alumno.user_id] || {
-                  nombre_completo: alumno.nombre_completo,
-                  cinturon: "Blanco",
-                  evaluaciones: [
-                    {
-                      tecnica_nombre: "Salir de 100 kilos",
-                      similitud: 88.5,
-                      estado: "Excelente",
-                      fecha: "Reciente",
-                      feedback: "Excelente postura de puente y escape de cadera.",
-                      keypoints_coincidencia: { Cadera: "98%", Hombros: "92%" }
-                    }
-                  ]
-                };
+                const evaluacionesReales = evaluacionesPorAlumno[alumno.user_id] || [];
 
                 return (
                   <div 
@@ -299,65 +317,76 @@ export default function ProfesorTecnicas({ user, onClose }) {
                         <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>{alumno.nombre_completo}</h4>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{alumno.username} • Sucursal: {alumno.sucursal_nombre}</span>
                       </div>
-                      <span className="badge-cinturon cinturon-blanco" style={{ padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white' }}>
-                        Cinturón {progreso.cinturon}
-                      </span>
                     </div>
 
-                    {/* Desglose de Técnicas Evaluadas por la IA */}
                     <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#4da6ff' }}>
-                      Progreso Biomecánico en las Técnicas Enseñadas:
+                      Progreso Biomecánico ({evaluacionesReales.length} {evaluacionesReales.length === 1 ? 'evaluación' : 'evaluaciones'}):
                     </h5>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                      {progreso.evaluaciones.map((evalItem, idx) => (
-                        <div 
-                          key={idx} 
-                          style={{
-                            background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-                          }}
-                        >
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                              <strong style={{ fontSize: '0.95rem', color: 'white' }}>{evalItem.tecnica_nombre}</strong>
-                              <span style={{
-                                fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px',
-                                background: `${getScoreColor(evalItem.similitud)}22`, color: getScoreColor(evalItem.similitud),
-                                border: `1px solid ${getScoreColor(evalItem.similitud)}`
-                              }}>
-                                {evalItem.estado}
-                              </span>
-                            </div>
+                    {evaluacionesReales.length === 0 ? (
+                      <p style={{ fontSize: '0.85rem', opacity: 0.6, fontStyle: 'italic' }}>
+                        Este alumno aún no ha subido ningún video para evaluación.
+                      </p>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                        {evaluacionesReales.map((evalItem, idx) => {
+                          const similitud = parseFloat(evalItem.porcentaje_similitud) || 0;
+                          const estadoLabel = similitud >= 85 ? 'Excelente' : (similitud >= 70 ? 'Bueno' : 'Requiere Ajuste');
+                          const fecha = evalItem.fecha_evaluacion
+                            ? new Date(evalItem.fecha_evaluacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : 'Fecha desconocida';
 
-                            {/* Barra de Progreso Biomecánico */}
-                            <div style={{ marginBottom: '0.75rem' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.2rem' }}>
-                                <span>Similitud Vectorial:</span>
-                                <strong style={{ color: getScoreColor(evalItem.similitud) }}>{evalItem.similitud}%</strong>
-                              </div>
-                              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{ width: `${evalItem.similitud}%`, height: '100%', background: getScoreColor(evalItem.similitud), transition: 'width 0.5s ease' }} />
-                              </div>
-                            </div>
-
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0', lineHeight: '1.3' }}>
-                              "{evalItem.feedback}"
-                            </p>
-                          </div>
-
-                          <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Evaluado: {evalItem.fecha}</span>
-                            <button 
-                              onClick={() => setSelectedAlumnoDetail({ alumno, evalItem })}
-                              style={{ background: 'none', border: 'none', color: '#4da6ff', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                          return (
+                            <div 
+                              key={idx} 
+                              style={{
+                                background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+                              }}
                             >
-                              Ver Detalle Keypoints
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                  <strong style={{ fontSize: '0.95rem', color: 'white' }}>{evalItem.tecnica_nombre}</strong>
+                                  <span style={{
+                                    fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px',
+                                    background: `${getScoreColor(similitud)}22`, color: getScoreColor(similitud),
+                                    border: `1px solid ${getScoreColor(similitud)}`
+                                  }}>
+                                    {estadoLabel}
+                                  </span>
+                                </div>
+
+                                <div style={{ marginBottom: '0.75rem' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.2rem' }}>
+                                    <span>Similitud Vectorial:</span>
+                                    <strong style={{ color: getScoreColor(similitud) }}>{similitud}%</strong>
+                                  </div>
+                                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${similitud}%`, height: '100%', background: getScoreColor(similitud), transition: 'width 0.5s ease' }} />
+                                  </div>
+                                </div>
+
+                                {(evalItem.feedback_gemini_es || evalItem.feedback_gemini_pt) && (
+                                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0', lineHeight: '1.3' }}>
+                                    "{evalItem.feedback_gemini_es || evalItem.feedback_gemini_pt}"
+                                  </p>
+                                )}
+                              </div>
+
+                              <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Evaluado: {fecha}</span>
+                                <button 
+                                  onClick={() => setSelectedAlumnoDetail({ alumno, evalItem })}
+                                  style={{ background: 'none', border: 'none', color: '#4da6ff', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                  Ver Detalle Keypoints
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -412,6 +441,12 @@ export default function ProfesorTecnicas({ user, onClose }) {
                     )}
                   </div>
                   <div className="tecnica-actions">
+                    <button
+                      className="btn-icon theory-btn"
+                      onClick={() => setTheoryModalTecnica(tech)}
+                    >
+                      📖 Ver Teoría
+                    </button>
                     <button className="btn-icon edit" onClick={() => handleEdit(tech)}>{t.btnEdit}</button>
                     <button className="btn-icon delete" onClick={() => handleDelete(tech.id)}>{t.btnDelete}</button>
                   </div>
@@ -435,19 +470,23 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#4da6ff' }}>
-                Coincidencia de Keypoints YOLO v8 / 11:
+                Resumen de la Evaluación:
               </div>
-              {Object.entries(selectedAlumnoDetail.evalItem.keypoints_coincidencia || {}).map(([kp, pct], i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span>{kp}:</span>
-                  <strong style={{ color: '#69db7c' }}>{pct}</strong>
-                </div>
-              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <span>Similitud:</span>
+                <strong style={{ color: '#69db7c' }}>{parseFloat(selectedAlumnoDetail.evalItem.porcentaje_similitud || 0).toFixed(1)}%</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
+                <span>Estado:</span>
+                <strong>{selectedAlumnoDetail.evalItem.estado}</strong>
+              </div>
             </div>
 
             <div style={{ fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.04)', padding: '0.8rem', borderRadius: '6px' }}>
               <strong>Retroalimentación Automática IA:</strong>
-              <p style={{ margin: '0.3rem 0 0 0', opacity: 0.8 }}>{selectedAlumnoDetail.evalItem.feedback}</p>
+              <p style={{ margin: '0.3rem 0 0 0', opacity: 0.8 }}>
+                {selectedAlumnoDetail.evalItem.feedback_gemini_es || selectedAlumnoDetail.evalItem.feedback_gemini_pt || "Sin feedback disponible."}
+              </p>
             </div>
 
             <button className="btn-primary" onClick={() => setSelectedAlumnoDetail(null)} style={{ width: '100%' }}>
@@ -478,6 +517,19 @@ export default function ProfesorTecnicas({ user, onClose }) {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label>Manual del Maestro (Teoría RAG)</label>
+                <textarea 
+                  name="teoria" 
+                  value={formData.teoria} 
+                  onChange={handleChange} 
+                  placeholder="Ej. En el Armbar, la cadera debe estar pegada al hombro..."
+                  rows="3"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.6rem', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px' }}
+                />
+                <span style={{fontSize: '0.75rem', opacity: 0.7, color: 'var(--brand-red)'}}>* La IA de Gemini leerá esto para dar feedback preciso a tus alumnos.</span>
               </div>
 
               <div className="form-group">
@@ -524,6 +576,15 @@ export default function ProfesorTecnicas({ user, onClose }) {
             </form>
           </div>
         </div>
+      )}
+
+      {theoryModalTecnica && (
+        <TheoryManagerModal
+          isOpen={true}
+          user={user}
+          tecnica={theoryModalTecnica}
+          onClose={() => setTheoryModalTecnica(null)}
+        />
       )}
     </div>
   );

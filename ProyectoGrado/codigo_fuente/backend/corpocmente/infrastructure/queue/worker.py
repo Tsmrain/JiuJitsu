@@ -6,7 +6,8 @@ import requests
 
 from corpocmente.config import settings
 from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
-from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter, QwenRerankerAdapter
+from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
+from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -29,8 +30,8 @@ class ColabAIWorker:
         logger.info("Inicializando Adaptadores e Interfaces de IA en el Worker...")
         self.yolo = YOLOPoseAdapter()
         self.qdrant = QdrantVectorAdapter()
-        self.qwen = QwenRerankerAdapter()
         self.gemini = GeminiApiAdapter()
+        self.qwen = QwenEmbeddingAdapter()
         
         self.facade = IntelligenceAnalysisFacade(
             yolo_adapter=self.yolo,

@@ -125,7 +125,8 @@ export default function VideoUpload({ user, onUploadStart }) {
     if (file && selectedTecnica) {
       onUploadStart(file, {
         ...selectedTecnica,
-        profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Mestre Oficial"
+        profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Mestre Oficial",
+        profesor_id: selectedProfesor?.user_id
       });
     }
   };

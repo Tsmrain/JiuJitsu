@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import VideoUpload from './pages/VideoUpload'
 import FeedbackView from './pages/FeedbackView'
@@ -14,6 +14,7 @@ function App() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [selectedTecnica, setSelectedTecnica] = useState(null);
+  const [currentEvaluacionId, setCurrentEvaluacionId] = useState(null);
 
   // Estado de Autenticación
   const [user, setUser] = useState(null);
@@ -33,54 +34,70 @@ function App() {
     formData.append("video", file);
     if (tecnica) {
       formData.append("tecnica_id", tecnica.id);
+      formData.append("tecnica_nombre", tecnica.nombre);
+      if (tecnica.profesor_id) {
+        formData.append("profesor_id", tecnica.profesor_id);
+      }
     }
+    formData.append("idioma", user?.idioma_preferido || 'es');
+    formData.append("alumno_id", user.user_id);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/evaluaciones/validar-spam", {
+      const response = await fetch("http://localhost:8000/api/v1/evaluaciones/analizar", {
         method: "POST",
+        headers: { "Authorization": `Bearer ${user.token}` },
         body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(`Error: ${errorData.detail || 'El video fue rechazado por la IA.'}`);
+        alert(`Error: ${errorData.detail || 'Error al procesar el video.'}`);
         setAppState('IDLE');
         setUploadProgress(0);
         return;
       }
-
-      const uploadInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(uploadInterval);
-            startProcessing();
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      
+      const data = await response.json();
+      setCurrentEvaluacionId(data.evaluacion_id);
+      setUploadProgress(100);
+      setAppState('PROCESSING');
 
     } catch (error) {
-      console.error("Error validando el video:", error);
-      alert("Hubo un error de conexión con el servidor (Filtro SPAM). Asegúrate de que el backend esté corriendo.");
+      console.error("Error subiendo el video:", error);
+      alert("Hubo un error de conexión con el servidor. Asegúrate de que el backend esté corriendo.");
       setAppState('IDLE');
       setUploadProgress(0);
     }
   };
 
-  const startProcessing = () => {
-    setAppState('PROCESSING');
-    
-    setTimeout(() => {
-      setResult({
-        similitud: 88.5,
-        feedback: (user?.idioma_preferido || 'es') === 'pt' 
-          ? "Sua postura base é excelente e os keypoints do seu quadril coincidem com o padrão.\n\nNo entanto, o ângulo do seu braço direito durante a pegada está ligeiramente desviado (15 graus mais aberto que o professor). Isso reduz a alavanca. Ajuste o cotovelo mais perto das costelas para finalizar o movimento."
-          : "Tu postura base es excelente y los keypoints de tu cadera coinciden con el patrón.\n\nSin embargo, el ángulo de tu brazo derecho durante el agarre está ligeramente desviado (15 grados más abierto que el profesor). Esto reduce la palanca. Ajusta el codo más cerca de tus costillas para finalizar el movimiento."
-      });
-      setAppState('FEEDBACK');
-    }, 3000);
-  };
+  useEffect(() => {
+    let interval;
+    if (appState === 'PROCESSING' && currentEvaluacionId) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`http://localhost:8000/api/v1/evaluaciones/${currentEvaluacionId}`, {
+            headers: { "Authorization": `Bearer ${user.token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.estado === 'completado') {
+              setResult({
+                similitud: data.similitud,
+                feedback: data.feedback,
+                video_referencia_url: data.video_referencia_url,
+                video_referencia_profesor_nombre: data.video_referencia_profesor_nombre,
+              });
+              setAppState('FEEDBACK');
+              setCurrentEvaluacionId(null);
+            }
+          }
+        } catch(e) {
+          console.error("Error consultando estado:", e);
+        }
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [appState, currentEvaluacionId]);
 
   const handleReset = () => {
     setAppState('IDLE');
@@ -238,7 +255,7 @@ function App() {
         {(appState === 'UPLOADING' || appState === 'PROCESSING') && (
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem'}}>
             <ProgressRing 
-              value={appState === 'UPLOADING' ? uploadProgress : 100} 
+              value={appState === 'UPLOADING' ? uploadProgress : 'indeterminate'} 
               statusText={appState === 'UPLOADING' ? t.uploadingVideo : t.processingIA} 
             />
             {appState === 'PROCESSING' && (

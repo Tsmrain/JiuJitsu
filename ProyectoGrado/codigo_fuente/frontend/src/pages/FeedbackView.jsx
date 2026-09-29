@@ -15,6 +15,12 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
 
   const isPt = user?.idioma_preferido === 'pt';
 
+  // URL absoluta del video (el backend devuelve /static/videos/xxx.mp4)
+  const API_BASE = "http://localhost:8000";
+  const videoUrl = result.video_referencia_url
+    ? `${API_BASE}${result.video_referencia_url}`
+    : null;
+
   return (
     <div className="feedback-container">
       <div className="feedback-header">
@@ -30,6 +36,65 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
           <h3 style={{ margin: '0.25rem 0', fontSize: '1.25rem' }}>{tecnica.nombre}</h3>
           <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.8 }}>
             <strong>{t.patronRefLabel}</strong> {tecnica.profesorRef}
+          </p>
+        </div>
+      )}
+
+      {/* ── Video de Referencia del Profesor ────────────────── */}
+      {videoUrl && (
+        <div
+          className="glass-panel"
+          style={{
+            padding: '1.25rem 1.5rem',
+            borderRadius: '12px',
+            borderLeft: '4px solid var(--brand-red)',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
+              color: 'var(--brand-red)',
+              letterSpacing: '1px',
+            }}
+          >
+            {isPt ? 'VÍDEO DE REFERÊNCIA DO PROFESSOR' : 'VIDEO DE REFERENCIA DEL PROFESOR'}
+          </span>
+
+          {result.video_referencia_profesor_nombre && (
+            <p style={{ margin: '0.35rem 0 0.75rem 0', fontSize: '0.9rem', opacity: 0.85 }}>
+              <strong>{isPt ? 'Demonstração de' : 'Demostración de'}:</strong>{' '}
+              {result.video_referencia_profesor_nombre}
+            </p>
+          )}
+
+          <video
+            src={videoUrl}
+            controls
+            playsInline
+            preload="metadata"
+            style={{
+              width: '100%',
+              maxHeight: '400px',
+              borderRadius: '8px',
+              backgroundColor: '#000',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              display: 'block',
+            }}
+          />
+
+          <p
+            style={{
+              margin: '0.75rem 0 0 0',
+              fontSize: '0.8rem',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.5,
+            }}
+          >
+            {isPt
+              ? 'Compare sua execução com o padrão do professor para entender as diferenças biomecânicas apontadas pela IA abaixo.'
+              : 'Compara tu ejecución contra el patrón del profesor para entender las diferencias biomecánicas que la IA señala abajo.'}
           </p>
         </div>
       )}

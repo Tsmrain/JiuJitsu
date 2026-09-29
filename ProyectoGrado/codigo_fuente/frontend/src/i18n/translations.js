@@ -39,6 +39,9 @@ export const translations = {
     similarityLabel: "Similitud Biomecánica",
     detailSummary: "Ver Detalle Biomecánico Completo",
     btnReset: " Evaluar Otra Técnica",
+    videoReferenciaLabel: "VIDEO DE REFERENCIA DEL PROFESOR",
+    videoReferenciaDemoDe: "Demostración de",
+    videoReferenciaHint: "Compara tu ejecución contra el patrón del profesor para entender las diferencias biomecánicas que la IA señala abajo.",
 
     // ProfesorTecnicas Page
     tecnicasTitle: "Catálogo de Técnicas",
@@ -152,6 +155,9 @@ export const translations = {
     similarityLabel: "Semelhança Biomecânica",
     detailSummary: "Ver Detalhe Biomecânico Completo",
     btnReset: " Avaliar Outra Técnica",
+    videoReferenciaLabel: "VÍDEO DE REFERÊNCIA DO PROFESSOR",
+    videoReferenciaDemoDe: "Demonstração de",
+    videoReferenciaHint: "Compare sua execução com o padrão do professor para entender as diferenças biomecânicas apontadas pela IA abaixo.",
 
     // ProfesorTecnicas Page
     tecnicasTitle: "Catálogo de Técnicas",

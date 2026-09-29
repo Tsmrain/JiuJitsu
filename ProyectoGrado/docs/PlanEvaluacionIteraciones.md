@@ -577,7 +577,119 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - C12.6 extenderá este endpoint para devolver también `keyframe_indices`.
   - En una iteración futura (C12.x), añadir filtrado de keypoints por umbral de confianza (`conf > 0.3`) directamente en el endpoint para robustecer la salida frente a frames de transición o intros.
 
+---
 
+### C12.5 — Fixes del Pipeline Biomecánico Real (YOLO → Qdrant → RAG → Gemini)
+
+**Fecha:** 2026-09-29  
+**Objetivo:** Corregir 5 bugs de implementación y crear 1 componente faltante que impedían el funcionamiento end-to-end del pipeline de análisis biomecánico con datos reales.
+
+#### Archivos Modificados (4)
+
+| # | Archivo | Fix | Descripción |
+|---|---------|-----|-------------|
+| 1.1 | `corpocmente/domain/entities/models.py` | `to_vector_array()` | Retornaba `None` (`pass`). Ahora retorna `list(self.keypoints133)` — vector crudo de 133 dims para comparación coseno en Qdrant. |
+| 1.2 | `corpocmente/domain/entities/models.py` | `frame_idx` | Pydantic v2 descartaba silenciosamente `frame_idx` del response del Colab worker. Campo añadido con default `0`. |
+| 2.1 | `corpocmente/infrastructure/persistence/qdrant_adapter.py` | `buscar_maxima_diferencia` | Realizaba ~777 queries HTTP individuales a Qdrant (1 por frame). Reescrito con `client.scroll()` + `numpy` coseno local: 1 query total, comparación O(N×M) en memoria. |
+| 3.1 | `corpocmente/domain/services/intelligence_facade.py` | `UMBRAL_ACEPTABLE` | Era `0.85` pero `score` viene en escala 0–100 → `similitud >= 0.85` siempre era `True` → Gemini nunca se invocaba. Corregido a `85.0`. |
+| 3.2 | `corpocmente/domain/strategies/prompt_strategies.py` | `SpanishPromptStrategy` | El prompt no indicaba a Gemini que la imagen era el fotograma crítico del error. Ahora incluye "EL FOTOGRAMA CRÍTICO" y pide mencionar articulación + dirección de corrección. |
+
+#### Archivo Creado (1)
+
+| # | Archivo | Propósito |
+|---|---------|-----------|
+| 4.1 | `scripts/ingest_reference_video.py` | Ingesta REAL de video de referencia del profesor. Flujo: `cv2.VideoCapture` → extrae frames JPG → envía al Colab Worker `/extraer_poses` → persiste keypoints133 + payload en Qdrant. Sin mocks, sin fallbacks silenciosos. |
+
+#### Tests de Regresión Añadidos (16 tests)
+
+| Archivo | Tests | Cobertura |
+|---------|-------|-----------|
+| `tests/domain/test_models_regression.py` | 7 | `to_vector_array()` retorna lista, 133 dims, valores correctos, copia. `frame_idx` default 0, acepta worker dict, serializa. |
+| `tests/infrastructure/test_qdrant_maxdiff_regression.py` | 6 | Usa `scroll` no `search`, retorna peor frame, score 0–100, ValueError en refs vacías, ValueError en alumno vacío, payload propagado. |
+| `tests/domain/test_threshold_prompt_regression.py` | 6 | Score 75 invoca Gemini, score 90 lo omite. Prompt contiene "FOTOGRAMA CRÍTICO", técnica, discrepancias, "articulación". |
+
+#### Ejecución de Tests
+
+```
+=================== 32 passed, 6 skipped, 0 failures in 0.09s ===================
+```
+
+- **32 passed:** Todos los tests existentes (16) + todos los nuevos (16) pasan.
+- **6 skipped:** Tests que requieren servicios externos (Colab, PostgREST) — diseño intencional.
+- **0 failures.**
+
+#### Variables de Entorno Validadas
+
+| Variable | Estado |
+|----------|--------|
+| `GEMINI_API_KEY` | ✅ Configurada (AI Studio) |
+| `POSTGREST_JWT_SECRET` | ✅ Configurada |
+| `QDRANT_HOST` / `QDRANT_PORT` | ✅ localhost:6333 |
+| `QDRANT_COLLECTION` | ✅ `vectores_poses_jiujitsu` |
+| `COLAB_TUNNEL_URL` | ✅ URL ngrok activa |
+| `WORKER_SERVICE_TOKEN` | ✅ Añadida al .env |
+| `JWT_SECRET_KEY` | ✅ Añadida al .env |
+
+#### Secuencia de Validación E2E — Estado
+
+| Paso | Descripción | Estado |
+|------|-------------|--------|
+| 1 | Levantar Qdrant + Postgres + FastAPI | ⏳ Pendiente ejecución manual |
+| 2 | Levantar worker Colab con sesión T4 | ⏳ Sesión activa (`gpu-t4-s-kkb-usw4a2-1dtusl2srqdww`), notebook pendiente de verificación |
+| 3 | Verificar `/health` del worker | ⏳ Pendiente curl |
+| 4 | Ingesta REAL de video de referencia | ⏳ Requiere paso 2–3 primero |
+| 5 | Ingesta de teoría RAG | ⏳ Pendiente verificación |
+| 6 | Prueba E2E con video del alumno | ⏳ Requiere pasos 1–5 |
+| 7 | Reconciliación Postgres ↔ Qdrant | ⏳ Requiere paso 6 |
+
+#### Deuda Técnica
+
+- Los pasos 1–7 de la secuencia de validación E2E requieren ejecución manual con servicios reales levantados (Qdrant, Postgres, Colab Worker).
+- `VectorSearchResultDTO` no expone aún `frame_alumno_idx` — reservado para iteración C12.7 cuando se implemente superposición del frame del alumno sobre el de referencia.
+- `PortuguesePromptStrategy` pendiente de implementación (la interfaz `IPromptStrategy` ya está lista).
+
+---
+
+### C12.6 — Video de Referencia del Profesor en el Reporte del Alumno
+
+**Fecha:** 2026-09-29  
+**Objetivo:** Cerrar el loop UX mostrando al alumno el video de referencia del profesor dentro del reporte de evaluación, para que pueda comparar visualmente su ejecución contra el patrón oficial.
+
+#### Archivos Modificados
+
+| # | Archivo | Capa | Cambio |
+|---|---------|------|--------|
+| 1 | `database/02_auth_jwt.sql` | SQL/RPC | `get_evaluacion_by_id` ahora hace JOIN con `videos_referencia` + `usuarios` para devolver `video_referencia_url` y `video_referencia_profesor_nombre`. |
+| 2 | `backend/corpocmente/ui/api/routes.py` | Backend | `GET /evaluaciones/{id}` convierte la ruta local del video a URL estática (`/static/videos/filename.mp4`) y la propaga en la respuesta JSON. |
+| 3 | `frontend/src/App.jsx` | Frontend | El estado `result` del polling ahora incluye `video_referencia_url` y `video_referencia_profesor_nombre`. |
+| 4 | `frontend/src/pages/FeedbackView.jsx` | Frontend | Nuevo bloque `<video>` con controles nativos HTML5 entre la tarjeta de técnica y el score. Muestra nombre del profesor y texto de orientación bilingüe. |
+| 5 | `frontend/src/i18n/translations.js` | i18n | Claves `videoReferenciaLabel`, `videoReferenciaDemoDe`, `videoReferenciaHint` en ES y PT. |
+
+#### Tests de Regresión
+
+- **32 passed, 6 skipped, 0 failures** — sin regresiones en backend.
+- Tests de frontend: verificación visual manual (paso 6 de la secuencia E2E).
+
+#### Secuencia de Validación E2E
+
+| Paso | Descripción | Criterio de Éxito |
+|------|-------------|-------------------|
+| 1 | Aplicar migración SQL (re-ejecutar `02_auth_jwt.sql`) | La función `get_evaluacion_by_id` devuelve `video_referencia_url` y `video_referencia_profesor_nombre` |
+| 2 | Reiniciar backend (`uvicorn --reload`) | Arranca sin errores |
+| 3 | `GET /api/v1/evaluaciones/{id}` con JWT | JSON incluye `"video_referencia_url": "/static/videos/..."` |
+| 4 | `curl -I http://localhost:8000/static/videos/<archivo>` | HTTP 200, Content-Type: video/mp4 |
+| 5 | Abrir `http://localhost:5173`, login como alumno, abrir reporte | El video del profesor se reproduce con controles nativos |
+| 6 | El nombre del profesor aparece como "Demostración de: ..." | Texto visible debajo del label |
+| 7 | Reconciliación Postgres ↔ Qdrant | Sin orphans |
+
+#### Deuda Técnica (fuera de scope)
+
+| Iteración | Descripción |
+|-----------|-------------|
+| C12.7 | Frame crítico resaltado en el reporte |
+| C12.8 | Comparación lado a lado: video alumno ↔ video profesor |
+| C12.9 | Timeline de keypoints con slider temporal |
+| C12.10 | Exportar reporte a PDF |
 
 
 

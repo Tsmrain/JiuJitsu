@@ -269,3 +269,42 @@ La Fase de Construcción sigue el Proceso Unificado (UP) de Craig Larman, constr
 
 ---
 *(La fase de **Transición** contemplará la corrección de errores finales, pruebas beta en las sedes de Corpo e Mente, y el despliegue en producción).*
+
+### 5.8 Iteración C9: Integración Multimodal (YOLO + Qwen + Gemini)
+- **Caso de Uso (UC9 - RAG Multimodal con Qwen para Libros y Videos):**
+  - **Actores:** Alumno / Atleta, Profesor
+  - **Flujo y Responsabilidades (Larman - Asignación de Responsabilidades):**
+    - **Gestión de Conocimiento (Profesor):** El profesor puede subir material teórico (libros, manuales) y videos. **QwenEmbeddingAdapter** asume la responsabilidad de procesar estos archivos y generar sus embeddings multimodales (2048 dimensiones).
+    - **Base de Datos Vectorial (Qdrant):** Almacena estos embeddings masivos (2048-dim). Se convierte en el núcleo del sistema **RAG (Retrieval-Augmented Generation)**.
+    - **YOLOPoseAdapter (Experto en Extracción Cruda):** Sigue siendo responsable de la cinemática. Extrae keypoints para aislar el instante exacto del error (el fotograma crítico).
+    - **Evaluación RAG (Alumno):** Una vez que YOLO detecta el fotograma crítico del alumno, Qwen lo vectoriza. Este vector se usa para consultar a Qdrant y recuperar la teoría exacta (del libro del profesor) o referencias visuales similares.
+    - **GeminiApiAdapter (Cerebro Pedagógico):** Recibe el análisis crudo de YOLO junto con la **teoría recuperada por el RAG (Qwen+Qdrant)**, y consolida esta información para redactar un feedback profundamente técnico y empático.
+  - **Justificación de Diseño (Domain Model & Variaciones Protegidas):**
+    - Se consagra el patrón **RAG Multimodal**. Qwen no es solo un extractor de características, sino el motor de recuperación de conocimiento (teoría y práctica).
+    - **Qwen3-VL** actúa puramente como Motor de Vectorización Multimodal (RAG).
+    - **Gemini** se exime del cálculo matemático y de la búsqueda, actuando como la interfaz generativa (NLP) que explica la teoría recuperada.
+    - `IntelligenceAnalysisFacade` orquesta: YOLO (Fallo) -> Qwen (Vectorizar) -> Qdrant (Recuperar Libro/Video) -> Gemini (Explicar).
+
+### 5.9 Iteración C11: Gestión Completa de Conocimiento RAG (Postgres + Qdrant + UI)
+
+- **Caso de Uso (UC10 - Gestión de Teoría del Profesor con CRUD Completo):**
+  - **Actores:** Profesor, Alumno (consumidor indirecto vía feedback enriquecido)
+  - **Flujo:**
+    1. El profesor sube teoría desde `ProfesorTecnicas.jsx` (campo "Manual del Maestro").
+    2. El backend (`IngestKnowledgeUseCase`) vectoriza los chunks vía Colab Qwen y los persiste en **Qdrant** (búsqueda vectorial) y en **PostgreSQL** (`teoria_referencia`, trazabilidad).
+    3. El profesor puede ver los chunks que subió vía `TheoryManagerModal.jsx` (consume `GET /conocimiento/teoria/{tecnica_id}?solo_mios=true`).
+    4. El profesor puede borrar toda su teoría vía `DELETE /conocimiento/teoria/{tecnica_id}` (sincroniza Postgres + Qdrant).
+  - **Justificación de Diseño (Mannino 3NF & Trazabilidad):**
+    - Nueva entidad `teoria_referencia` con FK a `tecnicas`, `usuarios` (profesor) y `sucursales`. Índices separados por cada FK.
+    - **Linkage bidireccional Postgres ↔ Qdrant:** `qdrant_point_id UUID UNIQUE` actúa como FK lógica entre motores. PostgreSQL es la fuente de verdad; Qdrant es índice reconstruible.
+    - **RLS habilitada** en `teoria_referencia`; todo acceso se hace vía RPC `SECURITY DEFINER` (`admin_save_teoria_chunk`, `admin_list_teoria_by_tecnica`, `admin_delete_teoria_by_tecnica_profesor`).
+  - **Hallazgos arquitectónicos (Larman - Feedback real):**
+    - La verificación E2E de C11.0 reveló que la teoría vivía **exclusivamente en Qdrant**, sin trazabilidad ni CRUD. El "checkbox de teoría" en `ProfesorTecnicas.jsx` era un write-only field.
+    - Se corrigió introduciendo una **capa relacional de metadata** + endpoints HTTP de gestión + UI de visualización/borrado.
+    - **Deuda técnica pendiente (C11.4):** El pipeline de **consumo** de la teoría (recuperación RAG en `IntelligenceAnalysisFacade`) tiene 3 bugs de integración (endpoint `/embed` inexistente, formato JSON vs form-data, vector sin nombre en Qdrant). El trabajo de C11.1-C11.3 es correcto; el evaluador no consume lo persistido aún.
+  - **Refinamiento del Modelo Conceptual:**
+    - `Tecnica` (1) ──── (N) `TeoriaReferencia` ──── (1) `Usuario` (profesor)
+    - Cada `TeoriaReferencia` es un chunk vectorizable con trazabilidad individual.
+  - **Justificación de Alcance Timeboxed:**
+    - Se dividió en 4 mini-iteraciones (C11.1 a C11.3) + 1 backlog (C11.4). Cada una entrega un incremento probado. Esto respeta el principio de Larman: **"Small steps, rapid feedback, and adaptation"**.
+

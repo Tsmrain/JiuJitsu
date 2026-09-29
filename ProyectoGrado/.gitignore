@@ -2,3 +2,5 @@
 docs/TFGdocsLatex/
 *.docx
 !requirements.txt
+postgrest
+postgrest.conf

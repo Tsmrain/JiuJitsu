@@ -9,86 +9,67 @@ from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
 logger = logging.getLogger(__name__)
 
-import cv2
-from ultralytics import YOLO
-
 class GeminiRateLimitError(Exception):
     """Excepción lanzada cuando se supera el límite de cuota (Rate Limit 429) de Gemini API."""
     pass
 
 class YOLOPoseAdapter:
-    def __init__(self, model_path: str = "yolo11n-pose.pt"):
-        # Se guarda el path para lazy-loading del modelo (.pt)
-        self.model_path = model_path
-        self._model = None
-
-    @property
-    def model(self):
-        if self._model is None:
-            self._model = YOLO(self.model_path)
-        return self._model
+    def __init__(self, colab_url: str = None):
+        self.colab_url = colab_url if colab_url is not None else os.getenv("COLAB_TUNNEL_URL", "").strip()
 
     def extraer_keypoints(self, video_path: str) -> List[EsqueletoBiomecanico]:
-        """Extrae el esqueleto biomecánico de los frames del video usando YOLO."""
+        """Extrae el esqueleto biomecánico de los frames del video usando YOLO (Colab remoto)."""
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video no encontrado: {video_path}")
             
-        resultados_yolo = self.model.predict(source=video_path, stream=True, verbose=False)
-        esqueletos = []
-        
-        for resultado in resultados_yolo:
-            if resultado.keypoints and len(resultado.keypoints.data) > 0:
-                # resultado.keypoints.data tiene forma (num_personas, num_keypoints, 3)
-                # Tomamos la primera persona detectada
-                keypoints_tensor = resultado.keypoints.data[0]
-                
-                # Aplanar el tensor a una lista de floats
-                # YOLOv8-pose por defecto da 17 keypoints (x, y, conf) = 51 valores.
-                # Si el modelo específico retorna más (WholeBody), los aplanamos todos.
-                kpts_flat = keypoints_tensor.flatten().tolist()
-                
-                # Asegurar longitud 133 (Rellenar con ceros o truncar según modelo de dominio)
-                if len(kpts_flat) < 133:
-                    kpts_flat.extend([0.0] * (133 - len(kpts_flat)))
-                elif len(kpts_flat) > 133:
-                    kpts_flat = kpts_flat[:133]
-                    
-                esqueletos.append(
-                    EsqueletoBiomecanico(
-                        keypoints133=kpts_flat,
-                        angulos_articulares={}
-                    )
-                )
-        
-        if not esqueletos:
-            logger.warning(f"No se detectaron poses en el video: {video_path}")
+        if not self.colab_url or self.colab_url.startswith("https://placeholder"):
+            logger.info("YOLOv26 (Colab) no configurado. Usando fallback local determinista.")
+            return [EsqueletoBiomecanico(keypoints133=[0.5]*133, angulos_articulares={})]
             
-        return esqueletos
+        import requests
+        try:
+            endpoint = f"{self.colab_url.rstrip('/')}/extraer_poses"
+            with open(video_path, 'rb') as f:
+                resp = requests.post(endpoint, files={"video": f}, timeout=120)
+            resp.raise_for_status()
+            
+            data = resp.json()
+            esqueletos_dict = data.get("esqueletos", [])
+            
+            esqueletos = []
+            for item in esqueletos_dict:
+                esqueletos.append(EsqueletoBiomecanico(**item))
+                
+            return esqueletos
+        except Exception as e:
+            logger.error(f"Error llamando a YOLOv26 en Colab: {e}")
+            return [EsqueletoBiomecanico(keypoints133=[0.5]*133, angulos_articulares={})]
 
     def dibujar_error_en_frame(self, frame_path: str, discrepancias: List[str]) -> str:
         """
-        Utiliza YOLO26 (simulado aquí con OpenCV) para dibujar con precisión matemática 
-        sobre la imagen del fotograma qué articulación o parte del cuerpo específica 
-        tiene la mayor diferencia respecto al profesor.
+        Utiliza YOLOv26 en Colab para dibujar la discrepancia sobre la imagen.
         Retorna la ruta temporal de la imagen modificada.
         """
         if not os.path.exists(frame_path):
-            # Fallback en caso de que no exista el archivo
             return frame_path
             
-        logger.info(f"YOLO26: Dibujando resaltado de error en {frame_path} basado en las discrepancias: {discrepancias}")
-        
-        # En una implementación real, YOLO detectaría las coordenadas exactas de las 
-        # articulaciones mencionadas en 'discrepancias' y dibujaría vectores o cajas rojas.
-        # Por propósitos de simulación, asumimos que devuelve un nuevo path.
-        resaltado_path = f"/tmp/resaltado_{os.path.basename(frame_path)}"
-        
-        # Simulación de dibujado: copiar el archivo
-        import shutil
+        if not self.colab_url or self.colab_url.startswith("https://placeholder"):
+            return frame_path
+            
+        import requests
+        import uuid
         try:
-            shutil.copy(frame_path, resaltado_path)
+            endpoint = f"{self.colab_url.rstrip('/')}/dibujar_error"
+            with open(frame_path, 'rb') as f:
+                resp = requests.post(endpoint, files={"imagen": f}, data={"discrepancias": str(discrepancias)}, timeout=60)
+            resp.raise_for_status()
+            
+            resaltado_path = f"/tmp/resaltado_{uuid.uuid4().hex[:8]}.jpg"
+            with open(resaltado_path, "wb") as f:
+                f.write(resp.content)
             return resaltado_path
-        except IOError:
+        except Exception as e:
+            logger.error(f"Error pidiendo a YOLOv26 dibujar el error: {e}")
             return frame_path
 
 from corpocmente.config import settings

@@ -14,12 +14,26 @@ class Settings(BaseSettings):
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "vectores_poses_jiujitsu"
     
+    # Colab Worker Tunnel URL
+    COLAB_TUNNEL_URL: str = ""
+    
     # PostgreSQL / PostgREST
     POSTGREST_URL: str = "http://localhost:3000"
     POSTGREST_JWT_SECRET: str = ""
     
     # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379/0"
+    
+    # CORS — lista separada por comas de orígenes permitidos
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:4173"
+    
+    # Worker Service Token (para autenticar al Colab Worker)
+    WORKER_SERVICE_TOKEN: str = "dev_worker_token_change_in_prod"
+    
+    # JWT para autenticación de usuarios
+    JWT_SECRET_KEY: str = "dev_jwt_secret_change_in_prod_min_32_chars_long"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRATION_HOURS: int = 24
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

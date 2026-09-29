@@ -3,6 +3,7 @@ from typing import List, Dict, Optional
 from uuid import UUID
 
 class EsqueletoBiomecanico(BaseModel):
+    frame_idx: int = 0
     keypoints133: List[float] = Field(..., min_length=133, max_length=133)
     angulos_articulares: Dict[str, float] = Field(default_factory=dict)
     
@@ -10,7 +11,11 @@ class EsqueletoBiomecanico(BaseModel):
         pass
         
     def to_vector_array(self) -> List[float]:
-        pass
+        """
+        Retorna el vector crudo de 133 dims para comparación por similitud coseno
+        contra la colección Qdrant `vectores_poses_jiujitsu` (size=133).
+        """
+        return list(self.keypoints133)
 
 class Evaluacion(BaseModel):
     id: UUID

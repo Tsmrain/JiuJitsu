@@ -212,3 +212,16 @@
   gap: 1rem;
   margin-top: 2rem;
 }
+
+.btn-icon.theory-btn {
+  flex-basis: 100%;
+  background: rgba(208, 17, 24, 0.12);
+  border: 1px solid var(--brand-red);
+  color: #ff8a8a;
+}
+
+.btn-icon.theory-btn:hover {
+  background: rgba(208, 17, 24, 0.25);
+  color: #ff6b6b;
+}
+

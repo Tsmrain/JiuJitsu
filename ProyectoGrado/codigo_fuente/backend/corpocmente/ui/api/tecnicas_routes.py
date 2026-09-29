@@ -1,196 +1,204 @@
 import os
 import shutil
-import tempfile
 from uuid import UUID, uuid4
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form, Header
 from pydantic import BaseModel
+
+from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
+from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_staff
 
 router = APIRouter(prefix="/api/v1/tecnicas", tags=["Técnicas"])
 
-# --- Modelos Pydantic ---
+
 class TecnicaCreate(BaseModel):
     nombre: str
     nivel_cinturon: str
 
+
 class TecnicaResponse(TecnicaCreate):
     id: UUID
-    # Campos dinámicos en base a los videos que haya subido el profesor
     tiene_video: bool = False
     video_url: Optional[str] = None
 
-import json
 
-# --- Mock Databases en Memoria (Hasta conectar Postgres) ---
-TECNICAS_DB = [
-    {
-        "id": UUID("d3b07384-d9a4-4f6c-947b-11347076a5b6"),
-        "nombre": "Armbar (Llave de Brazo)",
-        "nivel_cinturon": "Blanco"
-    },
-    {
-        "id": UUID("e8b15394-d9a4-4f6c-947b-11347076a5b7"),
-        "nombre": "Triângulo",
-        "nivel_cinturon": "Blanco"
-    },
-    {
-        "id": UUID("a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab"),
-        "nombre": "Salir de 100 kilos",
-        "nivel_cinturon": "Blanco"
-    }
-]
-
-# Tabla asociativa: Un profesor sube un video para una técnica
-VIDEOS_REFERENCIA_DB = []
-
-# Para guardar temporalmente videos en desarrollo
 UPLOAD_DIR = "/tmp/corpocmente_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-DB_FILE = "/tmp/corpocmente_tecnicas_db.json"
 
-# Auto-detectar video subido previo
-_existing_files = [f for f in os.listdir(UPLOAD_DIR) if f.endswith(".mp4") or f.endswith(".mov") or f.endswith(".webm")]
-if _existing_files:
-    _video_file_path = os.path.join(UPLOAD_DIR, _existing_files[0])
-    VIDEOS_REFERENCIA_DB.append({
-        "id": UUID("f1e2d3c4-b5a6-4f7e-8d9c-0123456789cd"),
-        "tecnica_id": UUID("a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab"),
-        "profesor_id": UUID("7e455a7d-cbc8-4190-9a10-3b959f6425fc"), # Profesor Mike
-        "url_video_local": _video_file_path,
-        "vector_qdrant_id": UUID("11111111-2222-3333-4444-555555555555")
-    })
 
-def _save_db():
-    try:
-        data = {
-            "tecnicas": [{**t, "id": str(t["id"])} for t in TECNICAS_DB],
-            "videos": [{**v, "id": str(v["id"]), "tecnica_id": str(v["tecnica_id"]), "profesor_id": str(v["profesor_id"])} for v in VIDEOS_REFERENCIA_DB]
-        }
-        with open(DB_FILE, "w") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        print("Error saving DB:", e)
+def get_db():
+    return PostgrestClient()
 
-def _load_db():
-    global TECNICAS_DB, VIDEOS_REFERENCIA_DB
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r") as f:
-                data = json.load(f)
-                if data.get("tecnicas"):
-                    TECNICAS_DB = [{**t, "id": UUID(t["id"])} for t in data["tecnicas"]]
-                if data.get("videos"):
-                    VIDEOS_REFERENCIA_DB = [
-                        {**v, "id": UUID(v["id"]), "tecnica_id": UUID(v["tecnica_id"]), "profesor_id": UUID(v["profesor_id"])}
-                        for v in data["videos"]
-                    ]
-        except Exception as e:
-            print("Error loading DB:", e)
 
-_load_db()
+def require_staff(authorization: Optional[str]) -> dict:
+    """Permite admin o profesor."""
+    caller = require_auth(authorization)
+    if caller.get("role") not in ("admin", "profesor"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requieren privilegios de profesor o administrador."
+        )
+    return caller
+
 
 @router.get("", response_model=List[TecnicaResponse], status_code=status.HTTP_200_OK)
 async def listar_tecnicas(profesor_id: Optional[UUID] = None):
     """
-    Lista todas las técnicas del catálogo global.
-    Si se provee profesor_id, cruza la información para indicar si el profesor ya subió un video para la técnica.
+    Lista todas las técnicas del catálogo global (público).
+    Si se provee profesor_id, marca las que ese profesor ya tiene con video.
     """
+    db = get_db()
+    try:
+        rows = db.rpc("get_tecnicas_with_videos", {})
+    except Exception:
+        rows = []
+
+    # Agrupar por técnica (una técnica puede tener varios videos de distintos profesores)
+    tecnicas_map: dict = {}
+    for r in rows:
+        tid = r["id"]
+        if tid not in tecnicas_map:
+            tecnicas_map[tid] = {
+                "id": tid,
+                "nombre": r["nombre"],
+                "nivel_cinturon": r["nivel_cinturon"],
+                "videos": []
+            }
+        if r.get("video_id"):
+            tecnicas_map[tid]["videos"].append({
+                "profesor_id": r.get("video_profesor_id"),
+                "url": r.get("video_url")
+            })
+
     resultados = []
-    for t in TECNICAS_DB:
-        tecnica_resp = TecnicaResponse(**t)
-        
-        # Verificar si el profesor tiene un video para esta técnica
+    for t in tecnicas_map.values():
+        tiene_video = False
+        video_url = None
         if profesor_id:
-            video_ref = next((v for v in VIDEOS_REFERENCIA_DB if v["tecnica_id"] == t["id"] and v["profesor_id"] == profesor_id), None)
-            if video_ref:
-                tecnica_resp.tiene_video = True
-                filename = os.path.basename(video_ref["url_video_local"])
-                tecnica_resp.video_url = f"http://localhost:8000/static/videos/{filename}"
-        
-        resultados.append(tecnica_resp)
-        
+            vid = next((v for v in t["videos"] if str(v["profesor_id"]) == str(profesor_id)), None)
+            if vid:
+                tiene_video = True
+                filename = os.path.basename(vid["url"])
+                video_url = f"http://localhost:8000/static/videos/{filename}"
+
+        resultados.append(TecnicaResponse(
+            id=UUID(t["id"]),
+            nombre=t["nombre"],
+            nivel_cinturon=t["nivel_cinturon"],
+            tiene_video=tiene_video,
+            video_url=video_url
+        ))
+
     return resultados
 
+
 @router.post("", response_model=TecnicaResponse, status_code=status.HTTP_201_CREATED)
-async def crear_tecnica(req: TecnicaCreate):
+async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Header(None)):
     """
     Agrega una nueva técnica al catálogo global.
+    Requiere token de admin o profesor. Usa RPC SECURITY DEFINER.
     """
-    nueva_tecnica = {
-        "id": uuid4(),
-        **req.model_dump()
-    }
-    TECNICAS_DB.append(nueva_tecnica)
-    _save_db()
-    return TecnicaResponse(**nueva_tecnica)
+    require_staff(authorization)
+    db = get_db()
+    created = db.rpc("admin_create_tecnica", {
+        "p_nombre": req.nombre,
+        "p_nivel_cinturon": req.nivel_cinturon
+    })
+    if not created:
+        raise HTTPException(status_code=500, detail="Error creando técnica")
+    c = created[0] if isinstance(created, list) else created
+    return TecnicaResponse(
+        id=UUID(c["id"]),
+        nombre=c["nombre"],
+        nivel_cinturon=c["nivel_cinturon"]
+    )
+
 
 @router.put("/{tecnica_id}", response_model=TecnicaResponse, status_code=status.HTTP_200_OK)
-async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate):
+async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, authorization: Optional[str] = Header(None)):
     """
-    Edita el catálogo de una técnica.
+    Edita una técnica del catálogo. Requiere token de admin o profesor.
     """
-    for index, t in enumerate(TECNICAS_DB):
-        if t["id"] == tecnica_id:
-            actualizada = {
-                "id": tecnica_id,
-                **req.model_dump()
-            }
-            TECNICAS_DB[index] = actualizada
-            _save_db()
-            return TecnicaResponse(**actualizada)
-            
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada.")
+    require_staff(authorization)
+    db = get_db()
+    updated = db.rpc("admin_update_tecnica", {
+        "p_tecnica_id": str(tecnica_id),
+        "p_nombre": req.nombre,
+        "p_nivel_cinturon": req.nivel_cinturon
+    })
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada.")
+    c = updated[0] if isinstance(updated, list) else updated
+    return TecnicaResponse(
+        id=UUID(c["id"]),
+        nombre=c["nombre"],
+        nivel_cinturon=c["nivel_cinturon"]
+    )
+
 
 @router.delete("/{tecnica_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def eliminar_tecnica(tecnica_id: UUID):
+async def eliminar_tecnica(tecnica_id: UUID, authorization: Optional[str] = Header(None)):
     """
-    Elimina una técnica del catálogo y sus videos asociados en memoria.
+    Elimina una técnica del catálogo. Requiere token de admin o profesor.
     """
-    global TECNICAS_DB
-    global VIDEOS_REFERENCIA_DB
-    
-    if not any(t["id"] == tecnica_id for t in TECNICAS_DB):
+    require_staff(authorization)
+    db = get_db()
+    deleted_ok = db.rpc("admin_delete_tecnica", {"p_tecnica_id": str(tecnica_id)})
+    if not deleted_ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada.")
-        
-    TECNICAS_DB = [t for t in TECNICAS_DB if t["id"] != tecnica_id]
-    VIDEOS_REFERENCIA_DB = [v for v in VIDEOS_REFERENCIA_DB if v["tecnica_id"] != tecnica_id]
-    _save_db()
-    
     return None
+
 
 @router.post("/{tecnica_id}/video", status_code=status.HTTP_200_OK)
 async def subir_video_referencia(
     tecnica_id: UUID,
     profesor_id: UUID = Form(...),
-    video: UploadFile = File(...)
+    video: UploadFile = File(...),
+    authorization: Optional[str] = Header(None)
 ):
     """
-    Sube un video de referencia para una técnica por parte de un profesor.
-    (Relación M:N entre Profesores y Técnicas a través del video de referencia)
+    Sube un video de referencia para una técnica.
+    Requiere token de profesor o admin. Un profesor solo puede subir sus propios videos.
     """
-    if not any(t["id"] == tecnica_id for t in TECNICAS_DB):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada en el catálogo.")
-        
+    caller = require_staff(authorization)
+
+    # Autorización: profesor solo puede subir videos a su propio nombre
+    if caller.get("role") != "admin" and str(caller.get("uid")) != str(profesor_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No puedes subir videos a nombre de otro profesor."
+        )
+
     if not video.filename.endswith(('.mp4', '.avi', '.mov', '.webm')):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato de video no soportado.")
 
-    # Almacenar en disco local para previsualización MVP
+    db = get_db()
+
+    # Verificar que la técnica existe vía RPC
+    try:
+        exists = db.rpc("tecnica_exists", {"p_tecnica_id": str(tecnica_id)})
+    except Exception:
+        exists = False
+
+    if not exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada en el catálogo.")
+
     file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}_{video.filename}")
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(video.file, buffer)
-        
-    # Remover video anterior si el profesor ya tenía uno para esta técnica
-    global VIDEOS_REFERENCIA_DB
-    VIDEOS_REFERENCIA_DB = [v for v in VIDEOS_REFERENCIA_DB if not (v["tecnica_id"] == tecnica_id and v["profesor_id"] == profesor_id)]
-    
-    nuevo_video = {
-        "id": uuid4(),
-        "tecnica_id": tecnica_id,
-        "profesor_id": profesor_id,
-        "url_video_local": file_path,
-        "vector_qdrant_id": uuid4() # Simulado
-    }
-    VIDEOS_REFERENCIA_DB.append(nuevo_video)
-    _save_db()
-    
-    return {"status": "ok", "message": "Video de referencia actualizado.", "video_id": str(nuevo_video["id"])}
+
+    # Guardar vía RPC (upsert: borra el anterior del mismo profesor y crea uno nuevo)
+    try:
+        result = db.rpc("admin_save_video_referencia", {
+            "p_tecnica_id": str(tecnica_id),
+            "p_profesor_id": str(profesor_id),
+            "p_url_video": file_path
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error guardando referencia de video: {e}")
+
+    if not result:
+        raise HTTPException(status_code=500, detail="Error guardando referencia de video.")
+
+    video_id = result[0]["video_id"] if isinstance(result, list) else result["video_id"]
+    return {"status": "ok", "message": "Video de referencia actualizado.", "video_id": video_id}

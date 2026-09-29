@@ -93,3 +93,21 @@ progress.progress-ring {
   letter-spacing: 0.1em;
   margin-top: 0.25rem;
 }
+
+progress.progress-ring.indeterminate {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--fill-color) 90deg,
+    transparent 180deg
+  );
+  animation: ring-spin 1.5s linear infinite;
+}
+
+@keyframes ring-spin {
+  to { rotate: 360deg; }
+}
+
+progress.progress-ring.indeterminate::before {
+  content: '';  /* Ocultar el % del centro */
+}

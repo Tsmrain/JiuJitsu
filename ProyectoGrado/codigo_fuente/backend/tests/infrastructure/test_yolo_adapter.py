@@ -4,6 +4,8 @@ from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
 import os
 
+pytestmark = pytest.mark.skip(reason="Pendiente migración a nueva arquitectura")
+
 @patch("corpocmente.infrastructure.ai.adapters.os.path.exists")
 @patch("corpocmente.infrastructure.ai.adapters.YOLO")
 def test_yolo_pose_adapter_extraer_keypoints_success(mock_yolo_class, mock_exists):

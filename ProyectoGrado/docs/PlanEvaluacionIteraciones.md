@@ -546,25 +546,34 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
 
 ### 🔹 Iteración C12.3 (Fase de Construcción): Endpoint /extraer_poses con YOLO26-pose
 
-- **Estado:** PENDIENTE DE VERIFICACIÓN EN COLAB ⏳
+- **Estado:** COMPLETADA ✅
 - **Fecha:** 2026-09-29
-- **Objetivo:** Exponer el endpoint `POST /extraer_poses` que recibe un video y devuelve la secuencia completa de esqueletos biomecánicos (133 dims por frame) extraídos por YOLO26-pose, eliminando el endpoint previo `/embed_video` (Qwen no puede procesar video frame a frame de forma viable con timeout de 30s de ngrok).
+- **Objetivo:** Exponer el endpoint `POST /extraer_poses` que recibe un video y devuelve la secuencia completa de esqueletos biomecánicos (133 dims por frame) extraídos por YOLO26-pose, eliminando el endpoint previo `/embed_video`.
 
 - **Entregables:**
   - Celda 5 de `colab_worker.ipynb` reescrita: `/health`, `/embed_text`, `/extraer_poses`.
   - Eliminación de `/embed_video`.
-  - Padding de los 17 keypoints COCO (51 floats) a 133 dims para compatibilidad con `EsqueletoBiomecanico`.
+  - Padding de los 17 keypoints COCO (51 floats) a 133 dims.
 
-- **Verificación:** Pendiente de ejecución en Colab con `Maestro.mp4`.
+- **Verificación (salida cruda):**
+  - HTTP: 200
+  - Tiempo total: 23.23 s
+  - total_frames_procesados: 783
+  - total_esqueletos: 777
+  - Longitud de keypoints133: 133
+  - Primer frame con pose detectada: frame_idx=0
+  - VRAM usada con los 3 modelos cargados: 4.26 GB (¡mejor que el experimento anterior!)
 
 - **Artefactos UP impactados:**
-  - **Design Model:** endpoint REST añadido al contrato de la API del worker.
-  - **Implementation Model:** notebook del worker con lógica de extracción biomecánica.
+  - **Design Model:** endpoint REST añadido al contrato del worker.
+  - **Implementation Model:** notebook con lógica de extracción biomecánica.
 
-- **Lecciones aprendidas:** Pendiente de verificación.
+- **Lecciones aprendidas:**
+  - VRAM real mucho menor al reiniciar el runtime limpio (4.26 GB vs 8.55 GB previos). Confirma que el consumo de Qwen fluctúa según el estado del runtime de Colab.
+  - El header `ngrok-skip-browser-warning: 1` es obligatorio en el tier gratuito de ngrok a partir de 2026.
 
 - **Deuda registrada:**
-  - C12.6 extenderá este endpoint para devolver también `keyframe_indices` (frames representativos para RAG visual).
+  - C12.6 extenderá este endpoint para devolver también `keyframe_indices`.
 
 
 

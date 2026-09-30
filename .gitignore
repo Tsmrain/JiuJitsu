@@ -1,21 +1,70 @@
+# ─────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────
 venv/
 env/
 .venv/
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 .pytest_cache/
 .coverage
+htmlcov/
+
+# ─────────────────────────────────────────────────────────
+# Node / Frontend
+# ─────────────────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─────────────────────────────────────────────────────────
+# Secretos y variables de entorno
+# ─────────────────────────────────────────────────────────
 .env
 *.env
 !.env.example
+
+# ─────────────────────────────────────────────────────────
+# Datos generados (runtime)
+# ─────────────────────────────────────────────────────────
 qdrant_storage/
+postgrest
+postgrest.conf
+data/embeddings/
+
+# ─────────────────────────────────────────────────────────
+# Archivos multimedia de prueba
+# ─────────────────────────────────────────────────────────
 *.mp4
 *.avi
 *.mov
 *.mkv
 *.webm
+
+# ─────────────────────────────────────────────────────────
+# Documentos generados
+# ─────────────────────────────────────────────────────────
 docs/TFGdocsLatex/
 *.docx
-.DS_Store
 *.log
+
+# ─────────────────────────────────────────────────────────
+# Sistema operativo / Editor
+# ─────────────────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

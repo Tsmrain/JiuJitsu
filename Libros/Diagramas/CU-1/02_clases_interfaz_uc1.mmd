@@ -1,0 +1,73 @@
+classDiagram
+    direction LR
+
+    class Usuario {
+        <<Actor>>
+        +username: String
+        +email: String
+        +password: String
+    }
+
+    class LoginModal {
+        <<Boundary - React UI>>
+        -loginUserOrEmail: String
+        -loginPassword: String
+        -loading: Boolean
+        -errorMsg: String
+        +isOpen: Boolean
+        +onClose(): void
+        +onLoginSuccess(userData): void
+        +handleLoginSubmit(event): Promise~void~
+        +render(): JSX.Element
+    }
+
+    class LoginRequest {
+        <<DTO - Pydantic>>
+        +username_or_email: String
+        +password: String
+    }
+
+    class LoginResponse {
+        <<DTO - Pydantic>>
+        +token: String
+        +user_id: UUID
+        +nombre_completo: String
+        +username: String
+        +email: String
+        +rol: String
+        +avatar_url: String
+        +sucursal_id: UUID
+        +sucursal_nombre: String
+    }
+
+    class AuthController {
+        <<Boundary - FastAPI>>
+        +POST_auth_login(req: LoginRequest) LoginResponse
+        +_sign_token(payload: dict) String
+        +_decode_jwt(authorization: String) dict
+        +require_admin(authorization: String) dict
+        +require_staff(authorization: String) dict
+        +require_auth(authorization: String) dict
+    }
+
+    class PostgrestClient {
+        <<Adapter>>
+        +rpc(function_name: String, params: dict, token: String) dict
+        +get(table: String, params: dict, token: String) list
+    }
+
+    class JWTSecret {
+        <<Configuration>>
+        +JWT_SECRET_KEY: String
+        +JWT_ALGORITHM: String
+        +JWT_EXPIRATION_HOURS: Int
+    }
+
+    Usuario --> LoginModal : ingresa credenciales
+    LoginModal --> LoginRequest : construye
+    LoginModal --> AuthController : POST /auth/login
+    AuthController --> LoginRequest : valida
+    AuthController --> LoginResponse : retorna
+    AuthController --> PostgrestClient : delega
+    AuthController --> JWTSecret : firma con
+    LoginModal ..> Usuario : muestra panel según rol

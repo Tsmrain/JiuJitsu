@@ -1,0 +1,55 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+
+package "Capa de Presentación (React 19)" as UI {
+    [AdminSucursales.jsx] as AS
+    [ImpersonationBanner (inline)] as Banner
+    [App.jsx] as App
+}
+
+package "Capa de Aplicación (FastAPI)" as AppLayer {
+    [auth_routes.py (AdminUserController)] as Routes
+    [require_admin (guard)] as Guard
+    [LoginRequest / LoginResponse DTOs] as DTOs
+}
+
+package "Capa de Dominio (Conceptual)" as Domain {
+    [Usuario (conceptual)] as Usuario
+    [Rol (enumeration)] as Rol
+    [Impersonacion (conceptual)] as Impersonacion
+}
+
+package "Capa de Infraestructura" as Infra {
+    [PostgrestClient] as PgClient
+    [JWT Service (PyJWT)] as JWT
+    [PostgreSQL + PostgREST] as PG
+    [JWT_SECRET_KEY (env)] as Secret
+}
+
+AS --> Routes : GET /usuarios
+AS --> Routes : POST /impersonate/{id}
+Banner --> App : activa modo impersonificación
+App --> Banner : muestra/oculta
+Routes --> Guard : valida rol admin
+Routes --> JWT : firma tokens de impersonificación
+Routes --> PgClient : rpc()
+Routes --> DTOs : valida/retorna
+PgClient --> PG : HTTP REST
+JWT --> Secret : lee clave
+
+note right of Routes
+  **Endpoints expuestos:**
+  - GET  /api/v1/auth/usuarios
+  - PUT  /api/v1/auth/usuarios/{id}
+  - POST /api/v1/auth/impersonate/{id}
+end note
+
+note bottom of JWT
+  **Claims de impersonificación:**
+  - uid: target_user_id
+  - role: target_role
+  - original_admin_id: admin_id
+end note
+
+@enduml

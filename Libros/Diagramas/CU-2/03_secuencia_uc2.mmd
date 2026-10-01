@@ -1,0 +1,61 @@
+sequenceDiagram
+    autonumber
+    actor A as Alumno
+    participant UI as VideoUploadView<br/>(React)
+    participant EC as EvaluationController<br/>(FastAPI)
+    participant Gemini as GeminiApiAdapter
+    participant Colab as Colab Worker<br/>(YOLO26)
+    participant Qdrant as QdrantVectorAdapter
+    participant Qwen as QwenEmbeddingAdapter
+    participant DB as PostgreSQL
+
+    A->>UI: Selecciona profesor, técnica y sube video
+    UI->>EC: POST /evaluaciones/analizar (Multipart)
+    EC->>Gemini: validar_es_jiujitsu(video_path)
+    
+    alt Video no es Jiu-Jitsu
+        Gemini-->>EC: False
+        EC-->>UI: HTTP 422 {detail: "Video no reconocido como BJJ"}
+        UI-->>A: Muestra error
+    else Video válido
+        Gemini-->>EC: True
+        EC->>DB: rpc("create_evaluacion", {id, alumno, tecnica, videoRef})
+        DB-->>EC: eval_id
+        EC-->>UI: HTTP 200 {evaluacion_id, estado: "procesando"}
+        UI->>UI: setAppState('PROCESSING')
+        
+        Note over UI: Polling cada 3 segundos
+        
+        Colab->>EC: GET /evaluaciones/pendientes (X-Worker-Token)
+        EC->>DB: rpc("worker_claim_next_pending")
+        DB-->>EC: {id, video_path, tecnica_id, tecnica_nombre}
+        EC-->>Colab: Tarea
+        
+        Colab->>Colab: POST /extraer_poses (video)
+        Colab->>Colab: YOLO26-pose + YOLO26-depth
+        Colab->>Qdrant: buscar_maxima_diferencia(esqueletos, tecnica_id)
+        Qdrant->>Qdrant: scroll + coseno local (numpy)
+        Qdrant-->>Colab: VectorSearchResultDTO(score, frame_path, discrepancias)
+        
+        alt score >= 85.0 (Técnica correcta)
+            Colab->>Colab: feedback = "¡Excelente ejecución!"
+        else score < 85.0 (Requiere corrección)
+            Colab->>Qwen: generar_embedding_texto(query)
+            Qwen->>Colab: [0.05] * 2048
+            Colab->>Qdrant: recuperar_contexto_rag(vector, tecnica_id)
+            Qdrant-->>Colab: "Teoría recuperada sobre control..."
+            Colab->>Gemini: generar_texto_feedback(prompt + frame + RAG)
+            Gemini-->>Colab: "Feedback correctivo estructurado"
+        end
+        
+        Colab->>EC: POST /evaluaciones/resultado/{id}
+        EC->>DB: rpc("worker_update_result", {similitud, feedback, 'completado'})
+        DB-->>EC: True
+        
+        UI->>EC: GET /evaluaciones/{id}
+        EC->>DB: rpc("get_evaluacion_by_id")
+        DB-->>EC: {estado:'completado', similitud, feedback, video_ref}
+        EC-->>UI: HTTP 200 {similitud, feedback, video_referencia_url}
+        UI->>UI: setAppState('FEEDBACK')
+        UI-->>A: Muestra reporte con gauge, video y feedback
+    end

@@ -1,0 +1,38 @@
+@startuml
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Alumno" as Alumno
+actor "Google Colab GPU" as Colab <<Worker AI>>
+actor "Google Gemini 2.5 Flash" as Gemini <<LLM Service>>
+actor "Qdrant Vector DB" as Qdrant <<Vector Engine>>
+
+rectangle "Sistema Corpo e Mente Biomechanics AI" {
+    usecase "UC2: Analizar Técnica\ny Generar Feedback" as UC2
+    
+    usecase "Seleccionar Profesor\ny Técnica" as UC2_Sel
+    usecase "Validar Video\nAnti-Spam (BJJ)" as UC2_Spam
+    usecase "Extraer Keypoints 3D\n(YOLO26-pose/depth)" as UC2_YOLO
+    usecase "Calcular Similitud\nCoseno y MSE" as UC2_Calc
+    usecase "Recuperar Teoría\nRAG (Qwen+Qdrant)" as UC2_RAG
+    usecase "Generar Retroalimentación\nLLM (Gemini)" as UC2_Gem
+    usecase "Visualizar Reporte\ncon Gráfico" as UC2_Rep
+}
+
+Alumno --> UC2
+UC2 ..> UC2_Sel : <<include>>
+UC2 ..> UC2_Spam : <<include>>
+UC2 ..> UC2_YOLO : <<include>>
+UC2 ..> UC2_Calc : <<include>>
+UC2 ..> UC2_Rep : <<include>>
+UC2 ..> UC2_RAG : <<extend>>\n(si similitud < 85%)
+UC2 ..> UC2_Gem : <<extend>>\n(si similitud < 85%)
+
+UC2_Spam ..> Gemini : <<invoca>>
+UC2_YOLO ..> Colab : <<invoca>>
+UC2_RAG ..> Qdrant : <<consulta>>
+UC2_Gem ..> Gemini : <<invoca>>
+
+@enduml

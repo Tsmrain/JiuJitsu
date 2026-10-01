@@ -1,0 +1,66 @@
+classDiagram
+    direction LR
+
+    class Alumno {
+        <<Actor>>
+        +userId: UUID
+        +token: String
+    }
+
+    class VideoUploadView {
+        <<Boundary - React>>
+        +profesores: List~ProfesorDTO~
+        +selectedProfesor: ProfesorDTO
+        +tecnicas: List~TecnicaDTO~
+        +selectedTecnica: TecnicaDTO
+        +file: File
+        +dragActive: Boolean
+        +onUploadStart(file, tecnica): void
+        +handleFile(selectedFile): void
+        +handleSubmit(): void
+    }
+
+    class FeedbackView {
+        <<Boundary - React>>
+        +result: AnalisisResultDTO
+        +similitud: Number
+        +feedback: String
+        +videoReferenciaUrl: String
+        +onReset(): void
+        +renderCircularGauge(): JSX.Element
+    }
+
+    class ProgressRing {
+        <<Boundary - React>>
+        +value: Number
+        +statusText: String
+        +render(): JSX.Element
+    }
+
+    class EvaluationController {
+        <<Boundary - FastAPI>>
+        +POST_evaluaciones_analizar(...) UUID
+        +GET_evaluaciones_pendientes() DTO
+        +POST_evaluaciones_resultado(id, payload) void
+        +GET_evaluaciones_id(id) DTO
+        +POST_validar_spam(video) DTO
+    }
+
+    class IntelligenceAnalysisFacade {
+        <<Facade>>
+        +ejecutarAnalisisCompleto(videoPath, tecnicaId, tecnicaNombre) AnalisisResultDTO
+    }
+
+    class AnalisisResultDTO {
+        <<DTO - Pydantic>>
+        +similitud: Float
+        +feedback: String
+    }
+
+    Alumno --> VideoUploadView
+    Alumno --> FeedbackView
+    VideoUploadView --> EvaluationController : POST /analizar
+    FeedbackView --> EvaluationController : GET /{id} (polling)
+    VideoUploadView --> ProgressRing : muestra progreso
+    EvaluationController --> IntelligenceAnalysisFacade : delega (Worker)
+    IntelligenceAnalysisFacade --> AnalisisResultDTO : produce

@@ -1,0 +1,52 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+
+package "Capa de Presentación (React 19)" as UI {
+    [ProfesorTecnicas.jsx] as PT
+    [TecnicaFormModal] as TFM
+    [TheoryManagerModal.jsx] as TMM
+}
+
+package "Capa de Aplicación (FastAPI)" as App {
+    [tecnicas_routes.py] as Routes
+    [TecnicaCreate / TecnicaResponse DTOs] as DTOs
+    [require_staff (guard)] as Guard
+}
+
+package "Capa de Dominio (Conceptual)" as Domain {
+    [Tecnica (conceptual)] as Tecnica
+    [VideoReferencia (conceptual)] as VideoRef
+    [BeltRank (enumeration)] as Belt
+}
+
+package "Capa de Infraestructura" as Infra {
+    [PostgrestClient] as PgClient
+    [PostgreSQL + PostgREST] as PG
+    [FileStorageService] as FS
+    [Multer / UploadFile] as Upload
+}
+
+PT --> Routes : HTTP REST
+PT *-- TFM : contiene
+PT *-- TMM : contiene
+Routes --> DTOs : valida
+Routes --> Guard : autoriza
+Routes --> PgClient : rpc() / get()
+Routes --> FS : almacena video
+PgClient --> PG : HTTP REST
+PG ..> Tecnica
+PG ..> VideoRef
+PG ..> Belt
+FS --> Upload : multipart
+
+note right of Routes
+  **Endpoints expuestos:**
+  - GET    /api/v1/tecnicas
+  - POST   /api/v1/tecnicas
+  - PUT    /api/v1/tecnicas/{id}
+  - DELETE /api/v1/tecnicas/{id}
+  - POST   /api/v1/tecnicas/{id}/video
+end note
+
+@enduml

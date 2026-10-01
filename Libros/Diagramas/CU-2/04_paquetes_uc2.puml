@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+
+package "Capa de Presentación (React 19)" as UI {
+    [VideoUploadView.jsx] as VUV
+    [FeedbackView.jsx] as FV
+    [ProgressRing.jsx] as PR
+    [App.jsx] as App
+}
+
+package "Capa de Aplicación (FastAPI)" as App {
+    [routes.py] as Routes
+    [EvaluationController] as EC
+    [ResultadoWorkerDTO] as RDTO
+}
+
+package "Capa de Dominio" as Domain {
+    [IntelligenceAnalysisFacade] as Facade
+    [IPromptStrategy] as Strategy
+    [SpanishPromptStrategy] as ESP
+    [EsqueletoBiomecanico] as Esq
+    [AnalisisResultDTO] as ARDTO
+}
+
+package "Capa de Infraestructura" as Infra {
+    [YOLOPoseAdapter] as YOLO
+    [QdrantVectorAdapter] as Qdrant
+    [GeminiApiAdapter] as Gemini
+    [QwenEmbeddingAdapter] as Qwen
+    [PostgrestClient] as PgClient
+}
+
+package "Servicios Externos" as Ext {
+    [Google Colab GPU (T4)] as Colab
+    [Google Gemini 2.5 Flash] as GeminiCloud
+    [Qdrant Vector DB] as QdrantDB
+    [PostgreSQL + PostgREST] as PG
+}
+
+VUV --> EC : POST /analizar
+FV --> EC : GET /{id}
+App --> VUV : renderiza
+App --> FV : renderiza
+App --> PR : animación
+EC --> Facade : delega
+Facade --> YOLO
+Facade --> Qdrant
+Facade --> Gemini
+Facade --> Qwen
+Facade --> Strategy
+Strategy <|.. ESP
+Facade ..> ARDTO
+YOLO --> Colab : HTTP /extraer_poses
+Qdrant --> QdrantDB : search / scroll
+Gemini --> GeminiCloud : generate_content
+Qwen --> Colab : HTTP /embed_text
+EC --> PgClient
+PgClient --> PG : RPCs
+
+@enduml

@@ -1,0 +1,60 @@
+@startuml
+skinparam dpi 300
+skinparam defaultFontName "Arial"
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+skinparam shadowing true
+skinparam roundCorner 10
+
+skinparam actor {
+    BackgroundColor #EAEFF5
+    BorderColor #1A365D
+}
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #2B6CB0
+    ArrowColor #2B6CB0
+}
+
+left to right direction
+
+actor "Alumno" as act_alumno
+actor "Profesor" as act_profesor
+actor "Administrador" as act_admin
+actor "Google Colab GPU / Gemini" as act_ai <<System>>
+
+rectangle "Corpo e Mente Biomechanics AI" {
+    usecase "UC1: Autenticarse en la Plataforma" as UC1
+    usecase "UC2: Analizar Técnica y Feedback" as UC2
+    usecase "UC3: Gestionar Técnicas y Videos" as UC3
+    usecase "UC4: Gestionar Teoría RAG" as UC4
+    usecase "UC5: Visualizar Progreso Alumnos" as UC5
+    usecase "UC6: Gestionar Sucursales y Geoposición" as UC6
+    usecase "UC7: Administrar Usuarios e Impersonificación" as UC7
+
+    usecase "Validar Anti-Spam (Gemini)" as UC_Spam
+    usecase "Extraer Keypoints (YOLO26)" as UC_YOLO
+    usecase "Generar Feedback Pedagógico (Gemini)" as UC_Feed
+}
+
+act_alumno --> UC1
+act_alumno --> UC2
+
+act_profesor --> UC1
+act_profesor --> UC3
+act_profesor --> UC4
+act_profesor --> UC5
+
+act_admin --> UC1
+act_admin --> UC6
+act_admin --> UC7
+
+UC2 ..> UC_Spam : <<include>>
+UC2 ..> UC_YOLO : <<include>>
+UC2 ..> UC_Feed : <<extend>> (si similitud < 85%)
+
+UC_Spam ..> act_ai : <<invoca>>
+UC_YOLO ..> act_ai : <<invoca>>
+UC_Feed ..> act_ai : <<invoca>>
+
+@enduml

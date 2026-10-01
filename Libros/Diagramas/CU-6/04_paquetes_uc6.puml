@@ -1,0 +1,49 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+
+package "Capa de Presentación (React 19)" as UI {
+    [AdminSucursales.jsx] as AS
+    [LeafletMap (dinámico)] as Leaflet
+    [Iframe OpenStreetMap] as Iframe
+}
+
+package "Capa de Aplicación (FastAPI)" as App {
+    [auth_routes.py (BranchController)] as Routes
+    [require_admin (guard)] as Guard
+    [SucursalCreate / ParseGmapsResponse DTOs] as DTOs
+}
+
+package "Capa de Dominio (Conceptual)" as Domain {
+    [Sucursal (conceptual)] as Sucursal
+    [GeoLocation (conceptual)] as Geo
+    [PlusCode (conceptual)] as Plus
+}
+
+package "Capa de Infraestructura" as Infra {
+    [PostgrestClient] as PgClient
+    [NominatimClient] as NOM
+    [GoogleMapsUrlParser] as GMaps
+    [OpenLocationCode Util] as OLC
+    [PostgreSQL + PostgREST] as PG
+}
+
+package "Servicios Externos" as Ext {
+    [OpenStreetMap Tiles] as OSM
+    [Nominatim API] as NOMCloud
+}
+
+AS --> Routes : HTTP REST
+AS --> Leaflet : inyecta script
+AS --> Iframe : muestra sucursales
+Routes --> Guard : valida rol
+Routes --> DTOs : valida/retorna
+Routes --> PgClient : rpc() / get()
+Routes --> NOM : reverse geocoding
+Routes --> GMaps : extrae coordenadas
+Routes --> OLC : genera Plus Codes
+PgClient --> PG : HTTP REST
+Leaflet --> OSM : tiles
+NOM --> NOMCloud : HTTP
+
+@enduml

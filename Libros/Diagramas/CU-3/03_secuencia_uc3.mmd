@@ -1,0 +1,46 @@
+sequenceDiagram
+    autonumber
+    actor P as Profesor
+    participant UI as ProfesorTecnicas<br/>(React)
+    participant TC as TecnicasController<br/>(FastAPI)
+    participant DB as PostgrestClient
+    participant PG as PostgreSQL
+    participant FS as File Storage<br/>(/tmp/corpocmente_videos)
+
+    P->>UI: Accede a "Mis Técnicas"
+    UI->>TC: GET /api/v1/tecnicas?profesor_id={id}
+    TC->>DB: rpc("get_tecnicas_with_videos")
+    DB->>PG: SELECT t.*, vr.* FROM tecnicas LEFT JOIN videos_referencia
+    PG-->>DB: [{id, nombre, nivel_cinturon, video_id, video_url}]
+    DB-->>TC: rows
+    TC->>TC: Agrupar por técnica y marcar tiene_video
+    TC-->>UI: HTTP 200 List~TecnicaResponse~
+    UI-->>P: Renderiza grid de técnicas con badges
+    
+    P->>UI: Clic "+ Nueva Técnica"
+    UI->>UI: setShowModal(true)
+    P->>UI: Completa formulario + selecciona video
+    P->>UI: Clic "Guardar Técnica"
+    
+    UI->>TC: POST /api/v1/tecnicas {nombre, nivel_cinturon}
+    TC->>DB: rpc("admin_create_tecnica", {p_nombre, p_nivel_cinturon})
+    DB->>PG: INSERT INTO tecnicas (...) RETURNING id
+    PG-->>DB: {id, nombre, nivel_cinturon}
+    DB-->>TC: created
+    TC-->>UI: HTTP 201 TecnicaResponse
+    
+    alt Video seleccionado
+        UI->>TC: POST /api/v1/tecnicas/{id}/video (Multipart)
+        TC->>FS: Guardar archivo con UUID + filename
+        FS-->>TC: file_path
+        TC->>DB: rpc("admin_save_video_referencia", {tecnica_id, profesor_id, url})
+        DB->>PG: DELETE + INSERT videos_referencia
+        PG-->>DB: {video_id}
+        DB-->>TC: video_id
+        TC-->>UI: HTTP 200 {status: "ok", video_id}
+    end
+    
+    UI->>UI: setShowModal(false)
+    UI->>TC: GET /api/v1/tecnicas?profesor_id={id}
+    TC-->>UI: Lista actualizada
+    UI-->>P: Muestra técnica en el catálogo con badge verde

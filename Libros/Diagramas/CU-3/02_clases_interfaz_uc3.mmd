@@ -1,0 +1,67 @@
+classDiagram
+    direction LR
+
+    class Profesor {
+        <<Actor>>
+        +userId: UUID
+        +token: String
+        +sucursalId: UUID
+    }
+
+    class ProfesorTecnicas {
+        <<Boundary - React>>
+        +activeTab: String
+        +tecnicas: List~TecnicaDTO~
+        +showModal: Boolean
+        +formData: TecnicaForm
+        +selectedFile: File
+        +previewUrl: String
+        +fetchTecnicas(): void
+        +handleSave(event): void
+        +handleDelete(id): void
+        +handleFileChange(event): void
+    }
+
+    class TecnicaFormModal {
+        <<Boundary - React>>
+        +nombre: String
+        +nivel_cinturon: String
+        +onSave(): void
+        +onCancel(): void
+    }
+
+    class TecnicasController {
+        <<Boundary - FastAPI>>
+        +listar_tecnicas(profesor_id) List~TecnicaResponse~
+        +crear_tecnica(req) TecnicaResponse
+        +actualizar_tecnica(id, req) TecnicaResponse
+        +eliminar_tecnica(id) void
+        +subir_video_referencia(id, profesor_id, video) DTO
+    }
+
+    class TecnicaCreate {
+        <<DTO - Pydantic>>
+        +nombre: String
+        +nivel_cinturon: String
+    }
+
+    class TecnicaResponse {
+        <<DTO - Pydantic>>
+        +id: UUID
+        +nombre: String
+        +nivel_cinturon: String
+        +tiene_video: Boolean
+        +video_url: String
+    }
+
+    class PostgrestClient {
+        <<Adapter>>
+        +rpc(function_name, params, token) dict
+    }
+
+    Profesor --> ProfesorTecnicas
+    ProfesorTecnicas --> TecnicasController : HTTP REST
+    ProfesorTecnicas *-- TecnicaFormModal : contiene
+    TecnicasController --> TecnicaCreate : valida
+    TecnicasController --> TecnicaResponse : retorna
+    TecnicasController --> PostgrestClient : delega

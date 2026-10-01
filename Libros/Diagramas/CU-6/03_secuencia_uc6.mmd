@@ -1,0 +1,46 @@
+sequenceDiagram
+    autonumber
+    actor A as Administrador
+    participant UI as AdminSucursales<br/>(Leaflet Map)
+    participant BC as BranchController<br/>(FastAPI)
+    participant PS as ParseGmapsService
+    participant GMaps as Google Maps<br/>(URL redirect)
+    participant NOM as Nominatim API
+    participant DB as PostgrestClient
+    participant PG as PostgreSQL
+
+    A->>UI: Pega enlace de Google Maps
+    UI->>BC: POST /api/v1/sucursales/parse-gmaps-link {url}
+    BC->>PS: extract_coordinates(url)
+    PS->>GMaps: GET (sigue redirect con User-Agent)
+    GMaps-->>PS: final_url con !3dLat!4dLng
+    PS->>PS: regex !3d(-?\d+\.\d+)!4d(-?\d+\.\d+)
+    
+    alt Coordenadas encontradas
+        PS->>NOM: GET /reverse?lat={lat}&lon={lng}
+        NOM-->>PS: {address: {road, city, country}}
+        PS->>PS: extract road + house_number
+        alt Sin calle registrada
+            PS->>PS: openlocationcode.encode(lat, lng, 11)
+            PS-->>PS: "8553+CJ, Santa Cruz"
+        end
+        PS-->>BC: ParseGmapsResponse(nombre, direccion, ciudad, pais, lat, lng)
+        BC-->>UI: HTTP 200 coordenadas + dirección
+        UI->>UI: updateMapPosition(lat, lng)
+        UI-->>A: Pin actualizado + formulario autocompletado
+    else Coordenadas no encontradas
+        BC-->>UI: HTTP 400 {detail: "No se encontraron coordenadas"}
+        UI-->>A: Muestra error
+    end
+    
+    A->>UI: Completa nombre, país, ciudad
+    A->>UI: Clic "Guardar Sucursal Global"
+    UI->>BC: POST /api/v1/sucursales {nombre, pais, ciudad, direccion, lat, lng}
+    BC->>BC: require_admin (verifica JWT)
+    BC->>DB: rpc("admin_create_sucursal", {...})
+    DB->>PG: INSERT INTO sucursales (...) RETURNING id
+    PG-->>DB: {id, nombre, pais, ciudad, direccion, lat, lng}
+    DB-->>BC: created
+    BC-->>UI: HTTP 201 SucursalResponse
+    UI->>UI: fetchSucursales()
+    UI-->>A: Nueva sucursal en el catálogo con mapa embebido

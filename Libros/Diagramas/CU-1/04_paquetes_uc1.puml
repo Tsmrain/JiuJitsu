@@ -1,0 +1,64 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+
+package "Capa de Presentación (UI - React)" as UI {
+    [LoginModal.jsx] as LoginModal
+    [App.jsx] as App
+    [UserProfileModal.jsx] as ProfileModal
+    [translations.js] as i18n
+}
+
+package "Capa de Aplicación (FastAPI)" as App {
+    [auth_routes.py] as AuthRoutes
+    [LoginRequest / LoginResponse DTOs] as DTOs
+    [JWT Service (_sign_token)] as JWT
+    [require_auth / require_admin / require_staff] as Guards
+}
+
+package "Capa de Dominio (Conceptual)" as Domain {
+    [Usuario (conceptual)] as Usuario
+    [Sesion (conceptual)] as Sesion
+    [Rol (enumeration)] as Rol
+}
+
+package "Capa de Infraestructura" as Infra {
+    [PostgrestClient] as PgClient
+    [PostgreSQL + PostgREST] as PG
+    [pgcrypto (bcrypt)] as Crypto
+    [JWT_SECRET_KEY (env)] as Secret
+}
+
+LoginModal --> AuthRoutes : POST /auth/login
+App --> LoginModal : abre modal
+App --> ProfileModal : abre perfil
+LoginModal --> i18n : traduce etiquetas
+LoginModal --> DTOs : construye LoginRequest
+AuthRoutes --> DTOs : valida
+AuthRoutes --> JWT : firma token
+AuthRoutes --> Guards : verifica roles
+AuthRoutes --> PgClient : rpc() / get()
+AuthRoutes --> Secret : lee clave
+PgClient --> PG : HTTP REST
+PG --> Crypto : crypt()
+PG ..> Usuario : retorna cuenta
+AuthRoutes ..> Sesion : crea
+AuthRoutes ..> Rol : asigna
+
+note right of AuthRoutes
+  **Endpoints expuestos:**
+  - POST /api/v1/auth/login
+  - POST /api/v1/auth/signup
+  - GET  /api/v1/auth/usuarios
+  - PUT  /api/v1/auth/usuarios/{id}
+  - POST /api/v1/auth/impersonate/{id}
+end note
+
+note bottom of PG
+  **RPCs utilizados:**
+  - authenticate(email, password)
+  - get_user_profile(user_id)
+end note
+
+@enduml

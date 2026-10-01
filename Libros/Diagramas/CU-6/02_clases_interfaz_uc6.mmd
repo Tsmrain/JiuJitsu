@@ -1,0 +1,69 @@
+classDiagram
+    direction LR
+
+    class Admin {
+        <<Actor>>
+        +userId: UUID
+        +token: String
+    }
+
+    class AdminSucursales {
+        <<Boundary - React>>
+        +activeTab: String
+        +sucursales: List~SucursalDTO~
+        +editingId: UUID
+        +nombre: String
+        +pais: String
+        +ciudad: String
+        +direccion: String
+        +latitud: Number
+        +longitud: Number
+        +googleMapsUrl: String
+        +fetchSucursales(): void
+        +handleGoogleMapsUrlChange(url): void
+        +handleSubmit(event): void
+        +handleDelete(id, nombre): void
+        +reverseGeocode(lat, lng): void
+    }
+
+    class BranchController {
+        <<Boundary - FastAPI>>
+        +listar_sucursales() List~SucursalResponse~
+        +crear_sucursal(req) SucursalResponse
+        +actualizar_sucursal(id, req) SucursalResponse
+        +eliminar_sucursal(id) void
+        +parse_gmaps_link(req) ParseGmapsResponse
+    }
+
+    class ParseGmapsService {
+        <<Service>>
+        +extract_coordinates(url) Tuple~Float,Float~
+        +reverse_geocode(lat, lng) AddressDTO
+        +generate_plus_code(lat, lng) String
+    }
+
+    class SucursalCreate {
+        <<DTO - Pydantic>>
+        +nombre: String
+        +pais: String
+        +ciudad: String
+        +direccion: String
+        +latitud: Float
+        +longitud: Float
+    }
+
+    class ParseGmapsResponse {
+        <<DTO - Pydantic>>
+        +nombre: String
+        +pais: String
+        +ciudad: String
+        +direccion: String
+        +latitud: Float
+        +longitud: Float
+    }
+
+    Admin --> AdminSucursales
+    AdminSucursales --> BranchController : HTTP REST
+    BranchController --> ParseGmapsService : delega parsing
+    BranchController --> SucursalCreate : valida
+    BranchController --> ParseGmapsResponse : retorna

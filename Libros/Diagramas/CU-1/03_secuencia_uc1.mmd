@@ -1,54 +1,45 @@
 sequenceDiagram
     autonumber
     actor Usuario
-    participant UI as LoginModal<br/>(React UI)
-    participant Ctrl as AuthController<br/>(FastAPI)
-    participant JWT as JWT Service<br/>(_sign_token)
-    participant DB as PostgrestClient
-    participant PG as PostgreSQL<br/>(authenticate RPC)
-    participant Profile as PostgreSQL<br/>(get_user_profile RPC)
-
-    Usuario->>UI: clic en avatar
-    UI->>UI: setIsLoginOpen(true)
-    Usuario->>UI: ingresa(username_or_email, password)
-    Usuario->>UI: clic "Ingresar"
+    participant Interfaz as InterfazAutenticacion
+    participant Sistema as SistemaAutenticacion
+    participant BD as BaseDeDatos
+    participant Generador as GeneradorTokens
     
-    UI->>UI: handleLoginSubmit(event)
-    UI->>UI: setLoading(true), setErrorMsg('')
-    UI->>Ctrl: POST /api/v1/auth/login {username_or_email, password}
+    Usuario->>Interfaz: solicitarAutenticacion(identificador, contraseña)
+    Interfaz->>Interfaz: validarFormatoCredenciales()
     
-    Ctrl->>Ctrl: validar Pydantic (LoginRequest)
-    Ctrl->>DB: rpc("authenticate", {email, password})
-    DB->>PG: SELECT * FROM usuarios WHERE email = $1 OR username = $1
-    PG-->>DB: account {id, password_hash, rol, sucursal_id, email}
-    DB->>PG: crypt(password, password_hash)
-    
-    alt Credenciales válidas
-        PG-->>DB: {token: "{role, email, uid, sucursal_id}"}
-        DB-->>Ctrl: token_resp
-        Ctrl->>Ctrl: json.loads(token_resp["token"])
-        Ctrl->>JWT: _sign_token({uid, role, email, sucursal_id})
-        JWT->>JWT: pyjwt.encode(payload, JWT_SECRET_KEY, HS256)
-        JWT-->>Ctrl: signed_token (exp: 24h)
+    alt Credenciales con formato válido
+        Interfaz->>Sistema: autenticarUsuario(identificador, contraseña)
+        Sistema->>BD: buscarUsuarioPorIdentificador(identificador)
         
-        Ctrl->>DB: rpc("get_user_profile", {user_id: uid})
-        DB->>Profile: SELECT id, nombre_completo, username, email, rol, avatar_url, sucursal_id
-        Profile-->>DB: profile
-        DB-->>Ctrl: profile
+        alt Usuario encontrado
+            BD-->>Sistema: usuarioEncontrado
+            Sistema->>BD: verificarContraseña(contraseña, contraseñaHasheada)
+            
+            alt Contraseña correcta
+                BD-->>Sistema: contraseñaValida
+                Sistema->>Generador: generarToken(usuarioId, rol, email, sucursalId)
+                Generador-->>Sistema: tokenFirmado
+                Sistema->>BD: recuperarPerfilCompleto(usuarioId)
+                BD-->>Sistema: perfilUsuario
+                
+                Sistema-->>Interfaz: TokenAutenticacion(token, usuario, sucursal)
+                Interfaz-->>Usuario: confirmacionAutenticacion(datosUsuario)
+                Interfaz->>Interfaz: redirigirSegunRol(usuario)
+                
+            else Contraseña incorrecta
+                BD-->>Sistema: contraseñaInvalida
+                Sistema-->>Interfaz: errorCredencialesIncorrectas
+                Interfaz-->>Usuario: mensajeErrorGenerico
+            end
+            
+        else Usuario no encontrado
+            BD-->>Sistema: usuarioNoExiste
+            Sistema-->>Interfaz: errorCredencialesIncorrectas
+            Interfaz-->>Usuario: mensajeErrorGenerico
+        end
         
-        Ctrl->>DB: get("sucursales", {id: eq.sucursal_id})
-        DB-->>Ctrl: [{nombre: "JIU JITSU CORPO E MENTE..."}]
-        
-        Ctrl-->>UI: HTTP 200 LoginResponse<br/>{token, user_id, nombre_completo, ..., sucursal_nombre}
-        UI->>UI: onLoginSuccess({...userData, idioma_preferido})
-        UI->>UI: onClose()
-        UI-->>Usuario: redirige a panel según rol
-    else Credenciales inválidas
-        PG-->>DB: NULL
-        DB-->>Ctrl: {token: null}
-        Ctrl-->>UI: HTTP 401 {detail: "Usuario o contraseña incorrectos"}
-        UI->>UI: setErrorMsg("Credenciales incorrectas.")
-        UI-->>Usuario: muestra mensaje de error
+    else Credenciales con formato inválido
+        Interfaz-->>Usuario: mensajeErrorFormato
     end
-    
-    UI->>UI: setLoading(false)

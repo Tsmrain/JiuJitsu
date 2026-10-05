@@ -1,73 +1,43 @@
 classDiagram
     direction LR
-
+    
     class Usuario {
-        <<Actor>>
+        +nombreCompleto: String
         +username: String
         +email: String
-        +password: String
+        +rol: RolEnum
+        +avatarUrl: String
+        +sucursalId: UUID
+        +sucursalNombre: String
     }
-
-    class LoginModal {
-        <<Boundary - React UI>>
-        -loginUserOrEmail: String
-        -loginPassword: String
-        -loading: Boolean
-        -errorMsg: String
-        +isOpen: Boolean
-        +onClose(): void
-        +onLoginSuccess(userData): void
-        +handleLoginSubmit(event): Promise~void~
-        +render(): JSX.Element
+    
+    class CredencialesAutenticacion {
+        +identificador: String
+        +contraseña: String
     }
-
-    class LoginRequest {
-        <<DTO - Pydantic>>
-        +username_or_email: String
-        +password: String
-    }
-
-    class LoginResponse {
-        <<DTO - Pydantic>>
+    
+    class TokenAutenticacion {
         +token: String
-        +user_id: UUID
-        +nombre_completo: String
-        +username: String
-        +email: String
-        +rol: String
-        +avatar_url: String
-        +sucursal_id: UUID
-        +sucursal_nombre: String
+        +tipo: String
+        +expiraEn: Integer
+        +usuario: Usuario
     }
-
-    class AuthController {
-        <<Boundary - FastAPI>>
-        +POST_auth_login(req: LoginRequest) LoginResponse
-        +_sign_token(payload: dict) String
-        +_decode_jwt(authorization: String) dict
-        +require_admin(authorization: String) dict
-        +require_staff(authorization: String) dict
-        +require_auth(authorization: String) dict
+    
+    class InterfazAutenticacion {
+        +solicitarAutenticacion(credenciales: CredencialesAutenticacion): TokenAutenticacion
+        +validarFormatoCredenciales(credenciales: CredencialesAutenticacion): Boolean
+        +mostrarMensajeError(mensaje: String): void
+        +redirigirSegunRol(usuario: Usuario): void
     }
-
-    class PostgrestClient {
-        <<Adapter>>
-        +rpc(function_name: String, params: dict, token: String) dict
-        +get(table: String, params: dict, token: String) list
+    
+    class RolEnum {
+        <<enumeration>>
+        ALUMNO
+        PROFESOR
+        ADMINISTRADOR
     }
-
-    class JWTSecret {
-        <<Configuration>>
-        +JWT_SECRET_KEY: String
-        +JWT_ALGORITHM: String
-        +JWT_EXPIRATION_HOURS: Int
-    }
-
-    Usuario --> LoginModal : ingresa credenciales
-    LoginModal --> LoginRequest : construye
-    LoginModal --> AuthController : POST /auth/login
-    AuthController --> LoginRequest : valida
-    AuthController --> LoginResponse : retorna
-    AuthController --> PostgrestClient : delega
-    AuthController --> JWTSecret : firma con
-    LoginModal ..> Usuario : muestra panel según rol
+    
+    CredencialesAutenticacion --> InterfazAutenticacion : proporciona
+    InterfazAutenticacion --> TokenAutenticacion : retorna
+    TokenAutenticacion --> Usuario : contiene
+    Usuario --> RolEnum : tiene

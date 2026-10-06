@@ -1,61 +1,62 @@
 @startuml
-!theme plain
-skinparam packageStyle rectangle
+skinparam defaultFontName "Arial"
+skinparam packageStyle package
+skinparam roundCorner 10
 
-package "Capa de Presentación (React 19)" as UI {
-    [VideoUploadView.jsx] as VUV
-    [FeedbackView.jsx] as FV
-    [ProgressRing.jsx] as PR
-    [App.jsx] as App
+package "Capa de Presentación\n(Frontend React 19)" #EBF8FF {
+    [VideoUpload.jsx\n(VideoUploadView)] as UI_Upload
+    [FeedbackView.jsx\n(FeedbackView)] as UI_Feedback
+    [ProgressRing.jsx] as UI_Progress
 }
 
-package "Capa de Aplicación (FastAPI)" as App {
-    [routes.py] as Routes
-    [EvaluationController] as EC
-    [ResultadoWorkerDTO] as RDTO
+package "Capa de Aplicación\n(FastAPI)" #E6FFFA {
+    [routes.py\n(EvaluationController)] as APP_Ctrl
+    [SolicitudAnalisisDTO\n(Multipart Form)] as APP_DTO_In
+    [ResultadoEvaluacionDTO\n(JSON Response)] as APP_DTO_Out
 }
 
-package "Capa de Dominio" as Domain {
-    [IntelligenceAnalysisFacade] as Facade
-    [IPromptStrategy] as Strategy
-    [SpanishPromptStrategy] as ESP
-    [EsqueletoBiomecanico] as Esq
-    [AnalisisResultDTO] as ARDTO
+package "Capa de Dominio\n(Conceptos Puros y Lógica IA)" #FAF5FF {
+    [IntelligenceAnalysisFacade\n(Fachada Orquestadora)] as DOM_Facade
+    [EsqueletoBiomecanico\n(133 Keypoints)] as DOM_Skeleton
+    [Evaluacion\n(Entidad Conceptual)] as DOM_Eval
+    interface "IPromptStrategy\n(Estrategia Idioma)" as DOM_IStrategy
+    [SpanishPromptStrategy] as DOM_StratES
+    [PortuguesePromptStrategy] as DOM_StratPT
 }
 
-package "Capa de Infraestructura" as Infra {
-    [YOLOPoseAdapter] as YOLO
-    [QdrantVectorAdapter] as Qdrant
-    [GeminiApiAdapter] as Gemini
-    [QwenEmbeddingAdapter] as Qwen
-    [PostgrestClient] as PgClient
+package "Capa de Infraestructura\n(Persistencia y Servicios Externos)" #FFF5F5 {
+    [PostgrestClient\n(PostgreSQL RPCs)] as INF_DB
+    [QdrantVectorAdapter\n(HNSW 133-dim)] as INF_QdrantPose
+    [QdrantRAGAdapter\n(Dense 2048-dim)] as INF_QdrantRAG
+    [ColabGPUWorker\n(YOLO26-pose/depth)] as INF_Worker
+    [GeminiApiAdapter\n(2.5 Flash Lite)] as INF_Gemini
+    [QwenEmbeddingAdapter\n(Colab /embed_text)] as INF_Qwen
 }
 
-package "Servicios Externos" as Ext {
-    [Google Colab GPU (T4)] as Colab
-    [Google Gemini 2.5 Flash] as GeminiCloud
-    [Qdrant Vector DB] as QdrantDB
-    [PostgreSQL + PostgREST] as PG
-}
+' Relaciones Capa de Presentación -> Aplicación
+UI_Upload --> APP_Ctrl : HTTP POST /api/v1/evaluaciones/analizar[cite: 5, 6]
+UI_Feedback --> APP_Ctrl : HTTP GET /api/v1/evaluaciones/{id} (Polling)[cite: 5, 6]
+UI_Upload ..> UI_Progress : Renderiza progreso[cite: 7]
 
-VUV --> EC : POST /analizar
-FV --> EC : GET /{id}
-App --> VUV : renderiza
-App --> FV : renderiza
-App --> PR : animación
-EC --> Facade : delega
-Facade --> YOLO
-Facade --> Qdrant
-Facade --> Gemini
-Facade --> Qwen
-Facade --> Strategy
-Strategy <|.. ESP
-Facade ..> ARDTO
-YOLO --> Colab : HTTP /extraer_poses
-Qdrant --> QdrantDB : search / scroll
-Gemini --> GeminiCloud : generate_content
-Qwen --> Colab : HTTP /embed_text
-EC --> PgClient
-PgClient --> PG : RPCs
+' Relaciones Capa de Aplicación -> DTOs y Servicios
+APP_Ctrl --> APP_DTO_In : Valida entrada[cite: 4, 6]
+APP_Ctrl --> APP_DTO_Out : Serializa respuesta[cite: 5, 6]
+APP_Ctrl --> INF_DB : Persiste estado inicial (create_evaluacion)[cite: 6]
+APP_Ctrl --> DOM_Facade : Inicia análisis biomecánico[cite: 5, 8]
+
+' Relaciones Capa de Dominio
+DOM_IStrategy <|.. DOM_StratES : implementa[cite: 8]
+DOM_IStrategy <|.. DOM_StratPT : implementa[cite: 8]
+DOM_Facade ..> DOM_IStrategy : Selecciona según idioma[cite: 5, 8]
+DOM_Facade --> DOM_Skeleton : Procesa cinemática[cite: 5, 8]
+DOM_Facade --> DOM_Eval : Modela y actualiza resultado[cite: 5, 8]
+
+' Relaciones Dominio -> Infraestructura (Inversión / Delegación)
+DOM_Facade --> INF_Worker : Extrae keypoints del video[cite: 5, 8]
+DOM_Facade --> INF_QdrantPose : Búsqueda máxima diferencia[cite: 5, 8]
+DOM_Facade --> INF_Qwen : Genera embedding textual query[cite: 5]
+DOM_Facade --> INF_QdrantRAG : Recupera fragmentos teóricos[cite: 5]
+DOM_Facade --> INF_Gemini : Genera feedback cualitativo[cite: 5, 8]
+DOM_Facade --> INF_DB : Actualiza evaluación (worker_update_result)[cite: 6]
 
 @enduml

@@ -32,6 +32,15 @@ class Evaluacion(BaseModel):
     def marcar_estado(self, nuevo_estado: str) -> None:
         pass
 
+from typing import List, Dict, Optional, Any
+
 class AnalisisResultDTO(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
     similitud: float
     feedback: str
+    frame_critico_path: Optional[Any] = None
+    frame_alumno_idx: Optional[int] = None
+    discrepancias: Optional[List[str]] = Field(default_factory=list)
+    articulaciones_criticas: Optional[List[int]] = Field(default_factory=list)
+    dtw_distance: Optional[float] = None
+    dtw_normalizado: Optional[float] = None

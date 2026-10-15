@@ -1,10 +1,13 @@
+import os
 import logging
+from typing import Optional
+from uuid import UUID, uuid4
+
 from corpocmente.domain.entities.models import AnalisisResultDTO
 from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
 from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrategy
-from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
@@ -19,64 +22,155 @@ class IntelligenceAnalysisFacade:
         self.gemini = gemini_adapter
         self.qwen = qwen_adapter
 
-    def ejecutar_analisis_completo(self, video_path: str, tecnica_id: UUID, tecnica_nombre: str) -> AnalisisResultDTO:
-        # 1. Extraer esqueleto con YOLO (frame a frame)
-        esqueletos_frames = self.yolo.extraer_keypoints(video_path)
-        if not esqueletos_frames:
-            raise ValueError("No se pudo detectar el esqueleto biomecánico.")
+    def ejecutar_analisis_completo(
+        self,
+        video_path: str,
+        tecnica_id: UUID,
+        tecnica_nombre: str,
+        video_referencia_path: Optional[str] = None,
+        evaluacion_id: Optional[str] = None,
+        persona_idx: Optional[int] = None
+    ) -> AnalisisResultDTO:
+        from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
-        # 2. Buscar similitud matemática del fotograma con mayor diferencia (en Qdrant)
-        resultado_comparacion = self.qdrant.buscar_maxima_diferencia(esqueletos_frames, tecnica_id)
-        
-        similitud = resultado_comparacion.score
-        UMBRAL_ACEPTABLE = 85.0  # escala 0–100 (score ya viene multiplicado ×100)
+        # 0. Recuperar patrón activo de referencia desde Qdrant
+        secuencia_maestro = None
+        if hasattr(self.qdrant, "obtener_secuencia_referencia"):
+            try:
+                res_q = self.qdrant.obtener_secuencia_referencia(tecnica_id=tecnica_id)
+                if isinstance(res_q, list) and len(res_q) > 0:
+                    secuencia_maestro = res_q
+            except Exception as e_q:
+                logger.warning(f"Error consultando obtener_secuencia_referencia: {e_q}")
 
-        # 3. Lógica Condicional para evitar invocar a la IA si está bien
+        # Si no hay patrón en Qdrant pero se proveyó video de referencia, asegurar ingesta
+        if not secuencia_maestro and video_referencia_path and hasattr(self.qdrant, "asegurar_poses_referencia"):
+            try:
+                self.qdrant.asegurar_poses_referencia(
+                    tecnica_id=tecnica_id,
+                    video_referencia_path=video_referencia_path,
+                    yolo_adapter=self.yolo,
+                    tecnica_nombre=tecnica_nombre
+                )
+                if hasattr(self.qdrant, "obtener_secuencia_referencia"):
+                    res_q = self.qdrant.obtener_secuencia_referencia(tecnica_id=tecnica_id)
+                    if isinstance(res_q, list) and len(res_q) > 0:
+                        secuencia_maestro = res_q
+            except Exception as e_ref:
+                logger.warning(f"No se pudo auto-ingerir video de referencia del profesor: {e_ref}")
+
+        # 1. Extraer secuencia de keypoints del alumno con tracking idéntico
+        secuencia_alumno = None
+        if hasattr(self.yolo, "extraer_secuencia"):
+            ext_res = self.yolo.extraer_secuencia(video_path, persona_idx_inicial=persona_idx)
+            if isinstance(ext_res, dict):
+                secuencia_alumno = ext_res.get("secuencia_kpts", [])
+                cobertura = ext_res.get("cobertura", 0.0)
+                total_frames = ext_res.get("total_frames", 0)
+                if isinstance(total_frames, (int, float)) and isinstance(cobertura, (int, float)):
+                    if total_frames == 0 or cobertura < 0.70:
+                        raise ValueError(f"Tracking insuficiente en el video del alumno: cobertura {cobertura*100:.1f}% < 70%.")
+
+        if secuencia_alumno is None:
+            esqueletos_frames = self.yolo.extraer_keypoints(video_path)
+            secuencia_alumno = [e.to_vector_array() if hasattr(e, "to_vector_array") else e for e in esqueletos_frames]
+
+        if not secuencia_alumno:
+            raise ValueError("No se pudo detectar el esqueleto biomecánico en el video del alumno.")
+
+        # 2. Comparación DTW o fallback a máxima diferencia
+        if secuencia_maestro:
+            from corpocmente.domain.biomechanics.dtw_comparator import comparar_secuencias_con_dtw
+            dtw_res = comparar_secuencias_con_dtw(secuencia_maestro, secuencia_alumno)
+            similitud = dtw_res["score_similitud"]
+            frame_alumno_critico = dtw_res["frame_alumno_critico"]
+            arts_criticas = dtw_res.get("articulaciones_criticas", [])
+            from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES
+            discrepancias_detectadas = [
+                f"Desviación biomecánica en {COCO_JOINT_NAMES[idx] if idx < len(COCO_JOINT_NAMES) else f'Articulación #{idx}'}: desalineación respecto al patrón del profesor."
+                for idx in arts_criticas
+            ]
+            dtw_distance = dtw_res.get("dtw_distance")
+            dtw_normalizado = dtw_res.get("dtw_normalizado")
+            kpts_critico = secuencia_alumno[frame_alumno_critico] if frame_alumno_critico < len(secuencia_alumno) else None
+        elif hasattr(self.qdrant, "buscar_maxima_diferencia"):
+            esqueletos_para_qdrant = []
+            for i, kp in enumerate(secuencia_alumno):
+                vec = list(kp)
+                if len(vec) < 133:
+                    vec.extend([0.0] * (133 - len(vec)))
+                esqueletos_para_qdrant.append(EsqueletoBiomecanico(frame_idx=i, keypoints133=vec[:133], angulos_articulares={}))
+            resultado_comparacion = self.qdrant.buscar_maxima_diferencia(esqueletos_para_qdrant, tecnica_id)
+            similitud = resultado_comparacion.score
+            frame_alumno_critico = getattr(resultado_comparacion, "frame_alumno_idx", 0) or 0
+            arts_criticas = getattr(resultado_comparacion, "articulaciones_criticas", [])
+            discrepancias_detectadas = resultado_comparacion.discrepancias
+            kpts_critico = getattr(resultado_comparacion, "keypoints_alumno", None)
+            dtw_distance = None
+            dtw_normalizado = None
+        else:
+            raise ValueError(f"No existe un patrón biomecánico activo registrado para la técnica {tecnica_id}")
+
+        # 3. Extraer y resaltar el error en el fotograma crítico del alumno
+        eval_suffix = evaluacion_id or uuid4().hex[:8]
+        out_frame_path = f"/tmp/corpocmente_frames/critico_{eval_suffix}.jpg"
+        if os.path.exists(video_path) and hasattr(self.yolo, "extraer_frame_y_dibujar_error"):
+            frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
+                video_path=video_path,
+                frame_idx=frame_alumno_critico,
+                keypoints133=kpts_critico,
+                articulaciones_criticas=arts_criticas,
+                output_path=out_frame_path,
+                tecnica_nombre=tecnica_nombre
+            )
+        elif hasattr(self.yolo, "dibujar_error_en_frame"):
+            frame_resaltado = self.yolo.dibujar_error_en_frame(
+                out_frame_path,
+                discrepancias_detectadas
+            )
+        else:
+            frame_resaltado = out_frame_path
+
+        # 4. Evaluación y feedback condicional (IA sólo si hay errores)
+        UMBRAL_ACEPTABLE = 85.0
         if similitud >= UMBRAL_ACEPTABLE:
             feedback_texto = "¡Técnica ejecutada correctamente. Excelente trabajo!"
         else:
-            # 4. Dibujar/Resaltar el error en el fotograma crítico usando YOLO
-            frame_resaltado = self.yolo.dibujar_error_en_frame(
-                resultado_comparacion.frame_path, 
-                resultado_comparacion.discrepancias
-            )
-
-            # 5. Recuperar teoría RAG desde Qdrant usando una query textual (C11.4)
-            # Se construye una query con el nombre de la técnica + las discrepancias detectadas,
-            # se vectoriza con Qwen (endpoint /embed_text) y se buscan los chunks más similares.
             contexto_profundo = ""
             if self.qwen:
                 try:
-                    discrepancias_str = "; ".join(resultado_comparacion.discrepancias) if resultado_comparacion.discrepancias else "sin detalles específicos"
+                    discrepancias_str = "; ".join(discrepancias_detectadas) if discrepancias_detectadas else "sin detalles específicos"
                     query_textual = (
                         f"Técnica de Jiu-Jitsu: {tecnica_nombre}. "
                         f"Errores biomecánicos detectados: {discrepancias_str}. "
                         f"¿Cuál es la forma correcta de ejecutar esta técnica y cómo corregir estos errores?"
                     )
-                    logger.info(f"Construyendo query textual para RAG: {query_textual[:120]}...")
-                    
                     embedding_qwen = self.qwen.generar_embedding_texto(query_textual)
                     teoria = self.qdrant.recuperar_contexto_rag(embedding_qwen, tecnica_id)
-                    
                     if teoria:
                         contexto_profundo = f"\n\n[Teoría Biomecánica Recuperada (RAG)]:\n{teoria}"
-                        logger.info(f"Contexto RAG recuperado: {len(teoria)} caracteres.")
-                    else:
-                        logger.info("Sin teoría RAG adicional para esta técnica.")
-                except Exception as e:
-                    logger.warning(f"Fallo en recuperación RAG (no bloqueante): {e}")
+                except Exception as e_rag:
+                    logger.warning(f"Fallo en recuperación RAG (no bloqueante): {e_rag}")
 
-            # 6. Usar estrategia de idioma en español y pasar contexto de la técnica
             strategy = SpanishPromptStrategy()
-                
-            prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, resultado_comparacion.discrepancias)
+            prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, discrepancias_detectadas)
             if contexto_profundo:
                 prompt += contexto_profundo
+            prompt += (
+                "\n\nFormato obligatorio de respuesta: español, máximo 2 frases y 45 palabras, "
+                "texto simple sin Markdown. Expón solo el error principal y una corrección concreta. "
+                "No menciones herramientas ni tecnologías."
+            )
 
-            # 6. Generar feedback pedagógico con Gemini API usando el frame dibujado
             feedback_texto = self.gemini.generar_texto_feedback(prompt, frame_resaltado)
 
         return AnalisisResultDTO(
             similitud=similitud,
-            feedback=feedback_texto
+            feedback=feedback_texto,
+            frame_critico_path=frame_resaltado,
+            frame_alumno_idx=frame_alumno_critico,
+            discrepancias=discrepancias_detectadas,
+            articulaciones_criticas=arts_criticas,
+            dtw_distance=dtw_distance,
+            dtw_normalizado=dtw_normalizado
         )

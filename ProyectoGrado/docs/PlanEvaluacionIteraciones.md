@@ -686,15 +686,55 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
 
 | Iteración | Descripción |
 |-----------|-------------|
-| C12.7 | Frame crítico resaltado en el reporte |
+| C12.7 | Integración DTW + Normalización Biomecánica (Completada) |
 | C12.8 | Comparación lado a lado: video alumno ↔ video profesor |
 | C12.9 | Timeline de keypoints con slider temporal |
 | C12.10 | Exportar reporte a PDF |
 
+---
 
+### C12.7 — Integración DTW + Normalización Biomecánica
 
+**Fecha:** 2026-10-14<br>
+**Objetivo:** Sustituir la comparación fotograma a fotograma aislada por Dynamic Time Warping (DTW) multidimensional sobre la secuencia continua normalizada, permitiendo comparar movimientos temporales a diferente ritmo de ejecución (maestro vs. alumno) y detectar el punto crítico con mayor error articular.
 
+#### Decisiones Arquitectónicas y Hallazgos de Implementación
+1. **Decisión Arquitectónica:** Se reemplaza la búsqueda de similitud frame-a-frame por un pipeline en dos etapas:
+   - **Normalización Espacial Canónica:** Proyección del esqueleto COCO-17 a frame corporal canónico (origen en punto medio de cadera, escala torso, rotación cadera-hombro) + 12 ángulos articulares invariantes (vector canónico resultante de 46 dimensiones).
+   - **Alineación Temporal DTW:** DTW multidimensional que calcula la distancia acumulada de alineación y obtiene el camino de deformación temporal (*warping path*).
+2. **Corrección de API en `dtaidistance`:** Se detectó empíricamente que `dtaidistance.dtw.distance()` solo opera sobre series univariadas 1D; para vectores de características multidimensionales $(N, 46)$ se migró a `from dtaidistance import dtw_ndim` con aceleración en C (`distance_fast`).
+3. **Fix de Compatibilidad PyTorch 2.6+ y Ultralytics:**
+   - En PyTorch 2.6+ la carga de pesos exige `weights_only=False` para unpickling de modelos YOLO (`PoseModel`).
+   - Se seleccionó `yolov8n-pose.pt` para la extracción offline local en CPU en compatibilidad con `ultralytics==8.1.0`.
+4. **Protección Anti-División por Cero en Oclusión:** Se añadió guarda de escala mínima (`raw_scale < 10.0px`) en `pose_normalizer.py` que previene que frames con articulaciones no detectadas $(0, 0)$ generen divisiones por $10^{-9}$ y valores espaciales de $10^{11}$.
+5. **Corrección en Búsqueda de Peor Frame y Fixes A y B:**
+   - Ajuste de `peor_sim = float('inf')` en `dtw_comparator.py`.
+   - **Fix A (Filtrado de articulaciones):** Descarte de keypoints colapsados a $(0, 0)$ (`norm < 0.05`) para evitar falsos positivos por oclusiones faciales.
+   - **Fix B (Ventana temporal 20%-80% y descarte de frames vacíos):** Búsqueda del peor momento acotada a la fase técnica activa, exigiendo al menos 15 coordenadas válidas en ambos frames para descartar momentos sin detección.
+6. **Evolución a Métrica Basada en Media de Similitudes por Paso:**
+   - Se sustituyó la fórmula que proyectaba la distancia euclidiana acumulada mediante un `FACTOR_ESCALA` arbitrario por el promedio de similitud espacial de los fotogramas alineados a lo largo del *warping path* (con media recortada al 5% para robustez).
+   - El resultado pasa a ser directamente interpretable como el porcentaje medio de concordancia anatómica frame-a-frame entre maestro y alumno.
 
+#### Evidencia Empírica de Validación y Calibración Baseline (`calibrar_dtw.py`)
+- **Dataset de Prueba:**
+  - `Maestro.mp4`: 783 frames (13.06s @ 59.93 fps, 464x832 px)
+  - `Alumno.mp4`: 276 frames (4.61s @ 59.93 fps, 464x832 px) — misma técnica (escape/raspada de montada) ejecutada de forma fluida ~2.8x más rápida.
+- **Tabla Comparativa de Calibración:**
 
+| Caso de Prueba | DTW Acumulado (`dtw_norm`) | Score Media 5% (Nueva Métrica) | Mediana |
+| :--- | :--- | :--- | :--- |
+| **1. Maestro vs Maestro** | `0.0000` | **100.00%** | **100.00%** |
+| **2. Cropping 10%** | `0.0963` | **97.50%** | **100.00%** |
+| **3. Ruido Gaussiano** | `0.3073` | **32.40%** | **34.26%** |
+| **4. Maestro vs Alumno (Real)** | `0.2352` | **63.25%** | **64.13%** |
 
+- **Métricas Resultantes en Pipeline Depurado:**
+  - `score_similitud`: **63.25%** (Mediana: **64.13%**, P75: **76.32%**, Máximo puntual: **90.30%**)
+  - `dtw_distance`: **204.8371**
+  - `path_length`: **871**
+  - `frame_maestro_critico`: **610** (de 783, ~78% del video)
+  - `frame_alumno_critico`: **67** (de 276, ~24% del video)
+  - `articulaciones_criticas`: **[16, 9, 5]** (Tobillo derecho, Muñeca izquierda, Hombro izquierdo — 100% articulaciones corporales reales)
 
+#### Tests de Regresión
+- **36 passed, 6 skipped, 0 failures** en suite backend pytest.

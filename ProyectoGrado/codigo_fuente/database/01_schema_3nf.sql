@@ -37,7 +37,8 @@ CREATE TABLE usuarios (
 CREATE TABLE tecnicas (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(100) NOT NULL,
-    nivel_cinturon VARCHAR(20) NOT NULL
+    nivel_cinturon VARCHAR(20) NOT NULL,
+    patron_activo_id UUID NULL
 );
 
 -- 4. Tabla: videos_referencia (Videos base para comparar)

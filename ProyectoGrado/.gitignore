@@ -7,3 +7,15 @@ postgrest.exe
 postgrest.conf
 artifacts/
 
+# Datos y archivos locales de ejecución
+qdrant_storage/
+**/.env
+!**/.env.example
+**/__pycache__/
+**/.pytest_cache/
+**/venv/
+**/.venv/
+**/node_modules/
+**/dist/
+codigo_fuente/data/*.mp4
+

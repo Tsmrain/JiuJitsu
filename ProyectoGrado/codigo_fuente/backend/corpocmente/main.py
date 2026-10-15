@@ -34,6 +34,10 @@ UPLOAD_DIR = "/tmp/corpocmente_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/static/videos", StaticFiles(directory=UPLOAD_DIR), name="videos")
 
+FRAMES_DIR = "/tmp/corpocmente_frames"
+os.makedirs(FRAMES_DIR, exist_ok=True)
+app.mount("/static/frames", StaticFiles(directory=FRAMES_DIR), name="frames")
+
 # Registrar rutas del dominio
 app.include_router(evaluaciones_router)
 app.include_router(auth_router)

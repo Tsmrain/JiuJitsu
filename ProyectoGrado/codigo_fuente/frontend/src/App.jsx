@@ -24,14 +24,36 @@ function App() {
 
   const { t } = useTranslation(user?.idioma_preferido || 'es');
 
-  const handleUploadStart = async (file, tecnica) => {
-    console.log("Iniciando subida de:", file.name, "para técnica:", tecnica?.nombre);
+  const handleUploadStart = async (uploadData) => {
+    // Soporta tanto objeto uploadData ({ sessionId, personaIdx, tecnica, file }) como firma clásica (file, tecnica)
+    let sessionId = null;
+    let personaIdx = null;
+    let tecnica = null;
+    let file = null;
+
+    if (uploadData instanceof File) {
+      file = uploadData;
+      tecnica = arguments[1] || selectedTecnica;
+    } else if (uploadData && typeof uploadData === 'object') {
+      sessionId = uploadData.sessionId;
+      personaIdx = uploadData.personaIdx;
+      tecnica = uploadData.tecnica || selectedTecnica;
+      file = uploadData.file;
+    }
+
+    console.log("Iniciando análisis:", { sessionId, personaIdx, tecnica: tecnica?.nombre });
     if (tecnica) setSelectedTecnica(tecnica);
     setAppState('UPLOADING');
     setUploadProgress(10);
 
     const formData = new FormData();
-    formData.append("video", file);
+    if (sessionId) {
+      formData.append("session_id", sessionId);
+      formData.append("persona_idx", String(personaIdx ?? 0));
+    }
+    if (file) {
+      formData.append("video", file);
+    }
     if (tecnica) {
       formData.append("tecnica_id", tecnica.id);
       formData.append("tecnica_nombre", tecnica.nombre);
@@ -86,8 +108,13 @@ function App() {
                 feedback: data.feedback,
                 video_referencia_url: data.video_referencia_url,
                 video_referencia_profesor_nombre: data.video_referencia_profesor_nombre,
+                frame_error_url: data.frame_error_url,
               });
               setAppState('FEEDBACK');
+              setCurrentEvaluacionId(null);
+            } else if (data.estado === 'error') {
+              alert(data.feedback || "Ocurrió un error al procesar el análisis biomecánico.");
+              setAppState('IDLE');
               setCurrentEvaluacionId(null);
             }
           }

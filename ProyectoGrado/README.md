@@ -3,7 +3,7 @@
 Este repositorio contiene el código fuente completo del sistema de evaluación biomecánica y gestión de conocimiento (RAG) para la academia Corpo e Mente.
 
 El sistema se compone de cuatro grandes pilares:
-1. **Base de Datos y Motores de Búsqueda:** PostgreSQL + PostgREST + Qdrant.
+1. **Base de Datos y Motores de Búsqueda:** PostgreSQL + PostgREST + Qdrant. Qdrant conserva patrones biomecánicos y conocimiento teórico para su recuperación.
 2. **Backend (API):** FastAPI (Orquestador de IA).
 3. **Colab Worker:** Servidor de Inferencia Remota en GPU (YOLOv8 + Qwen3-VL).
 4. **Frontend:** React 19 + Vite.
@@ -24,6 +24,15 @@ Asegúrate de tener instalado:
 
 ## 🚀 Guía de Instalación y Ejecución
 
+## 🎓 Recorrido breve para la demostración
+
+1. Inicia PostgreSQL, PostgREST, Qdrant, el backend y el frontend; conecta también el worker de Google Colab y configura la clave de Gemini.
+2. Entra como profesor, crea o selecciona una técnica y registra un video de demostración.
+3. Entra como alumno, selecciona esa técnica y carga un video donde se vea claramente a la persona.
+4. Revisa la puntuación, el fotograma crítico, la referencia del profesor y la corrección técnica.
+
+La comparación requiere un patrón del profesor registrado para la técnica. El worker de Colab presta el servicio de inferencia cuando está disponible; Qdrant debe permanecer accesible desde el backend.
+
 Sigue estos pasos en orden para levantar el sistema completo localmente.
 
 ### 1. Base de Datos Relacional (PostgreSQL)
@@ -41,10 +50,13 @@ El sistema requiere una base de datos local y ejecutar las migraciones para cons
    * `03_rls_policies.sql`
    * `04_seed_data.sql`
    * `05_teoria_referencia.sql`
+   * `06_patron_activo.sql`
+   * `07_evaluaciones_patron.sql`
+   * `08_tecnicas_patron_listado.sql`
 
 ### 2. Base de Datos Vectorial (Qdrant)
 
-Qdrant se utiliza para el sistema RAG (almacenamiento y recuperación semántica de la teoría de Jiu-Jitsu).
+Qdrant almacena y recupera tanto los patrones biomecánicos por técnica como los fragmentos de teoría usados en la búsqueda semántica.
 
 1. Abre una terminal en la carpeta principal `ProyectoGrado/`.
 2. Levanta el contenedor usando Docker Compose:
@@ -89,7 +101,7 @@ El backend orquesta la comunicación entre el Frontend, PostgREST, Qdrant, Gemin
    ```
 6. En **otra terminal** (con el entorno virtual activado), inicia el servidor **FastAPI**:
    ```bash
-   uvicorn corpocmente.ui.api.main:app --reload --port 8000
+   uvicorn corpocmente.main:app --reload --port 8000
    ```
 
 ### 5. Interfaz de Usuario (Frontend React)

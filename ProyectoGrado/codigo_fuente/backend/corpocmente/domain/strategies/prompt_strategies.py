@@ -18,7 +18,10 @@ class SpanishPromptStrategy(IPromptStrategy):
         for d in discrepancias:
             prompt += f"- {d}\n"
         prompt += (
-            "Analiza visualmente la imagen y proporciona instrucciones correctivas claras, "
-            "específicas y accionables en español. Menciona qué articulación ajustar y hacia dónde."
+            "Responde en español con máximo 2 frases y 45 palabras. Indica el principal error "
+            "visible y una corrección concreta. Usa lenguaje simple, respetuoso y directo. "
+            "No uses Markdown, títulos, listas, saludos ni explicaciones largas. No menciones "
+            "herramientas, modelos, algoritmos, tecnologías ni cómo se hizo el análisis. "
+            "Si la imagen no permite confirmar un detalle, no lo inventes."
         )
         return prompt

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './VideoUpload.css';
 import { useTranslation } from '../i18n/translations';
+import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
+import { incluirEstadoPatrones } from '../api/tecnicas';
 
 export default function VideoUpload({ user, onUploadStart }) {
   const { t } = useTranslation(user?.idioma_preferido);
@@ -46,13 +48,15 @@ export default function VideoUpload({ user, onUploadStart }) {
   const fetchTecnicasDelProfesor = async (profesorId) => {
     setLoadingTecnicas(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${profesorId}`);
+      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${profesorId}`, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
       if (res.ok) {
-        const data = await res.json();
+        const data = await incluirEstadoPatrones(await res.json(), user?.token);
         setTecnicas(data);
         if (data && data.length > 0) {
           // Priorizar seleccionar una técnica que tenga video de referencia
-          const conVideo = data.find(t => t.tiene_video);
+          const conVideo = data.find(t => t.tiene_patron || t.tiene_video);
           setSelectedTecnica(conVideo || data[0]);
         } else {
           setSelectedTecnica(null);
@@ -113,21 +117,107 @@ export default function VideoUpload({ user, onUploadStart }) {
     }
   };
 
-  const handleFile = (selectedFile) => {
-    if (selectedFile.type.startsWith('video/')) {
-      setFile(selectedFile);
-    } else {
+  const [extractingPrimerFrame, setExtractingPrimerFrame] = useState(false);
+  const [sessionData, setSessionData] = useState(null);
+  const [selectedPersonaIdx, setSelectedPersonaIdx] = useState(null);
+  const [userRejectedPersona, setUserRejectedPersona] = useState(false);
+  const [confirmingSelection, setConfirmingSelection] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const handleFile = async (selectedFile) => {
+    if (!selectedFile.type.startsWith('video/')) {
       alert(t.alertValidVideo);
+      return;
+    }
+    setFile(selectedFile);
+    setSessionData(null);
+    setSelectedPersonaIdx(null);
+    setUserRejectedPersona(false);
+    setErrorMessage(null);
+    setExtractingPrimerFrame(true);
+
+    const formData = new FormData();
+    formData.append("video", selectedFile);
+
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${user?.token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Error detectando personas en el fotograma inicial.");
+      }
+
+      const data = await res.json();
+      setSessionData(data);
+      if (data.personas && data.personas.length === 1) {
+        setSelectedPersonaIdx(data.personas[0].idx);
+      } else {
+        setSelectedPersonaIdx(null);
+      }
+    } catch (err) {
+      console.error("Error al obtener primer frame:", err);
+      setErrorMessage(err.message || "Error al procesar el fotograma inicial del video.");
+    } finally {
+      setExtractingPrimerFrame(false);
     }
   };
 
-  const handleSubmit = () => {
-    if (file && selectedTecnica) {
-      onUploadStart(file, {
-        ...selectedTecnica,
-        profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Mestre Oficial",
-        profesor_id: selectedProfesor?.user_id
+  const handleResetVideo = () => {
+    setFile(null);
+    setSessionData(null);
+    setSelectedPersonaIdx(null);
+    setUserRejectedPersona(false);
+    setErrorMessage(null);
+    setExtractingPrimerFrame(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!file || !selectedTecnica) return;
+
+    if (!sessionData || selectedPersonaIdx === null) {
+      alert(t.alertSelectPerson || "Por favor selecciona cuál persona eres en el video antes de continuar.");
+      return;
+    }
+
+    setConfirmingSelection(true);
+    setErrorMessage(null);
+
+    try {
+      // 1. Confirmar explícitamente la selección en la sesión de backend
+      const res = await fetch(`http://localhost:8000/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${user?.token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ persona_idx: selectedPersonaIdx })
       });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Error al confirmar selección de persona.");
+      }
+
+      // 2. Disparar análisis
+      onUploadStart({
+        sessionId: sessionData.session_id,
+        personaIdx: selectedPersonaIdx,
+        tecnica: {
+          ...selectedTecnica,
+          profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Mestre Oficial",
+          profesor_id: selectedProfesor?.user_id
+        },
+        file
+      });
+    } catch (err) {
+      console.error("Error confirmando persona:", err);
+      setErrorMessage(err.message || "Error al confirmar la persona seleccionada.");
+    } finally {
+      setConfirmingSelection(false);
     }
   };
 
@@ -143,7 +233,7 @@ export default function VideoUpload({ user, onUploadStart }) {
         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           {t.selectProfesorLabel}
         </label>
-        
+
         {loadingProfesores ? (
           <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.noProfessorsFound}</p>
         ) : (
@@ -153,7 +243,7 @@ export default function VideoUpload({ user, onUploadStart }) {
               {profesores.map(p => {
                 const isSelected = selectedProfesor?.user_id === p.user_id;
                 return (
-                  <div 
+                  <div
                     key={p.user_id}
                     onClick={() => setSelectedProfesor(p)}
                     style={{
@@ -190,9 +280,9 @@ export default function VideoUpload({ user, onUploadStart }) {
                       marginBottom: '0.75rem'
                     }}>
                       {p.avatar_url ? (
-                        <img 
-                          src={p.avatar_url} 
-                          alt={p.nombre_completo} 
+                        <img
+                          src={p.avatar_url}
+                          alt={p.nombre_completo}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={(e) => {
                             e.target.onerror = null;
@@ -205,9 +295,9 @@ export default function VideoUpload({ user, onUploadStart }) {
                     </div>
 
                     {/* Nombre del Profesor debajo de la Foto */}
-                    <span style={{ 
-                      fontWeight: 'bold', 
-                      fontSize: '1rem', 
+                    <span style={{
+                      fontWeight: 'bold',
+                      fontSize: '1rem',
                       color: isSelected ? '#ffffff' : 'var(--text-secondary)',
                       marginTop: '0.25rem'
                     }}>
@@ -223,7 +313,7 @@ export default function VideoUpload({ user, onUploadStart }) {
 
             {/* Select alternativo cuando hay varios profesores */}
             {profesores.length > 2 && (
-              <select 
+              <select
                 value={selectedProfesor?.user_id || ''}
                 onChange={handleProfesorChange}
                 style={{
@@ -260,7 +350,7 @@ export default function VideoUpload({ user, onUploadStart }) {
             {tecnicas.length === 0 ? (
               <p style={{ fontSize: '0.9rem', color: '#ff8787' }}>{t.noTecnicasFound}</p>
             ) : (
-              <select 
+              <select
                 value={selectedTecnica?.id || ''}
                 onChange={handleTecnicaChange}
                 style={{
@@ -276,7 +366,7 @@ export default function VideoUpload({ user, onUploadStart }) {
               >
                 {tecnicas.map(tech => (
                   <option key={tech.id} value={tech.id} style={{ background: '#111', color: 'white' }}>
-                    {tech.nombre} {tech.tiene_video ? '' : ''}
+                    {tech.nombre}
                   </option>
                 ))}
               </select>
@@ -297,8 +387,8 @@ export default function VideoUpload({ user, onUploadStart }) {
                   <span style={{ fontWeight: 'bold', color: 'white' }}>{selectedProfesor ? selectedProfesor.nombre_completo : ''}</span>
                   <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>{selectedTecnica.nombre}</span>
                 </div>
-                <span style={{ marginLeft: 'auto', background: selectedTecnica.tiene_video ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
-                  {selectedTecnica.tiene_video ? t.hasVideoTag : t.noVideoTag}
+                <span style={{ marginLeft: 'auto', background: (selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
+                  {(selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? t.hasVideoTag : t.noVideoTag}
                 </span>
               </div>
             )}
@@ -306,23 +396,22 @@ export default function VideoUpload({ user, onUploadStart }) {
         )}
       </div>
 
-      {/* Paso 3: Carga del Video del Alumno */}
-      <div 
-        className={`drop-zone glass-panel ${dragActive ? 'active' : ''}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <input 
-          type="file" 
-          id="file-upload" 
-          accept="video/*" 
-          onChange={handleChange} 
-          className="file-input"
-        />
-        
-        {!file ? (
+      {/* Paso 3: Carga del Video y Calibración Interactiva */}
+      {!file ? (
+        <div
+          className={`drop-zone glass-panel ${dragActive ? 'active' : ''}`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <input
+            type="file"
+            id="file-upload"
+            accept="video/*"
+            onChange={handleChange}
+            className="file-input"
+          />
           <label htmlFor="file-upload" className="drop-label">
             <div className="upload-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -334,25 +423,165 @@ export default function VideoUpload({ user, onUploadStart }) {
             <span className="drop-text">{t.dropText} <strong>{t.dropClick}</strong></span>
             <span className="drop-hint">{t.dropHint}</span>
           </label>
-        ) : (
-          <div className="file-preview" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
-            <video 
-              src={URL.createObjectURL(file)} 
-              controls 
-              className="video-player"
-              style={{ width: '100%', maxHeight: '300px', borderRadius: '8px', backgroundColor: 'black' }}
-            />
-            <div className="file-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-              <span className="file-name" style={{ fontWeight: 'bold' }}>{file.name}</span>
-              <span className="file-size" style={{ fontSize: '0.875rem', opacity: 0.7 }}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+        </div>
+      ) : (
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ display: 'block', fontWeight: 'bold', fontSize: '0.95rem' }}>{file.name}</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
             </div>
-            <div className="file-actions" style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-              <button type="button" className="btn-secondary" onClick={() => setFile(null)}>{t.btnChange}</button>
-              <button type="button" className="btn-primary" onClick={handleSubmit}>{t.btnAnalyze}</button>
-            </div>
+            <button type="button" className="btn-secondary" onClick={handleResetVideo} style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
+              {t.btnChange}
+            </button>
           </div>
-        )}
-      </div>
+
+          {errorMessage && (
+            <div style={{ background: 'rgba(208, 17, 24, 0.2)', border: '1px solid var(--brand-red)', padding: '0.75rem 1rem', borderRadius: '8px', color: '#ff8787', fontSize: '0.85rem' }}>
+              {errorMessage}
+            </div>
+          )}
+
+          {extractingPrimerFrame ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem' }}>
+              <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--brand-red)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.extractingFrame}</p>
+            </div>
+          ) : sessionData ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <SelectorPersonaVideo
+                sessionData={sessionData}
+                selectedPersonaIdx={selectedPersonaIdx}
+                onSelect={(idx) => {
+                  setSelectedPersonaIdx(idx);
+                  setUserRejectedPersona(false);
+                }}
+                heading={t.selectPersonStep}
+                subtitle={sessionData.personas.length > 1 ? t.multiplePersonsDetected : t.singlePersonDetected}
+                candidateLabel={t.personCandidate}
+                selectedLabel={t.personIdentified}
+                showCandidates={false}
+              />
+
+              {/* Caso A: Solo 1 persona detectada -> Preguntar explícitamente si es el usuario o negarse */}
+              {sessionData.personas.length === 1 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', width: '100%' }}>
+                  {userRejectedPersona ? (
+                    <div style={{
+                      background: 'rgba(208, 17, 24, 0.2)',
+                      border: '1px solid var(--brand-red)',
+                      borderRadius: '8px',
+                      padding: '0.9rem 1.25rem',
+                      color: '#ff8787',
+                      fontSize: '0.88rem',
+                      textAlign: 'center',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}>
+                      {t.bodyNotDetectedMsg}
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 'bold' }}>
+                        {t.isThisYou}
+                      </span>
+                      <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => {
+                            setUserRejectedPersona(true);
+                            setSelectedPersonaIdx(null);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '0.85rem',
+                            borderColor: '#ff4d4f',
+                            color: '#ff8787',
+                            borderRadius: '8px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {t.notThisPersonBtn}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={handleSubmit}
+                          disabled={confirmingSelection}
+                          style={{
+                            flex: 1,
+                            padding: '0.85rem',
+                            borderRadius: '8px',
+                            cursor: confirmingSelection ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {confirmingSelection ? t.confirmingSelection : t.yesItsMeBtn}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* Caso B: Múltiples personas -> Chips para seleccionar persona */}
+                  <div style={{ display: 'flex', gap: '0.75rem', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {sessionData.personas.map((p) => {
+                      const isSelected = selectedPersonaIdx === p.idx;
+                      return (
+                        <button
+                          key={p.idx}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPersonaIdx(p.idx);
+                            setUserRejectedPersona(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.6rem 1rem',
+                            borderRadius: '8px',
+                            background: isSelected ? 'rgba(208, 17, 24, 0.2)' : 'rgba(255,255,255,0.05)',
+                            border: isSelected ? '2px solid var(--brand-red)' : '1px solid rgba(255,255,255,0.15)',
+                            color: isSelected ? '#fff' : 'rgba(255,255,255,0.75)',
+                            cursor: 'pointer',
+                            fontWeight: isSelected ? 'bold' : 'normal',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: isSelected ? 'var(--brand-red)' : 'rgba(255,255,255,0.4)' }} />
+                          <span>{isSelected ? t.personIdentified : `${t.personCandidate} #${p.idx}`}</span>
+                          <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>({Math.round(p.confianza * 100)}%)</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Botón de Confirmación y Análisis */}
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={handleSubmit}
+                      disabled={selectedPersonaIdx === null || confirmingSelection}
+                      style={{
+                        width: '100%',
+                        padding: '0.85rem',
+                        fontSize: '1rem',
+                        opacity: selectedPersonaIdx === null || confirmingSelection ? 0.6 : 1,
+                        cursor: selectedPersonaIdx === null || confirmingSelection ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {confirmingSelection ? t.confirmingSelection : t.confirmPersonBtn}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

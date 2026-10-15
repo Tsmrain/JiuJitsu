@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import './ProfesorTecnicas.css';
 import { useTranslation } from '../i18n/translations';
 import TheoryManagerModal from '../components/TheoryManagerModal';
+import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
+import { incluirEstadoPatrones } from '../api/tecnicas';
 
 const OPACIONES_CINTURON = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
 
@@ -13,6 +15,9 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const [loadingAlumnos, setLoadingAlumnos] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [personaSelection, setPersonaSelection] = useState(null);
+  const [personaSelectionError, setPersonaSelectionError] = useState('');
+  const [confirmingPersona, setConfirmingPersona] = useState(false);
   const [theoryModalTecnica, setTheoryModalTecnica] = useState(null);
   const [selectedAlumnoDetail, setSelectedAlumnoDetail] = useState(null);
   const [evaluacionesPorAlumno, setEvaluacionesPorAlumno] = useState({}); // { alumno_id: [...] }
@@ -38,7 +43,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setTecnicas(data);
+        setTecnicas(await incluirEstadoPatrones(data, user?.token));
       }
     } catch (err) {
       console.error("Error fetching técnicas", err);
@@ -151,31 +156,38 @@ export default function ProfesorTecnicas({ user, onClose }) {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${user.token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ nombre: formData.nombre, nivel_cinturon: formData.nivel_cinturon })
       });
 
       if (!res.ok) {
-        alert("Error guardando la técnica.");
-        setSaving(false);
-        return;
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Error guardando la técnica.");
       }
 
       const savedTecnica = await res.json();
+      setEditingId(savedTecnica.id);
+      if (!editingId) fetchTecnicas();
 
       if (selectedFile) {
-        const videoData = new FormData();
-        videoData.append("profesor_id", user.user_id);
-        videoData.append("video", selectedFile);
-
-        const videoRes = await fetch(`http://localhost:8000/api/v1/tecnicas/${savedTecnica.id}/video`, {
+        const frameData = new FormData();
+        frameData.append("video", selectedFile);
+        const frameRes = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
           method: "POST",
           headers: { "Authorization": `Bearer ${user.token}` },
-          body: videoData
+          body: frameData
         });
-
-        if (!videoRes.ok) {
-          alert("Técnica guardada pero falló la subida del video.");
+        if (!frameRes.ok) {
+          const err = await frameRes.json().catch(() => ({}));
+          throw new Error(err.detail || "Técnica creada, pero no se pudo procesar el video.");
         }
+        const frame = await frameRes.json();
+        setPersonaSelection({
+          tecnicaId: savedTecnica.id,
+          sessionData: frame,
+          selectedIdx: frame.personas?.length === 1 ? frame.personas[0].idx : null,
+        });
+        setPersonaSelectionError('');
+        setShowModal(false);
       }
 
       // RAG Multimodal: Ingest theory if provided
@@ -200,15 +212,56 @@ export default function ProfesorTecnicas({ user, onClose }) {
         }
       }
 
-      alert("¡Técnica, conocimiento RAG y video guardados con éxito!");
-      setShowModal(false);
+      if (!selectedFile) {
+        alert("¡Técnica y conocimiento RAG guardados con éxito!");
+        setShowModal(false);
+      }
       fetchTecnicas();
 
     } catch (err) {
       console.error(err);
-      alert("Error de conexión al guardar la técnica.");
+      alert(err.message || "Error de conexión al guardar la técnica.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleConfirmPersona = async () => {
+    if (!personaSelection || personaSelection.selectedIdx === null) return;
+    setConfirmingPersona(true);
+    setPersonaSelectionError('');
+    try {
+      const { tecnicaId, sessionData, selectedIdx } = personaSelection;
+      const selectionRes = await fetch(`http://localhost:8000/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ persona_idx: selectedIdx }),
+      });
+      if (!selectionRes.ok) {
+        const err = await selectionRes.json().catch(() => ({}));
+        throw new Error(err.detail || 'No se pudo confirmar la persona seleccionada.');
+      }
+
+      const patronForm = new FormData();
+      patronForm.append('session_id', sessionData.session_id);
+      patronForm.append('persona_idx', String(selectedIdx));
+      const patronRes = await fetch(`http://localhost:8000/api/v1/tecnicas/${tecnicaId}/patron`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+        body: patronForm,
+      });
+      if (!patronRes.ok) {
+        const err = await patronRes.json().catch(() => ({}));
+        throw new Error(err.detail || 'No se pudo registrar el patrón biomecánico.');
+      }
+      const patron = await patronRes.json();
+      alert(`Patrón biomecánico activo: ${patron.total_frames} frames.`);
+      setPersonaSelection(null);
+      fetchTecnicas();
+    } catch (err) {
+      setPersonaSelectionError(err.message || 'Error registrando el patrón.');
+    } finally {
+      setConfirmingPersona(false);
     }
   };
 
@@ -412,10 +465,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
                     <span className={`badge-cinturon cinturon-${tech.nivel_cinturon?.toLowerCase()}`}>
                       {getBeltLabel(tech.nivel_cinturon)}
                     </span>
-                    {tech.tiene_video ? (
+                    {(tech.tiene_patron || tech.tiene_video) ? (
                       <div style={{ marginTop: '0.5rem' }}>
                         <div className="video-status has-video" style={{ marginBottom: '0.5rem' }}>
-                          {t.hasVideoStatus}
+                          {tech.tiene_patron ? '✅ Patrón biomecánico activo' : t.hasVideoStatus}
                         </div>
                         {tech.video_url && (
                           <div className="card-video-preview" style={{ marginTop: '0.5rem' }}>
@@ -574,6 +627,37 @@ export default function ProfesorTecnicas({ user, onClose }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {personaSelection && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="persona-selection-title">
+          <div className="modal-content glass-panel" style={{ maxWidth: '760px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 id="persona-selection-title" style={{ marginTop: 0 }}>Selecciona a la persona del patrón</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              La técnica ya fue creada. Selecciona a quien ejecuta el movimiento para registrar su patrón biomecánico.
+            </p>
+            <SelectorPersonaVideo
+              sessionData={personaSelection.sessionData}
+              selectedPersonaIdx={personaSelection.selectedIdx}
+              onSelect={(selectedIdx) => setPersonaSelection((current) => ({ ...current, selectedIdx }))}
+              candidateLabel="Persona"
+              selectedLabel="Seleccionada"
+            />
+            {personaSelectionError && (
+              <div role="alert" style={{ marginTop: '1rem', padding: '.75rem', borderRadius: '8px', background: 'rgba(208,17,24,.2)', color: '#ff8787' }}>
+                {personaSelectionError}
+              </div>
+            )}
+            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+              <button type="button" className="btn-secondary" onClick={() => setPersonaSelection(null)} disabled={confirmingPersona}>
+                Cerrar
+              </button>
+              <button type="button" className="btn-primary" onClick={handleConfirmPersona} disabled={personaSelection.selectedIdx === null || confirmingPersona}>
+                {confirmingPersona ? 'Registrando patrón…' : 'Confirmar y crear patrón'}
+              </button>
+            </div>
           </div>
         </div>
       )}

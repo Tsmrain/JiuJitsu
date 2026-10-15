@@ -11,3 +11,4 @@ opencv-python-headless==4.9.0.80
 PyJWT==2.9.0
 psycopg2-binary==2.9.13
 requests==2.34.2
+dtaidistance==2.3.12

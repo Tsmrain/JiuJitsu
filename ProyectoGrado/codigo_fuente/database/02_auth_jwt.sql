@@ -561,7 +561,8 @@ RETURNS TABLE(
     nivel_cinturon varchar,
     video_id uuid,
     video_profesor_id uuid,
-    video_url varchar
+    video_url varchar,
+    tiene_patron boolean
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -571,7 +572,8 @@ BEGIN
         t.nivel_cinturon,
         vr.id AS video_id,
         vr.profesor_id AS video_profesor_id,
-        vr.url_video_gcs AS video_url
+        vr.url_video_gcs AS video_url,
+        (t.patron_activo_id IS NOT NULL) AS tiene_patron
     FROM tecnicas t
     LEFT JOIN videos_referencia vr ON vr.tecnica_id = t.id;
 END;

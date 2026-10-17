@@ -18,4 +18,19 @@ qdrant_storage/
 **/node_modules/
 **/dist/
 codigo_fuente/data/*.mp4
+codigo_fuente/storage/manuales/
+codigo_fuente/backend/storage/
+
+# Credenciales sensibles y tokens de autenticación
+token.json
+**/token.json
+credentials.json
+**/credentials.json
+client_secret*.json
+**/client_secret*.json
+
+# Pesos binarios locales
+*.pt
+**/*.pt
+
 

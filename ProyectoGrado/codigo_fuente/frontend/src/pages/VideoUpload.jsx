@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './VideoUpload.css';
 import { useTranslation } from '../i18n/translations';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
@@ -123,6 +123,66 @@ export default function VideoUpload({ user, onUploadStart }) {
   const [userRejectedPersona, setUserRejectedPersona] = useState(false);
   const [confirmingSelection, setConfirmingSelection] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonResult, setComparisonResult] = useState(null);
+  const [comparisonVideoUrl, setComparisonVideoUrl] = useState(null);
+  const [comparisonError, setComparisonError] = useState(null);
+  const [selectedAlignment, setSelectedAlignment] = useState(null);
+  const comparisonPlayerRef = useRef(null);
+
+  const selectAlignmentFrame = (pair) => {
+    setSelectedAlignment(pair);
+    if (comparisonPlayerRef.current && Number.isFinite(pair.video_idx)) {
+      comparisonPlayerRef.current.currentTime = pair.video_idx / 24;
+    }
+  };
+
+  const handleCompareVideos = async () => {
+    if (!file || !selectedTecnica?.video_url || selectedPersonaIdx === null) return;
+    setComparisonLoading(true);
+    setComparisonResult(null);
+    if (comparisonVideoUrl) URL.revokeObjectURL(comparisonVideoUrl);
+    setComparisonVideoUrl(null);
+    setComparisonError(null);
+    try {
+      const referenceUrl = new URL(selectedTecnica.video_url, 'http://localhost:8000');
+      const teacherResponse = await fetch(referenceUrl);
+      if (!teacherResponse.ok) throw new Error('No se pudo cargar el video de referencia del profesor.');
+      const teacherBlob = await teacherResponse.blob();
+      const teacherFile = new File([teacherBlob], `referencia_${selectedTecnica.nombre || 'tecnica'}.mp4`, { type: teacherBlob.type || 'video/mp4' });
+      const form = new FormData();
+      form.append('video_alumno', file);
+      form.append('video_maestro', teacherFile);
+      form.append('tecnica_id', selectedTecnica.id);
+      form.append('persona_idx_alumno', String(selectedPersonaIdx));
+      form.append('idioma', user?.idioma_preferido || 'es');
+      form.append('video_maestro_nombre', `${selectedProfesor?.nombre_completo || 'Profesor'} — ${selectedTecnica.nombre || 'Técnica'}`);
+      const headers = { Authorization: `Bearer ${user?.token}` };
+      const start = await fetch('http://localhost:8000/api/v1/comparaciones/video-a-video', { method: 'POST', headers, body: form });
+      const startData = await start.json().catch(() => ({}));
+      if (!start.ok) throw new Error(startData.detail || 'No se pudo iniciar la comparación.');
+      let result;
+      for (let attempt = 0; attempt < 180; attempt += 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const response = await fetch(`http://localhost:8000/api/v1/comparaciones/${startData.comparacion_id}`, { headers });
+        result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || 'No se pudo consultar la comparación.');
+        if (result.estado === 'completado') break;
+        if (result.estado === 'error_procesamiento') throw new Error(result.error_message || 'Falló el análisis de los videos.');
+      }
+      if (result?.estado !== 'completado') throw new Error('La comparación sigue procesándose. Intenta consultar el reporte más tarde.');
+      if (result.video_url) {
+        const videoResponse = await fetch(`http://localhost:8000${result.video_url}`, { headers });
+        if (!videoResponse.ok) throw new Error('No se pudo cargar el video comparativo.');
+        setComparisonVideoUrl(URL.createObjectURL(await videoResponse.blob()));
+      }
+      setComparisonResult(result);
+    } catch (err) {
+      setComparisonError(err.message || 'Error al comparar los videos.');
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
 
   const handleFile = async (selectedFile) => {
     if (!selectedFile.type.startsWith('video/')) {
@@ -373,7 +433,8 @@ export default function VideoUpload({ user, onUploadStart }) {
             )}
 
             {selectedTecnica && (
-              <div className="profesor-ref-info" style={{ marginTop: '0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
+              <div className="profesor-ref-info" style={{ marginTop: '0.85rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 {selectedProfesor && (
                   <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5 solid var(--brand-red)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(208,17,24,0.3)' }}>
                     {selectedProfesor.avatar_url ? (
@@ -390,6 +451,13 @@ export default function VideoUpload({ user, onUploadStart }) {
                 <span style={{ marginLeft: 'auto', background: (selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
                   {(selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? t.hasVideoTag : t.noVideoTag}
                 </span>
+                </div>
+                {selectedTecnica.mensaje_profesor && (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,.1)', paddingTop: '.65rem', lineHeight: 1.5 }}>
+                    <strong style={{ color: 'white' }}>Indicaciones del profesor</strong>
+                    <p style={{ margin: '.3rem 0 0', color: 'rgba(255,255,255,.78)', whiteSpace: 'pre-wrap' }}>{selectedTecnica.mensaje_profesor}</p>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -440,6 +508,30 @@ export default function VideoUpload({ user, onUploadStart }) {
             <div style={{ background: 'rgba(208, 17, 24, 0.2)', border: '1px solid var(--brand-red)', padding: '0.75rem 1rem', borderRadius: '8px', color: '#ff8787', fontSize: '0.85rem' }}>
               {errorMessage}
             </div>
+          )}
+
+          {selectedTecnica?.video_url && selectedPersonaIdx !== null && (
+            <button type="button" className="btn-secondary" onClick={handleCompareVideos} disabled={comparisonLoading}>
+              {comparisonLoading ? 'Comparando videos…' : 'Comparar con el video del profesor'}
+            </button>
+          )}
+          {comparisonError && <div role="alert" style={{ color: '#ff8787' }}>{comparisonError}</div>}
+          {comparisonResult && (
+            <section className="glass-panel" aria-live="polite" style={{ padding: '1rem', borderRadius: '10px' }}>
+              <h3>Comparación con {selectedTecnica?.nombre}</h3>
+              <p>Video del profesor: {comparisonResult.video_maestro_nombre} · Tu video: {comparisonResult.video_alumno_nombre}</p>
+              <p>Similitud de movimiento: {comparisonResult.score_similitud}%</p>
+              {comparisonVideoUrl && <video ref={comparisonPlayerRef} controls src={comparisonVideoUrl} style={{ width: '100%', maxHeight: '480px' }} />}
+              {Array.isArray(comparisonResult.alineacion) && comparisonResult.alineacion.length > 0 && (
+                <div aria-label="Alineación temporal entre ambos videos" style={{ display: 'flex', alignItems: 'end', gap: '2px', height: '44px', marginTop: '0.75rem' }}>
+                  {comparisonResult.alineacion.filter((_, i) => i % Math.max(1, Math.ceil(comparisonResult.alineacion.length / 100)) === 0).map((pair, i) => (
+                    <button key={i} type="button" onClick={() => selectAlignmentFrame(pair)} aria-label={`Ver comparación: alumno fotograma ${pair.frame_alumno_idx}, profesor fotograma ${pair.frame_maestro_idx}`} title={`Alumno fotograma ${pair.frame_alumno_idx ?? '?'} · Profesor fotograma ${pair.frame_maestro_idx ?? '?'}`} style={{ flex: 1, minWidth: '2px', height: `${Math.max(5, Math.min(100, (pair.similitud_frame ?? 0) * 100))}%`, padding: 0, border: selectedAlignment?.video_idx === pair.video_idx ? '1px solid white' : 0, background: (pair.similitud_frame ?? 0) >= 0.7 ? '#35c878' : '#e04444', cursor: 'pointer' }} />
+                  ))}
+                </div>
+              )}
+              {selectedAlignment && <p>Fotogramas alineados: alumno #{selectedAlignment.frame_alumno_idx} · profesor #{selectedAlignment.frame_maestro_idx}</p>}
+              <small>La línea resume cómo se alinean los fotogramas del alumno con los del profesor a lo largo del movimiento.</small>
+            </section>
           )}
 
           {extractingPrimerFrame ? (

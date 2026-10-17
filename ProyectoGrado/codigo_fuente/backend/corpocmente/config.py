@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "vectores_poses_jiujitsu"
+    QDRANT_RAG_COLLECTION: str = "rag_knowledge"
     
     # Colab Worker Tunnel URL
     COLAB_TUNNEL_URL: str = ""

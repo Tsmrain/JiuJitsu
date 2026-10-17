@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import os
 from typing import List, Optional
 from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException, status, Header
@@ -526,7 +527,7 @@ async def listar_evaluaciones_alumno(
     authorization: Optional[str] = Header(None)
 ):
     """
-    Lista las últimas 20 evaluaciones de un alumno (para panel del profesor).
+    Lista hasta 50 evaluaciones para el historial propio o el panel del profesor.
     - Profesor: solo puede ver alumnos de su sucursal.
     - Admin: cualquier alumno.
     """
@@ -534,7 +535,9 @@ async def listar_evaluaciones_alumno(
 
     db = get_db()
 
-    # Verificar que el alumno pertenece a la sucursal del profesor (o que es admin)
+    es_propio_alumno = caller.get("role") == "alumno" and str(caller.get("uid")) == str(alumno_id)
+
+    # El alumno puede consultar su propio historial; el personal conserva el acceso actual.
     if caller.get("role") == "profesor":
         caller_sucursal = caller.get("sucursal_id")
         if not caller_sucursal:
@@ -548,7 +551,7 @@ async def listar_evaluaciones_alumno(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No puedes ver alumnos de otra sucursal."
             )
-    elif caller.get("role") != "admin":
+    elif caller.get("role") != "admin" and not es_propio_alumno:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requieren privilegios de profesor o administrador."
@@ -559,7 +562,12 @@ async def listar_evaluaciones_alumno(
     except Exception:
         evaluaciones = []
 
-    return evaluaciones
+    for evaluacion in evaluaciones or []:
+        for campo in ("url_video_alumno", "video_referencia_url"):
+            ruta = evaluacion.get(campo)
+            if ruta:
+                evaluacion[campo] = f"/static/videos/{os.path.basename(ruta)}"
+    return evaluaciones or []
 
 @router.post("/sucursales", response_model=SucursalResponse, status_code=status.HTTP_201_CREATED)
 async def crear_sucursal(nueva: SucursalCreate, authorization: Optional[str] = Header(None)):

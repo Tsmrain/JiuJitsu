@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './FeedbackView.css';
 import { useTranslation } from '../i18n/translations';
 
@@ -5,6 +6,7 @@ const API_BASE = 'http://localhost:8000';
 
 export default function FeedbackView({ user, result, tecnica, onReset }) {
   const { t } = useTranslation(user?.idioma_preferido);
+  const [videoError, setVideoError] = useState(false);
   if (!result) return null;
 
   const isExcellent = result.similitud >= 90;
@@ -43,23 +45,28 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
         </div>
       )}
 
-      {(videoUrl || frameErrorUrl) && (
-        <div className="comparison-media">
-          {videoUrl && (
-            <section className="glass-panel comparison-media-card">
-              <h3>{isPt ? 'VÍDEO DO PROFESSOR' : 'VIDEO DEL PROFESOR'}</h3>
-              {result.video_referencia_profesor_nombre && <p>{result.video_referencia_profesor_nombre}</p>}
-              <video src={videoUrl} controls playsInline preload="metadata" />
-            </section>
+      <div className="comparison-media">
+        <section className="glass-panel comparison-media-card">
+          <h3>{isPt ? 'VÍDEO DE REFERÊNCIA DO PROFESSOR' : 'VIDEO DE REFERENCIA DEL PROFESOR'}</h3>
+          <p>
+            {result.video_referencia_profesor_nombre || tecnica?.profesorRef || (isPt ? 'Professor selecionado' : 'Profesor seleccionado')}
+            {result.video_referencia_nombre ? ` · ${result.video_referencia_nombre}` : ''}
+          </p>
+          {videoUrl && !videoError ? (
+            <video src={videoUrl} controls playsInline preload="metadata" onError={() => setVideoError(true)} />
+          ) : (
+            <p role="status">{isPt ? 'O vídeo de referência não está disponível para reprodução.' : 'El video de referencia no está disponible para reproducirse.'}</p>
           )}
-          {frameErrorUrl && (
-            <section className="glass-panel comparison-media-card critical-frame-card">
-              <h3>{isPt ? 'MOMENTO A CORRIGIR' : 'MOMENTO A CORREGIR'}</h3>
-              <img src={frameErrorUrl} alt={isPt ? 'Quadro analisado do aluno' : 'Fotograma analizado del alumno'} />
-            </section>
+        </section>
+        <section className="glass-panel comparison-media-card critical-frame-card">
+          <h3>{isPt ? 'FOTOGRAMA CRÍTICO DO ALUNO' : 'FOTOGRAMA CRÍTICO DEL ALUMNO'}</h3>
+          {frameErrorUrl ? (
+            <img src={frameErrorUrl} alt={isPt ? 'Quadro analisado do aluno' : 'Fotograma analizado del alumno'} />
+          ) : (
+            <p role="status">{isPt ? 'O fotograma analisado não está disponível.' : 'El fotograma analizado no está disponible.'}</p>
           )}
-        </div>
-      )}
+        </section>
+      </div>
 
       <div className="score-card glass-panel">
         <div className="score-circle">

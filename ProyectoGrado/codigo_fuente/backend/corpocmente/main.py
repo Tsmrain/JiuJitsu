@@ -4,6 +4,7 @@ from corpocmente.config import settings
 from corpocmente.ui.api.routes import router as evaluaciones_router
 from corpocmente.ui.api.auth_routes import router as auth_router
 from corpocmente.ui.api.tecnicas_routes import router as tecnicas_router
+from corpocmente.api.routes.comparaciones import router as comparaciones_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -42,6 +43,7 @@ app.mount("/static/frames", StaticFiles(directory=FRAMES_DIR), name="frames")
 app.include_router(evaluaciones_router)
 app.include_router(auth_router)
 app.include_router(tecnicas_router)
+app.include_router(comparaciones_router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"])
 def health_check():

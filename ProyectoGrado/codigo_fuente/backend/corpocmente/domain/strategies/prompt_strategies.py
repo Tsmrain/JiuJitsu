@@ -19,7 +19,7 @@ class SpanishPromptStrategy(IPromptStrategy):
             prompt += f"- {d}\n"
         prompt += (
             "Responde en español con máximo 2 frases y 45 palabras. Indica el principal error "
-            "visible y una corrección concreta. Usa lenguaje simple, respetuoso y directo. "
+            "visible y una corrección concreta mencionando la articulación o postura afectada. Usa lenguaje simple, respetuoso y directo. "
             "No uses Markdown, títulos, listas, saludos ni explicaciones largas. No menciones "
             "herramientas, modelos, algoritmos, tecnologías ni cómo se hizo el análisis. "
             "Si la imagen no permite confirmar un detalle, no lo inventes."

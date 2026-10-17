@@ -1,7 +1,9 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 import os
 import logging
 import re
+import mimetypes
+from pathlib import Path
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
@@ -48,6 +50,49 @@ COCO_SKELETON_PAIRS = [
 
 FRAMES_DIR = "/tmp/corpocmente_frames"
 os.makedirs(FRAMES_DIR, exist_ok=True)
+RAG_MEDIA_STORAGE_ROOTS = (
+    Path(__file__).resolve().parents[3] / "storage" / "rag_frames",
+    Path(__file__).resolve().parents[3] / "storage" / "manuales",
+    Path(__file__).resolve().parents[4] / "storage" / "manuales",
+)
+MAX_RAG_IMAGE_BYTES = 8 * 1024 * 1024
+ALLOWED_RAG_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
+
+
+def _cargar_imagen_evidencia_rag(media_path: str, payload: Dict):
+    """Lee evidencia visual solo desde el almacenamiento de la aplicación."""
+    path = Path(media_path).resolve(strict=True)
+    allowed = False
+    for storage_root in RAG_MEDIA_STORAGE_ROOTS:
+        try:
+            path.relative_to(storage_root.resolve())
+            allowed = True
+            break
+        except ValueError:
+            continue
+    if not allowed:
+        raise ValueError("La evidencia visual está fuera del almacenamiento permitido.")
+
+    if path.suffix.lower() == ".pdf":
+        import fitz
+        document = fitz.open(path)
+        try:
+            if document.page_count < 1:
+                raise ValueError("El PDF de evidencia no contiene páginas.")
+            page_number = max(1, int(payload.get("pagina") or 1))
+            page = document[min(page_number - 1, document.page_count - 1)]
+            return page.get_pixmap(dpi=120, alpha=False).tobytes("jpeg"), "image/jpeg"
+        finally:
+            document.close()
+
+    if path.suffix.lower() not in ALLOWED_RAG_IMAGE_EXTENSIONS:
+        raise ValueError("El tipo de archivo de evidencia visual no está permitido.")
+    if path.stat().st_size > MAX_RAG_IMAGE_BYTES:
+        raise ValueError("La imagen de evidencia supera el límite de tamaño.")
+    mime_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+    if not mime_type.startswith("image/"):
+        raise ValueError("El tipo MIME de la evidencia no es una imagen.")
+    return path.read_bytes(), mime_type
 
 
 class YOLOPoseAdapter:
@@ -58,7 +103,8 @@ class YOLOPoseAdapter:
         self,
         video_path: str,
         persona_idx_inicial: Optional[int] = None,
-        max_disp_norm: float = 0.25
+        max_disp_norm: float = 0.25,
+        evaluacion_id: Optional[str] = None
     ) -> dict:
         """
         Extrae la secuencia temporal completa de keypoints (133 dims por frame) usando YOLO
@@ -84,7 +130,63 @@ class YOLOPoseAdapter:
         h = float(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1.0)
         cap.release()
 
-        # Intento 1: Worker remoto en Colab (vía ngrok) si está activo
+        # Intento 1: Worker remoto en Colab vía Google Drive Data Lake (Cero Túneles)
+        try:
+            from corpocmente.infrastructure.storage.google_drive_client import GoogleDriveDataLakeClient
+            drive_client = GoogleDriveDataLakeClient()
+            if drive_client.token_file.exists():
+                import uuid
+                import time
+                eval_id = str(evaluacion_id) if evaluacion_id else f"eval_{uuid.uuid4().hex[:10]}"
+                logger.info(f"Subiendo video {video_path} al Data Lake en Google Drive (eval_id: {eval_id})...")
+                video_drive_id = drive_client.subir_archivo(video_path, nombre_drive=f"video_{eval_id}.mp4")
+                logger.info(f"Video subido a Drive (ID: {video_drive_id}). Creando tarea para Colab Worker...")
+                drive_client.crear_tarea_video(
+                    evaluacion_id=eval_id,
+                    video_drive_id=video_drive_id,
+                    persona_idx=persona_idx_inicial if persona_idx_inicial is not None else 0
+                )
+
+                # Esperar resultado del worker en Colab (polling cada 3 segundos, max 300s)
+                timeout_segundos = 300
+                inicio_espera = time.time()
+                logger.info(f"Esperando inferencia cinemática 3D de Colab en Google Drive (timeout={timeout_segundos}s)...")
+
+                resultado_drive = None
+                while time.time() - inicio_espera < timeout_segundos:
+                    resultado_drive = drive_client.buscar_resultado_video(eval_id)
+                    if resultado_drive is not None:
+                        break
+                    time.sleep(3)
+
+                # Limpiar el video temporal de Drive para mantener la cuota libre
+                try:
+                    drive_client.eliminar_archivo(video_drive_id)
+                except Exception:
+                    pass
+
+                if resultado_drive and "esqueletos" in resultado_drive:
+                    esqueletos_dict = resultado_drive.get("esqueletos", [])
+                    if esqueletos_dict:
+                        sec = [item.get("keypoints133", [0.0]*133) for item in esqueletos_dict]
+                        frame_idxs = [int(item.get("frame_idx", i)) for i, item in enumerate(esqueletos_dict)]
+                        tot_f = int(resultado_drive.get("total_frames_procesados", len(sec)))
+                        frames_ok = int(resultado_drive.get("frames_con_persona", sum(1 for k in sec if any(v > 0 for v in k[:51]))))
+                        cob = float(resultado_drive.get("cobertura", (frames_ok / tot_f) if tot_f > 0 else 0.0))
+                        logger.info(f"✅ Secuencia cinemática 3D recibida de Colab Worker vía Drive ({len(sec)} frames, cobertura {cob*100:.1f}%).")
+                        return {
+                            "secuencia_kpts": sec,
+                            "frame_idxs": frame_idxs,
+                            "total_frames": tot_f,
+                            "frames_con_persona": frames_ok,
+                            "cobertura": cob
+                        }
+                else:
+                    logger.warning(f"Timeout o sin respuesta de Colab Worker en Google Drive tras {timeout_segundos}s. Continuando con fallback...")
+        except Exception as e_drive:
+            logger.warning(f"Error en comunicación con Google Drive Data Lake ({e_drive}). Continuando con fallback...")
+
+        # Intento 2: Worker remoto en Colab (vía ngrok si estuviera activo)
         if self.colab_url and not self.colab_url.startswith("https://placeholder"):
             import requests
             try:
@@ -93,8 +195,12 @@ class YOLOPoseAdapter:
                 with open(video_path, 'rb') as f:
                     resp = requests.post(
                         endpoint,
+                        data={"persona_idx": persona_idx_inicial if persona_idx_inicial is not None else 0},
                         files={"video": f},
-                        headers={"ngrok-skip-browser-warning": "1"},
+                        headers={
+                            "ngrok-skip-browser-warning": "1",
+                            "User-Agent": "CorpocmenteBackend/1.0",
+                        },
                         timeout=180
                     )
                 resp.raise_for_status()
@@ -102,11 +208,13 @@ class YOLOPoseAdapter:
                 esqueletos_dict = data.get("esqueletos", [])
                 if esqueletos_dict:
                     sec = [item.get("keypoints133", [0.0]*133) for item in esqueletos_dict]
+                    frame_idxs = [int(item.get("frame_idx", i)) for i, item in enumerate(esqueletos_dict)]
                     return {
                         "secuencia_kpts": sec,
-                        "total_frames": len(sec),
-                        "frames_con_persona": sum(1 for k in sec if any(v > 0 for v in k[:51])),
-                        "cobertura": 1.0
+                        "frame_idxs": frame_idxs,
+                        "total_frames": data.get("total_frames_procesados", len(sec)),
+                        "frames_con_persona": data.get("frames_con_persona", sum(1 for k in sec if any(v > 0 for v in k[:51]))),
+                        "cobertura": data.get("cobertura", 0.0)
                     }
             except Exception as e:
                 logger.warning(f"Error llamando a YOLO en Colab ({e}). Intentando fallback local...")
@@ -194,6 +302,7 @@ class YOLOPoseAdapter:
             cobertura = frames_con_persona / total
             return {
                 "secuencia_kpts": secuencia_kpts,
+                "frame_idxs": list(range(len(secuencia_kpts))),
                 "total_frames": frames_evaluados,
                 "frames_con_persona": frames_con_persona,
                 "cobertura": round(cobertura, 4)
@@ -202,10 +311,37 @@ class YOLOPoseAdapter:
             logger.debug(f"YOLO local fallo ({e_local}). Fallback determinista.")
             return {
                 "secuencia_kpts": [[0.5] * 133],
+                "frame_idxs": [0],
                 "total_frames": 1,
                 "frames_con_persona": 1,
                 "cobertura": 1.0
             }
+
+    def extraer_frame_limpio(
+        self,
+        video_path: str,
+        frame_idx: int,
+        output_path: str,
+    ) -> Optional[str]:
+        """Extrae el fotograma exacto del video sin dibujar anotaciones."""
+        import cv2
+        if not os.path.exists(video_path):
+            return None
+        try:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            cap = cv2.VideoCapture(video_path)
+            if not cap.isOpened():
+                return None
+            cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, frame_idx))
+            ret, img = cap.read()
+            cap.release()
+            if ret and img is not None:
+                cv2.imwrite(output_path, img)
+                logger.info(f"Fotograma limpio guardado en: {output_path}")
+                return output_path
+        except Exception as exc:
+            logger.warning(f"Error extrayendo frame limpio: {exc}")
+        return None
 
     def extraer_keypoints(self, video_path: str, persona_idx_inicial: Optional[int] = None) -> List[EsqueletoBiomecanico]:
         """Extrae la lista de EsqueletoBiomecanico delegando a extraer_secuencia con tracking."""
@@ -226,11 +362,13 @@ class YOLOPoseAdapter:
         keypoints133: Optional[List[float]],
         articulaciones_criticas: List[int],
         output_path: str,
+        clean_output_path: Optional[str] = None,
         tecnica_nombre: str = ""
     ) -> str:
         """
         Extrae el fotograma exacto con mayor diferencia biomecánica del video del alumno
         y dibuja el esqueleto COCO con las articulaciones en error resaltadas visualmente.
+        Si clean_output_path es provisto, guarda primero el fotograma limpio sin anotaciones.
         """
         import cv2
         import numpy as np
@@ -252,6 +390,15 @@ class YOLOPoseAdapter:
         if frame is None:
             logger.warning(f"No se pudo extraer frame {frame_idx} de {video_path}. Generando lienzo de respaldo.")
             frame = np.full((720, 1280, 3), 25, dtype=np.uint8)
+
+        # Guardar fotograma limpio antes de dibujar anotaciones
+        if clean_output_path and frame is not None:
+            try:
+                os.makedirs(os.path.dirname(clean_output_path), exist_ok=True)
+                cv2.imwrite(clean_output_path, frame)
+                logger.info(f"Fotograma crítico limpio guardado en: {clean_output_path}")
+            except Exception as e_clean:
+                logger.warning(f"No se pudo guardar el fotograma limpio: {e_clean}")
 
         h, w = frame.shape[:2]
 
@@ -423,7 +570,12 @@ class GeminiApiAdapter:
             logger.error(f"Error inesperado en validar_es_jiujitsu: {e}")
             return False
 
-    def generar_texto_feedback(self, prompt: str, frame_image_path: str) -> str:
+    def generar_texto_feedback(
+        self,
+        prompt: str,
+        frame_image_path: str,
+        evidencias_visuales: Optional[List[Dict]] = None,
+    ) -> str:
         """
         Genera la evaluación cualitativa estructurada en el idioma seleccionado (ES/PT)
         enviando el prompt de la estrategia y la imagen del fotograma con la discrepancia clave.
@@ -435,10 +587,22 @@ class GeminiApiAdapter:
             with open(frame_image_path, "rb") as f_img:
                 image_bytes = f_img.read()
             image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+            contents = [image_part]
+            for evidencia in (evidencias_visuales or [])[:3]:
+                payload = evidencia.get("payload", evidencia)
+                media_path = payload.get("media_path")
+                if not media_path:
+                    continue
+                try:
+                    visual_bytes, mime_type = _cargar_imagen_evidencia_rag(media_path, payload)
+                    contents.append(types.Part.from_bytes(data=visual_bytes, mime_type=mime_type))
+                except Exception as evidence_error:
+                    logger.warning("No se pudo cargar una imagen recuperada del RAG: %s", evidence_error)
+            contents.append(prompt)
 
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents=[image_part, prompt],
+                contents=contents,
                 config=types.GenerateContentConfig(
                     temperature=0.2, # Baja temperatura para respuestas consistentes y técnicas
                     max_output_tokens=250

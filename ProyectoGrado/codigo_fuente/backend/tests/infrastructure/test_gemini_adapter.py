@@ -61,3 +61,55 @@ def test_generar_texto_feedback_rate_limit(mock_genai_client, tmp_path):
 
     with pytest.raises(GeminiRateLimitError):
         adapter.generar_texto_feedback("Prompt de prueba", str(fake_frame))
+
+
+def test_feedback_envia_frame_del_alumno_y_evidencia_visual_a_gemini(mock_genai_client, tmp_path, monkeypatch):
+    import corpocmente.infrastructure.ai.adapters as gemini_module
+    monkeypatch.setattr(gemini_module, "RAG_MEDIA_STORAGE_ROOTS", (tmp_path,))
+    frame_alumno = tmp_path / "alumno.jpg"
+    frame_referencia = tmp_path / "profesor.jpg"
+    frame_alumno.write_bytes(b"student-image")
+    frame_referencia.write_bytes(b"teacher-image")
+    mock_genai_client.models.generate_content.return_value.text = "Ajusta la cadera hacia el compañero."
+
+    adapter = GeminiApiAdapter(api_key="fake_key")
+    adapter.generar_texto_feedback(
+        "Corrige el error principal.",
+        str(frame_alumno),
+        evidencias_visuales=[{"payload": {"media_path": str(frame_referencia)}}],
+    )
+
+    contents = mock_genai_client.models.generate_content.call_args.kwargs["contents"]
+    assert len(contents) == 3
+    assert contents[-1] == "Corrige el error principal."
+
+
+def test_feedback_ignora_evidencia_fuera_del_storage_y_limita_imagenes(mock_genai_client, tmp_path, monkeypatch):
+    import corpocmente.infrastructure.ai.adapters as gemini_module
+    allowed_dir = tmp_path / "allowed"
+    allowed_dir.mkdir()
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    monkeypatch.setattr(gemini_module, "RAG_MEDIA_STORAGE_ROOTS", (allowed_dir,))
+
+    frame_alumno = allowed_dir / "alumno.jpg"
+    frame_alumno.write_bytes(b"student")
+    inside_paths = []
+    for index in range(4):
+        path = allowed_dir / f"ref-{index}.jpg"
+        path.write_bytes(b"reference")
+        inside_paths.append(path)
+    outside = outside_dir / "private.jpg"
+    outside.write_bytes(b"private")
+    mock_genai_client.models.generate_content.return_value.text = "Respuesta breve."
+
+    adapter = GeminiApiAdapter(api_key="fake_key")
+    adapter.generar_texto_feedback(
+        "Evalúa el movimiento.",
+        str(frame_alumno),
+        evidencias_visuales=[
+            {"payload": {"media_path": str(path)}} for path in inside_paths
+        ] + [{"payload": {"media_path": str(outside)}}],
+    )
+    contents = mock_genai_client.models.generate_content.call_args.kwargs["contents"]
+    assert len(contents) == 5  # Fotograma alumno + máximo 3 referencias + prompt.

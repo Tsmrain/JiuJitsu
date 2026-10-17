@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import './ProfesorTecnicas.css';
 import { useTranslation } from '../i18n/translations';
 import TheoryManagerModal from '../components/TheoryManagerModal';
+import GlobalKnowledgeModal from '../components/GlobalKnowledgeModal';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
 
@@ -15,6 +16,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const [loadingAlumnos, setLoadingAlumnos] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showGlobalKnowledge, setShowGlobalKnowledge] = useState(false);
   const [personaSelection, setPersonaSelection] = useState(null);
   const [personaSelectionError, setPersonaSelectionError] = useState('');
   const [confirmingPersona, setConfirmingPersona] = useState(false);
@@ -25,7 +27,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const [formData, setFormData] = useState({
     nombre: '',
     nivel_cinturon: 'Blanco',
-    teoria: ''
+    mensaje_profesor: ''
   });
   const [editingId, setEditingId] = useState(null);
 
@@ -106,7 +108,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
   const handleOpenNewModal = () => {
     setEditingId(null);
-    setFormData({ nombre: '', nivel_cinturon: 'Blanco', teoria: '' });
+    setFormData({ nombre: '', nivel_cinturon: 'Blanco', mensaje_profesor: '' });
     setSelectedFile(null);
     setPreviewUrl(null);
     setShowModal(true);
@@ -117,7 +119,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
     setFormData({
       nombre: tech.nombre,
       nivel_cinturon: tech.nivel_cinturon,
-      teoria: '' // Usually theory is fetched, but keeping it simple for now
+      mensaje_profesor: tech.mensaje_profesor || ''
     });
     setSelectedFile(null);
     setPreviewUrl(tech.video_url || null);
@@ -142,6 +144,14 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!selectedFile && !previewUrl) {
+      alert('Debes subir el video de referencia para esta técnica.');
+      return;
+    }
+    if (!formData.mensaje_profesor.trim()) {
+      alert('Escribe el mensaje para explicar la técnica a tus alumnos.');
+      return;
+    }
     setSaving(true);
 
     const url = editingId 
@@ -156,7 +166,11 @@ export default function ProfesorTecnicas({ user, onClose }) {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${user.token}`
         },
-        body: JSON.stringify({ nombre: formData.nombre, nivel_cinturon: formData.nivel_cinturon })
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          nivel_cinturon: formData.nivel_cinturon,
+          mensaje_profesor: formData.mensaje_profesor.trim(),
+        })
       });
 
       if (!res.ok) {
@@ -190,30 +204,8 @@ export default function ProfesorTecnicas({ user, onClose }) {
         setShowModal(false);
       }
 
-      // RAG Multimodal: Ingest theory if provided
-      if (formData.teoria.trim() !== '') {
-        try {
-          const teoriaRes = await fetch(`http://localhost:8000/api/v1/conocimiento/teoria`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${user.token}`
-            },
-            body: JSON.stringify({
-              tecnica_id: savedTecnica.id,
-              contenido_texto: formData.teoria
-            })
-          });
-          if (!teoriaRes.ok) {
-            console.error("Error al indexar la teoría en RAG Qdrant");
-          }
-        } catch (e) {
-          console.error("No se pudo conectar al endpoint RAG", e);
-        }
-      }
-
       if (!selectedFile) {
-        alert("¡Técnica y conocimiento RAG guardados con éxito!");
+        alert("Técnica actualizada correctamente.");
         setShowModal(false);
       }
       fetchTecnicas();
@@ -453,7 +445,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>Técnicas y Videos de Referencia</h3>
-            <button className="btn-primary" onClick={handleOpenNewModal}>{t.btnNewTecnica}</button>
+            <div style={{ display: 'flex', gap: '.65rem', flexWrap: 'wrap' }}>
+              <button className="btn-secondary" onClick={() => setShowGlobalKnowledge(true)}>Manuales y fuentes globales</button>
+              <button className="btn-primary" onClick={handleOpenNewModal}>{t.btnNewTecnica}</button>
+            </div>
           </div>
 
           {loading ? <p>{t.loadingTecnicas}</p> : (
@@ -486,6 +481,11 @@ export default function ProfesorTecnicas({ user, onClose }) {
                                 display: 'block'
                               }} 
                             />
+                          </div>
+                        )}
+                        {tech.tiene_patron && !tech.video_url && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                            El patrón está activo, pero no se encontró un video reproducible del profesor.
                           </div>
                         )}
                       </div>
@@ -573,20 +573,22 @@ export default function ProfesorTecnicas({ user, onClose }) {
               </div>
 
               <div className="form-group">
-                <label>Manual del Maestro (Teoría RAG)</label>
-                <textarea 
-                  name="teoria" 
-                  value={formData.teoria} 
-                  onChange={handleChange} 
-                  placeholder="Ej. En el Armbar, la cadera debe estar pegada al hombro..."
-                  rows="3"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.6rem', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px' }}
+                <label htmlFor="mensaje_profesor">Mensaje del profesor para sus alumnos *</label>
+                <textarea
+                  id="mensaje_profesor"
+                  name="mensaje_profesor"
+                  value={formData.mensaje_profesor}
+                  onChange={handleChange}
+                  placeholder="Explica con tus palabras cómo deben realizar esta técnica."
+                  rows={5}
+                  required
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', resize: 'vertical' }}
                 />
-                <span style={{fontSize: '0.75rem', opacity: 0.7, color: 'var(--brand-red)'}}>* La IA de Gemini leerá esto para dar feedback preciso a tus alumnos.</span>
+                <small style={{ color: 'var(--text-secondary)' }}>Este mensaje aparecerá al alumno junto a la técnica.</small>
               </div>
 
               <div className="form-group">
-                <label>{editingId && previewUrl ? t.btnReplaceVideo : t.btnUploadVideo}</label>
+                <label>Video de referencia * (obligatorio)</label>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -602,6 +604,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
                 >
                   {selectedFile ? ` Video: ${selectedFile.name}` : (editingId && previewUrl ? t.btnReplaceVideo : t.btnUploadVideo)}
                 </button>
+                <small style={{ display: 'block', marginTop: '.4rem', color: 'var(--text-secondary)' }}>El video se usará como referencia al analizar los videos de los alumnos.</small>
               </div>
 
               {previewUrl && (
@@ -670,6 +673,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
           onClose={() => setTheoryModalTecnica(null)}
         />
       )}
+      {showGlobalKnowledge && <GlobalKnowledgeModal user={user} onClose={() => setShowGlobalKnowledge(false)} />}
     </div>
   );
 }

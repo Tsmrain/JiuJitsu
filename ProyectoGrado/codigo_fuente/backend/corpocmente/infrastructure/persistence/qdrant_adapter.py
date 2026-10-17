@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from uuid import UUID
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
@@ -11,6 +11,7 @@ import os
 from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES
 
 logger = logging.getLogger(__name__)
+RAG_VECTOR_DIM = 2048
 
 class VectorSearchResultDTO:
     def __init__(
@@ -46,9 +47,21 @@ class QdrantVectorAdapter:
                  client: Optional[QdrantClient] = None):
         self.host = host or settings.QDRANT_HOST
         self.port = port or settings.QDRANT_PORT
-        self.collection_name = collection_name or settings.QDRANT_COLLECTION
-        self.rag_collection = "rag_knowledge"
+        self.pose_collection_name = collection_name or settings.QDRANT_COLLECTION
+        self.rag_collection_name = settings.QDRANT_RAG_COLLECTION
+        if self.pose_collection_name == self.rag_collection_name:
+            raise ValueError("La colección biomecánica y la colección RAG deben ser distintas.")
         self._client = client
+
+    @property
+    def collection_name(self) -> str:
+        """Alias retrocompatible para la colección biomecánica de keypoints (133 dims)."""
+        return self.pose_collection_name
+
+    @property
+    def rag_collection(self) -> str:
+        """Alias retrocompatible de la colección RAG multimodal (2048 dims)."""
+        return self.rag_collection_name
 
     @property
     def client(self) -> QdrantClient:
@@ -59,12 +72,12 @@ class QdrantVectorAdapter:
     def asegurar_coleccion(self, vector_size: int = 133) -> None:
         """Crea la colección en Qdrant con métrica de Coseno si no existe previamente."""
         collections = [c.name for c in self.client.get_collections().collections]
-        if self.collection_name not in collections:
+        if self.pose_collection_name not in collections:
             self.client.create_collection(
-                collection_name=self.collection_name,
+                collection_name=self.pose_collection_name,
                 vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
             )
-            logger.info(f"Colección Qdrant '{self.collection_name}' creada con dimensión {vector_size}.")
+            logger.info(f"Colección biomecánica '{self.pose_collection_name}' creada con dimensión {vector_size}.")
 
     def insertar_vector(self, vector_id: UUID, vector: List[float], payload: Dict) -> None:
         """Inserta o actualiza un vector biomecánico con sus metadatos (payload)."""
@@ -74,7 +87,7 @@ class QdrantVectorAdapter:
             payload=payload
         )
         self.client.upsert(
-            collection_name=self.collection_name,
+            collection_name=self.pose_collection_name,
             points=[point]
         )
 
@@ -120,7 +133,7 @@ class QdrantVectorAdapter:
         for i in range(0, total_puntos, batch_size):
             batch = points[i:i + batch_size]
             self.client.upsert(
-                collection_name=self.collection_name,
+                collection_name=self.pose_collection_name,
                 points=batch
             )
         logger.info(f"Guardados {total_puntos} vectores en Qdrant para patrón {patron_id} (técnica {tecnica_id}).")
@@ -188,7 +201,7 @@ class QdrantVectorAdapter:
         next_offset = None
         while True:
             records, next_offset = self.client.scroll(
-                collection_name=self.collection_name,
+                collection_name=self.pose_collection_name,
                 scroll_filter=filtro,
                 limit=100,
                 offset=next_offset,
@@ -229,7 +242,7 @@ class QdrantVectorAdapter:
         ])
         try:
             self.client.delete(
-                collection_name=self.collection_name,
+                collection_name=self.pose_collection_name,
                 points_selector=filtro
             )
             logger.info(f"Patrón {patron_id} eliminado de Qdrant.")
@@ -254,7 +267,7 @@ class QdrantVectorAdapter:
         )
 
         resultados = self.client.search(
-            collection_name=self.collection_name,
+            collection_name=self.pose_collection_name,
             query_vector=vector_alumno,
             query_filter=filtro_tecnica,
             limit=1
@@ -293,7 +306,7 @@ class QdrantVectorAdapter:
             FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))
         ])
         referencias, _ = self.client.scroll(
-            collection_name=self.collection_name,
+            collection_name=self.pose_collection_name,
             scroll_filter=filtro,
             limit=10000,
             with_vectors=True,
@@ -392,7 +405,7 @@ class QdrantVectorAdapter:
             FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))
         ])
         existentes, _ = self.client.scroll(
-            collection_name=self.collection_name,
+            collection_name=self.pose_collection_name,
             scroll_filter=filtro,
             limit=1,
             with_vectors=False,
@@ -451,7 +464,7 @@ class QdrantVectorAdapter:
             ))
 
         if points:
-            self.client.upsert(collection_name=self.collection_name, points=points)
+            self.client.upsert(collection_name=self.pose_collection_name, points=points)
             logger.info(f"Auto-ingesta completada: {len(points)} poses indexadas para técnica {tecnica_id}.")
             return len(points)
 
@@ -465,30 +478,186 @@ class QdrantVectorAdapter:
         Retorna los top-3 chunks concatenados con separador '---' para dar contexto
         enriquecido a Gemini. Retorna cadena vacía si no hay resultados o si falla.
         """
-        filtro = Filter(
-            must=[
-                FieldCondition(
-                    key="tecnica_id",
-                    match=MatchValue(value=str(tecnica_id))
-                )
-            ]
-        )
+        if len(vector_multimodal) != RAG_VECTOR_DIM:
+            raise ValueError(f"Embedding RAG inválido: se esperaban {RAG_VECTOR_DIM} dimensiones.")
         try:
-            resultados = self.client.search(
-                collection_name=self.rag_collection,
+            filtro = Filter(should=[
+                Filter(must=[FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))]),
+                Filter(must=[FieldCondition(key="alcance", match=MatchValue(value="global"))]),
+            ])
+            hits = self.client.search(
+                collection_name=self.rag_collection_name,
                 query_vector=("dense", vector_multimodal),
                 query_filter=filtro,
-                limit=3
+                limit=3,
+                with_payload=True,
             )
-            if not resultados:
-                return ""
-            
             chunks = []
-            for r in resultados:
-                if r.payload and r.payload.get("contenido_texto"):
-                    chunks.append(r.payload["contenido_texto"])
-            
+            for hit in hits:
+                payload = hit.payload or {}
+                txt = self._formatear_evidencia_rag(payload)
+                if txt:
+                    chunks.append(txt)
             return "\n\n---\n\n".join(chunks)
         except Exception as e:
-            logger.warning(f"No se pudo recuperar contexto RAG de Qdrant: {e}")
+            logger.warning("No se pudo recuperar contexto RAG: %s", e)
             return ""
+
+    @staticmethod
+    def _formatear_evidencia_rag(evidencia: Dict) -> str:
+        payload = evidencia.get("payload", evidencia)
+        fuente = [
+            valor for valor in (
+                payload.get("fuente_nombre") or payload.get("fuente_tipo"),
+                payload.get("fuente_referencia"),
+                f"página {payload['pagina']}" if payload.get("pagina") else None,
+                (
+                    f"minuto {int(float(payload['timestamp_seconds']) // 60)}:"
+                    f"{int(float(payload['timestamp_seconds']) % 60):02d}"
+                ) if payload.get("timestamp_seconds") is not None else None,
+            ) if valor
+        ]
+        atribucion = f"Fuente: {' — '.join(fuente)}\n" if fuente else ""
+        texto_asociado = payload.get("texto_asociado")
+        contenido = payload.get("contenido_texto") or ""
+        if texto_asociado:
+            contenido = f"{contenido}\n{texto_asociado}"
+        return f"{atribucion}{contenido}".strip()
+
+    def recuperar_evidencias_rag(
+        self,
+        vectores_consulta: List[List[float]],
+        tecnica_id: Optional[UUID] = None,
+        limit: int = 5,
+        video_referencia_path: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Alias compatible para recuperar_evidencias_rag_multimodal."""
+        return self.recuperar_evidencias_rag_multimodal(
+            vectores_consulta=vectores_consulta,
+            tecnica_id=tecnica_id,
+            limit=limit,
+            video_referencia_path=video_referencia_path,
+        )
+
+    def recuperar_evidencias_rag_multimodal(
+        self,
+        vectores_consulta: List[List[float]],
+        tecnica_id: Optional[UUID] = None,
+        limit: int = 5,
+        video_referencia_path: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Busca evidencias RAG usando uno o varios vectores de consulta.
+
+        Puede recibir:
+        - vector de imagen del frame crítico del alumno
+        - vector textual de técnica + discrepancias
+
+        Devuelve resultados priorizando payloads con media_path.
+        """
+        if not vectores_consulta:
+            return []
+        for index, vector in enumerate(vectores_consulta):
+            if len(vector) != RAG_VECTOR_DIM:
+                raise ValueError(
+                    f"Embedding de consulta RAG {index} inválido: se esperaban {RAG_VECTOR_DIM} dimensiones."
+                )
+
+        should_conditions = []
+
+        if tecnica_id is not None:
+            should_conditions.append(
+                Filter(
+                    must=[
+                        FieldCondition(
+                            key="tecnica_id",
+                            match=MatchValue(value=str(tecnica_id)),
+                        )
+                    ]
+                )
+            )
+
+        should_conditions.append(
+            Filter(
+                must=[
+                    FieldCondition(
+                        key="alcance",
+                        match=MatchValue(value="global"),
+                    )
+                ]
+            )
+        )
+
+        query_filter = Filter(should=should_conditions)
+        col_name = self.rag_collection_name
+
+        resultados_unicos: Dict[str, Any] = {}
+
+        for vector in vectores_consulta:
+            hits = self.client.search(
+                collection_name=col_name,
+                query_vector=("dense", vector),
+                query_filter=query_filter,
+                limit=limit,
+                with_payload=True,
+            )
+
+            for hit in hits:
+                key = str(hit.id)
+                actual = resultados_unicos.get(key)
+                if actual is None or hit.score > actual.score:
+                    resultados_unicos[key] = hit
+
+        ordenados = sorted(
+            resultados_unicos.values(),
+            key=lambda x: x.score,
+            reverse=True,
+        )
+
+        def payload_de(hit):
+            return hit.payload or {}
+
+        def es_visual(hit):
+            return bool(payload_de(hit).get("media_path"))
+
+        visuales = [h for h in ordenados if es_visual(h)]
+        no_visuales = [h for h in ordenados if not es_visual(h)]
+
+        if video_referencia_path:
+            visuales.sort(
+                key=lambda h: (
+                    0 if payload_de(h).get("video_path") == video_referencia_path else 1,
+                    -h.score,
+                )
+            )
+
+        seleccionados = (visuales + no_visuales)[:limit]
+
+        evidencias = []
+
+        for hit in seleccionados:
+            payload = payload_de(hit)
+
+            evidencias.append(
+                {
+                    "id": str(hit.id),
+                    "score": float(hit.score),
+                    "contenido_texto": payload.get("contenido_texto", ""),
+                    "texto_asociado": payload.get("texto_asociado", ""),
+                    "modalidad": payload.get("modalidad", "texto"),
+                    "media_path": payload.get("media_path"),
+                    "media_url": payload.get("media_url"),
+                    "video_path": payload.get("video_path"),
+                    "timestamp_seconds": payload.get("timestamp_seconds"),
+                    "frame_idx": payload.get("frame_idx"),
+                    "tecnica_id": payload.get("tecnica_id"),
+                    "alcance": payload.get("alcance"),
+                    "fuente_tipo": payload.get("fuente_tipo"),
+                    "fuente_nombre": payload.get("fuente_nombre"),
+                    "fuente_referencia": payload.get("fuente_referencia"),
+                    "fuente_url": payload.get("fuente_url"),
+                    "pagina": payload.get("pagina"),
+                }
+            )
+
+        return evidencias

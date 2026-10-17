@@ -95,6 +95,7 @@ def test_tracking_desplazamiento_y_oclusion_parcial():
     import numpy as np
     from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
     import torch
+    import ultralytics
 
     adapter = YOLOPoseAdapter()
 

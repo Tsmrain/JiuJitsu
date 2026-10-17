@@ -8,6 +8,10 @@ from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAda
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
 from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrategy
+from corpocmente.application.services.multimodal_rag_service import (
+    formatear_evidencias_texto,
+    obtener_evidencias_rag_multimodal,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +63,13 @@ class IntelligenceAnalysisFacade:
             except Exception as e_ref:
                 logger.warning(f"No se pudo auto-ingerir video de referencia del profesor: {e_ref}")
 
-        # 1. Extraer secuencia de keypoints del alumno con tracking idéntico
         secuencia_alumno = None
         if hasattr(self.yolo, "extraer_secuencia"):
-            ext_res = self.yolo.extraer_secuencia(video_path, persona_idx_inicial=persona_idx)
+            ext_res = self.yolo.extraer_secuencia(
+                video_path,
+                persona_idx_inicial=persona_idx,
+                evaluacion_id=str(evaluacion_id) if evaluacion_id else None
+            )
             if isinstance(ext_res, dict):
                 secuencia_alumno = ext_res.get("secuencia_kpts", [])
                 cobertura = ext_res.get("cobertura", 0.0)
@@ -71,6 +78,7 @@ class IntelligenceAnalysisFacade:
                     if total_frames == 0 or cobertura < 0.70:
                         raise ValueError(f"Tracking insuficiente en el video del alumno: cobertura {cobertura*100:.1f}% < 70%.")
 
+        esqueletos_frames = None
         if secuencia_alumno is None:
             esqueletos_frames = self.yolo.extraer_keypoints(video_path)
             secuencia_alumno = [e.to_vector_array() if hasattr(e, "to_vector_array") else e for e in esqueletos_frames]
@@ -94,12 +102,15 @@ class IntelligenceAnalysisFacade:
             dtw_normalizado = dtw_res.get("dtw_normalizado")
             kpts_critico = secuencia_alumno[frame_alumno_critico] if frame_alumno_critico < len(secuencia_alumno) else None
         elif hasattr(self.qdrant, "buscar_maxima_diferencia"):
-            esqueletos_para_qdrant = []
-            for i, kp in enumerate(secuencia_alumno):
-                vec = list(kp)
-                if len(vec) < 133:
-                    vec.extend([0.0] * (133 - len(vec)))
-                esqueletos_para_qdrant.append(EsqueletoBiomecanico(frame_idx=i, keypoints133=vec[:133], angulos_articulares={}))
+            if esqueletos_frames is not None:
+                esqueletos_para_qdrant = esqueletos_frames
+            else:
+                esqueletos_para_qdrant = []
+                for i, kp in enumerate(secuencia_alumno):
+                    vec = list(kp)
+                    if len(vec) < 133:
+                        vec.extend([0.0] * (133 - len(vec)))
+                    esqueletos_para_qdrant.append(EsqueletoBiomecanico(frame_idx=i, keypoints133=vec[:133], angulos_articulares={}))
             resultado_comparacion = self.qdrant.buscar_maxima_diferencia(esqueletos_para_qdrant, tecnica_id)
             similitud = resultado_comparacion.score
             frame_alumno_critico = getattr(resultado_comparacion, "frame_alumno_idx", 0) or 0
@@ -114,15 +125,31 @@ class IntelligenceAnalysisFacade:
         # 3. Extraer y resaltar el error en el fotograma crítico del alumno
         eval_suffix = evaluacion_id or uuid4().hex[:8]
         out_frame_path = f"/tmp/corpocmente_frames/critico_{eval_suffix}.jpg"
+        out_clean_path = f"/tmp/corpocmente_frames/clean_{eval_suffix}.jpg"
+        frame_limpio = None
+
         if os.path.exists(video_path) and hasattr(self.yolo, "extraer_frame_y_dibujar_error"):
-            frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
-                video_path=video_path,
-                frame_idx=frame_alumno_critico,
-                keypoints133=kpts_critico,
-                articulaciones_criticas=arts_criticas,
-                output_path=out_frame_path,
-                tecnica_nombre=tecnica_nombre
-            )
+            try:
+                frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
+                    video_path=video_path,
+                    frame_idx=frame_alumno_critico,
+                    keypoints133=kpts_critico,
+                    articulaciones_criticas=arts_criticas,
+                    output_path=out_frame_path,
+                    clean_output_path=out_clean_path,
+                    tecnica_nombre=tecnica_nombre,
+                )
+                if os.path.isfile(out_clean_path):
+                    frame_limpio = out_clean_path
+            except TypeError:
+                frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
+                    video_path=video_path,
+                    frame_idx=frame_alumno_critico,
+                    keypoints133=kpts_critico,
+                    articulaciones_criticas=arts_criticas,
+                    output_path=out_frame_path,
+                    tecnica_nombre=tecnica_nombre,
+                )
         elif hasattr(self.yolo, "dibujar_error_en_frame"):
             frame_resaltado = self.yolo.dibujar_error_en_frame(
                 out_frame_path,
@@ -131,26 +158,43 @@ class IntelligenceAnalysisFacade:
         else:
             frame_resaltado = out_frame_path
 
+        if not frame_limpio and os.path.exists(video_path) and hasattr(self.yolo, "extraer_frame_limpio"):
+            frame_limpio = self.yolo.extraer_frame_limpio(
+                video_path=video_path,
+                frame_idx=frame_alumno_critico,
+                output_path=out_clean_path,
+            )
+
+        es_limpio_valido = isinstance(frame_limpio, (str, bytes, os.PathLike)) and os.path.isfile(frame_limpio)
+        frame_para_embedding = frame_limpio if es_limpio_valido else frame_resaltado
+
         # 4. Evaluación y feedback condicional (IA sólo si hay errores)
         UMBRAL_ACEPTABLE = 85.0
         if similitud >= UMBRAL_ACEPTABLE:
             feedback_texto = "¡Técnica ejecutada correctamente. Excelente trabajo!"
         else:
             contexto_profundo = ""
+            evidencias_rag = []
             if self.qwen:
                 try:
-                    discrepancias_str = "; ".join(discrepancias_detectadas) if discrepancias_detectadas else "sin detalles específicos"
-                    query_textual = (
-                        f"Técnica de Jiu-Jitsu: {tecnica_nombre}. "
-                        f"Errores biomecánicos detectados: {discrepancias_str}. "
-                        f"¿Cuál es la forma correcta de ejecutar esta técnica y cómo corregir estos errores?"
+                    evidencias_rag = obtener_evidencias_rag_multimodal(
+                        qwen_adapter=self.qwen,
+                        qdrant_adapter=self.qdrant,
+                        tecnica_id=tecnica_id,
+                        tecnica_nombre=tecnica_nombre,
+                        discrepancias=discrepancias_detectadas,
+                        frame_critico_path=frame_para_embedding,
+                        video_referencia_path=video_referencia_path,
+                        limit=5,
                     )
-                    embedding_qwen = self.qwen.generar_embedding_texto(query_textual)
-                    teoria = self.qdrant.recuperar_contexto_rag(embedding_qwen, tecnica_id)
-                    if teoria:
-                        contexto_profundo = f"\n\n[Teoría Biomecánica Recuperada (RAG)]:\n{teoria}"
+                    contexto_profundo = formatear_evidencias_texto(evidencias_rag)
+                    if contexto_profundo:
+                        contexto_profundo = (
+                            "\n\n[Evidencia recuperada de manuales y videos del profesor]:\n"
+                            + contexto_profundo
+                        )
                 except Exception as e_rag:
-                    logger.warning(f"Fallo en recuperación RAG (no bloqueante): {e_rag}")
+                    logger.warning("Fallo en recuperación RAG multimodal (no bloqueante): %s", e_rag)
 
             strategy = SpanishPromptStrategy()
             prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, discrepancias_detectadas)
@@ -159,10 +203,15 @@ class IntelligenceAnalysisFacade:
             prompt += (
                 "\n\nFormato obligatorio de respuesta: español, máximo 2 frases y 45 palabras, "
                 "texto simple sin Markdown. Expón solo el error principal y una corrección concreta. "
-                "No menciones herramientas ni tecnologías."
+                "Si el contexto incluye una fuente, atribuye la recomendación con su nombre y referencia. "
+                "No inventes fuentes ni referencias. No menciones herramientas ni tecnologías."
             )
 
-            feedback_texto = self.gemini.generar_texto_feedback(prompt, frame_resaltado)
+            feedback_texto = self.gemini.generar_texto_feedback(
+                prompt,
+                frame_resaltado,
+                evidencias_visuales=evidencias_rag,
+            )
 
         return AnalisisResultDTO(
             similitud=similitud,

@@ -5,7 +5,7 @@ Este repositorio contiene el código fuente completo del sistema de evaluación 
 El sistema se compone de cuatro grandes pilares:
 1. **Base de Datos y Motores de Búsqueda:** PostgreSQL + PostgREST + Qdrant. Qdrant conserva patrones biomecánicos y conocimiento teórico para su recuperación.
 2. **Backend (API):** FastAPI (Orquestador de IA).
-3. **Colab Worker:** Servidor de Inferencia Remota en GPU (YOLOv8 + Qwen3-VL).
+3. **Colab Worker:** Servidor de inferencia remota en GPU (YOLO + Qwen3-VL-Embedding).
 4. **Frontend:** React 19 + Vite.
 
 ---
@@ -53,10 +53,16 @@ El sistema requiere una base de datos local y ejecutar las migraciones para cons
    * `06_patron_activo.sql`
    * `07_evaluaciones_patron.sql`
    * `08_tecnicas_patron_listado.sql`
+   * `09_metadata_fuentes_teoria.sql`
+   * `10_progreso_alumno_con_videos.sql`
+   * `11_conocimiento_global_mensaje_tecnica.sql`
+   * `12_comparaciones_video.sql`
 
 ### 2. Base de Datos Vectorial (Qdrant)
 
 Qdrant almacena y recupera tanto los patrones biomecánicos por técnica como los fragmentos de teoría usados en la búsqueda semántica.
+
+La configuración conserva las colecciones separadas: `QDRANT_COLLECTION` para keypoints biomecánicos de 133 dimensiones y `QDRANT_RAG_COLLECTION` para embeddings multimodales Qwen de 2048 dimensiones. No las renombres a la misma colección.
 
 1. Abre una terminal en la carpeta principal `ProyectoGrado/`.
 2. Levanta el contenedor usando Docker Compose:
@@ -74,6 +80,18 @@ Debido al alto consumo de VRAM de los modelos YOLO y Qwen, la extracción biomec
 3. Reemplaza el token de ngrok en la celda correspondiente por tu token real de ngrok.
 4. Ejecuta todas las celdas (`Entorno de ejecución > Ejecutar todo`).
 5. Al final de la última celda, ngrok imprimirá una URL pública (ej. `https://xxxx-xx-xx-xx.ngrok-free.app`). **Copia esa URL.**
+
+El worker expone `/embed_text` y `/embed_images`. Los manuales PDF se indexan como texto extraíble y páginas visuales; los documentos Word aportan su texto e imágenes incrustadas. El video del profesor se muestrea en fotogramas y se indexan sus representaciones visuales. No se hace OCR: Qwen vectoriza la página como imagen y el texto que el documento ya contenga. Durante el análisis, Qdrant recupera fragmentos y medios pertinentes, y el generador recibe las imágenes recuperadas junto al fotograma crítico del alumno.
+
+El notebook usa `Qwen3-VL-Embedding-2B`, que genera vectores de 2048 dimensiones compatibles con `rag_knowledge`. El modelo 8B que también publica Qwen genera vectores de hasta 4096 dimensiones; cambiarlo directamente rompería la compatibilidad con la colección y exigiría reindexar los documentos con el mismo modelo. Mantén el 2B mientras uses la colección actual. Después de cambiar el notebook, reinicia y ejecuta todas sus celdas para que el worker exponga `/embed_images`.
+
+Para comprobar que imagen y texto comparten un espacio semántico, configura `COLAB_TUNNEL_URL` en `codigo_fuente/backend/.env` y ejecuta desde `codigo_fuente/backend/`:
+
+```bash
+./venv/bin/python scripts/smoke_qwen_crossmodal.py --image /ruta/a/una/imagen-de-jiujitsu.jpg
+```
+
+La prueba compara la imagen con una descripción relacionada y otra distractora. La similitud relacionada debe ser mayor. Esta prueba necesita el worker real conectado en Colab; las pruebas unitarias del backend no sustituyen esa comprobación.
 
 ### 4. Configuración del Backend (FastAPI + PostgREST)
 

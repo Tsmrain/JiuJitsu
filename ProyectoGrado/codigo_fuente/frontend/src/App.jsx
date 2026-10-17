@@ -4,6 +4,7 @@ import VideoUpload from './pages/VideoUpload'
 import FeedbackView from './pages/FeedbackView'
 import AdminSucursales from './pages/AdminSucursales'
 import ProfesorTecnicas from './pages/ProfesorTecnicas'
+import StudentProgress from './pages/StudentProgress'
 import ProgressRing from './components/ProgressRing'
 import LoginModal from './components/LoginModal'
 import UserProfileModal from './components/UserProfileModal'
@@ -107,6 +108,7 @@ function App() {
                 similitud: data.similitud,
                 feedback: data.feedback,
                 video_referencia_url: data.video_referencia_url,
+                video_referencia_nombre: data.video_referencia_nombre,
                 video_referencia_profesor_nombre: data.video_referencia_profesor_nombre,
                 frame_error_url: data.frame_error_url,
               });
@@ -186,6 +188,16 @@ function App() {
             </button>
           )}
 
+          {user?.rol === 'alumno' && (
+            <button
+              className="btn-secondary"
+              onClick={() => setAppState(appState === 'STUDENT_PROGRESS' ? 'IDLE' : 'STUDENT_PROGRESS')}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
+            >
+              Mi progreso
+            </button>
+          )}
+
           {/* Botón exclusivo para Admin */}
           {user?.rol === 'admin' && (
             <button 
@@ -241,7 +253,7 @@ function App() {
         </div>
       </header>
 
-      <main style={{flex: 1, display: 'flex', alignItems: appState === 'ADMIN_PANEL' || appState === 'PROFESOR_PANEL' ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
+      <main style={{flex: 1, display: 'flex', alignItems: ['ADMIN_PANEL', 'PROFESOR_PANEL', 'STUDENT_PROGRESS'].includes(appState) ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
         {appState === 'ADMIN_PANEL' && (
           <AdminSucursales 
             user={user} 
@@ -295,6 +307,9 @@ function App() {
 
         {appState === 'FEEDBACK' && (
           <FeedbackView user={user} result={result} tecnica={selectedTecnica} onReset={handleReset} />
+        )}
+        {appState === 'STUDENT_PROGRESS' && user?.rol === 'alumno' && (
+          <StudentProgress user={user} />
         )}
       </main>
 

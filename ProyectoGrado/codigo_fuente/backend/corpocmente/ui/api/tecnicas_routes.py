@@ -1,8 +1,11 @@
 import os
 import shutil
+import logging
+from pathlib import Path
 from uuid import UUID, uuid4
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form, Header, BackgroundTasks
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
@@ -14,6 +17,7 @@ router = APIRouter(prefix="/api/v1/tecnicas", tags=["Técnicas"])
 class TecnicaCreate(BaseModel):
     nombre: str
     nivel_cinturon: str
+    mensaje_profesor: str = ""
 
 
 class TecnicaResponse(TecnicaCreate):
@@ -25,6 +29,8 @@ class TecnicaResponse(TecnicaCreate):
 
 UPLOAD_DIR = "/tmp/corpocmente_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+RAG_VIDEO_FRAMES_DIR = Path(__file__).resolve().parents[4] / "storage" / "manuales" / "video_frames"
+RAG_VIDEO_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_db():
@@ -51,8 +57,12 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
     db = get_db()
     try:
         rows = db.rpc("get_tecnicas_with_videos", {})
-    except Exception:
-        rows = []
+    except Exception as error:
+        logger.exception("No se pudo consultar el catálogo de técnicas")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo consultar el catálogo. Revisa la conexión con la base de datos y las funciones SQL instaladas.",
+        ) from error
 
     # Agrupar por técnica (una técnica puede tener varios videos de distintos profesores)
     tecnicas_map: dict = {}
@@ -63,6 +73,7 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
                 "id": tid,
                 "nombre": r["nombre"],
                 "nivel_cinturon": r["nivel_cinturon"],
+                "mensaje_profesor": r.get("mensaje_profesor") or "",
                 "tiene_patron": bool(r.get("tiene_patron", False)),
                 "videos": []
             }
@@ -77,16 +88,26 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
         tiene_video = t["tiene_patron"]
         video_url = None
         if profesor_id:
-            vid = next((v for v in t["videos"] if str(v["profesor_id"]) == str(profesor_id)), None)
-            if vid:
+            videos_profesor = [v for v in t["videos"] if str(v["profesor_id"]) == str(profesor_id)]
+            # Puede haber referencias históricas duplicadas. Usa el último archivo
+            # que realmente exista y tenga contenido, no un registro de prueba vacío.
+            video_path = next((
+                os.path.join(UPLOAD_DIR, os.path.basename(v["url"]))
+                for v in reversed(videos_profesor)
+                if v.get("url")
+                and os.path.isfile(os.path.join(UPLOAD_DIR, os.path.basename(v["url"])))
+                and os.path.getsize(os.path.join(UPLOAD_DIR, os.path.basename(v["url"]))) > 1024
+            ), None)
+            if video_path:
                 tiene_video = True
-                filename = os.path.basename(vid["url"])
+                filename = os.path.basename(video_path)
                 video_url = f"http://localhost:8000/static/videos/{filename}"
 
         resultados.append(TecnicaResponse(
             id=UUID(t["id"]),
             nombre=t["nombre"],
             nivel_cinturon=t["nivel_cinturon"],
+            mensaje_profesor=t["mensaje_profesor"],
             tiene_video=tiene_video,
             tiene_patron=t["tiene_patron"],
             video_url=video_url
@@ -105,7 +126,8 @@ async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Heade
     db = get_db()
     created = db.rpc("admin_create_tecnica", {
         "p_nombre": req.nombre,
-        "p_nivel_cinturon": req.nivel_cinturon
+        "p_nivel_cinturon": req.nivel_cinturon,
+        "p_mensaje_profesor": req.mensaje_profesor,
     })
     if not created:
         raise HTTPException(status_code=500, detail="Error creando técnica")
@@ -113,7 +135,8 @@ async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Heade
     return TecnicaResponse(
         id=UUID(c["id"]),
         nombre=c["nombre"],
-        nivel_cinturon=c["nivel_cinturon"]
+        nivel_cinturon=c["nivel_cinturon"],
+        mensaje_profesor=c.get("mensaje_profesor") or req.mensaje_profesor,
     )
 
 
@@ -127,7 +150,8 @@ async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, authorization
     updated = db.rpc("admin_update_tecnica", {
         "p_tecnica_id": str(tecnica_id),
         "p_nombre": req.nombre,
-        "p_nivel_cinturon": req.nivel_cinturon
+        "p_nivel_cinturon": req.nivel_cinturon,
+        "p_mensaje_profesor": req.mensaje_profesor,
     })
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada.")
@@ -135,7 +159,8 @@ async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, authorization
     return TecnicaResponse(
         id=UUID(c["id"]),
         nombre=c["nombre"],
-        nivel_cinturon=c["nivel_cinturon"]
+        nivel_cinturon=c["nivel_cinturon"],
+        mensaje_profesor=c.get("mensaje_profesor") or req.mensaje_profesor,
     )
 
 
@@ -152,22 +177,59 @@ async def eliminar_tecnica(tecnica_id: UUID, authorization: Optional[str] = Head
     return None
 
 
-def auto_ingerir_referencia_background(tecnica_id: UUID, video_path: str):
-    import logging
-    logger = logging.getLogger(__name__)
+from corpocmente.application.services.rag_video_ingestion import indexar_frames_video_rag
+
+
+def auto_ingerir_video_rag_background(
+    tecnica_id: UUID,
+    video_path: str = None,
+    tecnica_nombre: str = "Técnica",
+    profesor_id: Optional[str] = None,
+    sucursal_id: Optional[str] = None,
+):
+    """
+    Ingesta en segundo plano del video de referencia:
+    1. Índices biomecánicos de poses (133 dims)
+    2. Evidencia visual multimodal (frames -> Qwen -> Qdrant)
+    """
+    # Soporta tanto (tecnica_id, video_path, tecnica_nombre) como (tecnica_id, tecnica_nombre, video_path)
+    if isinstance(video_path, str) and not os.path.exists(video_path) and isinstance(tecnica_nombre, str) and os.path.exists(tecnica_nombre):
+        video_path, tecnica_nombre = tecnica_nombre, video_path
+
+    # 1. Índices biomecánicos de poses (133 dims)
     try:
         from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
         from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+
         qdrant = QdrantVectorAdapter()
         yolo = YOLOPoseAdapter()
+
         qdrant.asegurar_poses_referencia(
             tecnica_id=tecnica_id,
             video_referencia_path=video_path,
-            yolo_adapter=yolo
+            yolo_adapter=yolo,
+            tecnica_nombre=tecnica_nombre,
         )
-        logger.info(f"Video de referencia de técnica {tecnica_id} auto-indexado en Qdrant.")
-    except Exception as e:
-        logger.warning(f"Auto-ingesta diferida de técnica {tecnica_id} falló: {e}")
+    except Exception as exc:
+        logger.warning("No se pudieron indexar poses de referencia: %s", exc)
+
+    # 2. Evidencia visual multimodal (frames -> Qwen -> Qdrant)
+    try:
+        indexar_frames_video_rag(
+            tecnica_id=tecnica_id,
+            video_path=video_path,
+            tecnica_nombre=tecnica_nombre,
+            profesor_id=str(profesor_id) if profesor_id else None,
+            sucursal_id=str(sucursal_id) if sucursal_id else None,
+            sample_seconds=2.0,
+            max_frames=30,
+        )
+    except Exception as exc:
+        logger.warning("No se pudieron indexar frames visuales para RAG: %s", exc)
+
+
+def auto_ingerir_referencia_background(tecnica_id: UUID, video_path: str):
+    auto_ingerir_video_rag_background(tecnica_id=tecnica_id, video_path=video_path)
 
 
 @router.post("/{tecnica_id}/video", status_code=status.HTTP_200_OK, deprecated=True)
@@ -261,6 +323,7 @@ async def consultar_patron_activo(
 @router.post("/{tecnica_id}/patron", status_code=status.HTTP_201_CREATED)
 async def registrar_patron_tecnica(
     tecnica_id: UUID,
+    background_tasks: BackgroundTasks,
     session_id: Optional[str] = Form(None),
     persona_idx: Optional[int] = Form(None),
     video: Optional[UploadFile] = File(None),
@@ -451,6 +514,21 @@ async def registrar_patron_tecnica(
     if session_id:
         SessionStateManager.finalizar_operacion(session_id, exito=True, eliminar_video=False)
 
+    if video_ref_saved:
+        try:
+            tecnica_rows = db.get("tecnicas", {"id": f"eq.{tecnica_id}", "select": "nombre"})
+            tecnica_nombre = tecnica_rows[0].get("nombre", str(tecnica_id)) if tecnica_rows else str(tecnica_id)
+        except Exception:
+            tecnica_nombre = str(tecnica_id)
+        background_tasks.add_task(
+            auto_ingerir_video_rag_background,
+            tecnica_id,
+            tecnica_nombre,
+            video_path,
+            str(profesor_id),
+            caller.get("sucursal_id"),
+        )
+
     return {
         "status": "ok",
         "tecnica_id": str(tecnica_id),
@@ -461,3 +539,17 @@ async def registrar_patron_tecnica(
         "video_referencia_guardado": video_ref_saved,
         "mensaje": "Patrón biomecánico registrado y activado exitosamente."
     }
+
+
+@router.get("/media/{tecnica_id}/{filename}")
+async def servir_frame_rag_tecnica(tecnica_id: str, filename: str):
+    """Sirve fotogramas muestreados del video de referencia para RAG multimodal."""
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="Filename inválido.")
+    if ".." in tecnica_id or "/" in tecnica_id or "\\" in tecnica_id:
+        raise HTTPException(status_code=400, detail="Tecnica ID inválido.")
+    from corpocmente.application.services.rag_video_ingestion import STORAGE_DIR
+    path = (STORAGE_DIR / tecnica_id / filename).resolve()
+    if not str(path).startswith(str(STORAGE_DIR.resolve())) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Frame no encontrado.")
+    return FileResponse(path)

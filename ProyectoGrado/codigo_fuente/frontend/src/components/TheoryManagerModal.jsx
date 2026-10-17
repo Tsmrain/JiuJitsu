@@ -157,6 +157,11 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
                     <span>Chunk #{c.chunk_index}</span>
                     <span>{formatFecha(c.fecha_ingesta)}</span>
                   </div>
+                  {(c.fuente_nombre || c.fuente_tipo || c.fuente_referencia || c.fuente_url) && (
+                    <p style={{ margin: '0 0 0.55rem', fontSize: '0.8rem', color: 'var(--brand-red)' }}>
+                      {[c.fuente_nombre || c.fuente_tipo, c.fuente_referencia, c.fuente_url].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
                   <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
                     {c.contenido_texto}
                   </p>

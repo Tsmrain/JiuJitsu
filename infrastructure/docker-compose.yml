@@ -6,7 +6,7 @@ services:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - ./qdrant_storage:/qdrant/storage
+      - ../data/qdrant:/qdrant/storage
     restart: unless-stopped
 
   postgres:
@@ -19,8 +19,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
-      - ./pg_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+      - ../data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d corpocmente"]
       interval: 3s

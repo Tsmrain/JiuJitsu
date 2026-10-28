@@ -39,3 +39,4 @@ Abrí http://localhost:5173
 - `scripts/` — orquestación local
 - `docs/` — diseño, arquitectura
 - `data/` — datos locales (gitignored)
+

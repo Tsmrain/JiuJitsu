@@ -13,7 +13,7 @@ from corpocmente.config import settings
 
 logger = logging.getLogger(__name__)
 
-STORAGE_DIR = Path(__file__).resolve().parents[3] / "storage" / "rag_frames"
+STORAGE_DIR = settings.rag_frames_dir
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}

@@ -27,3 +27,4 @@ docker exec corpocmente_postgres psql -U postgres -d corpocmente -tAc "
   UNION ALL SELECT '  evaluaciones=' || count(*) FROM evaluaciones_alumnos
   UNION ALL SELECT '  teoria_chunks=' || count(*) FROM teoria_referencia;
 " 2>/dev/null || echo "  (no responde)"
+

@@ -32,7 +32,7 @@ from corpocmente.domain.services.session_manager import (
 )
 
 logger = logging.getLogger(__name__)
-MANUALES_DIR = Path(__file__).resolve().parents[4] / "storage" / "manuales"
+MANUALES_DIR = settings.manuales_dir
 MANUALES_DIR.mkdir(parents=True, exist_ok=True)
 MAX_MANUAL_BYTES = 100 * 1024 * 1024
 WORKER_HEADERS = {

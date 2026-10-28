@@ -1,5 +1,22 @@
+from pathlib import Path
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
+
+
+def storage_root() -> Path:
+    """
+    Directorio raíz canónico para almacenamiento de datos (data/).
+    Permite override mediante variable de entorno CORPOCMENTE_DATA_DIR.
+    """
+    env_dir = os.getenv("CORPOCMENTE_DATA_DIR")
+    if env_dir:
+        root = Path(env_dir).resolve()
+    else:
+        root = Path(__file__).resolve().parents[2] / "data"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
 
 class Settings(BaseSettings):
     # App Settings
@@ -44,5 +61,30 @@ class Settings(BaseSettings):
         if not v or v.strip() == "":
             raise ValueError(f"La variable de entorno {info.field_name} no puede estar vacía.")
         return v
+
+    @property
+    def manuales_dir(self) -> Path:
+        d = storage_root() / "manuales"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    @property
+    def rag_frames_dir(self) -> Path:
+        d = storage_root() / "rag_frames"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    @property
+    def video_frames_dir(self) -> Path:
+        d = storage_root() / "manuales" / "video_frames"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    @property
+    def comparaciones_dir(self) -> Path:
+        d = storage_root() / "comparaciones"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
 
 settings = Settings()

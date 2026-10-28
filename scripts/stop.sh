@@ -32,3 +32,4 @@ docker compose -f infrastructure/docker-compose.yml down
 green "  Contenedores detenidos"
 echo
 green "✅ Sistema detenido."
+

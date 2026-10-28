@@ -7,3 +7,4 @@ read -r -p "⚠️  Borra data/postgres/ y data/qdrant/. ¿Continuar? [y/N] " a
 ./scripts/stop.sh
 rm -rf data/postgres/* data/qdrant/*
 echo "✓ Borrado. Ejecutá ./scripts/start.sh; initdb/ recreará el schema."
+

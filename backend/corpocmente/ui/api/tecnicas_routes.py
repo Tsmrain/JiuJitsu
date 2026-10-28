@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form, He
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from corpocmente.config import settings
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
 from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_staff
 
@@ -29,7 +30,7 @@ class TecnicaResponse(TecnicaCreate):
 
 UPLOAD_DIR = "/tmp/corpocmente_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-RAG_VIDEO_FRAMES_DIR = Path(__file__).resolve().parents[4] / "storage" / "manuales" / "video_frames"
+RAG_VIDEO_FRAMES_DIR = settings.video_frames_dir
 RAG_VIDEO_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
 
 

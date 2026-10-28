@@ -10,11 +10,12 @@ from corpocmente.domain.biomechanics.dtw_comparator import (
 )
 from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
+from corpocmente.config import settings
 from corpocmente.infrastructure.video.comparador_visual import generar_video_comparacion
 
 logger = logging.getLogger(__name__)
 
-STORAGE_DIR = Path(__file__).resolve().parents[3] / "storage" / "comparaciones"
+STORAGE_DIR = settings.comparaciones_dir
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 TABLE = "comparaciones_video"

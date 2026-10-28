@@ -9,6 +9,7 @@ from google.genai import types
 from google.genai.errors import APIError
 
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
+from corpocmente.config import storage_root
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +52,9 @@ COCO_SKELETON_PAIRS = [
 FRAMES_DIR = "/tmp/corpocmente_frames"
 os.makedirs(FRAMES_DIR, exist_ok=True)
 RAG_MEDIA_STORAGE_ROOTS = (
-    Path(__file__).resolve().parents[3] / "storage" / "rag_frames",
-    Path(__file__).resolve().parents[3] / "storage" / "manuales",
-    Path(__file__).resolve().parents[4] / "storage" / "manuales",
+    storage_root() / "rag_frames",
+    storage_root() / "manuales",
+    storage_root() / "manuales" / "video_frames",
 )
 MAX_RAG_IMAGE_BYTES = 8 * 1024 * 1024
 ALLOWED_RAG_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}

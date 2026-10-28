@@ -1,0 +1,42 @@
+# Datos locales (NUNCA commitear)
+data/
+ProyectoGrado/pg_data/
+ProyectoGrado/qdrant_storage/
+
+# Secretos
+.env
+*.env
+!**/.env.example
+credentials.json
+token.json
+client_secret*.json
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Modelos binarios
+*.pt
+
+# SO / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Artefactos generados
+project_context.md
+Codigo.py

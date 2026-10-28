@@ -1,0 +1,310 @@
+# Análisis y Diseño Orientado a Objetos (Proceso Unificado)
+## Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño (Corpo e Mente)
+
+Este documento aplica estrictamente la metodología iterativa e incremental de **Craig Larman** descrita en *"Applying UML and Patterns"*, estructurando el ciclo de vida del software mediante las Fases e Iteraciones del **Proceso Unificado (UP)**.
+
+---
+
+## FASE 1: INCEPCIÓN (Visión y Delimitación)
+
+El objetivo de la Incepción es establecer la visión, el caso de negocio y delimitar el alcance del Producto Mínimo Viable (MVP).
+
+* **Visión:** Desarrollar un sistema de análisis biomecánico por inteligencia artificial para la red internacional de academias "Corpo e Mente" (Soporte i18n PT/ES).
+* **Restricciones de Negocio y Arquitectura:**
+  * **Zero-Shot AI:** Solo se dispone de 2 videos por técnica. No hay datos para entrenar un modelo; se usará inferencia directa con **YOLO v11/26** (Pose Estimation).
+  * **Procesamiento de Bajo Costo:** Inferencia pesada aislada en **Google Colab Pro** (Worker asíncrono).
+  * **Modelos IA Gratuitos:** **Gemini API Free Tier** para lenguaje natural y retroalimentación, requiriendo un control estricto de cuotas (Rate Limits).
+  * **Almacenamiento:** Arquitectura Híbrida (PostgreSQL/PostgREST para operacional + Qdrant para vectores).
+
+---
+
+## FASE 2: ELABORACIÓN - ITERACIÓN 1 (Núcleo Biomecánico)
+
+La primera iteración aborda los riesgos fundamentales del negocio y modela la lógica básica para el análisis de una técnica.
+
+### 2.1 Caso de Uso UC1: Analizar Técnica y Generar Feedback (*Fully Dressed*)
+
+*   **Caso de Uso UC1:** Analizar Técnica y Generar Feedback
+*   **Actor Principal:** Alumno
+*   **Partes Interesadas e Intereses:**
+    *   **Alumno:** Desea subir un video de su ejecución, recibir una evaluación objetiva y precisa en su idioma (PT/ES), y obtener retroalimentación biomecánica clara sin demoras excesivas.
+    *   **Profesor / Academia ("Corpo e Mente"):** Desea garantizar que los alumnos ejecuten las técnicas de acuerdo con el patrón de referencia y mantener un estándar de enseñanza uniforme en todas las sucursales.
+    *   **Administrador del Sistema:** Requiere un control estricto sobre el consumo de recursos (Google Colab Pro, cuotas de Gemini API Free Tier) y prevención de SPAM en el almacenamiento.
+*   **Precondición:** El alumno está autenticado en la plataforma y pertenece a una sucursal válida.
+*   **Garantía de Éxito (Postcondiciones):** El video de la técnica es procesado, los vectores biomecánicos son extraídos y comparados contra la referencia, se genera el informe explicativo multimodal en el idioma correspondiente y los resultados son almacenados de forma persistente en PostgreSQL y Qdrant.
+
+**Flujo Principal (Escenario Principal de Éxito):**
+1. El Alumno selecciona el idioma de evaluación (PT/ES), elige la Técnica a evaluar y sube el archivo de video de su intento.
+2. El Sistema valida mediante la API de Gemini Flash que el video contenga una ejecución válida de Jiu-Jitsu (prevención de contenido no relacionado / SPAM).
+3. El Sistema registra la evaluación con estado 'procesando' y encola la tarea de análisis asíncrono para el Worker de Colab Pro.
+4. El Worker extrae los vectores del esqueleto biomecánico (keypoints) del video del Alumno utilizando el modelo YOLO (Pose Estimation).
+5. El Worker consulta la base de datos vectorial Qdrant y calcula la similitud del coseno entre la pose del Alumno y el esqueleto de referencia del Profesor.
+6. El Sistema orquesta el re-ranking visual y genera el feedback biomecánico estructurado utilizando la estrategia de prompt en el idioma seleccionado mediante Gemini.
+7. El Sistema actualiza el estado de la evaluación a 'completado' y presenta los resultados visuales (video con esqueleto superpuesto) y textuales al Alumno.
+
+**Extensiones (Flujos Alternativos y de Excepción):**
+*   **2a. El contenido del video no es reconocido como Jiu-Jitsu:**
+    1. El Sistema rechaza el procesamiento, marca la evaluación como 'inválida' y notifica al Alumno el motivo del rechazo.
+*   **3a. El servicio de cola o Worker en Colab Pro no se encuentra disponible:**
+    1. El Sistema registra el estado como 'en_espera_worker' y reintenta la conexión de acuerdo con la política de tolerancia a fallos.
+    2. Si el tiempo de espera excede el límite (timeout), se envía una notificación al Alumno informando que su video será procesado en diferido.
+*   **4a. YOLO no logra detectar la estructura corporal en el video (baja iluminación o encuadre incompleto):**
+    1. Worker notifica falla de extracción, el Sistema cambia el estado a 'error_procesamiento' y solicita al Alumno volver a grabar el video siguiendo las recomendaciones de captura.
+*   **6a. Se supera el límite de cuota (Rate Limit) en Gemini API (Free Tier):**
+    1. El Sistema aplica una pausa o delega la petición a una estrategia de prompts de contingencia, reteniendo la tarea en la cola hasta la renovación del token.
+
+**Requisitos Especiales:**
+*   El procesamiento del video en el Worker de Colab Pro no debe exceder los 90 segundos por intento.
+*   La interfaz debe soportar internacionalización fluida (i18n) en Portugués y Español.
+*   El control de privacidad debe garantizar que el video y las evaluaciones solo sean accesibles por el Alumno y los instructores de su sucursal (mediante políticas RLS en PostgreSQL).
+
+**Lista de Variaciones Tecnológicas y de Datos:**
+*   Formatos de video de entrada: MP4, MOV o WebM con resolución mínima de 720p.
+*   Dispositivos de captura: Cámaras de dispositivos móviles (iOS/Android) o cámaras web.
+
+**Frecuencia de Ocurrencia:** Alta en horarios de entrenamiento (estimado de 5 a 20 evaluaciones por alumno a la semana).
+
+**Cuestiones Abiertas:**
+*   ¿Se debe permitir la comparación del video del alumno contra más de un video de referencia de distintos profesores?
+
+
+### 2.2 Diagrama de Secuencia del Sistema (SSD)
+
+Modela los eventos en la frontera del sistema para el escenario principal.
+
+```mermaid
+sequenceDiagram
+    actor Alumno
+    participant Sistema as :Sistema
+    
+    Alumno->>Sistema: solicitarAnalisisTecnica(idTecnica, videoArchivo, idioma)
+    Sistema-->>Alumno: acuseReciboProcesamiento(idEvaluacion)
+    
+    Note over Sistema: [Procesamiento Asíncrono en Background]
+    
+    Alumno->>Sistema: consultarEstadoEvaluacion(idEvaluacion)
+    Sistema-->>Alumno: resultadosAnalisis(feedbackIA, porcentajeSimilitud, videoSuperpuesto)
+```
+
+### 2.3 Contratos de Operación
+* **Operación:** `solicitarAnalisisTecnica(idTecnica, videoArchivo, idioma)`
+* **Pre-condiciones:** Existe una `Tecnica` con el `idTecnica`. El Alumno está autenticado.
+* **Post-condiciones:** 
+  * Se creó una instancia `ev` de `Evaluacion`.
+  * Se asoció `ev` al `Alumno` y a la `Tecnica`.
+  * El estado de `ev` pasó a 'procesando'.
+
+### 2.4 Modelo de Dominio Conceptual
+Muestra los conceptos del problema del mundo real (sin identificadores de base de datos ni métodos de software).
+
+```mermaid
+classDiagram
+    class Academia {
+        nombre
+    }
+    class Sucursal {
+        pais
+        idiomaPrincipal
+    }
+    class Usuario {
+        nombreCompleto
+        rol
+    }
+    class Tecnica {
+        nombre
+        nivel
+    }
+    class Video {
+        archivoVideo
+    }
+    class EsqueletoBiomecanico {
+        coordenadasArticulaciones
+    }
+    class Evaluacion {
+        porcentajeSimilitud
+        feedbackTextual
+        estado
+    }
+
+    Academia "1" *-- "1..*" Sucursal : tiene
+    Sucursal "1" o-- "1..*" Usuario : aloja
+    Usuario "1" -- "1..*" Video : graba
+    Video "*" -- "1" Tecnica : demuestra
+    Video "1" *-- "1" EsqueletoBiomecanico : contiene
+    Usuario "1" -- "*" Evaluacion : recibe
+    Evaluacion "1" -- "2" Video : compara (Profesor vs Alumno)
+```
+
+### 2.5 Diseño Lógico Orientado a Objetos (GRASP)
+Asignación de responsabilidades mediante patrones GRASP.
+* **Controller:** Un `VideoAnalysisController` recibe el evento `solicitarAnalisisTecnica`. Delega el almacenamiento y encola la petición.
+* **Creator & Information Expert:** La entidad `Video` contiene la responsabilidad de extraer el `EsqueletoBiomecanico` (alta cohesión), ya que posee la imagen base.
+
+---
+
+## FASE 2: ELABORACIÓN - ITERACIÓN 2 (Pipeline Biomecánico YOLO -> Gemini)
+
+La iteración 2 aborda la lógica central de la IA: comparación biomecánica matemática y retroalimentación pedagógica condicional.
+
+### 3.1 Lógica del Pipeline y Optimización de Recursos
+Para minimizar costos y maximizar la precisión, el flujo se define de la siguiente manera:
+1. **YOLO26 (Pose Estimation):** Extrae los vectores (keypoints) del video del alumno frame a frame.
+2. **Comparación Matemática (Qdrant/Similitud Coseno):** Se compara cada frame del alumno contra la técnica de referencia. Se busca el fotograma exacto con la mayor diferencia (distancia vectorial).
+3. **Resaltado Visual del Error:** El sistema utiliza YOLO26 para **dibujar con precisión** sobre la imagen del fotograma qué articulación o parte del cuerpo específica tiene la mayor diferencia respecto al profesor.
+4. **Validación de Umbral (Tolerancia):** 
+   - Si la diferencia máxima está dentro de un rango aceptable (ej. > 85% de similitud), la técnica se considera **correcta**. NO se invoca a la IA generativa (Gemini).
+   - Si la diferencia supera el umbral, la técnica es **incorrecta**. Se extrae el fotograma crítico (keyframe) ya marcado/dibujado.
+5. **Cerebro Pedagógico (Gemini):** Solo si la técnica es incorrecta, se envía a Gemini el **nombre de la técnica** (para dar contexto exacto de lo que se evalúa) y el fotograma con el error resaltado. Gemini genera la corrección pedagógica textual.
+
+*Nota sobre Qwen-VL:* Inicialmente se contempló usar Qwen para un "re-ranking visual" de los fotogramas. Sin embargo, dado que YOLO y el cálculo de distancia matemática ya nos devuelven el fotograma exacto con mayor diferencia de forma precisa y determinista, el paso de Qwen resulta redundante y ha sido eliminado de la arquitectura para optimizar la velocidad y consumo de VRAM.
+
+### 3.2 Diagrama de Interacción de Software (Secuencia UML)
+
+```mermaid
+sequenceDiagram
+    participant Worker as WorkerColabPro
+    participant YOLO as YOLO_Extractor
+    participant Math as ComparadorMatematico
+    participant Gemini as GeminiApiAdapter
+    participant DB as PostgresDB
+
+    Worker->>YOLO: extraerVectoresPose(videoAlumno)
+    YOLO-->>Worker: vectoresBiomecanicos (133 keypoints por frame)
+    
+    Worker->>Math: buscarFotogramaMaxDiferencia(vectoresAlumno, referenciaQdrant)
+    Math-->>Worker: frameErrorCritico, porcentajeSimilitud
+    
+    alt Similitud > Umbral Aceptable (Técnica Correcta)
+        Worker->>DB: actualizarEvaluacion("¡Técnica Excelente!", estado='completado')
+    else Similitud < Umbral Aceptable (Técnica Incorrecta)
+        Worker->>Gemini: generarFeedbackBiomecanico(frameErrorCritico, PromptStrategy)
+        Gemini-->>Worker: textoExplicativoCorreccion (ES/PT)
+        Worker->>DB: actualizarEvaluacion(textoExplicativoCorreccion, estado='completado')
+    end
+```
+
+---
+
+## FASE 2: ELABORACIÓN - ITERACIÓN 3 (Persistencia Híbrida y Resiliencia)
+
+La iteración 3 estabiliza la infraestructura de software y maneja problemas de rendimiento, concurrencia de múltiples sucursales y almacenamiento robusto.
+
+### 4.1 Arquitectura de Cola Asíncrona (Resiliencia Rate Limits)
+El Nivel Gratuito de la API de Gemini impone límites estrictos (RPM/RPD). Larman aconseja manejar estos riesgos en la capa de **Servicios Técnicos (Infraestructura)**.
+* Se implementará una cola de mensajes (Broker, ej. Redis o RabbitMQ, consumida por el script de Colab Pro).
+* El controlador web no espera a Gemini; añade la tarea a la cola y retorna inmediatamente (Patrón `Fire-and-Forget`).
+
+### 4.2 Persistencia de Objetos (Híbrida)
+* **Datos Operacionales (PostgreSQL + PostgREST):** El modelo de dominio conceptual se traduce a tablas relacionales normalizadas (3NF) gestionando Usuarios, Roles, Sucursales y Evaluaciones. Se implementa seguridad **RLS (Row Level Security)** en PostgreSQL para garantizar que un alumno solo vea sus propias evaluaciones y el administrador de Brasil no vea los datos de Colombia.
+* **Datos Vectoriales (Qdrant):** El objeto `EsqueletoBiomecanico` y su estado trigonométrico se guarda como un arreglo de punto flotante indexado por HNSW en Qdrant, vinculado a la BD transaccional por un `UUID`. *(Ver detalles técnicos en el documento de Diseño de Base de Datos).*
+
+---
+
+---
+
+## FASE 3: CONSTRUCCIÓN - ITERACIONES E INCREMENTOS EJECUTABLES
+
+La Fase de Construcción sigue el Proceso Unificado (UP) de Craig Larman, construyendo incrementos probados de grado de producción.
+
+### 5.1 Iteración C1: Infraestructura de API y Mocks
+- **Objetivo:** Codificar el núcleo de FastAPI, Controladores (`VideoAnalysisController`) y Fachadas (`IntelligenceAnalysisFacade`).
+- **Logros:** Implementación de enrutamiento REST, validación con Pydantic, y pruebas unitarias aisladas (`test_intelligence_facade.py`) usando inyección de dependencias y objetos Mock, cumpliendo el principio de *Test-First Programming* de Larman.
+
+### 5.2 Iteración C2: Seguridad (RLS/JWT), Base de Datos 3NF y Extracción Biomecánica (YOLO)
+- **Caso de Uso (UC2 - Autenticación y Privacidad Multi-Tenant):**
+  - **Actores:** Alumno / Profesor
+  - **Flujo:** El usuario se autentica y el sistema garantiza, mediante **Row Level Security (RLS)** en PostgreSQL (`03_rls_policies.sql`), que un Alumno solo acceda a sus propias evaluaciones y un Profesor a las de su sucursal.
+- **Implementación de YOLOPoseAdapter:**
+  - Se materializó el *Experto de Información (Information Expert)* para la extracción vectorial de la pose usando `ultralytics` (`yolo11n-pose.pt`).
+  - Aplicación efectiva del patrón *Adapter (GoF)* para encapsular el aplanamiento de tensores de 133 dimensiones y su mapeo al modelo conceptual `EsqueletoBiomecanico`.
+- **Capa de Datos Transaccional (Mannino):**
+  - Esquema en **Tercera Forma Normal (3NF)** y Boyce-Codd (BCNF) en SQL puro (`01_schema_3nf.sql`).
+  - Funciones nativas de base de datos (`pgcrypto`) delegando la autenticación a PostgREST (`02_auth_jwt.sql`).
+
+### 5.3 Iteración C3: Sistema de Diseño e Interfaz de Usuario (React + Vite)
+- **Caso de Uso (UC3 - Carga e Inspección Visual de la Técnica):**
+  - **Actores:** Alumno / Atleta
+  - **Interfaz de Usuario:** Construcción de la Web App en React + Vite utilizando un Sistema de Diseño basado en tokens de Vanilla CSS (Tema Oscuro con Rojo Institucional `#d01118` y Glassmorphism).
+- **Componentes Creados:**
+  - `ProgressRing.jsx`: Anillo de progreso biomecánico mediante `<progress>` nativo animado con `conic-gradient` CSS.
+  - `VideoUpload.jsx`: Módulo de carga mediante *Drag & Drop* con previsualización del archivo de video (`URL.createObjectURL`).
+  - `FeedbackReport.jsx` (Vista de Resultados): Interfaz estructurada donde:
+    - **Sección Superior (Visual):** Muestra el **Video Original del Maestro** (en bucle/reproducción) lado a lado con el **Fotograma del Alumno** (que tiene el área del cuerpo incorrecta dibujada/resaltada por YOLO26).
+    - **Sección Inferior (Texto):** Muestra el texto explicativo generado por Gemini detallando el error y cómo corregirlo (solo si hubo error). Si no hubo error, muestra un mensaje de felicitación.
+
+### 5.4 Iteración C4: Filtro Inteligente Anti-SPAM (Gemini Multimodal API)
+- **Caso de Uso (UC4 - Prevenir Contenido No Relacionado / SPAM):**
+  - **Actores:** Sistema / Gemini API
+  - **Flujo:** Antes de enviar un video a la GPU de procesamiento pesado, el sistema realiza una llamada asíncrona a `GeminiApiAdapter.validar_es_jiujitsu()` enviando el video a la *Files API* de Gemini para verificar si contiene ejecuciones de Jiu-Jitsu o Grappling.
+- **Resiliencia y Manejo de Estado:**
+  - Implementación de espera activa de estado (`PROCESSING` -> `ACTIVE`) en Gemini Files API.
+  - Aplicación del patrón *Lazy Loading* en `YOLOPoseAdapter` y `QdrantVectorAdapter` para desacoplar el arranque del servidor HTTP de la disponibilidad de modelos pesados o BDs externas.
+  - Endpoint REST expuesto en `/api/v1/evaluaciones/validar-spam` devolviendo HTTP 422 si el contenido es rechazado.
+
+### 5.5 Iteración C5: Autenticación por Roles, Impersonalización y Perfil
+- **Caso de Uso (UC5 - Autenticación, Gestión de Perfil y Cambio de Roles):**
+  - **Actores:** Alumno / Profesor / Administrador
+  - **Flujo:** El modal de inicio de sesión (`LoginModal.jsx`) permite conmutar entre roles. Los usuarios pueden actualizar su perfil (`UserProfileModal.jsx`), incluyendo la carga de una foto de perfil (`avatar_url`) procesada en Base64 para persistencia de sesión.
+  - **Patrón Impersonalización (Admin Proxy):** Se implementó un flujo avanzado para control de calidad donde el Administrador General puede "impersonalizar" cualquier cuenta de usuario o profesor (`/api/v1/auth/impersonate/{user_id}`). El sistema utiliza un banner persistente en la aplicación React para advertir el estado de impersonificación y ofrecer una vía de escape al perfil administrador original.
+  - **Patrón Singleton y Controlador MOCK (Backend):** Toda la lógica de roles interactúa con un estado persistente simulado (`USUARIOS_DB` y `SUCURSALES_DB` en `auth_routes.py`) siguiendo el patrón **Controller** y preservando las reglas de normalización (Mannino) al hacer referencias mutuas por `sucursal_id` (UUID).
+- **Caso de Uso (UC6 - Gestión Multi-Tenant de Sucursales Globales):**
+  - **Actores:** Administrador
+  - **Flujo:** El panel de administración (`AdminSucursales.jsx`) permite el registro CRUD de sedes físicas con un mapa mundial interactivo **100% Gratuito y Libre (Leaflet.js + OpenStreetMap)**.
+  - **Resolución Analítica de Coordenadas (Web Scraping & Plus Codes):** El administrador puede pegar un enlace de Google Maps. El sistema extrae en el backend las coordenadas exactas de la URI (`!3d / !4d`), realiza *Reverse Geocoding* gratuito con Nominatim y, si la ubicación carece de calle registrada, aplica un algoritmo compensatorio usando la librería de Google `openlocationcode` para generar matemáticamente el identificador de área exacto (Plus Code) evitando imprecisiones de barrio.
+
+### 5.6 Iteración C6: Gestión de Técnicas y Referencias (Profesor)
+- **Caso de Uso (UC7 - Gestión del Catálogo de Técnicas y Videos de Referencia):**
+  - **Actores:** Profesor
+  - **Flujo:** Desde su panel exclusivo (`ProfesorTecnicas.jsx`), un profesor puede poblar el catálogo global de técnicas creando, editando y eliminando elementos especificando únicamente el `nombre` propio universal de la técnica y su nivel de cinturón (`nivel_cinturon`), además de adjuntar sus propios videos de demostración (previsualización interactiva con `URL.createObjectURL`).
+  - **Refinamiento del Modelo y Nombres Propios:** Siguiendo las directrices del dominio del Jiu-Jitsu, las técnicas (ej. *Armbar*, *Kimura*, *Triângulo*, *De la Riva*) se tratan como **nombres propios universales**, por lo que se consolidaron los campos bilingües en una única propiedad `nombre`. Asimismo, se eliminaron los campos redundantes `categoria` y `descripcion`. Los campos dinámicos traducibles (como el nivel de cinturón) son adaptados automáticamente por la interfaz según el idioma preferido del usuario.
+  - **Justificación de Diseño (Mannino 3NF):** Las Técnicas (`tecnicas`) son tratadas como entidades fuertes (catálogo global universal) independientes del profesor que las crea para evitar anomalías de inserción y redundancia. La relación de pertenencia se establece de manera M:N (muchos profesores pueden subir su versión de una misma técnica) mediante la entidad asociativa `videos_referencia`.
+
+### 5.7 Iteración C7: Selección de Profesor de Sucursal y Evaluación de Alumno
+- **Caso de Uso (UC8 - Evaluación Biomecánica basada en Selección de Profesor y Técnica):**
+  - **Actores:** Alumno / Atleta
+  - **Flujo:** Al ingresar a la vista de carga de ejecuciones (`VideoUpload.jsx`), el alumno primero selecciona el **Profesor registrado en su Sucursal** (`GET /api/v1/profesores?sucursal_id=...`). A continuación, el sistema filtra dinámicamente el catálogo mostrando únicamente las **Técnicas que dicho profesor ha demostrado y subido como patrón de referencia** (`GET /api/v1/tecnicas?profesor_id=...`). El alumno carga su video y el sistema realiza la inferencia comparativa biomecánica contra la referencia vectorial en Qdrant registrada por ese profesor específico.
+  - **Justificación de Diseño (Mannino 3NF & Relaciones Relacionales):**
+    - `sucursales (1) -> (N) usuarios (profesores)`: Garantiza el aislamiento multi-tenant por sede.
+    - `profesores (M) <-> (N) tecnicas`: Resuelto mediante la entidad asociativa `videos_referencia`. Esto permite que un alumno evalúe su técnica con el patrón exacto asignado por los instructores de su propia academia, preservando la normalización 3NF en el modelo transaccional.
+
+---
+*(La fase de **Transición** contemplará la corrección de errores finales, pruebas beta en las sedes de Corpo e Mente, y el despliegue en producción).*
+
+### 5.8 Iteración C9: Integración Multimodal (YOLO + Qwen + Gemini)
+- **Caso de Uso (UC9 - RAG Multimodal con Qwen para Libros y Videos):**
+  - **Actores:** Alumno / Atleta, Profesor
+  - **Flujo y Responsabilidades (Larman - Asignación de Responsabilidades):**
+    - **Gestión de Conocimiento (Profesor):** El profesor puede subir material teórico (libros, manuales) y videos. **QwenEmbeddingAdapter** asume la responsabilidad de procesar estos archivos y generar sus embeddings multimodales (2048 dimensiones).
+    - **Base de Datos Vectorial (Qdrant):** Almacena estos embeddings masivos (2048-dim). Se convierte en el núcleo del sistema **RAG (Retrieval-Augmented Generation)**.
+    - **YOLOPoseAdapter (Experto en Extracción Cruda):** Sigue siendo responsable de la cinemática. Extrae keypoints para aislar el instante exacto del error (el fotograma crítico).
+    - **Evaluación RAG (Alumno):** Una vez que YOLO detecta el fotograma crítico del alumno, Qwen lo vectoriza. Este vector se usa para consultar a Qdrant y recuperar la teoría exacta (del libro del profesor) o referencias visuales similares.
+    - **GeminiApiAdapter (Cerebro Pedagógico):** Recibe el análisis crudo de YOLO junto con la **teoría recuperada por el RAG (Qwen+Qdrant)**, y consolida esta información para redactar un feedback profundamente técnico y empático.
+  - **Justificación de Diseño (Domain Model & Variaciones Protegidas):**
+    - Se consagra el patrón **RAG Multimodal**. Qwen no es solo un extractor de características, sino el motor de recuperación de conocimiento (teoría y práctica).
+    - **Qwen3-VL** actúa puramente como Motor de Vectorización Multimodal (RAG).
+    - **Gemini** se exime del cálculo matemático y de la búsqueda, actuando como la interfaz generativa (NLP) que explica la teoría recuperada.
+    - `IntelligenceAnalysisFacade` orquesta: YOLO (Fallo) -> Qwen (Vectorizar) -> Qdrant (Recuperar Libro/Video) -> Gemini (Explicar).
+
+### 5.9 Iteración C11: Gestión Completa de Conocimiento RAG (Postgres + Qdrant + UI)
+
+- **Caso de Uso (UC10 - Gestión de Teoría del Profesor con CRUD Completo):**
+  - **Actores:** Profesor, Alumno (consumidor indirecto vía feedback enriquecido)
+  - **Flujo:**
+    1. El profesor sube teoría desde `ProfesorTecnicas.jsx` (campo "Manual del Maestro").
+    2. El backend (`IngestKnowledgeUseCase`) vectoriza los chunks vía Colab Qwen y los persiste en **Qdrant** (búsqueda vectorial) y en **PostgreSQL** (`teoria_referencia`, trazabilidad).
+    3. El profesor puede ver los chunks que subió vía `TheoryManagerModal.jsx` (consume `GET /conocimiento/teoria/{tecnica_id}?solo_mios=true`).
+    4. El profesor puede borrar toda su teoría vía `DELETE /conocimiento/teoria/{tecnica_id}` (sincroniza Postgres + Qdrant).
+  - **Justificación de Diseño (Mannino 3NF & Trazabilidad):**
+    - Nueva entidad `teoria_referencia` con FK a `tecnicas`, `usuarios` (profesor) y `sucursales`. Índices separados por cada FK.
+    - **Linkage bidireccional Postgres ↔ Qdrant:** `qdrant_point_id UUID UNIQUE` actúa como FK lógica entre motores. PostgreSQL es la fuente de verdad; Qdrant es índice reconstruible.
+    - **RLS habilitada** en `teoria_referencia`; todo acceso se hace vía RPC `SECURITY DEFINER` (`admin_save_teoria_chunk`, `admin_list_teoria_by_tecnica`, `admin_delete_teoria_by_tecnica_profesor`).
+  - **Hallazgos arquitectónicos (Larman - Feedback real):**
+    - La verificación E2E de C11.0 reveló que la teoría vivía **exclusivamente en Qdrant**, sin trazabilidad ni CRUD. El "checkbox de teoría" en `ProfesorTecnicas.jsx` era un write-only field.
+    - Se corrigió introduciendo una **capa relacional de metadata** + endpoints HTTP de gestión + UI de visualización/borrado.
+    - **Deuda técnica pendiente (C11.4):** El pipeline de **consumo** de la teoría (recuperación RAG en `IntelligenceAnalysisFacade`) tiene 3 bugs de integración (endpoint `/embed` inexistente, formato JSON vs form-data, vector sin nombre en Qdrant). El trabajo de C11.1-C11.3 es correcto; el evaluador no consume lo persistido aún.
+  - **Refinamiento del Modelo Conceptual:**
+    - `Tecnica` (1) ──── (N) `TeoriaReferencia` ──── (1) `Usuario` (profesor)
+    - Cada `TeoriaReferencia` es un chunk vectorizable con trazabilidad individual.
+  - **Justificación de Alcance Timeboxed:**
+    - Se dividió en 4 mini-iteraciones (C11.1 a C11.3) + 1 backlog (C11.4). Cada una entrega un incremento probado. Esto respeta el principio de Larman: **"Small steps, rapid feedback, and adaptation"**.
+

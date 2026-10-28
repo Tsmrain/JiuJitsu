@@ -1,0 +1,259 @@
+import logging
+import os
+import uuid
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from corpocmente.domain.biomechanics.dtw_comparator import (
+    comparar_secuencias_con_dtw,
+    resumen_alineacion,
+)
+from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
+from corpocmente.infrastructure.video.comparador_visual import generar_video_comparacion
+
+logger = logging.getLogger(__name__)
+
+STORAGE_DIR = Path(__file__).resolve().parents[3] / "storage" / "comparaciones"
+STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+TABLE = "comparaciones_video"
+
+# Fallback en memoria si la tabla aún no existe en PostgREST.
+_STORE: Dict[str, Dict[str, Any]] = {}
+
+
+def _db() -> PostgrestClient:
+    return PostgrestClient()
+
+
+def rutas_comparacion(comparacion_id: str):
+    return (
+        STORAGE_DIR / f"{comparacion_id}_alumno.mp4",
+        STORAGE_DIR / f"{comparacion_id}_maestro.mp4",
+        STORAGE_DIR / f"{comparacion_id}_comparacion.mp4",
+    )
+
+
+def crear_comparacion(
+    comparacion_id: Optional[str] = None,
+    tecnica_id: Optional[str] = None,
+    idioma: str = "es",
+    persona_idx_alumno: int = 0,
+    persona_idx_maestro: int = 0,
+    alumno_id: Optional[str] = None,
+    token: Optional[str] = None,
+    video_alumno_nombre: Optional[str] = None,
+    video_maestro_nombre: Optional[str] = None,
+) -> str:
+    comparacion_id = comparacion_id or str(uuid.uuid4())
+
+    data = {
+        "id": comparacion_id,
+        "alumno_id": alumno_id,
+        "video_alumno_nombre": video_alumno_nombre,
+        "video_maestro_nombre": video_maestro_nombre,
+        "estado": "procesando",
+        "tecnica_id": tecnica_id,
+        "idioma": idioma,
+        "persona_idx_alumno": persona_idx_alumno,
+        "persona_idx_maestro": persona_idx_maestro,
+        "score_similitud": None,
+        "dtw_distance": None,
+        "dtw_normalizado": None,
+        "frame_alumno_critico": None,
+        "frame_maestro_critico": None,
+        "articulaciones_criticas": None,
+        "alineacion": None,
+        "error_message": None,
+    }
+
+    try:
+        _db().post(TABLE, data, token=token)
+    except Exception as exc:
+        logger.warning("No se pudo insertar comparación en Postgres, usando memoria: %s", exc)
+        _STORE[comparacion_id] = data
+
+    return comparacion_id
+
+
+def _obtener_row(comparacion_id: str, token: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    try:
+        rows = _db().get(TABLE, {"id": f"eq.{comparacion_id}"}, token=token)
+        if rows:
+            return rows[0]
+    except Exception as exc:
+        logger.warning("No se pudo leer comparación de Postgres: %s", exc)
+
+    return _STORE.get(comparacion_id)
+
+
+def _actualizar_row(comparacion_id: str, data: Dict[str, Any], token: Optional[str] = None) -> None:
+    data = dict(data)
+    data["actualizado_en"] = "NOW()"
+
+    try:
+        _db().patch(TABLE, {"id": f"eq.{comparacion_id}"}, data, token=token)
+    except Exception as exc:
+        logger.warning("No se pudo actualizar comparación en Postgres: %s", exc)
+
+    if comparacion_id in _STORE:
+        _STORE[comparacion_id].update(data)
+
+
+def procesar_comparacion_video_a_video(
+    comparacion_id: str,
+    tecnica_id: Optional[str] = None,
+    idioma: str = "es",
+    persona_idx_alumno: int = 0,
+    persona_idx_maestro: int = 0,
+    token: Optional[str] = None,
+) -> None:
+    """
+    Tarea de fondo:
+    1. Lee videos del alumno y maestro.
+    2. Extrae secuencias de keypoints con YOLO Pose.
+    3. Compara con DTW.
+    4. Genera video side-by-side.
+    5. Persiste resultado.
+    """
+    path_alumno, path_maestro, path_output = rutas_comparacion(comparacion_id)
+
+    try:
+        _actualizar_row(comparacion_id, {"estado": "procesando"}, token=token)
+
+        if not path_alumno.exists():
+            raise FileNotFoundError(f"Video del alumno no encontrado: {path_alumno}")
+
+        if not path_maestro.exists():
+            raise FileNotFoundError(f"Video del maestro no encontrado: {path_maestro}")
+
+        yolo = YOLOPoseAdapter()
+
+        logger.info("Extrayendo pose del alumno: %s", path_alumno)
+        res_alumno = yolo.extraer_secuencia(
+            str(path_alumno),
+            persona_idx_inicial=persona_idx_alumno,
+        )
+
+        logger.info("Extrayendo pose del maestro: %s", path_maestro)
+        res_maestro = yolo.extraer_secuencia(
+            str(path_maestro),
+            persona_idx_inicial=persona_idx_maestro,
+        )
+
+        if isinstance(res_alumno, dict):
+            secuencia_alumno = res_alumno.get("secuencia_kpts", [])
+            cobertura_alumno = float(res_alumno.get("cobertura", 0.0))
+            frame_idxs_alumno = res_alumno.get("frame_idxs")
+        else:
+            secuencia_alumno = res_alumno
+            cobertura_alumno = 1.0
+            frame_idxs_alumno = None
+
+        if isinstance(res_maestro, dict):
+            secuencia_maestro = res_maestro.get("secuencia_kpts", [])
+            cobertura_maestro = float(res_maestro.get("cobertura", 0.0))
+            frame_idxs_maestro = res_maestro.get("frame_idxs")
+        else:
+            secuencia_maestro = res_maestro
+            cobertura_maestro = 1.0
+            frame_idxs_maestro = None
+
+        if not secuencia_alumno:
+            raise ValueError("No se detectó esqueleto válido en el video del alumno.")
+
+        if not secuencia_maestro:
+            raise ValueError("No se detectó esqueleto válido en el video del maestro.")
+
+        if cobertura_alumno < 0.65:
+            raise ValueError(
+                f"Cobertura insuficiente en alumno: {cobertura_alumno * 100:.1f}%. "
+                "Se requiere al menos 65%."
+            )
+
+        if cobertura_maestro < 0.65:
+            raise ValueError(
+                f"Cobertura insuficiente en maestro: {cobertura_maestro * 100:.1f}%. "
+                "Se requiere al menos 65%."
+            )
+
+        logger.info("Comparando secuencias con DTW...")
+        comparacion = comparar_secuencias_con_dtw(
+            secuencia_maestro=secuencia_maestro,
+            secuencia_alumno=secuencia_alumno,
+            window=None,
+            top_k_articulaciones=3,
+            frame_idxs_maestro=frame_idxs_maestro,
+            frame_idxs_alumno=frame_idxs_alumno,
+        )
+
+        logger.info("Generando video comparativo: %s", path_output)
+        generar_video_comparacion(
+            video_alumno=str(path_alumno),
+            video_maestro=str(path_maestro),
+            alineacion=comparacion["alineacion"],
+            output_path=str(path_output),
+            fps=24,
+            width=1280,
+            height=720,
+        )
+
+        alineacion_para_guardar = [
+            {**pair, "video_idx": index}
+            for index, pair in enumerate(comparacion["alineacion"])
+        ]
+        if len(alineacion_para_guardar) > 2000:
+            alineacion_para_guardar = resumen_alineacion(alineacion_para_guardar, max_items=240)
+
+        _actualizar_row(
+            comparacion_id,
+            {
+                "estado": "completado",
+                "score_similitud": comparacion["score_similitud"],
+                "dtw_distance": comparacion["dtw_distance"],
+                "dtw_normalizado": comparacion["dtw_normalizado"],
+                "frame_alumno_critico": comparacion["frame_alumno_critico"],
+                "frame_maestro_critico": comparacion["frame_maestro_critico"],
+                "articulaciones_criticas": comparacion["articulaciones_criticas"],
+                "alineacion": alineacion_para_guardar,
+                "video_comparacion_path": str(path_output),
+                "error_message": None,
+            },
+            token=token,
+        )
+
+    except Exception as exc:
+        logger.exception("Falló comparación video a video %s: %s", comparacion_id, exc)
+        _actualizar_row(
+            comparacion_id,
+            {
+                "estado": "error_procesamiento",
+                "error_message": str(exc),
+            },
+            token=token,
+        )
+
+
+def obtener_comparacion(comparacion_id: str, token: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    row = _obtener_row(comparacion_id, token=token)
+    if not row:
+        return None
+
+    output = dict(row)
+
+    video_path = output.get("video_comparacion_path")
+    video_disponible = bool(video_path and os.path.exists(str(video_path)))
+
+    output.pop("video_alumno_path", None)
+    output.pop("video_maestro_path", None)
+    output.pop("video_comparacion_path", None)
+
+    output["video_disponible"] = video_disponible
+    output["video_url"] = (
+        f"/api/v1/comparaciones/{comparacion_id}/video"
+        if video_disponible and output.get("estado") == "completado"
+        else None
+    )
+
+    return output

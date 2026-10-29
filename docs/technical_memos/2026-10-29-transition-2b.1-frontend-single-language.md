@@ -78,3 +78,4 @@ Screenshots captured before and after in `/tmp/baseline_before/` vs `/tmp/baseli
 - `upload.png`
 - `feedback.png`
 - `admin.png`
+

@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-export PATH="/Applications/Docker.app/Contents/Resources/bin:/Users/santiago/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH"
+export PATH="$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:/opt/homebrew/bin:/usr/local/bin:/Users/santiago/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH"
 
 red()   { printf "\033[31m%s\033[0m\n" "$*"; }
 green() { printf "\033[32m%s\033[0m\n" "$*"; }

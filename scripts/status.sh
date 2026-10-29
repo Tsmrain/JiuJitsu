@@ -2,7 +2,7 @@
 set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+export PATH="$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 check() {
   local n=$1 u=$2

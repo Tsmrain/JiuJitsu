@@ -140,3 +140,4 @@ with sync_playwright() as p:
 
     browser.close()
     print("Done! All 4 screenshots captured successfully.")
+

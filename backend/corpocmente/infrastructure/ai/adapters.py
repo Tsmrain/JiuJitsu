@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 import os
 import logging
 import re
+import json
 import mimetypes
 from pathlib import Path
 from google import genai
@@ -665,13 +666,14 @@ class GeminiApiAdapter:
                 model=self.model_name,
                 contents=contents,
                 config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
                     temperature=0.2, # Baja temperatura para respuestas consistentes y técnicas
                     max_output_tokens=500
                 )
             )
 
             if response.text:
-                return self._limpiar_feedback(response.text)
+                return self._parsear_feedback_json(response.text)
             else:
                 raise ValueError("Gemini API retornó una respuesta vacía.")
 
@@ -681,6 +683,45 @@ class GeminiApiAdapter:
                 raise GeminiRateLimitError("Límite de velocidad/cuota excedido en Gemini API.") from e
             logger.error(f"Error en llamada a Gemini API: {e}")
             raise e
+
+    @staticmethod
+    def _parsear_feedback_json(texto: str) -> Dict[str, str]:
+        """Parsea la respuesta JSON de Gemini con fallback a texto plano."""
+        raw = texto.strip()
+        raw_clean = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
+        raw_clean = re.sub(r"\s*```$", "", raw_clean)
+        try:
+            parsed = json.loads(raw_clean)
+            if isinstance(parsed, dict) and ("summary" in parsed or "correction" in parsed):
+                summary = str(parsed.get("summary", "")).strip()
+                correction = str(parsed.get("correction", "")).strip()
+                if "(" in correction and ")" not in correction[correction.rfind("("):]:
+                    correction = correction[:correction.rfind("(")].rstrip(" ,;:")
+                if correction and not re.search(r"[.!?]\)?$", correction):
+                    correction = correction.rstrip(" ,;:") + "."
+                return {
+                    "summary": summary or "Technique feedback",
+                    "correction": correction or summary or "Technique executed with minor variance."
+                }
+        except Exception as err:
+            logger.warning(f"No se pudo parsear JSON de Gemini ({err}). Aplicando fallback a texto plano.")
+
+        texto_limpio = raw.replace("\n", " ").strip()
+        frases = re.split(r"(?<=[.!?])\s+", texto_limpio)
+        summary = frases[0].strip() if frases else "Technique feedback"
+        palabras_sum = summary.split()
+        if len(palabras_sum) > 8:
+            summary = " ".join(palabras_sum[:8]) + "..."
+        correction = " ".join(frases[1:]).strip() if len(frases) > 1 else texto_limpio
+        if "(" in correction and ")" not in correction[correction.rfind("("):]:
+            correction = correction[:correction.rfind("(")].rstrip(" ,;:")
+        if correction and not re.search(r"[.!?]\)?$", correction):
+            correction = correction.rstrip(" ,;:") + "."
+
+        return {
+            "summary": summary,
+            "correction": correction
+        }
 
     @staticmethod
     def _limpiar_feedback(texto: str) -> str:

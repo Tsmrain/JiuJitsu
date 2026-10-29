@@ -38,6 +38,8 @@ class AnalisisResultDTO(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
     similitud: float
     feedback: str
+    feedback_summary: Optional[str] = None
+    feedback_correction: Optional[str] = None
     frame_critico_path: Optional[Any] = None
     frame_alumno_idx: Optional[int] = None
     discrepancias: Optional[List[str]] = Field(default_factory=list)

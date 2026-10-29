@@ -84,6 +84,18 @@ class UserUpdateRequest(BaseModel):
 def get_db():
     return PostgrestClient()
 
+def clean_fallback_summary(feedback: Optional[str]) -> str:
+    if not feedback:
+        return "Technique feedback"
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", feedback.strip())
+    summary = sentences[0].strip() if sentences else feedback.strip()
+    if "(" in summary and ")" not in summary[summary.rfind("("):]:
+        summary = summary[:summary.rfind("(")].rstrip(" ,;:")
+    words = summary.split()
+    if len(words) > 8:
+        summary = " ".join(words[:8]) + "..."
+    return summary
+
 def _decode_jwt(authorization: Optional[str]) -> dict:
     """
     Decodifica y verifica un JWT firmado (HS256).
@@ -563,6 +575,10 @@ async def listar_evaluaciones_alumno(
         evaluaciones = []
 
     for evaluacion in evaluaciones or []:
+        tec_nom = evaluacion.get("tecnica_nombre") or "jiu-jitsu"
+        evaluacion["practice_url"] = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(tec_nom + ' jiu-jitsu tutorial')}"
+        if not evaluacion.get("feedback_summary"):
+            evaluacion["feedback_summary"] = clean_fallback_summary(evaluacion.get("feedback_gemini_es") or evaluacion.get("feedback_gemini_pt"))
         for campo in ("url_video_alumno", "video_referencia_url"):
             ruta = evaluacion.get(campo)
             if ruta:

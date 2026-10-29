@@ -523,6 +523,7 @@ RETURNS TABLE(
     porcentaje_similitud numeric,
     feedback_gemini_es text,
     feedback_gemini_pt text,
+    feedback_summary text,
     video_referencia_url varchar,
     video_referencia_profesor_nombre varchar
 ) AS $$
@@ -537,6 +538,7 @@ BEGIN
         e.porcentaje_similitud,
         e.feedback_gemini_es,
         e.feedback_gemini_pt,
+        e.feedback_summary,
         COALESCE(vr.url_video_gcs, '')::varchar AS video_referencia_url,
         COALESCE(u_prof.nombre_completo, 'Profesor')::varchar AS video_referencia_profesor_nombre
     FROM evaluaciones_alumnos e
@@ -814,11 +816,13 @@ GRANT EXECUTE ON FUNCTION worker_get_video_path(uuid) TO anon;
 
 -- 3. Actualizar el resultado de una evaluación (usado por el worker)
 DROP FUNCTION IF EXISTS worker_update_result(uuid, numeric, text, text);
+DROP FUNCTION IF EXISTS worker_update_result(uuid, numeric, text, text, text);
 CREATE OR REPLACE FUNCTION worker_update_result(
     p_evaluacion_id uuid,
     p_similitud numeric,
     p_feedback_es text,
-    p_estado text
+    p_estado text,
+    p_feedback_summary text DEFAULT NULL
 )
 RETURNS boolean AS $$
 DECLARE
@@ -828,7 +832,8 @@ BEGIN
     SET
         porcentaje_similitud = p_similitud,
         feedback_gemini_es = p_feedback_es,
-        estado = p_estado
+        estado = p_estado,
+        feedback_summary = COALESCE(p_feedback_summary, feedback_summary)
     WHERE id = p_evaluacion_id;
 
     GET DIAGNOSTICS updated_count = ROW_COUNT;
@@ -836,7 +841,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION worker_update_result(uuid, numeric, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION worker_update_result(uuid, numeric, text, text, text) TO anon;
 
 -- ==============================================================================
 -- C12.7 — RPC para obtener el video de referencia de un profesor específico

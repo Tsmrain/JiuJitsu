@@ -29,7 +29,7 @@ INSERT INTO usuarios (id, sucursal_id, nombre_completo, username, email, passwor
 VALUES (
   '7e455a7d-cbc8-4190-9a10-3b959f6425fc',
   '8b315b4e-43f2-4ca1-904d-dec87242f347',
-  'Mestre Mike Baigorria',
+  'Coach Mike Baigorria',
   'mike',
   'mike@corpocmente.com',
   crypt('password123', gen_salt('bf')),

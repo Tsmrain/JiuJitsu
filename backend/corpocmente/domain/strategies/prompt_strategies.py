@@ -29,7 +29,7 @@ class SpanishPromptStrategy(IPromptStrategy):
 class EnglishPromptStrategy(IPromptStrategy):
     def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str]) -> str:
         prompt = (
-            f"You are a black belt Brazilian Jiu-Jitsu instructor. "
+            f"You are a black belt Brazilian Jiu-Jitsu coach. "
             f"The technique being evaluated is: {tecnica_nombre}. "
             f"The attached image is THE CRITICAL FRAME where the student made the largest biomechanical error. "
             f"Errors detected by pose analysis:\n"
@@ -37,12 +37,12 @@ class EnglishPromptStrategy(IPromptStrategy):
         for d in discrepancias:
             prompt += f"- {d}\n"
         prompt += (
-            "Reply in English with at most 2 sentences and 60 words. "
-            "Identify the main visible error and one concrete correction "
-            "mentioning the affected joint or posture. Use simple, respectful, direct language. "
-            "Do not use Markdown, headers, lists, greetings, or long explanations. "
-            "Do not mention tools, models, algorithms, technologies, or how the analysis was performed. "
-            "If the image does not allow confirming a detail, do not invent it. "
-            "If the context includes a source, cite the recommendation by its name and reference."
+            "Reply in English. Provide a JSON object with exactly two fields: "
+            "'summary' (max 8 words, a short label of the main error, e.g. 'Elbow flaring, lose hip connection') "
+            "and 'correction' (max 2 sentences, 45 words, Markdown format with one bold keyword and one bullet point if helpful). "
+            "If the error is minor, set summary to 'Good technique' and correction to a brief praise. "
+            "Cite the source if the context includes one: e.g. 'as taught in Jiu-Jitsu University (p. 116)'. "
+            "Do not mention tools, models, algorithms, or how the analysis was performed. "
+            "If the image does not allow confirming a detail, do not invent it."
         )
         return prompt

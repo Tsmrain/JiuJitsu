@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './ProfesorTecnicas.css';
 import TheoryManagerModal from '../components/TheoryManagerModal';
 import GlobalKnowledgeModal from '../components/GlobalKnowledgeModal';
@@ -421,20 +422,19 @@ export default function ProfesorTecnicas({ user, onClose }) {
                                   </div>
                                 </div>
 
-                                {(evalItem.feedback_gemini_es || evalItem.feedback_gemini_pt) && (
-                                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0', lineHeight: '1.3' }}>
-                                    "{evalItem.feedback_gemini_es || evalItem.feedback_gemini_pt}"
-                                  </p>
-                                )}
+                                <p style={{ fontSize: '0.85rem', color: '#ffffff', margin: '0 0 0.5rem 0', fontWeight: '600', lineHeight: '1.4' }}>
+                                  {evalItem.feedback_summary || (evalItem.feedback_gemini_es ? evalItem.feedback_gemini_es.split('.')[0] : 'Technique feedback')}
+                                </p>
                               </div>
 
                               <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Evaluated: {fecha}</span>
                                 <button 
                                   onClick={() => setSelectedAlumnoDetail({ alumno, evalItem })}
-                                  style={{ background: 'none', border: 'none', color: '#4da6ff', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                  className="btn-secondary"
+                                  style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
                                 >
-                                  View Keypoints Detail
+                                  View Details
                                 </button>
                               </div>
                             </div>
@@ -684,6 +684,83 @@ export default function ProfesorTecnicas({ user, onClose }) {
         />
       )}
       {showGlobalKnowledge && <GlobalKnowledgeModal user={user} onClose={() => setShowGlobalKnowledge(false)} />}
+
+      {selectedAlumnoDetail && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setSelectedAlumnoDetail(null)}>
+          <div className="modal-content glass-panel" style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)', letterSpacing: '1px' }}>
+                  EVALUATION DETAILS
+                </span>
+                <h3 style={{ margin: '0.25rem 0 0 0', fontSize: '1.25rem', color: 'white' }}>
+                  {selectedAlumnoDetail.evalItem.tecnica_nombre}
+                </h3>
+                <small style={{ color: 'var(--text-secondary)' }}>
+                  Student: {selectedAlumnoDetail.alumno.nombre_completo}
+                </small>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: '0.35rem 0.75rem' }}
+                onClick={() => setSelectedAlumnoDetail(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+              <div style={{
+                padding: '0.35rem 0.75rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.9rem',
+                background: `${getScoreColor(selectedAlumnoDetail.evalItem.porcentaje_similitud)}22`,
+                color: getScoreColor(selectedAlumnoDetail.evalItem.porcentaje_similitud),
+                border: `1px solid ${getScoreColor(selectedAlumnoDetail.evalItem.porcentaje_similitud)}`
+              }}>
+                {selectedAlumnoDetail.evalItem.porcentaje_similitud >= 85 ? 'Excellent' : selectedAlumnoDetail.evalItem.porcentaje_similitud >= 70 ? 'Good' : 'Needs Work'} ({Math.round(selectedAlumnoDetail.evalItem.porcentaje_similitud)}%)
+              </div>
+              {selectedAlumnoDetail.evalItem.practice_url && (
+                <a
+                  href={selectedAlumnoDetail.evalItem.practice_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#ef4444', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                >
+                  YouTube Practice Tutorials ↗
+                </a>
+              )}
+            </div>
+
+            {selectedAlumnoDetail.evalItem.feedback_summary && (
+              <div style={{ marginBottom: '1rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
+                  SUMMARY
+                </span>
+                <strong style={{ color: 'white', fontSize: '1.05rem' }}>
+                  {selectedAlumnoDetail.evalItem.feedback_summary}
+                </strong>
+              </div>
+            )}
+
+            <div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
+                FULL TECHNICAL FEEDBACK (MARKDOWN)
+              </span>
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', color: '#d1d5db', lineHeight: 1.6 }}>
+                <ReactMarkdown>
+                  {selectedAlumnoDetail.evalItem.feedback_gemini_es || selectedAlumnoDetail.evalItem.feedback_gemini_pt || 'No detailed feedback available.'}
+                </ReactMarkdown>
+              </div>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn-secondary" onClick={() => setSelectedAlumnoDetail(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

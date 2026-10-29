@@ -358,5 +358,48 @@ Siguiendo el principio de **simplicidad y entrega de valor (Larman UP)**, se det
     `"You are letting your framing arm get isolated and flattened instead of keeping your elbow tucked tightly in front of Xande's hip as taught in Jiu-Jitsu University (p. 116). Keep your elbow actively posted to maintain structural integrity and prevent him from passing your defense."`
 - **Evidencia Visual:** Capturas automatizadas con Playwright en `/tmp/baseline_before/` y `/tmp/baseline_after/` para las 4 vistas principales (`login.png`, `upload.png`, `feedback.png`, `admin.png`).
 
+---
+
+## 12. ANEXO: Iteración Transition-2C — Feedback Estructurado (Resumen + Corrección), Layout 2×2, YouTube Dinámico y Rol Coach
+
+**Fecha:** 2026-10-29  
+**Tag:** `transition-2c`  
+
+### 12.1 Contexto y Decisión de Arquitectura
+En la revisión de la iteración previa (`transition-2b.1`), se detectaron varias oportunidades clave de usabilidad y estructuración de datos:
+1. **Layout 2×2 en Reporte de Feedback (`FeedbackView.jsx`):** El diseño anterior vertical dilataba la vista. Se adopta el wireframe 2×2 en cuadrícula (`grid-template-columns: 1fr 1fr; gap: 1.5rem`):
+   - Arriba-Izquierda: Video de referencia oficial del coach con controles.
+   - Arriba-Derecha: Fotograma crítico anotado con el error biomecánico del alumno.
+   - Abajo-Izquierda: Tarjeta de Análisis de IA con badge de similitud, resumen y corrección técnica renderizada en Markdown (`react-markdown`).
+   - Abajo-Derecha: Tarjeta de Recomendación Práctica con enlace dinámico a tutoriales de YouTube generados según el nombre de la técnica.
+   - Botón inferior centrado: "Analyze Another Technique".
+2. **Feedback Estructurado (JSON de Gemini):** Para permitir que los paneles del profesor muestren resúmenes concisos sin sobrecargar la pantalla y que el alumno reciba explicaciones enriquecidas, se reconfigura Gemini con `response_mime_type="application/json"` solicitando un objeto con `summary` (máx. 8 palabras) y `correction` (máx. 2 frases, formato Markdown). Se añade la columna `feedback_summary` a la tabla `evaluaciones_alumnos` y se actualizan los RPCs (`get_evaluacion_by_id`, `admin_list_evaluaciones_alumno`, `worker_update_result`).
+3. **Link Dinámico a YouTube (`practice_url`):** En lugar de depender de URLs pregrabadas o manuales, el backend genera dinámicamente un enlace a búsqueda de YouTube con la query codificada (`{tecnica_nombre} jiu-jitsu tutorial`), integrado en los endpoints de evaluación e historial.
+4. **Reproducción de Videos en "My Progress" (`StudentProgress.jsx`):** Corrección del error "No video with supported format or MIME type found" asegurando la persistencia y servicio de los archivos estáticos en `/tmp/corpocmente_videos` bajo el prefijo `/static/videos/`.
+5. **Estandarización del Rol a "Coach":** Sustitución integral de la denominación histórica "Mestre" por "Coach" tanto en la base de datos como en los componentes de la interfaz de usuario.
+6. **Vista de Profesor Simplificada (`ProfesorTecnicas.jsx`):** Las tarjetas de progreso de los alumnos muestran ahora exclusivamente badges de desempeño (`Needs Work`, `Good`, `Excellent`), similitud vectorial y el resumen conciso (`feedback_summary`), habilitando un botón "View Details" que despliega un modal con el feedback técnico completo en Markdown.
+
+### 12.2 Componentes Modificados
+- **Base de Datos / PostgREST:**
+  - Nueva columna `feedback_summary TEXT` en `evaluaciones_alumnos`.
+  - RPCs actualizados: `get_evaluacion_by_id`, `admin_list_evaluaciones_alumno`, `worker_update_result`.
+  - Limpieza SQL de feedback truncado residual en históricos.
+- **Backend (Dominio, Infraestructura e Interfaz REST):**
+  - `EnglishPromptStrategy`: Solicita objeto JSON con campos `summary` y `correction` (Markdown).
+  - `GeminiApiAdapter`: Configurado con `response_mime_type="application/json"`, parseador JSON y fallback a oraciones.
+  - `IntelligenceAnalysisFacade`: `AnalisisResultDTO` transporta `feedback_summary` y `feedback_correction`.
+  - `routes.py` y `auth_routes.py`: Endpoint `GET /evaluaciones/{id}` y `GET /auth/alumnos/{id}/evaluaciones` devuelven `feedback_summary` y `practice_url`.
+- **Frontend (React + Vite):**
+  - `FeedbackView.jsx` y `FeedbackView.css`: Rediseño al layout 2×2 con soporte de `react-markdown`.
+  - `StudentProgress.jsx`: Resolución de carga de videos y estandarización a "Coach".
+  - `ProfesorTecnicas.jsx`: Reemplazo del bloque extenso de texto por badge + resumen, y nuevo modal de detalles con Markdown.
+  - Script Playwright: `scripts/capture_transition_2c_screenshots.py` para evidencia visual automatizada.
+
+### 12.3 Verificación y Métricas
+- **Pruebas de regresión backend:** 51 passed, 3 skipped en `pytest` (0 failures).
+- **Compilación Frontend:** `vite build` generado limpiamente con 215 módulos transformados en 429ms.
+- **Evidencia Visual:** Screenshots antes y después guardadas en `docs/visual_evidence/transition-2c/` (`before/feedback.png`, `before/profesor.png`, `after/feedback.png`, `after/profesor.png`, `after/profesor_modal.png`, `after/student_progress.png`).
+
+
 
 

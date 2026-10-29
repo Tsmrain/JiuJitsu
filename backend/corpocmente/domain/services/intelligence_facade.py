@@ -171,7 +171,9 @@ class IntelligenceAnalysisFacade:
         # 4. Evaluación y feedback condicional (IA sólo si hay errores)
         UMBRAL_ACEPTABLE = 85.0
         if similitud >= UMBRAL_ACEPTABLE:
-            feedback_texto = "Technique executed correctly. Excellent work!"
+            feedback_summary = "Good technique"
+            feedback_correction = "Technique executed correctly. Excellent work!"
+            feedback_texto = feedback_correction
         else:
             contexto_profundo = ""
             evidencias_rag = []
@@ -200,22 +202,28 @@ class IntelligenceAnalysisFacade:
             prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, discrepancias_detectadas)
             if contexto_profundo:
                 prompt += contexto_profundo
-            prompt += (
-                "\n\nMandatory response format: English, at most 2 sentences and 45 words, "
-                "plain text without Markdown. State only the main error and one concrete correction. "
-                "If the context includes a source, cite the recommendation by its name and reference. "
-                "Do not invent sources or references. Do not mention tools or technologies."
-            )
 
-            feedback_texto = self.gemini.generar_texto_feedback(
+            res_gemini = self.gemini.generar_texto_feedback(
                 prompt,
                 frame_resaltado,
                 evidencias_visuales=evidencias_rag,
             )
 
+            if isinstance(res_gemini, dict):
+                feedback_summary = res_gemini.get("summary", "Technique error")
+                feedback_correction = res_gemini.get("correction", "")
+                feedback_texto = feedback_correction
+            else:
+                feedback_texto = str(res_gemini)
+                partes = feedback_texto.split(".")
+                feedback_summary = partes[0].strip() if partes else "Technique error"
+                feedback_correction = feedback_texto
+
         return AnalisisResultDTO(
             similitud=similitud,
             feedback=feedback_texto,
+            feedback_summary=feedback_summary,
+            feedback_correction=feedback_correction,
             frame_critico_path=frame_resaltado,
             frame_alumno_idx=frame_alumno_critico,
             discrepancias=discrepancias_detectadas,

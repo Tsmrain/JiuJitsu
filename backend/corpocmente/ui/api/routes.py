@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse, JSONResponse
 import numpy as np
 import requests
 from pydantic import BaseModel
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus
 
 from corpocmente.infrastructure.ai.adapters import GeminiApiAdapter
 from corpocmente.application.use_cases.ingest_knowledge_use_case import IngestKnowledgeUseCase
@@ -78,6 +78,19 @@ class ResultadoWorkerDTO(BaseModel):
     similitud: float
     feedback: str
     estado: str
+    feedback_summary: Optional[str] = None
+
+def clean_fallback_summary(feedback: Optional[str]) -> str:
+    if not feedback:
+        return "Technique feedback"
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", feedback.strip())
+    summary = sentences[0].strip() if sentences else feedback.strip()
+    if "(" in summary and ")" not in summary[summary.rfind("("):]:
+        summary = summary[:summary.rfind("(")].rstrip(" ,;:")
+    words = summary.split()
+    if len(words) > 8:
+        summary = " ".join(words[:8]) + "..."
+    return summary
 
 
 VIDEOS_DIR = "/tmp/corpocmente_videos"
@@ -143,7 +156,8 @@ def ejecutar_evaluacion_background(
             "p_evaluacion_id": str(eval_id),
             "p_similitud": res.similitud,
             "p_feedback_es": res.feedback,
-            "p_estado": "completado"
+            "p_estado": "completado",
+            "p_feedback_summary": res.feedback_summary or "Technique feedback",
         })
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=True, eliminar_video=False)
@@ -364,7 +378,8 @@ async def recibir_resultado(
             "p_evaluacion_id": str(evaluacion_id),
             "p_similitud": payload.similitud,
             "p_feedback_es": payload.feedback,
-            "p_estado": payload.estado
+            "p_estado": payload.estado,
+            "p_feedback_summary": payload.feedback_summary
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error actualizando resultado: {e}")
@@ -415,17 +430,22 @@ async def consultar_evaluacion(
     if os.path.exists(frame_candidate):
         frame_error_url = f"/static/frames/critico_{evaluacion_id}.jpg"
 
+    tecnica_nombre = eval_data.get("tecnica_nombre") or "jiu-jitsu"
+    practice_url = f"https://www.youtube.com/results?search_query={quote_plus(tecnica_nombre + ' jiu-jitsu tutorial')}"
+
     return {
         "id": eval_data["id"],
         "estado": eval_data["estado"],
         "similitud": eval_data["porcentaje_similitud"],
-        "feedback": eval_data["feedback_gemini_es"] or eval_data["feedback_gemini_pt"],
+        "feedback": eval_data.get("feedback_gemini_es") or eval_data.get("feedback_gemini_pt"),
+        "feedback_summary": eval_data.get("feedback_summary") or clean_fallback_summary(eval_data.get("feedback_gemini_es") or eval_data.get("feedback_gemini_pt")),
         "tecnica_id": eval_data["tecnica_id"],
         "tecnica_nombre": eval_data["tecnica_nombre"],
         "video_referencia_url": video_ref_url,
         "video_referencia_nombre": os.path.basename(raw_video_path) if raw_video_path else None,
         "video_referencia_profesor_nombre": eval_data.get("video_referencia_profesor_nombre"),
         "frame_error_url": frame_error_url,
+        "practice_url": practice_url,
     }
 
 @router.post("/evaluaciones/validar-spam", status_code=status.HTTP_200_OK)

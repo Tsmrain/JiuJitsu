@@ -866,4 +866,48 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
     - `feedback.png`
     - `admin.png`
 
+---
+
+### 🔹 Iteración Transition-2C (Fase de Transición): Feedback Estructurado (Resumen + Corrección Markdown), Layout 2×2, YouTube Dinámico y Rol Coach
+
+- **Estado:** COMPLETADA ✅
+- **Fecha:** 2026-10-29
+- **Tag:** `transition-2c`
+
+- **Objetivo:**
+  1. Rediseñar `FeedbackView.jsx` adoptando el layout 2×2 en cuadrícula (Video Coach, Frame Crítico Alumno, Tarjeta IA con `react-markdown`, Tarjeta YouTube con enlace de práctica dinámico).
+  2. Implementar feedback estructurado en Gemini (`summary` máx. 8 palabras, `correction` máx. 2 frases en Markdown con `response_mime_type="application/json"`), columna `feedback_summary` en PostgreSQL y actualización de RPCs.
+  3. Resolver el error de reproducción de video en "My Progress" (`StudentProgress.jsx`) asegurando persistencia y servicio de archivos estáticos en `/static/videos/`.
+  4. Simplificar la vista del profesor (`ProfesorTecnicas.jsx`) reemplazando textos extensos por badge de desempeño + `feedback_summary` conciso y modal de detalles con Markdown.
+  5. Estandarizar la terminología reemplazando "Mestre" por "Coach".
+  6. Limpieza SQL de feedback truncado previo en `evaluaciones_alumnos`.
+  7. Evidencia visual before/after guardada en `docs/visual_evidence/transition-2c/` y `/tmp/baseline_after/`.
+
+- **Entregables:**
+  - `evaluaciones_alumnos`: columna `feedback_summary` añadida y limpiados registros antiguos.
+  - RPCs: `get_evaluacion_by_id`, `admin_list_evaluaciones_alumno`, `worker_update_result` con soporte para `feedback_summary`.
+  - `EnglishPromptStrategy`: prompt configurado para exigir JSON `{summary, correction}` en Markdown.
+  - `GeminiApiAdapter`: `application/json` en `GenerateContentConfig` y parseador robusto con fallback.
+  - `IntelligenceAnalysisFacade`: `AnalisisResultDTO` transporta `feedback_summary` y `feedback_correction`.
+  - `routes.py` y `auth_routes.py`: generación de `practice_url` dinámico para tutoriales de YouTube y servicio de `feedback_summary`.
+  - `FeedbackView.jsx` y `FeedbackView.css`: wireframe 2×2 implementado, `react-markdown` y botón "Analyze Another Technique".
+  - `StudentProgress.jsx`: videos visibles y corrección a "Coach".
+  - `ProfesorTecnicas.jsx`: badges + resumen y modal interactivo de detalles con Markdown.
+  - Script Playwright: `scripts/capture_transition_2c_screenshots.py`.
+
+- **Evidencia Cruda de Verificación:**
+  - **Pytest:** 51 passed, 3 skipped en `pytest -q tests/domain/ tests/infrastructure/`.
+  - **Build Frontend:** `vite build` generado limpiamente con 215 módulos transformados en 429ms.
+  - **API Verification:**
+    - `GET /api/v1/evaluaciones/{id}` devuelve `feedback_summary`, `practice_url` y `feedback` con Markdown.
+    - `GET /api/v1/auth/alumnos/{id}/evaluaciones` devuelve el listado con `feedback_summary` y `practice_url`.
+  - **Evidencia Visual:**
+    - `docs/visual_evidence/transition-2c/before/feedback.png`
+    - `docs/visual_evidence/transition-2c/before/profesor.png`
+    - `docs/visual_evidence/transition-2c/after/feedback.png`
+    - `docs/visual_evidence/transition-2c/after/profesor.png`
+    - `docs/visual_evidence/transition-2c/after/profesor_modal.png`
+    - `docs/visual_evidence/transition-2c/after/student_progress.png`
+
+
 

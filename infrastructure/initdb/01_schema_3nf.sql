@@ -62,6 +62,7 @@ CREATE TABLE evaluaciones_alumnos (
     porcentaje_similitud NUMERIC(5,2),
     feedback_gemini_es TEXT,
     feedback_gemini_pt TEXT,
+    feedback_summary TEXT,
     vector_qdrant_id UUID UNIQUE,
     estado VARCHAR(30) NOT NULL DEFAULT 'procesando',
     fecha_evaluacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

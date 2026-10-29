@@ -166,6 +166,16 @@ def ejecutar_evaluacion_background(
             })
         except Exception:
             pass
+    finally:
+        import gc, torch
+        gc.collect()
+        if torch.backends.mps.is_available():
+            try:
+                torch.mps.empty_cache()
+            except Exception:
+                pass
+        from corpocmente.infrastructure.ai.adapters import log_ram_usage
+        log_ram_usage("post_yolo")
 
 @router.post("/evaluaciones/analizar", status_code=status.HTTP_200_OK)
 async def analizar_video(
@@ -185,7 +195,7 @@ async def analizar_video(
     if caller.get("role") != "admin" and str(caller.get("uid")) != str(alumno_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No puedes crear evaluaciones a nombre de otro usuario."
+            detail="You cannot create evaluations on behalf of another user."
         )
 
     db = get_db()
@@ -216,7 +226,7 @@ async def analizar_video(
     if not patron_id and not videos_ref:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No existe un patrón biomecánico activo registrado para esta técnica."
+            detail="No active biomechanical pattern registered for this technique."
         )
 
     # 2. Resolver sesión o video directo
@@ -230,21 +240,21 @@ async def analizar_video(
         try:
             sesion = SessionStateManager.obtener_sesion(session_id)
         except SessionNotFoundError:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sesión no encontrada.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found.")
         except SessionExpiredError:
-            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Sesión expirada.")
+            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Session expired.")
 
         if sesion.get("estado") != SessionState.PERSONA_SELECTED:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"La sesión está en estado '{sesion.get('estado')}'. Se requiere confirmación de persona previa."
+                detail=f"Session is in state '{sesion.get('estado')}'. Person confirmation required first."
             )
 
         target_persona_idx = sesion.get("persona_idx_seleccionada")
         if persona_idx is not None and persona_idx != target_persona_idx:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El persona_idx ({persona_idx}) no coincide con el seleccionado en la sesión ({target_persona_idx})."
+                detail=f"The persona_idx ({persona_idx}) does not match session selection ({target_persona_idx})."
             )
 
         video_path = sesion.get("video_path")
@@ -256,7 +266,7 @@ async def analizar_video(
         if not video.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Formato de archivo no soportado. Debe ser un video (MP4, AVI, MOV, MKV)."
+                detail="Unsupported file format. Must be a video (MP4, AVI, MOV, MKV)."
             )
         video_path = os.path.join(VIDEOS_DIR, f"{eval_id}.mp4")
         with open(video_path, "wb") as f:
@@ -266,7 +276,7 @@ async def analizar_video(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Debe proporcionar session_id o subir un archivo de video."
+            detail="Must provide session_id or upload a video file."
         )
 
     # 3. Registrar en base de datos
@@ -429,7 +439,7 @@ async def validar_spam(video: UploadFile = File(...), authorization: Optional[st
     if not video.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Formato de archivo no soportado."
+            detail="Unsupported file format."
         )
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
@@ -442,9 +452,9 @@ async def validar_spam(video: UploadFile = File(...), authorization: Optional[st
         if not es_valido:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="El video proporcionado no parece estar relacionado con Jiu-Jitsu o Grappling."
+                detail="The provided video does not appear to be related to Brazilian Jiu-Jitsu or Grappling."
             )
-        return {"status": "ok", "message": "El video es válido."}
+        return {"status": "ok", "message": "Video is valid."}
     finally:
         if os.path.exists(temp_video_path):
             os.remove(temp_video_path)
@@ -1099,7 +1109,7 @@ async def obtener_primer_frame(
     if not video.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Formato de archivo no soportado. Debe ser un video (MP4, AVI, MOV, MKV)."
+            detail="Unsupported file format. Must be a video (MP4, AVI, MOV, MKV)."
         )
 
     session_id = str(uuid4())
@@ -1168,7 +1178,7 @@ async def obtener_primer_frame(
                     pass
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="No se detectaron personas válidas en los primeros fotogramas del video."
+                detail="No valid persons detected in the first video frames."
             )
 
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
@@ -1176,7 +1186,7 @@ async def obtener_primer_frame(
         if not ret:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error codificando fotograma a JPEG."
+                detail="Error encoding frame to JPEG."
             )
         import base64
         frame_b64 = base64.b64encode(buffer).decode('utf-8')
@@ -1244,7 +1254,7 @@ async def confirmar_seleccion_persona(
                 pass
 
     if target_idx is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debe especificar persona_idx.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Must specify persona_idx.")
 
     try:
         sesion = SessionStateManager.seleccionar_persona(session_id, target_idx)

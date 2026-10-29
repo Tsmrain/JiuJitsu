@@ -37,6 +37,36 @@ COCO_JOINT_NAMES = [
     "Tobillo derecho",
 ]
 
+COCO_JOINT_NAMES_EN = [
+    "Nose",
+    "Left Eye",
+    "Right Eye",
+    "Left Ear",
+    "Right Ear",
+    "Left Shoulder",
+    "Right Shoulder",
+    "Left Elbow",
+    "Right Elbow",
+    "Left Wrist",
+    "Right Wrist",
+    "Left Hip",
+    "Right Hip",
+    "Left Knee",
+    "Right Knee",
+    "Left Ankle",
+    "Right Ankle",
+]
+
+def log_ram_usage(tag: str) -> None:
+    import psutil
+    import logging
+    vm = psutil.virtual_memory()
+    logger = logging.getLogger(__name__)
+    logger.info(
+        "[RAM %s] usado=%.1fGB / total=%.1fGB (%.0f%%) disponible=%.1fGB",
+        tag, vm.used / 1e9, vm.total / 1e9, vm.percent, vm.available / 1e9,
+    )
+
 COCO_SKELETON_PAIRS = [
     (5, 7), (7, 9),      # Brazo izquierdo: hombro -> codo -> muñeca
     (6, 8), (8, 10),     # Brazo derecho: hombro -> codo -> muñeca
@@ -122,6 +152,8 @@ class YOLOPoseAdapter:
         """
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video no encontrado: {video_path}")
+
+        log_ram_usage("enter_extraer_secuencia")
 
         import cv2
         import numpy as np
@@ -222,8 +254,18 @@ class YOLOPoseAdapter:
 
         # Intento 2: Inferencia local con YOLO Pose
         try:
+            import gc
             import torch
             from ultralytics import YOLO
+
+            import psutil
+            if psutil.virtual_memory().available < 2 * 1024**3:
+                raise RuntimeError(
+                    f"RAM insuficiente para cargar YOLO: disponible={psutil.virtual_memory().available/1e9:.1f}GB"
+                )
+
+            _device = "mps" if torch.backends.mps.is_available() else "cpu"
+            logger.info("YOLO backend: %s (device: %s)", "MPS" if _device == "mps" else "CPU", _device)
 
             _orig = torch.load
             def _safe_load(*args, **kwargs):
@@ -231,9 +273,17 @@ class YOLOPoseAdapter:
                 return _orig(*args, **kwargs)
             torch.load = _safe_load
 
-            model_name = "yolo26n-pose.pt" if os.path.exists("yolo26n-pose.pt") else "yolo11n-pose.pt"
-            model = YOLO(model_name)
-            results = model.predict(source=video_path, stream=True, verbose=False, conf=0.3)
+            _candidates = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "yolo26n-pose.pt"),
+                os.path.join("storage", "models", "yolo26n-pose.pt"),
+                "yolo26n-pose.pt",
+                "yolo11n-pose.pt",
+            ]
+            _weights = next((c for c in _candidates if os.path.exists(c)), "yolo26n-pose.pt")
+            log_ram_usage("pre_yolo_load")
+            model = YOLO(_weights)
+            log_ram_usage("post_yolo_load")
+            results = model.predict(source=video_path, stream=True, verbose=False, conf=0.3, device=_device)
 
             secuencia_kpts = []
             persona_anterior = None
@@ -317,6 +367,16 @@ class YOLOPoseAdapter:
                 "frames_con_persona": 1,
                 "cobertura": 1.0
             }
+        finally:
+            import gc
+            gc.collect()
+            try:
+                import torch
+                if torch.backends.mps.is_available():
+                    torch.mps.empty_cache()
+            except Exception:
+                pass
+            log_ram_usage("exit_extraer_secuencia")
 
     def extraer_frame_limpio(
         self,
@@ -446,7 +506,7 @@ class YOLOPoseAdapter:
                 cv2.circle(frame, (px, py), 4, (255, 255, 255), -1, lineType=cv2.LINE_AA)
 
                 # Etiqueta con el nombre de la articulación
-                nombre_art = COCO_JOINT_NAMES[art_idx] if art_idx < len(COCO_JOINT_NAMES) else f"Joint {art_idx}"
+                nombre_art = COCO_JOINT_NAMES_EN[art_idx] if art_idx < len(COCO_JOINT_NAMES_EN) else f"Joint {art_idx}"
                 label = f"{nombre_art} [ERROR]"
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 scale = 0.55
@@ -462,7 +522,7 @@ class YOLOPoseAdapter:
                 cv2.putText(frame, label, (lx, ly), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
 
         # 6. Banner superior informativo
-        header_text = f"FOTOGRAMA CRITICO #{frame_idx} | {tecnica_nombre.upper()} | ERROR BIOMECANICO DETECTADO"
+        header_text = f"CRITICAL FRAME #{frame_idx} | {tecnica_nombre.upper()} | BIOMECHANICAL ERROR DETECTED"
         cv2.rectangle(frame, (0, 0), (w, 42), (18, 18, 22), -1)
         cv2.rectangle(frame, (0, 40), (w, 43), (0, 0, 255), -1)
         cv2.putText(frame, header_text, (20, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
@@ -510,7 +570,7 @@ class GeminiApiAdapter:
     Aísla al dominio de los detalles de red, autenticación y manejo de tokens.
     """
     
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-2.5-flash-lite"):
+    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-3.5-flash-lite"):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
         if not self.api_key:
             raise ValueError("Se requiere una API Key válida para instanciar GeminiApiAdapter.")

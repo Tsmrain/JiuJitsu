@@ -13,7 +13,7 @@ Identificación de los requisitos no funcionales (NFRs) críticos y las solucion
 
 | Factor Arquitectónico | Restricción / Desafío | Solución de Diseño / Patrón Adoptado |
 | :--- | :--- | :--- |
-| **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Inferencia local en Apple Silicon con MLX:** `Qwen3-VL-Embedding-2B` corre nativamente en la Mac del desarrollador. Fallback HTTP a Google Colab disponible vía `USE_LOCAL_QWEN=false` (deprecado). |
+| **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Inferencia 100% local en Apple Silicon:** Qwen3-VL (MLX) + YOLO26-pose (MPS) en Mac M5 24 GB. Gemini 3.5 Flash-Lite (API gratuita) como generador de feedback. Colab queda deprecado. |
 | **Límite de Cuota (Gemini API)** | Nivel Gratuito de Gemini API impone cuotas estrictas de solicitudes por minuto (RPM). | **Patrón Message Queue (Cola de Tareas):** Encolado de tareas asíncronas con reintentos para no saturar las llamadas a Gemini. |
 | **Estimación 3D / Profundidad** | Capturar la profundidad espacial ($Z$) en llaves y agarres complejos. | **Ultralytics Pose & Depth Tasks:** Estimación de profundidad y keypoints tridimensionales ($X, Y, Z$). |
 | **Identificación de Error** | Encontrar el momento exacto donde el alumno falla en la técnica. | **YOLO + Distancia Coseno:** Comparación matemática de vectores frame a frame para hallar la diferencia máxima. |
@@ -311,4 +311,21 @@ Ver technical memo completo en `docs/technical_memos/2026-10-28-mlx-embeddings-q
 **Impacto en la vista de despliegue:** el nodo "Google Colab Pro (GPU Worker)" queda como **opcional y deprecado**. El nodo "Máquina Local (Persistencia & Servidores)" ahora incluye también el motor de inferencia de embeddings.
 
 **Verificación:** E2E del PDF "Jiu-Jitsu University" (600p) en 817.52 seg. Ver `docs/PlanEvaluacionIteraciones.md` (Transition-2A).
+
+---
+
+## 10. ANEXO: Iteración Transition-2B — Inferencia Local de YOLO26 con MPS y Gemini 3.5 Flash-Lite
+
+**Fecha:** 2026-10-28
+**Tag:** `transition-2b`
+
+Ver technical memo completo en `docs/technical_memos/2026-10-28-yolo26-local-mps-vs-mlx.md`.
+
+**Cambio arquitectónico:**
+- Inferencia de pose cinemática migrada a ejecución 100% local mediante `ultralytics` sobre Apple Metal Performance Shaders (`device="mps"`), alcanzando 63.5 FPS.
+- Eliminación de la dependencia de workers remotos en Google Colab para la estimación de pose.
+- Modelo de lenguaje para feedback cualitativo actualizado a `gemini-3.5-flash-lite` utilizando prompts en inglés (`EnglishPromptStrategy`) y citación obligatoria de fuentes RAG (`Jiu-Jitsu University`).
+- Gestión estricta de recursos de memoria con guard preventivo (< 2 GB disponible) y vaciado explícito de caché Metal (`torch.mps.empty_cache()` y `gc.collect()`) en bloques `finally`.
+- Internacionalización del flujo E2E en frontend con soporte default en inglés (`en`).
+
 

@@ -2,6 +2,137 @@
 // Los nombres de las técnicas son nombres propios universales de Jiu-Jitsu y no se traducen.
 
 export const translations = {
+  en: {
+    // Header & Navigation
+    brandSub: "AI",
+    adminBtn: " Manage Academies (Admin)",
+    profesorBtn: " My Techniques",
+    loginTooltip: "Switch Role / Sign In",
+    roleLabel: "Role",
+    
+    // Status & Progress
+    uploadingVideo: "Uploading video...",
+    processingIA: "AI Analyzing Biomechanics...",
+    processingHint: "Extracting keypoints with YOLO and comparing vector similarity in Qdrant...",
+
+    // VideoUpload Page
+    uploadTitle: "Upload Your Execution",
+    uploadSubtitle: "Select the instructor from your academy and the technique you want to practice to compare your movement.",
+    selectProfesorLabel: "1. SELECT YOUR ACADEMY INSTRUCTOR:",
+    selectTecnicaLabelStep: "2. SELECT TECHNIQUE TO EVALUATE:",
+    patronProfesor: "INSTRUCTOR PATTERN",
+    dropText: "Drag your video here or",
+    dropClick: "click to browse",
+    dropHint: "MP4, MOV or WebM (Max 50MB)",
+    btnChange: "Change",
+    btnAnalyze: "Analyze Technique",
+    alertValidVideo: "Please select a valid video file.",
+    noProfessorsFound: "Loading academy instructors...",
+    noTecnicasFound: "This instructor does not have techniques with reference video yet.",
+    hasVideoTag: " With Reference Video",
+    noVideoTag: " Without Instructor Video",
+    selectPersonStep: "3. IDENTIFY YOURSELF IN THE VIDEO (CALIBRATION):",
+    selectPersonTitle: "Select yourself in the initial frame",
+    selectPersonHint: "Click on your bounding box or in the list below to confirm your identity before analysis.",
+    extractingFrame: "Analyzing initial frame and detecting practitioners...",
+    confirmPersonBtn: "Confirm Identity and Analyze",
+    personIdentified: "You (Selected)",
+    personCandidate: "Practitioner",
+    singlePersonDetected: "1 practitioner detected in frame. Click to confirm your identity.",
+    multiplePersonsDetected: "Multiple people detected. Click on your body to calibrate tracking.",
+    confirmingSelection: "Confirming selection...",
+    alertSelectPerson: "You must confirm which person you are in the video to proceed with the evaluation.",
+    notThisPersonBtn: "❌ Not this person",
+    yesItsMeBtn: "✅ Yes, that's me (Confirm and Analyze)",
+    isThisYou: "Is this you?",
+    bodyNotDetectedMsg: "Your body was not detected in the initial frame. Try another angle or record again showing your full body.",
+
+    // FeedbackView Page
+    feedbackTitle: "Biomechanical Analysis Completed",
+    tecnicaEvaluada: "EVALUATED TECHNIQUE",
+    patronRefLabel: "Reference Pattern:",
+    similarityLabel: "Biomechanical Similarity",
+    detailSummary: "View Full Biomechanical Details",
+    btnReset: " Evaluate Another Technique",
+    videoReferenciaLabel: "INSTRUCTOR REFERENCE VIDEO",
+    videoReferenciaDemoDe: "Demonstration by",
+    videoReferenciaHint: "Compare your execution against the instructor pattern to understand the biomechanical differences highlighted by the AI below.",
+
+    // ProfesorTecnicas Page
+    tecnicasTitle: "Technique Catalog",
+    btnNewTecnica: "+ New Technique",
+    btnClose: "Close",
+    loadingTecnicas: "Loading techniques...",
+    hasVideoStatus: " Video uploaded by you",
+    noVideoStatus: " No video for this technique",
+    btnEdit: " Edit",
+    btnDelete: " Delete",
+    btnReplaceVideo: " Replace Video",
+    btnUploadVideo: " Upload Video",
+    confirmDeleteTecnica: "Are you sure you want to delete this technique from the catalog?",
+    alertVideoUploaded: "Video uploaded successfully.",
+    modalPreviewTitle: "Video Preview",
+    modalNewTitle: "New Technique",
+    modalEditTitle: "Edit Technique",
+    labelTecnicaNombre: "Technique Name",
+    placeholderTecnicaNombre: "E.g.: Armbar, Kimura, De la Riva",
+    labelNivelCinturon: "Belt Level",
+    labelVideoReferencia: "Reference Video (Instructor Demo)",
+    dropVideoHint: "Click to select or drag a reference video",
+    btnSelectVideo: " Select Video",
+    btnChangeVideo: " Change Video",
+    btnCancel: "Cancel",
+    btnSave: "Save Technique",
+    savingTecnica: "Saving...",
+
+    // Belt Levels (English)
+    beltPrefix: "Belt",
+    belts: {
+      Blanco: "White",
+      Azul: "Blue",
+      Morado: "Purple",
+      Marrón: "Brown",
+      Negro: "Black"
+    },
+
+    // AdminSucursales Page
+    adminTitle: "Global Academy Management",
+    btnNewBranch: "+ New Academy",
+    searchMapsPlaceholder: "Paste Google Maps link to autocomplete...",
+    btnSearchLocation: " Autocomplete Location",
+    tableNombre: "Name",
+    tablePais: "Country",
+    tableCiudad: "City",
+    tableDireccion: "Address",
+    tableAcciones: "Actions",
+    confirmDeleteBranch: "Are you sure you want to delete this academy?",
+    modalNewBranchTitle: "New Academy",
+    modalEditBranchTitle: "Edit Academy",
+    labelBranchNombre: "Academy Name",
+    labelBranchPais: "Country",
+    labelBranchCiudad: "City",
+    labelBranchDireccion: "Address",
+
+    // LoginModal Component
+    tabLogin: "Sign In",
+    tabSignup: "Create Account",
+    labelUserOrEmail: "Username or Email",
+    placeholderUserOrEmail: "E.g. admin or user@example.com",
+    labelPassword: "Password",
+    btnLogin: "Sign In",
+    btnLoggingIn: "Verifying...",
+    labelNombreCompleto: "Full Name",
+    placeholderNombreCompleto: "E.g. Lucas Lepri",
+    labelUsername: "Username",
+    labelEmail: "Email",
+    labelUserRole: "USER ROLE:",
+    labelSucursal: "Academy",
+    btnSignupSubmit: "Create Account",
+    btnSigningUp: "Creating account...",
+    roleAlumno: "student",
+    roleProfesor: "instructor"
+  },
+
   es: {
     // Header & Navegación
     brandSub: "IA",
@@ -265,13 +396,14 @@ export const translations = {
   }
 };
 
-export function useTranslation(language = 'es') {
-  const lang = (language || 'es').toLowerCase().startsWith('pt') ? 'pt' : 'es';
-  const t = translations[lang] || translations.es;
+export function useTranslation(language = 'en') {
+  const l = (language || 'en').toLowerCase();
+  const lang = l.startsWith('pt') ? 'pt' : (l.startsWith('es') ? 'es' : 'en');
+  const t = translations[lang] || translations.en;
   
   const getBeltLabel = (beltKey) => {
-    const beltName = t.belts[beltKey] || beltKey;
-    return `${t.beltPrefix} ${beltName}`;
+    const beltName = t.belts?.[beltKey] || beltKey;
+    return `${t.beltPrefix || 'Belt'} ${beltName}`;
   };
 
   return { t, lang, getBeltLabel };

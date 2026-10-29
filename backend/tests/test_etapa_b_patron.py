@@ -67,7 +67,8 @@ def test_alumno_intenta_registrar_patron_retorna_403():
         data={"session_id": "cualquiera"}
     )
     assert res.status_code == 403
-    assert "profesor o administrador" in res.json()["detail"]
+    detail = res.json()["detail"]
+    assert "Instructor or administrator privileges required" in detail or "profesor o administrador" in detail
 
 
 def test_tecnica_inexistente_retorna_404():
@@ -98,7 +99,9 @@ def test_patron_inexistente_get_retorna_404():
 def test_tracking_insuficiente_retorna_422():
     """Si la cobertura del tracking es < 70%, debe retornar 422 Unprocessable Entity."""
     prof_token = make_token(role="profesor")
-    tecnica_id = "2de123c5-8ed3-4de5-a3f9-daeb2218d062"
+    res_t = client.get("/api/v1/tecnicas")
+    tecnicas = res_t.json() if res_t.status_code == 200 else []
+    tecnica_id = tecnicas[0]["id"] if tecnicas else "30a4afe4-23cc-4479-9f14-4f6d867de7dd"
 
     # Mockear YOLO para retornar cobertura baja
     with patch("corpocmente.infrastructure.ai.adapters.YOLOPoseAdapter.extraer_secuencia") as mock_ext:
@@ -114,7 +117,8 @@ def test_tracking_insuficiente_retorna_422():
             files={"video": ("test.mp4", b"dummy video content", "video/mp4")}
         )
         assert res.status_code == 422
-        assert "Tracking insuficiente" in res.json()["detail"]
+        detail = res.json()["detail"]
+        assert "Insufficient tracking" in detail or "Tracking insuficiente" in detail
 
 
 def test_fallo_postgres_limpia_patron_huerfano_en_qdrant():
@@ -152,7 +156,8 @@ def test_fallo_postgres_limpia_patron_huerfano_en_qdrant():
                     files={"video": ("test.mp4", b"dummy", "video/mp4")}
                 )
                 assert res.status_code == 500
-                assert "Fallo al activar patrón en PostgreSQL" in res.json()["detail"]
+                detail = res.json()["detail"]
+                assert "Failed to activate pattern in PostgreSQL" in detail or "Fallo al activar patrón en PostgreSQL" in detail
                 assert spy_eliminar.called
 
 
@@ -269,4 +274,5 @@ def test_fallo_insercion_qdrant_mantiene_patron_anterior():
             files={"video": ("test.mp4", b"dummy", "video/mp4")}
         )
         assert res.status_code == 500
-        assert "Fallo al insertar patrón en Qdrant" in res.json()["detail"]
+        detail = res.json()["detail"]
+        assert "Failed to insert pattern in Qdrant" in detail or "Fallo al insertar patrón en Qdrant" in detail

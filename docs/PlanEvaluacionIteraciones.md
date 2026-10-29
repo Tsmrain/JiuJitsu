@@ -779,3 +779,43 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - PR a `ml-explore/mlx-embeddings` con el fix.
   - Re-evaluar el patch cuando salga versión oficial.
   - Ninguna en Task 6. Modo fallback probado y funcional.
+
+---
+
+### 🔹 Iteración Transition-2B (Fase de Transición): YOLO26 local + Gemini 3.5 Flash-Lite + inglés
+
+- **Estado:** COMPLETADA ✅
+- **Fecha:** 2026-10-28
+- **Commit:** `c0ac9fd`
+- **Tag:** `transition-2b`
+
+- **Objetivo:** YOLO26-pose corriendo localmente en Mac (MLX o MPS), Gemini 3.5 Flash-Lite como generador, todo el feedback en inglés, gestión explícita de recursos.
+
+- **Riesgos mitigados:**
+  - Dependencia de Colab para YOLO: eliminada.
+  - Modelo de Gemini deprecado: migrado a 3.5 Flash-Lite vigente.
+  - RAM descontrolada: instrumentada con logs `[RAM]` y `finally` de liberación.
+
+- **Entregables:**
+  - Ruta B (`ultralytics` con Apple Metal MPS) para YOLO26-pose
+  - `GeminiApiAdapter` con `gemini-3.5-flash-lite`
+  - `EnglishPromptStrategy` + `COCO_JOINT_NAMES_EN`
+  - `translations.en` en frontend (`translations.js`) y `useTranslation` default `'en'`
+  - `log_ram_usage()` + RAM guard (< 2 GB libre aborta)
+  - Memo técnico: `docs/technical_memos/2026-10-28-yolo26-local-mps-vs-mlx.md`
+
+- **Evidencia E2E:**
+  - `Maestro.mp4` → patrón registrado: 783 frames, cobertura 94.25% (12.32s, 63.5 FPS), `patron_id`: `e4264a95-594c-4e61-9b28-864748304e01`
+  - `Alumno.mp4` → análisis completo: DURACION_SEG = 70.77s, similitud 25.72%, feedback en inglés
+  - Frame crítico: `/tmp/corpocmente_frames/critico_b5a01854-3f66-47f4-b415-4e11da4d41a1.jpg` (81 KB, 464x832 px)
+  - Feedback cita el libro: *"Your elbows are flaring outward and losing connection to your hips, which allows the opponent to collapse your frame. Keep your elbows tightly glued to your ribs as recommended in Jiu-Jitsu University (p."*
+
+- **Lecciones aprendidas:**
+  - Ruta B (MPS) fue la correcta porque `thewebAI/yolo-mlx` tiene un conflicto estricto con `mlx>=0.31.1` (requerido por `mlx-embeddings` para Qwen3-VL local). Mantener PyTorch MPS permite que ambos modelos convivan sin romper dependencias.
+  - La gestión de RAM es crítica: liberación explícita con `gc.collect()` y `torch.mps.empty_cache()` en `finally` previene fugas en background tasks, dejando 11.3 GB de RAM disponible post-E2E.
+  - Inglés en prompts + i18n frontend es timeboxed: se tradujeron las claves del flujo E2E y los mensajes de error (`detail`) de la API.
+
+- **Deuda residual:**
+  - Traducir el resto de i18n si el sistema se despliega internacionalmente.
+  - Migrar a `yolo-mlx` cuando soporte pose sin conflicto de versión con `mlx`.
+

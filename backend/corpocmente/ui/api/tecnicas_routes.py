@@ -44,7 +44,7 @@ def require_staff(authorization: Optional[str]) -> dict:
     if caller.get("role") not in ("admin", "profesor"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requieren privilegios de profesor o administrador."
+            detail="Instructor or administrator privileges required."
         )
     return caller
 
@@ -62,7 +62,7 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
         logger.exception("No se pudo consultar el catálogo de técnicas")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No se pudo consultar el catálogo. Revisa la conexión con la base de datos y las funciones SQL instaladas.",
+            detail="Could not query catalog. Please check database connection.",
         ) from error
 
     # Agrupar por técnica (una técnica puede tener varios videos de distintos profesores)
@@ -131,7 +131,7 @@ async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Heade
         "p_mensaje_profesor": req.mensaje_profesor,
     })
     if not created:
-        raise HTTPException(status_code=500, detail="Error creando técnica")
+        raise HTTPException(status_code=500, detail="Error creating technique.")
     c = created[0] if isinstance(created, list) else created
     return TecnicaResponse(
         id=UUID(c["id"]),
@@ -155,7 +155,7 @@ async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, authorization
         "p_mensaje_profesor": req.mensaje_profesor,
     })
     if not updated:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Technique not found.")
     c = updated[0] if isinstance(updated, list) else updated
     return TecnicaResponse(
         id=UUID(c["id"]),
@@ -174,7 +174,7 @@ async def eliminar_tecnica(tecnica_id: UUID, authorization: Optional[str] = Head
     db = get_db()
     deleted_ok = db.rpc("admin_delete_tecnica", {"p_tecnica_id": str(tecnica_id)})
     if not deleted_ok:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Technique not found.")
     return None
 
 
@@ -254,11 +254,11 @@ async def subir_video_referencia(
     if caller.get("role") != "admin" and str(caller.get("uid")) != str(profesor_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No puedes subir videos a nombre de otro profesor."
+            detail="You cannot upload videos on behalf of another instructor."
         )
 
     if not video.filename.endswith(('.mp4', '.avi', '.mov', '.webm')):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato de video no soportado.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported video format.")
 
     db = get_db()
 
@@ -269,7 +269,7 @@ async def subir_video_referencia(
         exists = False
 
     if not exists:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada en el catálogo.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Technique not found in catalog.")
 
     file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}_{video.filename}")
     with open(file_path, "wb") as buffer:
@@ -283,10 +283,10 @@ async def subir_video_referencia(
             "p_url_video": file_path
         })
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error guardando referencia de video: {e}")
+        raise HTTPException(status_code=500, detail=f"Error saving video reference: {e}")
 
     if not result:
-        raise HTTPException(status_code=500, detail="Error guardando referencia de video.")
+        raise HTTPException(status_code=500, detail="Error saving video reference.")
 
     video_id = result[0]["video_id"] if isinstance(result, list) else result["video_id"]
 
@@ -309,7 +309,7 @@ async def consultar_patron_activo(
     qdrant = QdrantVectorAdapter()
     patron_id = qdrant._get_patron_activo_db(tecnica_id)
     if not patron_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La técnica no tiene un patrón activo registrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The technique does not have an active pattern registered.")
 
     secuencia = qdrant.obtener_secuencia_referencia(tecnica_id, patron_id=patron_id)
     return {
@@ -365,7 +365,7 @@ async def registrar_patron_tecnica(
             pass
 
     if not exists:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Técnica no encontrada en el catálogo.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Technique not found in catalog.")
 
     # Resolver video_path y persona_idx a través de session_id o upload directo
     from corpocmente.domain.services.session_manager import (
@@ -376,20 +376,20 @@ async def registrar_patron_tecnica(
         try:
             sesion = SessionStateManager.obtener_sesion(session_id)
         except SessionNotFoundError:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sesión no encontrada.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found.")
         except SessionExpiredError:
-            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Sesión expirada.")
+            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Session expired.")
 
         if sesion.get("estado") != SessionState.PERSONA_SELECTED:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"La sesión está en estado '{sesion.get('estado')}'. Se requiere estado 'PERSONA_SELECTED'."
+                detail=f"Session is in state '{sesion.get('estado')}'. State 'PERSONA_SELECTED' is required."
             )
         target_persona_idx = sesion.get("persona_idx_seleccionada")
         if persona_idx is not None and persona_idx != target_persona_idx:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El persona_idx ({persona_idx}) no coincide con el seleccionado en la sesión ({target_persona_idx})."
+                detail=f"The persona_idx ({persona_idx}) does not match session selection ({target_persona_idx})."
             )
         video_path = sesion.get("video_path")
         try:
@@ -398,7 +398,7 @@ async def registrar_patron_tecnica(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e_conf))
     elif video:
         if not video.filename.endswith(('.mp4', '.avi', '.mov', '.webm')):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato de video no soportado.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported video format.")
         video_path = os.path.join(UPLOAD_DIR, f"patron_{uuid4()}_{video.filename}")
         with open(video_path, "wb") as buffer:
             shutil.copyfileobj(video.file, buffer)
@@ -406,7 +406,7 @@ async def registrar_patron_tecnica(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Debe proporcionar session_id o subir un archivo de video."
+            detail="Must provide session_id or upload a video file."
         )
 
     # 1. Extraer y validar secuencia
@@ -417,7 +417,7 @@ async def registrar_patron_tecnica(
     except Exception as e_ext:
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=False, error=str(e_ext))
-        raise HTTPException(status_code=500, detail=f"Error al extraer poses del video: {e_ext}")
+        raise HTTPException(status_code=500, detail=f"Error extracting poses from video: {e_ext}")
 
     cobertura = ext_res.get("cobertura", 0.0)
     total_frames = ext_res.get("total_frames", 0)
@@ -426,7 +426,7 @@ async def registrar_patron_tecnica(
             SessionStateManager.finalizar_operacion(session_id, exito=False, error="Tracking insuficiente")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Tracking insuficiente en el video del patrón: cobertura {cobertura*100:.1f}% < 70% requerida."
+            detail=f"Insufficient tracking in pattern video: coverage {cobertura*100:.1f}% < 70% required."
         )
 
     secuencia_kpts = ext_res["secuencia_kpts"]
@@ -446,7 +446,7 @@ async def registrar_patron_tecnica(
     except Exception as e_qdrant:
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=False, error=str(e_qdrant))
-        raise HTTPException(status_code=500, detail=f"Fallo al insertar patrón en Qdrant: {e_qdrant}")
+        raise HTTPException(status_code=500, detail=f"Failed to insert pattern in Qdrant: {e_qdrant}")
 
     # 3. Verificar recuperación completa y ordenada
     try:
@@ -457,7 +457,7 @@ async def registrar_patron_tecnica(
                 SessionStateManager.finalizar_operacion(session_id, exito=False, error="Inconsistencia de frames")
             raise HTTPException(
                 status_code=500,
-                detail=f"Inconsistencia al verificar patrón en Qdrant: esperados {len(secuencia_kpts)} frames, recuperados {len(recuperados)}."
+                detail=f"Inconsistency verifying pattern in Qdrant: expected {len(secuencia_kpts)} frames, retrieved {len(recuperados)}."
             )
     except HTTPException:
         raise
@@ -465,7 +465,7 @@ async def registrar_patron_tecnica(
         qdrant.eliminar_patron(nuevo_patron_id)
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=False, error=str(e_verif))
-        raise HTTPException(status_code=500, detail=f"Fallo verificando patrón en Qdrant: {e_verif}")
+        raise HTTPException(status_code=500, detail=f"Failed verifying pattern in Qdrant: {e_verif}")
 
     # 4. Activar nuevo patrón en PostgreSQL
     patron_anterior_id = None
@@ -482,7 +482,7 @@ async def registrar_patron_tecnica(
         qdrant.eliminar_patron(nuevo_patron_id)
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=False, error=str(e_pg))
-        raise HTTPException(status_code=500, detail=f"Fallo al activar patrón en PostgreSQL: {e_pg}. Patrón huérfano eliminado.")
+        raise HTTPException(status_code=500, detail=f"Failed to activate pattern in PostgreSQL: {e_pg}. Orphan pattern deleted.")
 
     # 5. Limpiar patrón anterior solo tras confirmación de activación
     if patron_anterior_id and str(patron_anterior_id) != str(nuevo_patron_id):
@@ -546,11 +546,11 @@ async def registrar_patron_tecnica(
 async def servir_frame_rag_tecnica(tecnica_id: str, filename: str):
     """Sirve fotogramas muestreados del video de referencia para RAG multimodal."""
     if ".." in filename or "/" in filename or "\\" in filename:
-        raise HTTPException(status_code=400, detail="Filename inválido.")
+        raise HTTPException(status_code=400, detail="Invalid filename.")
     if ".." in tecnica_id or "/" in tecnica_id or "\\" in tecnica_id:
-        raise HTTPException(status_code=400, detail="Tecnica ID inválido.")
+        raise HTTPException(status_code=400, detail="Invalid technique ID.")
     from corpocmente.application.services.rag_video_ingestion import STORAGE_DIR
     path = (STORAGE_DIR / tecnica_id / filename).resolve()
     if not str(path).startswith(str(STORAGE_DIR.resolve())) or not path.is_file():
-        raise HTTPException(status_code=404, detail="Frame no encontrado.")
+        raise HTTPException(status_code=404, detail="Frame not found.")
     return FileResponse(path)

@@ -155,7 +155,7 @@ export default function VideoUpload({ user, onUploadStart }) {
       form.append('video_maestro', teacherFile);
       form.append('tecnica_id', selectedTecnica.id);
       form.append('persona_idx_alumno', String(selectedPersonaIdx));
-      form.append('idioma', user?.idioma_preferido || 'es');
+      form.append('idioma', user?.idioma_preferido || 'en');
       form.append('video_maestro_nombre', `${selectedProfesor?.nombre_completo || 'Profesor'} — ${selectedTecnica.nombre || 'Técnica'}`);
       const headers = { Authorization: `Bearer ${user?.token}` };
       const start = await fetch('http://localhost:8000/api/v1/comparaciones/video-a-video', { method: 'POST', headers, body: form });

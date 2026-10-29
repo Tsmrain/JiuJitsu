@@ -63,7 +63,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       const userData = await response.json();
       onLoginSuccess({
         ...userData,
-        idioma_preferido: user?.idioma_preferido || 'es'
+        idioma_preferido: user?.idioma_preferido || 'en'
       });
       onClose();
     } catch (err) {
@@ -109,7 +109,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       const userData = await response.json();
       onLoginSuccess({
         ...userData,
-        idioma_preferido: user?.idioma_preferido || 'es'
+        idioma_preferido: user?.idioma_preferido || 'en'
       });
       onClose();
     } catch (err) {

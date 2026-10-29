@@ -23,7 +23,7 @@ function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const { t } = useTranslation(user?.idioma_preferido || 'es');
+  const { t } = useTranslation(user?.idioma_preferido || 'en');
 
   const handleUploadStart = async (uploadData) => {
     // Soporta tanto objeto uploadData ({ sessionId, personaIdx, tecnica, file }) como firma clásica (file, tecnica)
@@ -62,7 +62,7 @@ function App() {
         formData.append("profesor_id", tecnica.profesor_id);
       }
     }
-    formData.append("idioma", user?.idioma_preferido || 'es');
+    formData.append("idioma", user?.idioma_preferido || 'en');
     formData.append("alumno_id", user.user_id);
 
     try {
@@ -155,15 +155,15 @@ function App() {
         </div>
 
         <div className="user-nav" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Selector de Idioma (ES / PT) */}
+          {/* Selector de Idioma (EN / ES / PT) */}
           <select 
-            value={user?.idioma_preferido || 'es'} 
+            value={user?.idioma_preferido || 'en'} 
             onChange={(e) => {
               if (user) {
                 setUser(prev => ({ ...prev, idioma_preferido: e.target.value }));
               }
             }}
-            title="Seleccionar Idioma del Sistema"
+            title="Select System Language"
             style={{
               background: 'rgba(255, 255, 255, 0.08)',
               color: 'white',
@@ -174,6 +174,7 @@ function App() {
               cursor: 'pointer'
             }}
           >
+            <option value="en" style={{ background: '#111', color: 'white' }}>EN</option>
             <option value="es" style={{ background: '#111', color: 'white' }}>ES</option>
             <option value="pt" style={{ background: '#111', color: 'white' }}>PT</option>
           </select>

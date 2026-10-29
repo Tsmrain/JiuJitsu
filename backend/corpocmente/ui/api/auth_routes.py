@@ -92,7 +92,7 @@ def _decode_jwt(authorization: Optional[str]) -> dict:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Se requiere autenticación."
+            detail="Authentication required."
         )
 
     token_str = authorization[7:].strip()
@@ -106,18 +106,18 @@ def _decode_jwt(authorization: Optional[str]) -> dict:
     except pyjwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expirado."
+            detail="Token expired."
         )
     except pyjwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o firma incorrecta."
+            detail="Invalid token or signature."
         )
 
     if not payload.get("uid") or not payload.get("role"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token incompleto."
+            detail="Incomplete token."
         )
 
     return payload
@@ -129,7 +129,7 @@ def require_admin(authorization: Optional[str]) -> dict:
     if payload.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requieren privilegios de administrador."
+            detail="Administrator privileges required."
         )
     return payload
 
@@ -140,7 +140,7 @@ def require_staff(authorization: Optional[str]) -> dict:
     if payload.get("role") not in ["admin", "profesor"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requieren privilegios de staff (admin o profesor)."
+            detail="Staff privileges required (admin or professor)."
         )
     return payload
 
@@ -181,14 +181,14 @@ async def login(req: LoginRequest):
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Nombre de usuario o contraseña incorrectos."
+            detail="Incorrect username or password."
         )
 
     # PostgREST puede devolver {"token": None} si el RPC retorna NULL (credenciales inválidas)
     if not token_resp or not token_resp.get("token"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Nombre de usuario o contraseña incorrectos."
+            detail="Incorrect username or password."
         )
 
     try:
@@ -196,7 +196,7 @@ async def login(req: LoginRequest):
     except (KeyError, json.JSONDecodeError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Nombre de usuario o contraseña incorrectos."
+            detail="Incorrect username or password."
         )
 
     # Firmar JWT real
@@ -261,13 +261,13 @@ async def signup(req: SignupRequest):
     if rol_solicitado == "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="El rol de Administrador es exclusivo y reservado por seguridad."
+            detail="The Administrator role is exclusive and restricted for security."
         )
 
     if rol_solicitado not in ["alumno", "profesor"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El rol de registro debe ser 'alumno' o 'profesor'."
+            detail="Registration role must be 'alumno' or 'profesor'."
         )
 
     usr_clean = req.username.strip().lower()
@@ -287,7 +287,7 @@ async def signup(req: SignupRequest):
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No hay sucursales registradas en el sistema para asociar al usuario. Por favor, crea una sucursal primero."
+                detail="No academies registered in the system. Please create an academy first."
             )
 
     try:
@@ -304,12 +304,12 @@ async def signup(req: SignupRequest):
         if "unique" in err or "duplicate" in err or "23505" in err:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El nombre de usuario '{req.username}' ya está registrado."
+                detail=f"Username '{req.username}' is already registered."
             )
         raise
 
     if not created_users:
-        raise HTTPException(status_code=500, detail="Error creando usuario")
+        raise HTTPException(status_code=500, detail="Error creating user.")
     created_user = created_users[0] if isinstance(created_users, list) else created_users
 
     signed_token = _sign_token({
@@ -372,7 +372,7 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
     if caller_role != "admin" and str(user_id) != str(caller_uid):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para modificar este perfil."
+            detail="You do not have permission to modify this profile."
         )
 
     db = get_db()
@@ -384,7 +384,7 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
         "p_avatar_url": req.avatar_url
     })
     if not updated_list:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     updated = updated_list[0]
 
     signed_token = _sign_token({
@@ -415,7 +415,7 @@ async def impersonate_user(user_id: UUID, authorization: Optional[str] = Header(
     db = get_db()
     users = db.rpc("admin_get_user_full", {"p_user_id": str(user_id)})
     if not users:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     user = users[0]
     signed_token = _sign_token({
@@ -493,7 +493,7 @@ async def listar_alumnos(
     elif caller.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requieren privilegios de profesor o administrador."
+            detail="Instructor or administrator privileges required."
         )
 
     db = get_db()
@@ -541,20 +541,20 @@ async def listar_evaluaciones_alumno(
     if caller.get("role") == "profesor":
         caller_sucursal = caller.get("sucursal_id")
         if not caller_sucursal:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token sin sucursal.")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token missing academy.")
 
         alumno = db.rpc("admin_get_user_full", {"p_user_id": str(alumno_id)})
         if not alumno:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alumno no encontrado.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
         if str(alumno[0].get("sucursal_id")) != str(caller_sucursal):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="No puedes ver alumnos de otra sucursal."
+                detail="You cannot view students from another academy."
             )
     elif caller.get("role") != "admin" and not es_propio_alumno:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requieren privilegios de profesor o administrador."
+            detail="Instructor or administrator privileges required."
         )
 
     try:
@@ -586,7 +586,7 @@ async def crear_sucursal(nueva: SucursalCreate, authorization: Optional[str] = H
         "p_longitud": float(nueva.longitud)
     })
     if not created:
-        raise HTTPException(status_code=500, detail="Error creando sucursal")
+        raise HTTPException(status_code=500, detail="Error creating academy.")
     c = created[0] if isinstance(created, list) else created
     return SucursalResponse(id=UUID(c["id"]), **{k:v for k,v in c.items() if k != "id"})
 
@@ -610,7 +610,7 @@ async def actualizar_sucursal(sucursal_id: UUID, req: SucursalCreate, authorizat
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sucursal no encontrada."
+            detail="Academy not found."
         )
     c = updated[0]
     return SucursalResponse(id=UUID(c["id"]), **{k:v for k,v in c.items() if k != "id"})
@@ -631,14 +631,14 @@ async def eliminar_sucursal(sucursal_id: UUID, authorization: Optional[str] = He
         if "sucursal_con_usuarios" in err:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No se puede eliminar esta sucursal porque tiene usuarios (profesores o alumnos) vinculados. Reasigna o elimina los usuarios primero."
+                detail="Cannot delete academy with linked users. Reassign or delete users first."
             )
         raise
 
     if not deleted_ok:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sucursal no encontrada."
+            detail="Academy not found."
         )
     return None
 
@@ -673,7 +673,7 @@ async def parse_gmaps_link(req: ParseGmapsRequest):
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No se encontraron coordenadas válidas en el enlace proporcionado."
+                    detail="No valid coordinates found in the provided link."
                 )
 
     place_name = None

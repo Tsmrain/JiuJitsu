@@ -33,7 +33,8 @@ def test_analizar_tecnica_sin_patron_activo_retorna_404():
         files={"video": ("test.mp4", b"dummy video", "video/mp4")}
     )
     assert res.status_code == 404
-    assert "No existe un patrón biomecánico activo" in res.json()["detail"]
+    detail = res.json()["detail"]
+    assert "No active biomechanical pattern" in detail or "No existe un patrón biomecánico activo" in detail
 
 
 def test_sesion_reutilizada_o_concurrencia_retorna_409():
@@ -56,12 +57,14 @@ def test_sesion_reutilizada_o_concurrencia_retorna_409():
 
 def test_recuperacion_patron_tras_reiniciar_adaptador():
     """Verifica que un nuevo QdrantVectorAdapter() recupera íntegramente el patrón persistido."""
-    tecnica_id = "2de123c5-8ed3-4de5-a3f9-daeb2218d062"
+    res_t = client.get("/api/v1/tecnicas")
+    tecnicas = res_t.json() if res_t.status_code == 200 else []
+    tecnica_id = tecnicas[0]["id"] if tecnicas else "30a4afe4-23cc-4479-9f14-4f6d867de7dd"
 
     # Instancia 1
     adapter1 = QdrantVectorAdapter()
     patron_id = adapter1._get_patron_activo_db(tecnica_id)
-    assert patron_id is not None, "Debe existir un patrón activo para 'Salir de 100 kilos'"
+    assert patron_id is not None, f"Debe existir un patrón activo para técnica {tecnica_id}"
 
     # Instancia 2 (simula reinicio de servicio/adaptador desacoplado)
     adapter2 = QdrantVectorAdapter()
@@ -74,7 +77,9 @@ def test_comparacion_dtw_con_secuencias_reales():
     """Ejecuta comparación DTW directa entre secuencias reales y valida determinismo y métrica."""
     from corpocmente.domain.biomechanics.dtw_comparator import comparar_secuencias_con_dtw
 
-    tecnica_id = "2de123c5-8ed3-4de5-a3f9-daeb2218d062"
+    res_t = client.get("/api/v1/tecnicas")
+    tecnicas = res_t.json() if res_t.status_code == 200 else []
+    tecnica_id = tecnicas[0]["id"] if tecnicas else "30a4afe4-23cc-4479-9f14-4f6d867de7dd"
     adapter = QdrantVectorAdapter()
     secuencia_maestro = adapter.obtener_secuencia_referencia(tecnica_id=tecnica_id)
     assert len(secuencia_maestro) > 0

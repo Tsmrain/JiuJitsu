@@ -33,10 +33,12 @@ Abrí http://localhost:5173
 
 ## Estructura
 
-- `backend/` — FastAPI (domain/application/infrastructure/ui)
-- `frontend/` — React + Vite
+- `backend/` — FastAPI (dominio/aplicación/infraestructura/ui)
+  - **Inferencia local:** Qwen3-VL 2B (MLX) + YOLO26-pose (MPS)
+- **Feedback:** Gemini 3.5 Flash-Lite (API gratuita, inglés)
+- `frontend/` — React + Vite (i18n con inglés por defecto)
 - `infrastructure/` — docker-compose + scripts SQL de initdb
 - `scripts/` — orquestación local
-- `docs/` — diseño, arquitectura
+- `docs/` — diseño, arquitectura y technical memos
 - `data/` — datos locales (gitignored)
 

@@ -7,7 +7,7 @@ from corpocmente.domain.entities.models import AnalisisResultDTO
 from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
-from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrategy
+from corpocmente.domain.strategies.prompt_strategies import EnglishPromptStrategy
 from corpocmente.application.services.multimodal_rag_service import (
     formatear_evidencias_texto,
     obtener_evidencias_rag_multimodal,
@@ -93,9 +93,9 @@ class IntelligenceAnalysisFacade:
             similitud = dtw_res["score_similitud"]
             frame_alumno_critico = dtw_res["frame_alumno_critico"]
             arts_criticas = dtw_res.get("articulaciones_criticas", [])
-            from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES
+            from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
             discrepancias_detectadas = [
-                f"Desviación biomecánica en {COCO_JOINT_NAMES[idx] if idx < len(COCO_JOINT_NAMES) else f'Articulación #{idx}'}: desalineación respecto al patrón del profesor."
+                f"Biomechanical deviation at {COCO_JOINT_NAMES_EN[idx] if idx < len(COCO_JOINT_NAMES_EN) else f'Joint #{idx}'}: misalignment vs. the instructor's pattern."
                 for idx in arts_criticas
             ]
             dtw_distance = dtw_res.get("dtw_distance")
@@ -171,7 +171,7 @@ class IntelligenceAnalysisFacade:
         # 4. Evaluación y feedback condicional (IA sólo si hay errores)
         UMBRAL_ACEPTABLE = 85.0
         if similitud >= UMBRAL_ACEPTABLE:
-            feedback_texto = "¡Técnica ejecutada correctamente. Excelente trabajo!"
+            feedback_texto = "Technique executed correctly. Excellent work!"
         else:
             contexto_profundo = ""
             evidencias_rag = []
@@ -190,21 +190,21 @@ class IntelligenceAnalysisFacade:
                     contexto_profundo = formatear_evidencias_texto(evidencias_rag)
                     if contexto_profundo:
                         contexto_profundo = (
-                            "\n\n[Evidencia recuperada de manuales y videos del profesor]:\n"
+                            "\n\n[Evidence retrieved from manuals and instructor reference videos]:\n"
                             + contexto_profundo
                         )
                 except Exception as e_rag:
                     logger.warning("Fallo en recuperación RAG multimodal (no bloqueante): %s", e_rag)
 
-            strategy = SpanishPromptStrategy()
+            strategy = EnglishPromptStrategy()
             prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, discrepancias_detectadas)
             if contexto_profundo:
                 prompt += contexto_profundo
             prompt += (
-                "\n\nFormato obligatorio de respuesta: español, máximo 2 frases y 45 palabras, "
-                "texto simple sin Markdown. Expón solo el error principal y una corrección concreta. "
-                "Si el contexto incluye una fuente, atribuye la recomendación con su nombre y referencia. "
-                "No inventes fuentes ni referencias. No menciones herramientas ni tecnologías."
+                "\n\nMandatory response format: English, at most 2 sentences and 45 words, "
+                "plain text without Markdown. State only the main error and one concrete correction. "
+                "If the context includes a source, cite the recommendation by its name and reference. "
+                "Do not invent sources or references. Do not mention tools or technologies."
             )
 
             feedback_texto = self.gemini.generar_texto_feedback(

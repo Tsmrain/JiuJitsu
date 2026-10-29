@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from '../i18n/translations';
 
 export default function UserProfileModal({ isOpen, user, onClose, onUpdateSuccess, onLogout }) {
-  const { t } = useTranslation(user?.idioma_preferido || 'es');
+  const { t } = useTranslation(user?.idioma_preferido || 'en');
   
   const [nombre, setNombre] = useState(user?.nombre_completo || '');
   const [password, setPassword] = useState('');

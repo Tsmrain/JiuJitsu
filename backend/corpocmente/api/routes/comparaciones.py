@@ -49,7 +49,7 @@ async def _guardar_upload(file: UploadFile, dest: Path) -> None:
 
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail="El video supera el límite de 300 MB.",
+                    detail="The video exceeds the 300 MB limit.",
                 )
 
             out.write(chunk)
@@ -70,13 +70,13 @@ async def comparar_video_a_video(
     if not _ext_valido(video_alumno.filename or ""):
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Video del alumno en formato no soportado. Usa MP4, MOV, AVI, MKV o WEBM.",
+            detail="Student video format not supported. Use MP4, MOV, AVI, MKV or WEBM.",
         )
 
     if not _ext_valido(video_maestro.filename or ""):
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Video del maestro en formato no soportado. Usa MP4, MOV, AVI, MKV o WEBM.",
+            detail="Instructor video format not supported. Use MP4, MOV, AVI, MKV or WEBM.",
         )
 
     usuario = require_auth(authorization)
@@ -126,10 +126,10 @@ async def leer_comparacion(comparacion_id: str, authorization: Optional[str] = H
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Comparación no encontrada.",
+            detail="Comparison not found.",
         )
     if data.get("alumno_id") != usuario["uid"] and usuario.get("role") != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta comparación.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this comparison.")
 
     return data
 
@@ -142,21 +142,21 @@ async def descargar_video_comparacion(comparacion_id: str, authorization: Option
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Comparación no encontrada.",
+            detail="Comparison not found.",
         )
     if data.get("alumno_id") != usuario["uid"] and usuario.get("role") != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes acceso a esta comparación.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this comparison.")
 
     if data.get("estado") != "completado":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La comparación aún no está completada.",
+            detail="Comparison is not yet completed.",
         )
 
     if not data.get("video_disponible"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="El video comparativo no está disponible.",
+            detail="Comparison video is not available.",
         )
 
     _, _, path_output = rutas_comparacion(comparacion_id)
@@ -164,7 +164,7 @@ async def descargar_video_comparacion(comparacion_id: str, authorization: Option
     if not path_output.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="El archivo de video comparativo no existe en disco.",
+            detail="Comparison video file does not exist on disk.",
         )
 
     return FileResponse(

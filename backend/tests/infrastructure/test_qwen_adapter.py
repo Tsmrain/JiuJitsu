@@ -1,16 +1,17 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter, NGROK_HEADERS
+from PIL import Image
 
 
 def test_generar_embedding_imagen_exige_worker_activo():
-    adapter = QwenEmbeddingAdapter(colab_url="")
+    adapter = QwenEmbeddingAdapter(colab_url="", use_local=False)
     with pytest.raises(RuntimeError):
         adapter.generar_embedding("dummy_frame.jpg")
 
 
 def test_generar_embedding_texto_no_inventa_vector_si_colab_no_esta_disponible():
-    adapter = QwenEmbeddingAdapter(colab_url="")
+    adapter = QwenEmbeddingAdapter(colab_url="", use_local=False)
     with pytest.raises(RuntimeError, match="COLAB_TUNNEL_URL"):
         adapter.generar_embedding_texto("control de cadera")
 
@@ -21,7 +22,7 @@ def test_qwen_embedding_adapter_colab_success(mock_post, tmp_path):
     frame_file = tmp_path / "dummy_frame.jpg"
     frame_file.write_bytes(b"\xff\xd8\xff\xe0\x00\x10JFIF")
 
-    adapter = QwenEmbeddingAdapter(colab_url="http://fake-colab.com")
+    adapter = QwenEmbeddingAdapter(colab_url="http://fake-colab.com", use_local=False)
 
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -48,7 +49,7 @@ def test_generar_embedding_texto_usa_form_data(mock_post):
     Y debe incluir los headers de ngrok.
     """
     # Arrange
-    adapter = QwenEmbeddingAdapter(colab_url="http://fake-colab.com")
+    adapter = QwenEmbeddingAdapter(colab_url="http://fake-colab.com", use_local=False)
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {"embeddings": [[0.07] * 2048]}
@@ -69,3 +70,20 @@ def test_generar_embedding_texto_usa_form_data(mock_post):
     assert call_kwargs["data"] == {"texto": "Teoría del Armbar"}, \
         "El campo debe llamarse 'texto' (como espera el endpoint /embed_text de FastAPI)"
     assert call_kwargs["headers"]["ngrok-skip-browser-warning"] == "1"
+
+
+def test_generar_embedding_local_texto_dim_2048():
+    adapter = QwenEmbeddingAdapter(use_local=True)
+    with patch.object(adapter, "_generar_embedding_texto_local", return_value=[0.05] * 2048) as mock_local:
+        vec = adapter.generar_embedding_texto("Pasaje de guardia")
+        assert len(vec) == 2048
+        mock_local.assert_called_once_with("Pasaje de guardia")
+
+
+def test_generar_embedding_local_imagen_dim_2048():
+    adapter = QwenEmbeddingAdapter(use_local=True)
+    img = Image.new("RGB", (100, 100), (0, 128, 255))
+    with patch.object(adapter, "_generar_embedding_imagen_local", return_value=[0.02] * 2048) as mock_local:
+        vec = adapter.generar_embedding_imagen(img, prompt="consulta_visual")
+        assert len(vec) == 2048
+        mock_local.assert_called_once_with(img, prompt="consulta_visual")

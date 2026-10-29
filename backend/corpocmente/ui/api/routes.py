@@ -661,14 +661,22 @@ async def ingerir_archivo_teoria(
         raise HTTPException(status_code=422, detail="No se encontró texto legible en el documento.")
 
     worker_url = settings.COLAB_TUNNEL_URL
-    from corpocmente.infrastructure.storage.google_drive_client import GoogleDriveDataLakeClient
-    drive_client = GoogleDriveDataLakeClient()
-    use_drive = drive_client.token_file.exists()
+    use_local_qwen = getattr(settings, "USE_LOCAL_QWEN", False)
+    use_drive = False
+    drive_client = None
 
-    if (texto.strip() or medios_visuales) and not use_drive and (not worker_url or "placeholder" in worker_url):
+    if not use_local_qwen:
+        try:
+            from corpocmente.infrastructure.storage.google_drive_client import GoogleDriveDataLakeClient
+            drive_client = GoogleDriveDataLakeClient()
+            use_drive = drive_client.token_file.exists()
+        except Exception:
+            use_drive = False
+
+    if (texto.strip() or medios_visuales) and not use_local_qwen and not use_drive and (not worker_url or "placeholder" in worker_url):
         raise HTTPException(
             status_code=503,
-            detail="El archivo quedó guardado, pero para vectorizar su contenido debes iniciar el worker Qwen en Colab.",
+            detail="El archivo quedó guardado, pero para vectorizar su contenido debes iniciar el worker Qwen en Colab o activar USE_LOCAL_QWEN=true.",
         )
 
     nombre_fuente = (fuente_nombre or nombre_archivo).strip()
@@ -678,7 +686,22 @@ async def ingerir_archivo_teoria(
     imagenes_embeddings = []
 
     if texto.strip():
-        if use_drive:
+        if use_local_qwen:
+            try:
+                from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
+                qwen_local = QwenEmbeddingAdapter(use_local=True)
+                bloques_texto = [texto[i:i + 8000] for i in range(0, len(texto), 8000)]
+                texto_embeddings = {"chunks": [], "embeddings": [], "dimension": 2048}
+                for indice, bloque in enumerate(bloques_texto, start=1):
+                    emb = qwen_local.generar_embedding_texto(bloque)
+                    texto_embeddings["chunks"].append(bloque)
+                    texto_embeddings["embeddings"].append(emb)
+                    avance = 30 + round(23 * indice / len(bloques_texto))
+                    _set_knowledge_progress(job_id, avance, f"Vectorizando texto con Qwen local: bloque {indice} de {len(bloques_texto)}", bloques_texto_procesados=indice, total_bloques_texto=len(bloques_texto))
+            except Exception as error:
+                logger.exception("Error vectorizando texto con Qwen local: %s", error)
+                raise HTTPException(status_code=500, detail=f"Error en inferencia local Qwen: {error}") from error
+        elif use_drive:
             try:
                 _set_knowledge_progress(job_id, 35, "Enviando texto al worker Qwen vía Google Drive...")
                 datos_texto = drive_client.vectorizar_texto_qwen(texto=texto, job_id=job_id)
@@ -720,7 +743,34 @@ async def ingerir_archivo_teoria(
         lotes = [medios_visuales[i:i + 4] for i in range(0, len(medios_visuales), 4)]
         _set_knowledge_progress(job_id, 54 if texto.strip() else 30, "Preparando páginas e imágenes", elementos_visuales_procesados=0, total_elementos_visuales=len(medios_visuales))
         for indice_lote, lote in enumerate(lotes, start=1):
-            if use_drive:
+            if use_local_qwen:
+                try:
+                    import io
+                    from PIL import Image
+                    from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
+                    qwen_local = QwenEmbeddingAdapter(use_local=True)
+                    lote_embs = []
+                    for item in lote:
+                        if item.get("pagina"):
+                            pixmap = item["documento"][item["pagina"] - 1].get_pixmap(dpi=120, alpha=False)
+                            image_bytes = pixmap.tobytes("jpeg")
+                        else:
+                            image_bytes = item["bytes"]
+                        item["imagen_hash"] = item.get("imagen_hash") or hashlib.sha256(image_bytes).hexdigest()
+                        img_pil = Image.open(io.BytesIO(image_bytes))
+                        emb = qwen_local.generar_embedding_imagen(img_pil, prompt=item.get("label", "Página/Imagen"))
+                        lote_embs.append(emb)
+                    datos_imagen = {
+                        "embeddings": lote_embs,
+                        "dimension": 2048
+                    }
+                    imagenes_embeddings.append((lote, datos_imagen))
+                    avance = 54 + round(34 * indice_lote / len(lotes)) if texto.strip() else 30 + round(58 * indice_lote / len(lotes))
+                    _set_knowledge_progress(job_id, avance, f"Vectorizando imágenes con Qwen local: {min(indice_lote * 4, len(medios_visuales))} de {len(medios_visuales)}", elementos_visuales_procesados=min(indice_lote * 4, len(medios_visuales)), total_elementos_visuales=len(medios_visuales))
+                except Exception as error:
+                    logger.exception("Error vectorizando imágenes con Qwen local: %s", error)
+                    raise HTTPException(status_code=500, detail=f"Error en inferencia local Qwen para imágenes: {error}") from error
+            elif use_drive:
                 try:
                     import base64
                     lote_payload = []

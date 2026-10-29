@@ -17,6 +17,8 @@ client_secret*.json
 # Python
 venv/
 .venv/
+venv_mlx/
+*venv*/
 __pycache__/
 *.pyc
 *.pyo

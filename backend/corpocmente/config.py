@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # Colab Worker Tunnel URL
     COLAB_TUNNEL_URL: str = ""
     
+    # Inferencia Local Qwen (Apple Silicon MLX)
+    USE_LOCAL_QWEN: bool = True
+    LOCAL_QWEN_MODEL: str = "mlx-community/Qwen3-VL-Embedding-2B-8bit"
+    
     # PostgreSQL / PostgREST
     POSTGREST_URL: str = "http://localhost:3000"
     POSTGREST_JWT_SECRET: str = ""
@@ -53,7 +57,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
     
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=[
+            str(Path(__file__).resolve().parents[1] / ".env"),
+            ".env",
+        ],
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
     @field_validator("GEMINI_API_KEY", "POSTGREST_JWT_SECRET")
     @classmethod

@@ -1,7 +1,15 @@
+"""
+backend/corpocmente/infrastructure/ai/qwen_adapter.py
+Adaptador de embeddings para Qwen3-VL.
+Soporta inferencia local nativa con Apple Silicon MLX (USE_LOCAL_QWEN=true)
+o túnel HTTP remoto hacia Google Colab (fallback).
+"""
 import json
 import logging
 import os
-from typing import List, Optional
+import threading
+from typing import List, Optional, Union
+from PIL import Image
 
 import requests
 
@@ -12,24 +20,67 @@ NGROK_HEADERS = {
     "User-Agent": "CorpocmenteBackend/1.0",
 }
 
+# Cache global del modelo y processor para evitar recargas en memoria
+_local_model = None
+_local_processor = None
+_local_lock = threading.Lock()
+
 
 class QwenEmbeddingAdapter:
     """
-    Adaptador para Qwen3-VL-Embedding-2B (Google Colab Remoto / Fallback Local).
+    Adaptador para Qwen3-VL-Embedding-2B.
+
+    Genera representaciones vectoriales densas de exactamente 2048 dimensiones,
+    compatibles con la colección rag_knowledge de Qdrant.
 
     Soporta:
     - generar_embedding_texto()
-    - generar_embedding_imagen() para imágenes usando el endpoint /embed_images.
+    - generar_embedding_imagen()
     - generar_embedding() como alias directo hacia generar_embedding_imagen().
+    - generar_embeddings_texto_lote()
     """
 
-    def __init__(self, colab_url: str = None):
+    def __init__(
+        self,
+        colab_url: Optional[str] = None,
+        use_local: Optional[bool] = None,
+        local_model_id: Optional[str] = None,
+    ):
         self._dim = 2048
+
+        if use_local is not None:
+            self.use_local = use_local
+        else:
+            self.use_local = os.getenv("USE_LOCAL_QWEN", "true").lower() in ("true", "1", "yes")
+
+        self.local_model_id = (
+            local_model_id
+            or os.getenv("LOCAL_QWEN_MODEL", "mlx-community/Qwen3-VL-Embedding-2B-8bit")
+        ).strip()
+
         self.colab_url = (
             colab_url
             if colab_url is not None
             else os.getenv("COLAB_TUNNEL_URL", "")
         ).strip()
+
+    @classmethod
+    def _get_local_model_and_processor(cls, model_id: str):
+        global _local_model, _local_processor
+        if _local_model is None or _local_processor is None:
+            with _local_lock:
+                if _local_model is None or _local_processor is None:
+                    try:
+                        from mlx_embeddings import load
+                    except ImportError as err:
+                        raise ImportError(
+                            "mlx_embeddings no está disponible en este entorno. "
+                            "Instala la librería ejecutando: pip install mlx-embeddings mlx-lm"
+                        ) from err
+                    logger.info("Cargando modelo local Qwen MLX: %s", model_id)
+                    _local_model, _local_processor = load(model_id)
+                    logger.info("Modelo local Qwen MLX cargado exitosamente.")
+        return _local_model, _local_processor
 
     def _base_url(self) -> str:
         if (
@@ -53,24 +104,83 @@ class QwenEmbeddingAdapter:
             )
         return [float(x) for x in vector]
 
+    # --- INFERENCIA LOCAL MLX ---
+
+    def _generar_embedding_texto_local(self, texto: str) -> List[float]:
+        model, processor = self._get_local_model_and_processor(self.local_model_id)
+        import mlx.core as mx
+
+        if hasattr(model, "language_model"):
+            model.language_model._position_ids = None
+            model.language_model._rope_deltas = None
+
+        inputs = processor.prepare_embedding_inputs([{"text": texto}])
+        outputs = model(**inputs)
+        mx.eval(outputs.text_embeds)
+        vector = outputs.text_embeds[0].tolist()
+        return self._validar_vector(vector)
+
+    def _generar_embedding_imagen_local(
+        self,
+        image_input: Union[str, Image.Image],
+        prompt: str = "consulta_visual",
+    ) -> List[float]:
+        if isinstance(image_input, str):
+            if not os.path.isfile(image_input):
+                raise FileNotFoundError(f"No existe la imagen para vectorizar: {image_input}")
+            img_target = image_input
+        elif isinstance(image_input, Image.Image):
+            img_target = image_input
+        else:
+            raise ValueError(f"Tipo de imagen no soportado: {type(image_input)}")
+
+        model, processor = self._get_local_model_and_processor(self.local_model_id)
+        import mlx.core as mx
+
+        if hasattr(model, "language_model"):
+            model.language_model._position_ids = None
+            model.language_model._rope_deltas = None
+
+        inputs = processor.prepare_embedding_inputs([
+            {"image": img_target, "text": prompt or "consulta_visual"}
+        ])
+        outputs = model(**inputs)
+        mx.eval(outputs.text_embeds)
+        vector = outputs.text_embeds[0].tolist()
+        return self._validar_vector(vector)
+
+    def _generar_embeddings_texto_lote_local(self, textos: List[str]) -> List[List[float]]:
+        if not textos:
+            return []
+        model, processor = self._get_local_model_and_processor(self.local_model_id)
+        import mlx.core as mx
+
+        resultados = []
+        lote_tamano = 8
+        for i in range(0, len(textos), lote_tamano):
+            batch = textos[i : i + lote_tamano]
+            items = [{"text": t} for t in batch]
+            inputs = processor.prepare_embedding_inputs(items)
+            outputs = model(**inputs)
+            mx.eval(outputs.text_embeds)
+            for v in outputs.text_embeds:
+                resultados.append(self._validar_vector(v.tolist()))
+        return resultados
+
+    # --- API PÚBLICA ---
+
     def generar_embedding_texto(self, texto: str) -> List[float]:
         """Genera un embedding de texto de 2048 dimensiones para la teoría (RAG)."""
-        # Prioridad 1: Google Drive Data Lake si token.json existe
-        try:
-            from corpocmente.infrastructure.storage.google_drive_client import GoogleDriveDataLakeClient
-            client = GoogleDriveDataLakeClient()
-            if client.token_file.exists():
-                import uuid
-                job_id = f"query_{uuid.uuid4().hex[:8]}"
-                res = client.vectorizar_texto_qwen(texto, job_id=job_id, timeout=60)
-                embs = res.get("embeddings") or []
-                if embs:
-                    return self._validar_vector(embs[0])
-        except Exception as e_drive:
-            logger.warning("Fallo vectorizando texto vía Drive (%s), intentando fallback HTTP...", e_drive)
+        if self.use_local:
+            try:
+                return self._generar_embedding_texto_local(texto)
+            except Exception as e:
+                logger.error("Error en inferencia local MLX para texto: %s", e)
+                if not self.colab_url or "placeholder" in self.colab_url:
+                    raise
+                logger.warning("Intentando fallback a worker HTTP remoto tras fallo local...")
 
         endpoint = f"{self._base_url()}/embed_text"
-
         response = requests.post(
             endpoint,
             data={"texto": texto},
@@ -87,73 +197,73 @@ class QwenEmbeddingAdapter:
 
         return self._validar_vector(embeddings[0])
 
-    def generar_embedding_imagen(self, image_path: str, prompt: str = "consulta_visual") -> List[float]:
+    def generar_embedding_imagen(
+        self,
+        image_path: Union[str, Image.Image],
+        prompt: str = "consulta_visual",
+    ) -> List[float]:
         """
-        Vectoriza una imagen real usando el Worker de Colab (Google Drive Data Lake o /embed_images).
-        No usa fallback de vector inventado para evitar ensuciar Qdrant.
+        Vectoriza una imagen real usando inferencia local MLX o HTTP Colab.
+        Retorna vector de 2048 dimensiones.
         """
-        if not os.path.isfile(image_path):
-            raise FileNotFoundError(f"No existe la imagen para vectorizar: {image_path}")
+        if self.use_local:
+            try:
+                return self._generar_embedding_imagen_local(image_path, prompt=prompt)
+            except Exception as e:
+                logger.error("Error en inferencia local MLX para imagen: %s", e)
+                if not self.colab_url or "placeholder" in self.colab_url:
+                    raise
+                logger.warning("Intentando fallback a worker HTTP remoto tras fallo local...")
 
-        # Prioridad 1: Google Drive Data Lake si token.json existe
-        try:
-            from corpocmente.infrastructure.storage.google_drive_client import GoogleDriveDataLakeClient
-            client = GoogleDriveDataLakeClient()
-            if client.token_file.exists():
-                import uuid
-                import base64
-                job_id = f"img_{uuid.uuid4().hex[:8]}"
-                with open(image_path, "rb") as f:
-                    b64_str = base64.b64encode(f.read()).decode("utf-8")
-                lote = [{"label": prompt or "consulta_visual", "b64": b64_str}]
-                res = client.vectorizar_imagenes_qwen(lote, job_id=job_id, timeout=60)
-                embs = res.get("embeddings") or []
-                if embs:
-                    return self._validar_vector(embs[0])
-        except Exception as e_drive:
-            logger.warning("Fallo vectorizando imagen vía Drive (%s), intentando fallback HTTP...", e_drive)
+        # Validar worker remoto antes de procesar archivos
+        self._base_url()
 
-        if not self.colab_url or "placeholder" in self.colab_url:
-            raise RuntimeError(
-                "COLAB_TUNNEL_URL no está configurada para generar embeddings visuales y no hay token.json."
-            )
+        if isinstance(image_path, Image.Image):
+            import io
+            buf = io.BytesIO()
+            image_path.save(buf, format="JPEG")
+            img_bytes = buf.getvalue()
+            filename = "image.jpg"
+            mime_type = "image/jpeg"
+        else:
+            if not os.path.isfile(image_path):
+                raise FileNotFoundError(f"No existe la imagen para vectorizar: {image_path}")
+            filename = os.path.basename(image_path)
+            ext = filename.lower()
+            if ext.endswith((".jpg", ".jpeg")):
+                mime_type = "image/jpeg"
+            elif ext.endswith(".png"):
+                mime_type = "image/png"
+            elif ext.endswith(".webp"):
+                mime_type = "image/webp"
+            elif ext.endswith((".tif", ".tiff")):
+                mime_type = "image/tiff"
+            elif ext.endswith(".bmp"):
+                mime_type = "image/bmp"
+            else:
+                mime_type = "image/jpeg"
+            with open(image_path, "rb") as f:
+                img_bytes = f.read()
 
         endpoint = f"{self._base_url()}/embed_images"
-        filename = os.path.basename(image_path)
-        ext = filename.lower()
-
-        if ext.endswith((".jpg", ".jpeg")):
-            mime_type = "image/jpeg"
-        elif ext.endswith(".png"):
-            mime_type = "image/png"
-        elif ext.endswith(".webp"):
-            mime_type = "image/webp"
-        elif ext.endswith((".tif", ".tiff")):
-            mime_type = "image/tiff"
-        elif ext.endswith(".bmp"):
-            mime_type = "image/bmp"
-        else:
-            mime_type = "image/jpeg"
-
         label = prompt or "consulta_visual"
 
-        with open(image_path, "rb") as f:
-            response = requests.post(
-                endpoint,
-                data={
-                    "labels": label,
-                    "texts_json": json.dumps([label], ensure_ascii=False),
-                },
-                files={
-                    "files": (
-                        filename,
-                        f,
-                        mime_type,
-                    )
-                },
-                headers=NGROK_HEADERS,
-                timeout=180,
-            )
+        response = requests.post(
+            endpoint,
+            data={
+                "labels": label,
+                "texts_json": json.dumps([label], ensure_ascii=False),
+            },
+            files={
+                "files": (
+                    filename,
+                    img_bytes,
+                    mime_type,
+                )
+            },
+            headers=NGROK_HEADERS,
+            timeout=180,
+        )
 
         if response.status_code == 404:
             raise RuntimeError(
@@ -170,6 +280,16 @@ class QwenEmbeddingAdapter:
 
         return self._validar_vector(embeddings[0])
 
-    def generar_embedding(self, image_path: str, prompt: str = "consulta_visual") -> List[float]:
+    def generar_embedding(
+        self,
+        image_path: Union[str, Image.Image],
+        prompt: str = "consulta_visual",
+    ) -> List[float]:
         """Delegación segura a generar_embedding_imagen para compatibilidad de firma."""
         return self.generar_embedding_imagen(image_path, prompt=prompt)
+
+    def generar_embeddings_texto_lote(self, textos: List[str]) -> List[List[float]]:
+        """Vectoriza una lista de fragmentos de texto."""
+        if self.use_local:
+            return self._generar_embeddings_texto_lote_local(textos)
+        return [self.generar_embedding_texto(t) for t in textos]

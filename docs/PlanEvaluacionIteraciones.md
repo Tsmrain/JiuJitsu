@@ -738,3 +738,44 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
 
 #### Tests de Regresión
 - **36 passed, 6 skipped, 0 failures** en suite backend pytest.
+
+### 🔹 Iteración Transition-2A (Fase de Transición): Migración de Qwen a MLX Local
+
+- **Estado:** COMPLETADA ✅
+- **Fecha:** 2026-10-28
+- **Commit:** `ae9c543`
+- **Tag:** `transition-2a`
+
+- **Objetivo:** Eliminar la dependencia del worker de Google Colab y del polling a Google Drive para la vectorización de embeddings, ejecutando `Qwen3-VL-Embedding-2B` localmente en Apple Silicon con MLX.
+
+- **Riesgos mitigados:**
+  - **Latencia de red:** Eliminada por completo. La inferencia es local.
+  - **Dependencia externa:** Colab/ngrok/Drive ya no son requeridos para el pipeline RAG.
+  - **Costo operativo:** Cero (hardware propio).
+  - **Rate limits:** No aplican.
+
+- **Entregables:**
+  - `backend/corpocmente/infrastructure/ai/qwen_adapter.py` con soporte dual (local MLX + fallback HTTP).
+  - `backend/corpocmente/config.py` con `USE_LOCAL_QWEN` y `LOCAL_QWEN_MODEL`.
+  - `scripts/test_qwen_mlx.py` (PoC de carga e inferencia).
+  - `scripts/benchmark_qwen_local.py` (benchmark micro).
+  - Patch local a `mlx_embeddings.models.qwen3_vl.model` (ver Task 4).
+
+- **Evidencia E2E (PDF real):**
+  - PDF: `Jiu-Jitsu University.pdf` (600 páginas, ~30 MB)
+  - Duración total: **817.52 segundos**
+  - Chunks indexados: **630**
+  - Páginas con texto: **578**
+  - Páginas con imagen: **575**
+  - Persistencia dual verificada: Qdrant 630 pts / Postgres 630 filas
+  - **Comparativa:** baseline Colab+Drive = 64 min → MLX local = **13.6 min** (**4.7x más rápido**)
+
+- **Lecciones aprendidas (Larman):**
+  - **Falso positivo de benchmark:** el micro-benchmark (49ms/texto) es necesario pero no suficiente. La comparación honesta requiere el caso real.
+  - **Patch a terceros = deuda silenciosa:** un `pip install -U` mata el sistema. El technical memo + script de re-aplicación es obligatorio, no opcional.
+  - **Protected Variations violado en `mlx_embeddings`:** hubo que parchar el paquete. Idealmente, abrir PR upstream.
+
+- **Deuda residual (registrada):**
+  - PR a `ml-explore/mlx-embeddings` con el fix.
+  - Re-evaluar el patch cuando salga versión oficial.
+  - Ninguna en Task 6. Modo fallback probado y funcional.

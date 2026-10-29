@@ -13,7 +13,7 @@ Identificación de los requisitos no funcionales (NFRs) críticos y las solucion
 
 | Factor Arquitectónico | Restricción / Desafío | Solución de Diseño / Patrón Adoptado |
 | :--- | :--- | :--- |
-| **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Procesamiento Asíncrono en Google Colab Web:** El backend delega la inferencia de YOLO y Qwen3-VL a un Worker ejecutado como un notebook en Google Colab Web (runtime T4 GPU). |
+| **Bajo Presupuesto Hardware** | No se dispone de servidor propio con GPU para inferencia pesada de IA. | **Inferencia local en Apple Silicon con MLX:** `Qwen3-VL-Embedding-2B` corre nativamente en la Mac del desarrollador. Fallback HTTP a Google Colab disponible vía `USE_LOCAL_QWEN=false` (deprecado). |
 | **Límite de Cuota (Gemini API)** | Nivel Gratuito de Gemini API impone cuotas estrictas de solicitudes por minuto (RPM). | **Patrón Message Queue (Cola de Tareas):** Encolado de tareas asíncronas con reintentos para no saturar las llamadas a Gemini. |
 | **Estimación 3D / Profundidad** | Capturar la profundidad espacial ($Z$) en llaves y agarres complejos. | **Ultralytics Pose & Depth Tasks:** Estimación de profundidad y keypoints tridimensionales ($X, Y, Z$). |
 | **Identificación de Error** | Encontrar el momento exacto donde el alumno falla en la técnica. | **YOLO + Distancia Coseno:** Comparación matemática de vectores frame a frame para hallar la diferencia máxima. |
@@ -293,3 +293,22 @@ Conforme a la metodología iterativa, la arquitectura lógica fue llevada a cód
   - Exposición del endpoint REST `/api/v1/evaluaciones/validar-spam` en FastAPI.
   - **Manejo del Ciclo de Vida Multimodal:** Integración con Google GenAI SDK (`client.files.upload(path=...)`) añadiendo un bucle de espera de estado (`PROCESSING` -> `ACTIVE`).
   - **Patrón Lazy Loading:** Desacoplamiento de la inicialización de adaptadores pesados (`YOLOPoseAdapter` y `QdrantVectorAdapter`) mediante propiedades computadas, evitando fallos de arranque del servidor web cuando las BDs o pesos locales de IA no se encuentran cargados aún.
+
+---
+
+## 9. ANEXO: Iteración Transition-2A — Inferencia Local con MLX
+
+**Fecha:** 2026-10-28
+**Commit:** `ae9c543`
+**Tag:** `transition-2a`
+
+Ver technical memo completo en `docs/technical_memos/2026-10-28-mlx-embeddings-qwen3-vl-patch.md`.
+
+**Cambio arquitectónico:**
+- Antes: `Backend → Drive polling → Colab → Qwen` (latencia 5-15s por chunk)
+- Después: `Backend → MLX local → Qwen` (latencia ~50ms por chunk)
+
+**Impacto en la vista de despliegue:** el nodo "Google Colab Pro (GPU Worker)" queda como **opcional y deprecado**. El nodo "Máquina Local (Persistencia & Servidores)" ahora incluye también el motor de inferencia de embeddings.
+
+**Verificación:** E2E del PDF "Jiu-Jitsu University" (600p) en 817.52 seg. Ver `docs/PlanEvaluacionIteraciones.md` (Transition-2A).
+

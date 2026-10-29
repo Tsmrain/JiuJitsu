@@ -19,6 +19,9 @@ command -v curl   >/dev/null || die "curl no está disponible"
 mkdir -p data/logs data/uploads data/frames
 green "  Precondiciones OK"
 
+blue "▸ Verificando integridad de mlx-embeddings..."
+"$ROOT/scripts/reapply_mlx_patch.sh" || die "mlx-embeddings perdió el patch. Corre ./scripts/reapply_mlx_patch.sh manualmente."
+
 blue "▸ Levantando Docker..."
 docker compose -f infrastructure/docker-compose.yml up -d
 

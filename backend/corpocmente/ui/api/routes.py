@@ -761,6 +761,7 @@ async def ingerir_archivo_teoria(
                         emb = qwen_local.generar_embedding_imagen(img_pil, prompt=item.get("label", "Página/Imagen"))
                         lote_embs.append(emb)
                     datos_imagen = {
+                        "chunks": [f"[Imagen: {item['label']}]" for item in lote],
                         "embeddings": lote_embs,
                         "dimension": 2048
                     }

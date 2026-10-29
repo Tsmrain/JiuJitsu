@@ -328,4 +328,35 @@ Ver technical memo completo en `docs/technical_memos/2026-10-28-yolo26-local-mps
 - Gestión estricta de recursos de memoria con guard preventivo (< 2 GB disponible) y vaciado explícito de caché Metal (`torch.mps.empty_cache()` y `gc.collect()`) en bloques `finally`.
 - Internacionalización del flujo E2E en frontend con soporte default en inglés (`en`).
 
+---
+
+## 11. ANEXO: Iteración Transition-2B.1 — Frontend Single-Language (Hardcoded English) y Corrección de Truncamiento RAG
+
+**Fecha:** 2026-10-29  
+**Tag:** `transition-2b.1`  
+
+### 11.1 Contexto y Decisión de Arquitectura
+En la iteración previa (Transition-2B), la interfaz gráfica mantenía una arquitectura de traducción híbrida (`useTranslation`, ternarios `isPt ? ... : ...`, dropdown `<select>`), ocasionando inconsistencias visuales donde convivían cadenas en español, portugués e inglés. Además, la retroalimentación técnica de Gemini RAG se truncaba en medio de citas bibliográficas (`...Jiu-Jitsu University (p.`) debido a que el regex de limpieza dividía en cualquier punto seguido de espacio (afectando la abreviatura `p. 116`).
+
+Siguiendo el principio de **simplicidad y entrega de valor (Larman UP)**, se determinó:
+1. **Single-Language Frontend:** Eliminar la capa de internacionalización (`translations.js`, hooks, dropdowns) y hardcodear inglés directamente en las vistas y componentes.
+2. **Corrección de Truncamiento en Feedback RAG:** Modificar `_limpiar_feedback` para delimitar oraciones solo ante mayúsculas subsiguientes (`(?<=[.!?])\s+(?=[A-Z¿¡])`), elevar `max_output_tokens` a 500 y proteger paréntesis desbalanceados ante cortes accidentales.
+
+### 11.2 Componentes Impactados
+- **Frontend (10 componentes migrados a inglés puro, 0 `useTranslation`, 0 dropdowns):**
+  - `App.jsx`, `FeedbackView.jsx`, `VideoUpload.jsx`, `AdminSucursales.jsx`, `ProfesorTecnicas.jsx`, `StudentProgress.jsx`, `SelectorPersonaVideo.jsx`, `TheoryManagerModal.jsx`, `GlobalKnowledgeModal.jsx`, `UserProfileModal.jsx`, `LoginModal.jsx`.
+- **Backend (Dominio e Infraestructura IA):**
+  - `EnglishPromptStrategy` (`prompt_strategies.py`): Límite ajustado a 60 palabras.
+  - `GeminiApiAdapter` (`adapters.py`): Delimitación segura de oraciones y protección de citaciones.
+
+### 11.3 Verificación y Métricas
+- **Pruebas de regresión:** 36 passed en `backend/tests/` (0 failures).
+- **Compilación de producción:** `vite build` generado en 361ms sin errores de resolución ni dependencias rotas.
+- **Prueba End-to-End en Vivo (`Alumno.mp4`):**
+  - Análisis ejecutado en 12.11 segundos.
+  - Cita completa generada y validada:
+    `"You are letting your framing arm get isolated and flattened instead of keeping your elbow tucked tightly in front of Xande's hip as taught in Jiu-Jitsu University (p. 116). Keep your elbow actively posted to maintain structural integrity and prevent him from passing your defense."`
+- **Evidencia Visual:** Capturas automatizadas con Playwright en `/tmp/baseline_before/` y `/tmp/baseline_after/` para las 4 vistas principales (`login.png`, `upload.png`, `feedback.png`, `admin.png`).
+
+
 

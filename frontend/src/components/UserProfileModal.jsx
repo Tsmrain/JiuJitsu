@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import { useTranslation } from '../i18n/translations';
 
 export default function UserProfileModal({ isOpen, user, onClose, onUpdateSuccess, onLogout }) {
-  const { t } = useTranslation(user?.idioma_preferido || 'en');
-  
   const [nombre, setNombre] = useState(user?.nombre_completo || '');
   const [password, setPassword] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
@@ -11,12 +8,12 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
 
   if (!isOpen || !user) return null;
 
-  // Convertir archivo a base64
+  // Convert file to base64
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert("La imagen es demasiado grande. El límite es 2MB.");
+        alert("The image is too large. The limit is 2MB.");
         return;
       }
       const reader = new FileReader();
@@ -53,15 +50,15 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
       if (res.ok) {
         const updatedUser = await res.json();
         onUpdateSuccess(updatedUser);
-        alert("¡Perfil actualizado con éxito!");
+        alert("Profile updated successfully!");
         onClose();
       } else {
         const errorData = await res.json();
-        alert(errorData.detail || "Error al actualizar perfil");
+        alert(errorData.detail || "Error updating profile");
       }
     } catch (err) {
       console.error(err);
-      alert("Error de conexión al servidor.");
+      alert("Connection error to server.");
     } finally {
       setLoading(false);
     }
@@ -70,7 +67,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
   return (
     <div className="modal-overlay" onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ padding: '2rem', maxWidth: '400px', width: '90%', borderRadius: '12px' }}>
-        <h2 style={{ margin: '0 0 1.5rem 0', textAlign: 'center', color: 'var(--brand-red)' }}>Mi Perfil</h2>
+        <h2 style={{ margin: '0 0 1.5rem 0', textAlign: 'center', color: 'var(--brand-red)' }}>My Profile</h2>
         
         <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
@@ -90,14 +87,14 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
             
             <div>
               <label htmlFor="avatar-upload" style={{ cursor: 'pointer', padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>
-                Cambiar Foto (Max 2MB)
+                Change Photo (Max 2MB)
               </label>
               <input id="avatar-upload" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Usuario / Email</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Username / Email</label>
             <input 
               type="text" value={`@${user.username} | ${user.email}`} disabled
               style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'gray', boxSizing: 'border-box' }}
@@ -105,7 +102,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Nombre Completo</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Full Name</label>
             <input 
               type="text" required value={nombre} onChange={e => setNombre(e.target.value)}
               style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
@@ -113,16 +110,16 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Nueva Contraseña (Opcional)</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>New Password (Optional)</label>
             <input 
               type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="Dejar en blanco para no cambiar"
+              placeholder="Leave blank to keep current password"
               style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
             />
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.75rem', marginTop: '0.5rem' }}>
-            {loading ? 'Guardando...' : 'Guardar Cambios'}
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
 
@@ -133,7 +130,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
           className="btn-secondary" 
           style={{ width: '100%', padding: '0.75rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}
         >
-          Cerrar Sesión
+          Sign Out
         </button>
       </div>
     </div>

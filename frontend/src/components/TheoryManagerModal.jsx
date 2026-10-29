@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Modal de gestión de teoría RAG para una técnica.
- * Permite al profesor ver todos los chunks que subió y borrarlos de golpe.
+ * Modal to manage RAG theory for a technique.
+ * Allows instructor to view and purge all uploaded chunks for this technique.
  */
 export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
   const [chunks, setChunks] = useState([]);
@@ -24,7 +24,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       if (!res.ok) {
-        setError('No se pudo cargar la teoría.');
+        setError('Could not load theory.');
         setLoading(false);
         return;
       }
@@ -32,14 +32,14 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
       setChunks(data.chunks || []);
     } catch (e) {
       console.error(e);
-      setError('Error de conexión con el servidor.');
+      setError('Connection error with server.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm(`¿Eliminar TODOS los aportes de teoría que subiste para "${tecnica.nombre}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`Delete ALL theory chunks you uploaded for "${tecnica.nombre}"? This action cannot be undone.`)) {
       return;
     }
     setDeleting(true);
@@ -54,16 +54,16 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
       );
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.detail || 'Error al eliminar.');
+        setError(errData.detail || 'Error deleting theory.');
         setDeleting(false);
         return;
       }
       const data = await res.json();
-      alert(`Eliminados: ${data.chunks_eliminados_postgres} de Postgres y ${data.chunks_eliminados_qdrant} de Qdrant.`);
+      alert(`Deleted: ${data.chunks_eliminados_postgres} from Postgres and ${data.chunks_eliminados_qdrant} from Qdrant.`);
       setChunks([]);
     } catch (e) {
       console.error(e);
-      setError('Error de conexión al eliminar.');
+      setError('Connection error while deleting.');
     } finally {
       setDeleting(false);
     }
@@ -74,7 +74,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
   const formatFecha = (iso) => {
     if (!iso) return '—';
     try {
-      return new Date(iso).toLocaleString('es-ES', {
+      return new Date(iso).toLocaleString('en-US', {
         day: '2-digit', month: 'short', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
       });
@@ -92,7 +92,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ margin: 0, color: 'var(--brand-red)' }}>
-            Teoría RAG — {tecnica.nombre}
+            RAG Theory — {tecnica.nombre}
           </h3>
           <button
             onClick={onClose}
@@ -103,7 +103,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
         </div>
 
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
-          Estos son los fragmentos de teoría que subiste. Gemini los leerá para dar feedback a tus alumnos.
+          These are the theory excerpts you uploaded. Gemini references them to provide technical feedback to students.
         </p>
 
         {error && (
@@ -121,7 +121,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
         )}
 
         {loading ? (
-          <p>Cargando teoría...</p>
+          <p>Loading theory...</p>
         ) : chunks.length === 0 ? (
           <div style={{
             background: 'rgba(255,255,255,0.03)',
@@ -131,15 +131,15 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
             color: 'var(--text-secondary)',
             fontSize: '0.9rem'
           }}>
-            Aún no has subido teoría para esta técnica.<br />
+            You haven't uploaded theory for this technique yet.<br />
             <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-              Edita la técnica y usa el campo "Manual del Maestro (Teoría RAG)" para agregar contenido.
+              Edit the technique to attach and index theory material.
             </span>
           </div>
         ) : (
           <>
             <div style={{ marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {chunks.length} {chunks.length === 1 ? 'fragmento' : 'fragmentos'} en total
+              {chunks.length} {chunks.length === 1 ? 'excerpt' : 'excerpts'} total
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
@@ -184,7 +184,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
                 fontSize: '0.9rem'
               }}
             >
-              {deleting ? 'Eliminando...' : '🗑 Eliminar toda mi teoría de esta técnica'}
+              {deleting ? 'Deleting...' : '🗑 Delete all my theory for this technique'}
             </button>
           </>
         )}

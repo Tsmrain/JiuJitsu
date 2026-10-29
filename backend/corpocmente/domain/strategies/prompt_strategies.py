@@ -37,7 +37,7 @@ class EnglishPromptStrategy(IPromptStrategy):
         for d in discrepancias:
             prompt += f"- {d}\n"
         prompt += (
-            "Reply in English with at most 2 sentences and 45 words. "
+            "Reply in English with at most 2 sentences and 60 words. "
             "Identify the main visible error and one concrete correction "
             "mentioning the affected joint or posture. Use simple, respectful, direct language. "
             "Do not use Markdown, headers, lists, greetings, or long explanations. "

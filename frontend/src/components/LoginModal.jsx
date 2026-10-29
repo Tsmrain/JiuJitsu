@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from '../i18n/translations';
 
 export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
-
-  const { t } = useTranslation(user?.idioma_preferido);
 
   // Login form state
   const [loginUserOrEmail, setLoginUserOrEmail] = useState('admin');
@@ -23,7 +20,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
   useEffect(() => {
     if (isOpen) {
-      // Cargar sucursales para el formulario de registro
+      // Load branches for signup form
       fetch("http://localhost:8000/api/v1/sucursales")
         .then(res => res.json())
         .then(data => {
@@ -32,7 +29,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
             if (data.length > 0) setSignupSucursalId(data[0].id);
           }
         })
-        .catch(err => console.error("Error al cargar sucursales:", err));
+        .catch(err => console.error("Error loading branches:", err));
     }
   }, [isOpen]);
 
@@ -54,8 +51,8 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({ detail: "Error al iniciar sesión" }));
-        setErrorMsg(errData.detail || "Credenciales incorrectas.");
+        const errData = await response.json().catch(() => ({ detail: "Error signing in" }));
+        setErrorMsg(errData.detail || "Incorrect credentials.");
         setLoading(false);
         return;
       }
@@ -63,12 +60,12 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       const userData = await response.json();
       onLoginSuccess({
         ...userData,
-        idioma_preferido: user?.idioma_preferido || 'en'
+        idioma_preferido: 'en'
       });
       onClose();
     } catch (err) {
-      console.error("Error conectando con la API de Auth:", err);
-      setErrorMsg("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
+      console.error("Error connecting to Auth API:", err);
+      setErrorMsg("Could not connect to server. Check that backend is running.");
       setLoading(false);
     } finally {
       setLoading(false);
@@ -81,7 +78,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
     setErrorMsg('');
 
     if (signupRol === 'admin') {
-      setErrorMsg(user?.idioma_preferido === 'pt' ? 'A função de Administrador é reservada.' : 'El rol de Administrador es exclusivo y reservado.');
+      setErrorMsg('The Administrator role is exclusive and reserved.');
       setLoading(false);
       return;
     }
@@ -100,8 +97,8 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({ detail: "Error al registrar cuenta" }));
-        setErrorMsg(errData.detail || "No se pudo registrar la cuenta.");
+        const errData = await response.json().catch(() => ({ detail: "Error registering account" }));
+        setErrorMsg(errData.detail || "Could not register account.");
         setLoading(false);
         return;
       }
@@ -109,12 +106,12 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       const userData = await response.json();
       onLoginSuccess({
         ...userData,
-        idioma_preferido: user?.idioma_preferido || 'en'
+        idioma_preferido: 'en'
       });
       onClose();
     } catch (err) {
-      console.error("Error al registrar cuenta en backend:", err);
-      alert(err.message || "Error al registrarse");
+      console.error("Error registering account:", err);
+      alert(err.message || "Error registering account");
     } finally {
       setLoading(false);
     }
@@ -150,7 +147,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            {t.tabLogin}
+            Sign In
           </button>
           <button
             onClick={() => { setTab('signup'); setErrorMsg(''); }}
@@ -161,7 +158,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            {t.tabSignup}
+            Create Account
           </button>
         </div>
 
@@ -175,23 +172,23 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
           </div>
         )}
 
-        {/* Formulario de Login */}
+        {/* Login Form */}
         {tab === 'login' && (
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                {t.labelUserOrEmail}
+                Username or Email
               </label>
               <input 
                 type="text" required value={loginUserOrEmail} onChange={e => setLoginUserOrEmail(e.target.value)}
-                placeholder={t.placeholderUserOrEmail}
+                placeholder="admin or student@email.com"
                 style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
               />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                {t.labelPassword}
+                Password
               </label>
               <input 
                 type="password" required value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
@@ -204,21 +201,21 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               type="submit" disabled={loading}
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
             >
-              {loading ? t.btnLoggingIn : t.btnLogin}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
         )}
 
-        {/* Formulario de Signup */}
+        {/* Signup Form */}
         {tab === 'signup' && (
           <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                {t.labelNombreCompleto}
+                Full Name
               </label>
               <input 
                 type="text" required value={signupNombre} onChange={e => setSignupNombre(e.target.value)}
-                placeholder={t.placeholderNombreCompleto}
+                placeholder="e.g. John Doe"
                 style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
               />
             </div>
@@ -226,7 +223,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  {t.labelUsername}
+                  Username
                 </label>
                 <input 
                   type="text" required value={signupUsername} onChange={e => setSignupUsername(e.target.value)}
@@ -238,7 +235,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                {t.labelPassword}
+                Password
               </label>
               <input 
                 type="password" required value={signupPassword} onChange={e => setSignupPassword(e.target.value)}
@@ -249,7 +246,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.3rem' }}>
-                {t.labelUserRole}
+                User Role
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {['alumno', 'profesor'].map((r) => (
@@ -264,7 +261,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
                       color: 'white', cursor: 'pointer', fontWeight: signupRol === r ? 'bold' : 'normal'
                     }}
                   >
-                    {r === 'alumno' ? t.roleAlumno : t.roleProfesor}
+                    {r === 'alumno' ? 'Student' : 'Instructor'}
                   </button>
                 ))}
               </div>
@@ -272,7 +269,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                {t.labelSucursal}
+                Branch / Academy
               </label>
               <select
                 value={signupSucursalId}
@@ -291,7 +288,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               type="submit" disabled={loading}
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
             >
-              {loading ? t.btnSigningUp : t.btnSignupSubmit}
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
         )}

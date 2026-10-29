@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import './FeedbackView.css';
-import { useTranslation } from '../i18n/translations';
 
 const API_BASE = 'http://localhost:8000';
 
 export default function FeedbackView({ user, result, tecnica, onReset }) {
-  const { t } = useTranslation(user?.idioma_preferido);
   const [videoError, setVideoError] = useState(false);
   if (!result) return null;
 
@@ -16,9 +14,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
   if (isExcellent) scoreClass = 'score-excellent';
   else if (isGood) scoreClass = 'score-good';
 
-  const isPt = user?.idioma_preferido === 'pt';
-
-  // URL absoluta del video (el backend devuelve /static/videos/xxx.mp4)
+  // Absolute video URL (backend returns /static/videos/xxx.mp4)
   const videoUrl = result.video_referencia_url
     ? `${API_BASE}${result.video_referencia_url}`
     : null;
@@ -29,41 +25,41 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
   return (
     <div className="feedback-container">
       <div className="feedback-header">
-        <h2>{t.feedbackTitle}</h2>
-        <p>{isPt ? "Comparação concluída com o padrão oficial do professor." : "Comparación completada contra el patrón oficial del profesor."}</p>
+        <h2>Biomechanical Analysis Completed</h2>
+        <p>Comparison completed against the instructor's official reference.</p>
       </div>
 
       {tecnica && (
         <div className="tecnica-comparison-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px', borderLeft: '4px solid var(--brand-red)' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)', letterSpacing: '1px' }}>
-            {t.tecnicaEvaluada}
+            EVALUATED TECHNIQUE
           </span>
           <h3 style={{ margin: '0.25rem 0', fontSize: '1.25rem' }}>{tecnica.nombre}</h3>
           <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.8 }}>
-            <strong>{t.patronRefLabel}</strong> {tecnica.profesorRef}
+            <strong>Reference Pattern:</strong> {tecnica.profesorRef}
           </p>
         </div>
       )}
 
       <div className="comparison-media">
         <section className="glass-panel comparison-media-card">
-          <h3>{isPt ? 'VÍDEO DE REFERÊNCIA DO PROFESSOR' : 'VIDEO DE REFERENCIA DEL PROFESOR'}</h3>
+          <h3>INSTRUCTOR REFERENCE VIDEO</h3>
           <p>
-            {result.video_referencia_profesor_nombre || tecnica?.profesorRef || (isPt ? 'Professor selecionado' : 'Profesor seleccionado')}
+            {result.video_referencia_profesor_nombre || tecnica?.profesorRef || 'Selected instructor'}
             {result.video_referencia_nombre ? ` · ${result.video_referencia_nombre}` : ''}
           </p>
           {videoUrl && !videoError ? (
             <video src={videoUrl} controls playsInline preload="metadata" onError={() => setVideoError(true)} />
           ) : (
-            <p role="status">{isPt ? 'O vídeo de referência não está disponível para reprodução.' : 'El video de referencia no está disponible para reproducirse.'}</p>
+            <p role="status">The reference video is not available for playback.</p>
           )}
         </section>
         <section className="glass-panel comparison-media-card critical-frame-card">
-          <h3>{isPt ? 'FOTOGRAMA CRÍTICO DO ALUNO' : 'FOTOGRAMA CRÍTICO DEL ALUMNO'}</h3>
+          <h3>STUDENT CRITICAL FRAME</h3>
           {frameErrorUrl ? (
-            <img src={frameErrorUrl} alt={isPt ? 'Quadro analisado do aluno' : 'Fotograma analizado del alumno'} />
+            <img src={frameErrorUrl} alt="Analyzed student frame" />
           ) : (
-            <p role="status">{isPt ? 'O fotograma analisado não está disponível.' : 'El fotograma analizado no está disponible.'}</p>
+            <p role="status">The analyzed frame is not available.</p>
           )}
         </section>
       </div>
@@ -86,18 +82,18 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
           </svg>
         </div>
         <div className="score-info">
-          <h3>{t.similarityLabel}</h3>
+          <h3>Biomechanical Similarity</h3>
           <p>
-            {isExcellent && (isPt ? "Execução excelente! Sua técnica é quase idêntica à referência do professor." : "¡Excelente ejecución! Tu técnica es casi idéntica a la referencia del profesor.")}
-            {isGood && (isPt ? "Bom trabalho. Há detalhes menores a ajustar, mas a base é sólida." : "Buen trabajo. Hay detalles menores que ajustar, pero la base es sólida.")}
-            {!isExcellent && !isGood && (isPt ? "Você precisa ajustar a biomecânica. Verifique os comentários da IA." : "Necesitas ajustar la biomecánica. Revisa los comentarios de la IA.")}
+            {isExcellent && "Excellent execution! Your technique closely matches the instructor reference."}
+            {isGood && "Good job. Minor details need adjustment, but your foundation is solid."}
+            {!isExcellent && !isGood && "You need to adjust your biomechanics. Review the AI technical feedback below."}
           </p>
         </div>
       </div>
 
       <details className="feedback-details glass-panel" open>
         <summary>
-          <span className="summary-title">{isPt ? "Correção técnica" : "Corrección técnica"}</span>
+          <span className="summary-title">Technical Correction</span>
           <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -108,7 +104,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
       </details>
 
       <button className="btn-primary reset-btn" onClick={onReset}>
-        {t.btnReset}
+        Analyze Another Video
       </button>
     </div>
   );

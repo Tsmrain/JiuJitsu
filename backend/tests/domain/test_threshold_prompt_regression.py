@@ -73,7 +73,7 @@ class TestUmbralAceptableEscala:
         resultado = facade.ejecutar_analisis_completo("/tmp/video.mp4", uuid4(), "Armbar")
 
         mock_gemini.generar_texto_feedback.assert_not_called()
-        assert "Excelente" in resultado.feedback or "correctamente" in resultado.feedback
+        assert any(w in resultado.feedback.lower() for w in ["excelente", "correctamente", "excellent", "correctly"])
 
 
 class TestSpanishPromptStrategyEnhanced:

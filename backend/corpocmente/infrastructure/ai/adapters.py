@@ -666,7 +666,7 @@ class GeminiApiAdapter:
                 contents=contents,
                 config=types.GenerateContentConfig(
                     temperature=0.2, # Baja temperatura para respuestas consistentes y técnicas
-                    max_output_tokens=250
+                    max_output_tokens=500
                 )
             )
 
@@ -692,11 +692,16 @@ class GeminiApiAdapter:
         texto = re.sub(r"(?m)^\s*\d+[.)]\s+", "", texto)
         texto = re.sub(r"[*_`~]", "", texto)
         texto = re.sub(r"\s+", " ", texto).strip()
-        frases = re.split(r"(?<=[.!?])\s+", texto)
+        frases = re.split(r"(?<=[.!?])\s+(?=[A-Z¿¡])", texto)
         reducido = " ".join(frases[:2]).strip()
         palabras = reducido.split()
-        if len(palabras) > 45:
-            reducido = " ".join(palabras[:45]).rstrip(" ,;:") + "."
-        return reducido[:450].strip()
+        if len(palabras) > 60:
+            reducido = " ".join(palabras[:60]).rstrip(" ,;:")
+        # Protección de citación: si hay paréntesis sin cerrar, retroceder antes del paréntesis
+        if "(" in reducido and ")" not in reducido[reducido.rfind("("):]:
+            reducido = reducido[:reducido.rfind("(")].rstrip(" ,;:")
+        if not re.search(r"[.!?]\)?$", reducido):
+            reducido = reducido.rstrip(" ,;:") + "."
+        return reducido[:500].strip()
 
 

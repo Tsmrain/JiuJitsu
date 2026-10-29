@@ -2,9 +2,9 @@ export default function SelectorPersonaVideo({
   sessionData,
   selectedPersonaIdx,
   onSelect,
-  candidateLabel = 'Persona',
-  selectedLabel = 'Seleccionada',
-  heading = 'Selecciona a la persona que ejecuta la técnica',
+  candidateLabel = 'Person',
+  selectedLabel = 'Selected',
+  heading = 'Select the person executing the technique',
   subtitle,
   showCandidates = true,
 }) {
@@ -16,15 +16,15 @@ export default function SelectorPersonaVideo({
         <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', margin: '0 0 0.25rem 0' }}>{heading}</h3>
         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
           {subtitle || (sessionData.personas.length > 1
-            ? `Se detectaron ${sessionData.personas.length} personas.`
-            : 'Confirma que la persona detectada es quien ejecuta la técnica.')}
+            ? `Detected ${sessionData.personas.length} persons.`
+            : 'Confirm that the detected person is executing the technique.')}
         </p>
       </div>
 
       <div style={{ position: 'relative', width: '100%', borderRadius: '10px', overflow: 'hidden', background: '#000', border: '1px solid rgba(255,255,255,0.1)' }}>
         <img
           src={`data:image/jpeg;base64,${sessionData.frame_base64}`}
-          alt="Fotograma inicial con personas detectadas"
+          alt="Initial video frame with detected persons"
           style={{ width: '100%', display: 'block', maxHeight: '420px', objectFit: 'contain' }}
         />
         {sessionData.personas.map((persona) => {

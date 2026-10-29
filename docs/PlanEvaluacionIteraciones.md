@@ -819,3 +819,51 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - Traducir el resto de i18n si el sistema se despliega internacionalmente.
   - Migrar a `yolo-mlx` cuando soporte pose sin conflicto de versión con `mlx`.
 
+---
+
+### 🔹 Iteración Transition-2B.1 (Fase de Transición): Frontend Single-Language (Hardcoded English) + Fix de Truncamiento en Feedback
+
+- **Estado:** COMPLETADA ✅
+- **Fecha:** 2026-10-29
+- **Tag:** `transition-2b.1`
+
+- **Objetivo:**
+  1. Eliminar por completo la infraestructura i18n (`translations.js`, `useTranslation`, selector `<select>` de idioma) y hardcodear inglés directo en todos los componentes JSX de la aplicación.
+  2. Resolver la causa raíz del truncamiento de citaciones de IA en `GeminiApiAdapter._limpiar_feedback`, asegurando que citas bibliográficas como `(p. 116)` se preserven íntegras y no se corten en `(p.`.
+  3. Evidencia visual estricta mediante capturas "before" (`/tmp/baseline_before/`) y "after" (`/tmp/baseline_after/`) con Playwright.
+
+- **Riesgos Mitigados:**
+  - **Inconsistencia de interfaz:** Eliminación de texto híbrido (español/portugués/inglés) y ternarios frágiles `isPt ? ... : ...`.
+  - **Corte de retroalimentación crítica:** Reparación del regex de partición de oraciones que interpretaba el punto de `(p.` como delimitador de fin de oración, cortando la cita a la mitad.
+
+- **Entregables:**
+  - Hardcodeo a inglés en los componentes: `App.jsx`, `FeedbackView.jsx`, `VideoUpload.jsx`, `AdminSucursales.jsx`, `ProfesorTecnicas.jsx`, `StudentProgress.jsx`, `SelectorPersonaVideo.jsx`, `TheoryManagerModal.jsx`, `GlobalKnowledgeModal.jsx`, `UserProfileModal.jsx`, `LoginModal.jsx`.
+  - Eliminación del directorio `frontend/src/i18n` y de `<select>` de idiomas en `App.jsx`.
+  - Modificación en `EnglishPromptStrategy`: límite ampliado de 45 a 60 palabras.
+  - Modificación en `GeminiApiAdapter`:
+    - `max_output_tokens` incrementado a 500.
+    - Partición de oraciones mejorada: `re.split(r"(?<=[.!?])\s+(?=[A-Z¿¡])", texto)` para evitar falsos positivos en abreviaturas como `p. 116`.
+    - Protección de citaciones desbalanceadas: si un paréntesis de apertura `(` no tiene cierre posterior, se realiza rollback antes del `(`.
+  - Script automatizado de captura de pantalla con Playwright: `scripts/capture_screenshots.py`.
+
+- **Evidencia Cruda de Verificación:**
+  - **5 Greps de Control (Frontend):**
+    - Acentos / caracteres especiales en JSX strings: **0 matches**
+    - Usos de `useTranslation` en frontend: **0 matches**
+    - Referencias `t.xxx` en JSX: **0 matches**
+    - Selectores `<option value="es"` / dropdowns de idioma: **0 matches**
+  - **Compilación Vite:** `dist/index.html` generado limpiamente con 51 módulos transformados en 361ms sin errores.
+  - **Pytest:** 36 passed, 1 skipped (0 failures) en 0.06s.
+  - **E2E con Alumno.mp4:**
+    - Duración: 12.11s
+    - Similitud: 25.72%
+    - Feedback generado:
+      `"You are letting your framing arm get isolated and flattened instead of keeping your elbow tucked tightly in front of Xande's hip as taught in Jiu-Jitsu University (p. 116). Keep your elbow actively posted to maintain structural integrity and prevent him from passing your defense."`
+    - Cita bibliográfica: `(p. 116).` íntegra, sin truncamiento.
+  - **Capturas Visuales:** 4 vistas antes (`/tmp/baseline_before/`) vs 4 vistas después (`/tmp/baseline_after/`):
+    - `login.png`
+    - `upload.png`
+    - `feedback.png`
+    - `admin.png`
+
+

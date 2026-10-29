@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import './VideoUpload.css';
-import { useTranslation } from '../i18n/translations';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
 
 export default function VideoUpload({ user, onUploadStart }) {
-  const { t } = useTranslation(user?.idioma_preferido);
-
   const [profesores, setProfesores] = useState([]);
   const [selectedProfesor, setSelectedProfesor] = useState(null);
   const [tecnicas, setTecnicas] = useState([]);
@@ -17,7 +14,7 @@ export default function VideoUpload({ user, onUploadStart }) {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
 
-  // 1. Cargar profesores de la sucursal del alumno
+  // 1. Load academy instructors
   const fetchProfesores = async () => {
     setLoadingProfesores(true);
     try {
@@ -29,7 +26,7 @@ export default function VideoUpload({ user, onUploadStart }) {
           setProfesores(data);
           setSelectedProfesor(data[0]);
         } else {
-          // Fallback a todos los profesores si no hay en la sucursal específica
+          // Fallback to all instructors if none registered for this branch
           const resAll = await fetch(`http://localhost:8000/api/v1/profesores`);
           if (resAll.ok) {
             const dataAll = await resAll.json();
@@ -39,7 +36,7 @@ export default function VideoUpload({ user, onUploadStart }) {
         }
       }
     } catch (err) {
-      console.error("Error cargando profesores:", err);
+      console.error("Error loading instructors:", err);
     } finally {
       setLoadingProfesores(false);
     }
@@ -55,15 +52,15 @@ export default function VideoUpload({ user, onUploadStart }) {
         const data = await incluirEstadoPatrones(await res.json(), user?.token);
         setTecnicas(data);
         if (data && data.length > 0) {
-          // Priorizar seleccionar una técnica que tenga video de referencia
-          const conVideo = data.find(t => t.tiene_patron || t.tiene_video);
+          // Prioritize technique with reference video
+          const conVideo = data.find(item => item.tiene_patron || item.tiene_video);
           setSelectedTecnica(conVideo || data[0]);
         } else {
           setSelectedTecnica(null);
         }
       }
     } catch (err) {
-      console.error("Error cargando técnicas del profesor:", err);
+      console.error("Error loading instructor techniques:", err);
     } finally {
       setLoadingTecnicas(false);
     }
@@ -147,38 +144,38 @@ export default function VideoUpload({ user, onUploadStart }) {
     try {
       const referenceUrl = new URL(selectedTecnica.video_url, 'http://localhost:8000');
       const teacherResponse = await fetch(referenceUrl);
-      if (!teacherResponse.ok) throw new Error('No se pudo cargar el video de referencia del profesor.');
+      if (!teacherResponse.ok) throw new Error('Could not load instructor reference video.');
       const teacherBlob = await teacherResponse.blob();
-      const teacherFile = new File([teacherBlob], `referencia_${selectedTecnica.nombre || 'tecnica'}.mp4`, { type: teacherBlob.type || 'video/mp4' });
+      const teacherFile = new File([teacherBlob], `reference_${selectedTecnica.nombre || 'technique'}.mp4`, { type: teacherBlob.type || 'video/mp4' });
       const form = new FormData();
       form.append('video_alumno', file);
       form.append('video_maestro', teacherFile);
       form.append('tecnica_id', selectedTecnica.id);
       form.append('persona_idx_alumno', String(selectedPersonaIdx));
-      form.append('idioma', user?.idioma_preferido || 'en');
-      form.append('video_maestro_nombre', `${selectedProfesor?.nombre_completo || 'Profesor'} — ${selectedTecnica.nombre || 'Técnica'}`);
+      form.append('idioma', 'en');
+      form.append('video_maestro_nombre', `${selectedProfesor?.nombre_completo || 'Instructor'} — ${selectedTecnica.nombre || 'Technique'}`);
       const headers = { Authorization: `Bearer ${user?.token}` };
       const start = await fetch('http://localhost:8000/api/v1/comparaciones/video-a-video', { method: 'POST', headers, body: form });
       const startData = await start.json().catch(() => ({}));
-      if (!start.ok) throw new Error(startData.detail || 'No se pudo iniciar la comparación.');
+      if (!start.ok) throw new Error(startData.detail || 'Could not start video comparison.');
       let result;
       for (let attempt = 0; attempt < 180; attempt += 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         const response = await fetch(`http://localhost:8000/api/v1/comparaciones/${startData.comparacion_id}`, { headers });
         result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.detail || 'No se pudo consultar la comparación.');
+        if (!response.ok) throw new Error(result.detail || 'Could not retrieve video comparison.');
         if (result.estado === 'completado') break;
-        if (result.estado === 'error_procesamiento') throw new Error(result.error_message || 'Falló el análisis de los videos.');
+        if (result.estado === 'error_procesamiento') throw new Error(result.error_message || 'Video analysis failed.');
       }
-      if (result?.estado !== 'completado') throw new Error('La comparación sigue procesándose. Intenta consultar el reporte más tarde.');
+      if (result?.estado !== 'completado') throw new Error('Comparison is still processing. Please check back later.');
       if (result.video_url) {
         const videoResponse = await fetch(`http://localhost:8000${result.video_url}`, { headers });
-        if (!videoResponse.ok) throw new Error('No se pudo cargar el video comparativo.');
+        if (!videoResponse.ok) throw new Error('Could not load comparison video.');
         setComparisonVideoUrl(URL.createObjectURL(await videoResponse.blob()));
       }
       setComparisonResult(result);
     } catch (err) {
-      setComparisonError(err.message || 'Error al comparar los videos.');
+      setComparisonError(err.message || 'Error comparing videos.');
     } finally {
       setComparisonLoading(false);
     }
@@ -186,7 +183,7 @@ export default function VideoUpload({ user, onUploadStart }) {
 
   const handleFile = async (selectedFile) => {
     if (!selectedFile.type.startsWith('video/')) {
-      alert(t.alertValidVideo);
+      alert("Please select a valid video file.");
       return;
     }
     setFile(selectedFile);
@@ -208,7 +205,7 @@ export default function VideoUpload({ user, onUploadStart }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Error detectando personas en el fotograma inicial.");
+        throw new Error(err.detail || "Error detecting persons in the initial frame.");
       }
 
       const data = await res.json();
@@ -219,8 +216,8 @@ export default function VideoUpload({ user, onUploadStart }) {
         setSelectedPersonaIdx(null);
       }
     } catch (err) {
-      console.error("Error al obtener primer frame:", err);
-      setErrorMessage(err.message || "Error al procesar el fotograma inicial del video.");
+      console.error("Error getting first frame:", err);
+      setErrorMessage(err.message || "Error processing initial video frame.");
     } finally {
       setExtractingPrimerFrame(false);
     }
@@ -239,7 +236,7 @@ export default function VideoUpload({ user, onUploadStart }) {
     if (!file || !selectedTecnica) return;
 
     if (!sessionData || selectedPersonaIdx === null) {
-      alert(t.alertSelectPerson || "Por favor selecciona cuál persona eres en el video antes de continuar.");
+      alert("Please select which person you are in the video before continuing.");
       return;
     }
 
@@ -247,7 +244,7 @@ export default function VideoUpload({ user, onUploadStart }) {
     setErrorMessage(null);
 
     try {
-      // 1. Confirmar explícitamente la selección en la sesión de backend
+      // 1. Confirm person selection in backend session
       const res = await fetch(`http://localhost:8000/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
         method: "POST",
         headers: {
@@ -259,23 +256,23 @@ export default function VideoUpload({ user, onUploadStart }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Error al confirmar selección de persona.");
+        throw new Error(err.detail || "Error confirming person selection.");
       }
 
-      // 2. Disparar análisis
+      // 2. Trigger analysis
       onUploadStart({
         sessionId: sessionData.session_id,
         personaIdx: selectedPersonaIdx,
         tecnica: {
           ...selectedTecnica,
-          profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Mestre Oficial",
+          profesorRef: selectedProfesor ? selectedProfesor.nombre_completo : "Official Instructor",
           profesor_id: selectedProfesor?.user_id
         },
         file
       });
     } catch (err) {
-      console.error("Error confirmando persona:", err);
-      setErrorMessage(err.message || "Error al confirmar la persona seleccionada.");
+      console.error("Error confirming person:", err);
+      setErrorMessage(err.message || "Error confirming selected person.");
     } finally {
       setConfirmingSelection(false);
     }
@@ -284,21 +281,22 @@ export default function VideoUpload({ user, onUploadStart }) {
   return (
     <div className="upload-container">
       <div className="upload-header">
-        <h2>{t.uploadTitle}</h2>
-        <p>{t.uploadSubtitle}</p>
+        <h2>Upload Your Execution</h2>
+        <p>Select the instructor from your academy and the technique you want to practice to compare your movement.</p>
       </div>
 
-      {/* Paso 1: Selección de Profesor de la Sucursal */}
+      {/* Step 1: Select Instructor */}
       <div className="tecnica-selector-card glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1rem', borderRadius: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          {t.selectProfesorLabel}
+          1. SELECT YOUR ACADEMY INSTRUCTOR:
         </label>
 
         {loadingProfesores ? (
-          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.noProfessorsFound}</p>
+          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Loading academy instructors...</p>
+        ) : profesores.length === 0 ? (
+          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>No instructors found in this branch.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-            {/* Grid de Tarjetas de Profesores con Foto Arriba y Nombre Abajo */}
             <div className="profesores-container" style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
               {profesores.map(p => {
                 const isSelected = selectedProfesor?.user_id === p.user_id;
@@ -322,7 +320,6 @@ export default function VideoUpload({ user, onUploadStart }) {
                       transform: isSelected ? 'scale(1.02)' : 'scale(1)'
                     }}
                   >
-                    {/* Foto del Perfil del Profesor */}
                     <div style={{
                       width: '90px',
                       height: '90px',
@@ -354,7 +351,6 @@ export default function VideoUpload({ user, onUploadStart }) {
                       )}
                     </div>
 
-                    {/* Nombre del Profesor debajo de la Foto */}
                     <span style={{
                       fontWeight: 'bold',
                       fontSize: '1rem',
@@ -371,7 +367,6 @@ export default function VideoUpload({ user, onUploadStart }) {
               })}
             </div>
 
-            {/* Select alternativo cuando hay varios profesores */}
             {profesores.length > 2 && (
               <select
                 value={selectedProfesor?.user_id || ''}
@@ -399,16 +394,16 @@ export default function VideoUpload({ user, onUploadStart }) {
         )}
       </div>
 
-      {/* Paso 2: Selección de Técnica enseñada por el Profesor */}
+      {/* Step 2: Select Technique */}
       <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
-          {t.selectTecnicaLabelStep}
+          2. SELECT TECHNIQUE TO EVALUATE:
         </label>
 
-        {loadingTecnicas ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t.loadingTecnicas}</p> : (
+        {loadingTecnicas ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Loading instructor techniques...</p> : (
           <>
             {tecnicas.length === 0 ? (
-              <p style={{ fontSize: '0.9rem', color: '#ff8787' }}>{t.noTecnicasFound}</p>
+              <p style={{ fontSize: '0.9rem', color: '#ff8787' }}>No techniques registered for this instructor.</p>
             ) : (
               <select
                 value={selectedTecnica?.id || ''}
@@ -436,7 +431,7 @@ export default function VideoUpload({ user, onUploadStart }) {
               <div className="profesor-ref-info" style={{ marginTop: '0.85rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 {selectedProfesor && (
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5 solid var(--brand-red)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(208,17,24,0.3)' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid var(--brand-red)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(208,17,24,0.3)' }}>
                     {selectedProfesor.avatar_url ? (
                       <img src={selectedProfesor.avatar_url} alt={selectedProfesor.nombre_completo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
@@ -449,12 +444,12 @@ export default function VideoUpload({ user, onUploadStart }) {
                   <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>{selectedTecnica.nombre}</span>
                 </div>
                 <span style={{ marginLeft: 'auto', background: (selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
-                  {(selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? t.hasVideoTag : t.noVideoTag}
+                  {(selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? 'With Reference Video' : 'No Reference Video'}
                 </span>
                 </div>
                 {selectedTecnica.mensaje_profesor && (
                   <div style={{ borderTop: '1px solid rgba(255,255,255,.1)', paddingTop: '.65rem', lineHeight: 1.5 }}>
-                    <strong style={{ color: 'white' }}>Indicaciones del profesor</strong>
+                    <strong style={{ color: 'white' }}>Instructor instructions</strong>
                     <p style={{ margin: '.3rem 0 0', color: 'rgba(255,255,255,.78)', whiteSpace: 'pre-wrap' }}>{selectedTecnica.mensaje_profesor}</p>
                   </div>
                 )}
@@ -464,7 +459,7 @@ export default function VideoUpload({ user, onUploadStart }) {
         )}
       </div>
 
-      {/* Paso 3: Carga del Video y Calibración Interactiva */}
+      {/* Step 3: Video Upload & Interactive Calibration */}
       {!file ? (
         <div
           className={`drop-zone glass-panel ${dragActive ? 'active' : ''}`}
@@ -488,8 +483,8 @@ export default function VideoUpload({ user, onUploadStart }) {
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
             </div>
-            <span className="drop-text">{t.dropText} <strong>{t.dropClick}</strong></span>
-            <span className="drop-hint">{t.dropHint}</span>
+            <span className="drop-text">Drag and drop your video here or <strong>browse file</strong></span>
+            <span className="drop-hint">MP4, MOV, WEBM (Max. 100MB)</span>
           </label>
         </div>
       ) : (
@@ -500,7 +495,7 @@ export default function VideoUpload({ user, onUploadStart }) {
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
             </div>
             <button type="button" className="btn-secondary" onClick={handleResetVideo} style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
-              {t.btnChange}
+              Change Video
             </button>
           </div>
 
@@ -512,32 +507,32 @@ export default function VideoUpload({ user, onUploadStart }) {
 
           {selectedTecnica?.video_url && selectedPersonaIdx !== null && (
             <button type="button" className="btn-secondary" onClick={handleCompareVideos} disabled={comparisonLoading}>
-              {comparisonLoading ? 'Comparando videos…' : 'Comparar con el video del profesor'}
+              {comparisonLoading ? 'Comparing videos...' : 'Compare with Instructor Video'}
             </button>
           )}
           {comparisonError && <div role="alert" style={{ color: '#ff8787' }}>{comparisonError}</div>}
           {comparisonResult && (
             <section className="glass-panel" aria-live="polite" style={{ padding: '1rem', borderRadius: '10px' }}>
-              <h3>Comparación con {selectedTecnica?.nombre}</h3>
-              <p>Video del profesor: {comparisonResult.video_maestro_nombre} · Tu video: {comparisonResult.video_alumno_nombre}</p>
-              <p>Similitud de movimiento: {comparisonResult.score_similitud}%</p>
+              <h3>Comparison with {selectedTecnica?.nombre}</h3>
+              <p>Instructor video: {comparisonResult.video_maestro_nombre} · Your video: {comparisonResult.video_alumno_nombre}</p>
+              <p>Movement similarity: {comparisonResult.score_similitud}%</p>
               {comparisonVideoUrl && <video ref={comparisonPlayerRef} controls src={comparisonVideoUrl} style={{ width: '100%', maxHeight: '480px' }} />}
               {Array.isArray(comparisonResult.alineacion) && comparisonResult.alineacion.length > 0 && (
-                <div aria-label="Alineación temporal entre ambos videos" style={{ display: 'flex', alignItems: 'end', gap: '2px', height: '44px', marginTop: '0.75rem' }}>
+                <div aria-label="Temporal alignment between both videos" style={{ display: 'flex', alignItems: 'end', gap: '2px', height: '44px', marginTop: '0.75rem' }}>
                   {comparisonResult.alineacion.filter((_, i) => i % Math.max(1, Math.ceil(comparisonResult.alineacion.length / 100)) === 0).map((pair, i) => (
-                    <button key={i} type="button" onClick={() => selectAlignmentFrame(pair)} aria-label={`Ver comparación: alumno fotograma ${pair.frame_alumno_idx}, profesor fotograma ${pair.frame_maestro_idx}`} title={`Alumno fotograma ${pair.frame_alumno_idx ?? '?'} · Profesor fotograma ${pair.frame_maestro_idx ?? '?'}`} style={{ flex: 1, minWidth: '2px', height: `${Math.max(5, Math.min(100, (pair.similitud_frame ?? 0) * 100))}%`, padding: 0, border: selectedAlignment?.video_idx === pair.video_idx ? '1px solid white' : 0, background: (pair.similitud_frame ?? 0) >= 0.7 ? '#35c878' : '#e04444', cursor: 'pointer' }} />
+                    <button key={i} type="button" onClick={() => selectAlignmentFrame(pair)} aria-label={`View comparison: student frame ${pair.frame_alumno_idx}, instructor frame ${pair.frame_maestro_idx}`} title={`Student frame ${pair.frame_alumno_idx ?? '?'} · Instructor frame ${pair.frame_maestro_idx ?? '?'}`} style={{ flex: 1, minWidth: '2px', height: `${Math.max(5, Math.min(100, (pair.similitud_frame ?? 0) * 100))}%`, padding: 0, border: selectedAlignment?.video_idx === pair.video_idx ? '1px solid white' : 0, background: (pair.similitud_frame ?? 0) >= 0.7 ? '#35c878' : '#e04444', cursor: 'pointer' }} />
                   ))}
                 </div>
               )}
-              {selectedAlignment && <p>Fotogramas alineados: alumno #{selectedAlignment.frame_alumno_idx} · profesor #{selectedAlignment.frame_maestro_idx}</p>}
-              <small>La línea resume cómo se alinean los fotogramas del alumno con los del profesor a lo largo del movimiento.</small>
+              {selectedAlignment && <p>Aligned frames: student #{selectedAlignment.frame_alumno_idx} · instructor #{selectedAlignment.frame_maestro_idx}</p>}
+              <small>The timeline summarizes how the student frames align with the instructor frames throughout the movement.</small>
             </section>
           )}
 
           {extractingPrimerFrame ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem' }}>
               <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--brand-red)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.extractingFrame}</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Extracting first frame and detecting persons...</p>
             </div>
           ) : sessionData ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -548,14 +543,14 @@ export default function VideoUpload({ user, onUploadStart }) {
                   setSelectedPersonaIdx(idx);
                   setUserRejectedPersona(false);
                 }}
-                heading={t.selectPersonStep}
-                subtitle={sessionData.personas.length > 1 ? t.multiplePersonsDetected : t.singlePersonDetected}
-                candidateLabel={t.personCandidate}
-                selectedLabel={t.personIdentified}
+                heading="Identify Yourself in the Video"
+                subtitle={sessionData.personas.length > 1 ? "Multiple persons detected. Please click on the box that corresponds to you:" : "Single person detected in the frame:"}
+                candidateLabel="Candidate"
+                selectedLabel="Identified"
                 showCandidates={false}
               />
 
-              {/* Caso A: Solo 1 persona detectada -> Preguntar explícitamente si es el usuario o negarse */}
+              {/* Case A: Single person detected */}
               {sessionData.personas.length === 1 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', width: '100%' }}>
                   {userRejectedPersona ? (
@@ -570,12 +565,12 @@ export default function VideoUpload({ user, onUploadStart }) {
                       width: '100%',
                       boxSizing: 'border-box'
                     }}>
-                      {t.bodyNotDetectedMsg}
+                      Could not find a second person. Please ensure you are visible in the initial frame or record with better framing.
                     </div>
                   ) : (
                     <>
                       <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 'bold' }}>
-                        {t.isThisYou}
+                        Is this you in the video?
                       </span>
                       <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
                         <button
@@ -594,7 +589,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                             cursor: 'pointer'
                           }}
                         >
-                          {t.notThisPersonBtn}
+                          No, that's not me
                         </button>
                         <button
                           type="button"
@@ -608,7 +603,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                             cursor: confirmingSelection ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          {confirmingSelection ? t.confirmingSelection : t.yesItsMeBtn}
+                          {confirmingSelection ? "Confirming..." : "Yes, analyze this person"}
                         </button>
                       </div>
                     </>
@@ -616,7 +611,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                 </div>
               ) : (
                 <>
-                  {/* Caso B: Múltiples personas -> Chips para seleccionar persona */}
+                  {/* Case B: Multiple persons */}
                   <div style={{ display: 'flex', gap: '0.75rem', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
                     {sessionData.personas.map((p) => {
                       const isSelected = selectedPersonaIdx === p.idx;
@@ -643,14 +638,14 @@ export default function VideoUpload({ user, onUploadStart }) {
                           }}
                         >
                           <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: isSelected ? 'var(--brand-red)' : 'rgba(255,255,255,0.4)' }} />
-                          <span>{isSelected ? t.personIdentified : `${t.personCandidate} #${p.idx}`}</span>
+                          <span>{isSelected ? "Identified" : `Candidate #${p.idx}`}</span>
                           <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>({Math.round(p.confianza * 100)}%)</span>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Botón de Confirmación y Análisis */}
+                  {/* Confirmation button */}
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                     <button
                       type="button"
@@ -665,7 +660,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                         cursor: selectedPersonaIdx === null || confirmingSelection ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      {confirmingSelection ? t.confirmingSelection : t.confirmPersonBtn}
+                      {confirmingSelection ? "Confirming..." : "Confirm Selection & Analyze"}
                     </button>
                   </div>
                 </>

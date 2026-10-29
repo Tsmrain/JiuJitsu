@@ -1,12 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import './ProfesorTecnicas.css';
-import { useTranslation } from '../i18n/translations';
 import TheoryManagerModal from '../components/TheoryManagerModal';
 import GlobalKnowledgeModal from '../components/GlobalKnowledgeModal';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
 
 const OPACIONES_CINTURON = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
+
+const BELT_LABELS = {
+  'Blanco': 'White Belt',
+  'Azul': 'Blue Belt',
+  'Morado': 'Purple Belt',
+  'Marrón': 'Brown Belt',
+  'Negro': 'Black Belt',
+  'White': 'White Belt',
+  'Blue': 'Blue Belt',
+  'Purple': 'Purple Belt',
+  'Brown': 'Brown Belt',
+  'Black': 'Black Belt',
+};
+
+const getBeltLabel = (nivel) => BELT_LABELS[nivel] || `${nivel} Belt`;
 
 export default function ProfesorTecnicas({ user, onClose }) {
   const [activeTab, setActiveTab] = useState('alumnos'); // 'alumnos' (default) | 'tecnicas'
@@ -36,8 +50,6 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  const { t, getBeltLabel } = useTranslation(user?.idioma_preferido);
-
   const fetchTecnicas = async () => {
     try {
       const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${user?.user_id}`, {
@@ -48,7 +60,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
         setTecnicas(await incluirEstadoPatrones(data, user?.token));
       }
     } catch (err) {
-      console.error("Error fetching técnicas", err);
+      console.error("Error fetching techniques", err);
     } finally {
       setLoading(false);
     }
@@ -57,7 +69,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const fetchAlumnos = async () => {
     setLoadingAlumnos(true);
     try {
-      // Profesor ve solo alumnos de su sucursal; admin ve todos
+      // Instructor sees students from their branch; admin sees all
       const sucursalQuery = user?.rol === 'profesor' && user?.sucursal_id
         ? `?p_sucursal_id=${user.sucursal_id}`
         : '';
@@ -69,7 +81,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
         setAlumnos(data);
       }
     } catch (e) {
-      console.error("Error cargando alumnos:", e);
+      console.error("Error loading students:", e);
     } finally {
       setLoadingAlumnos(false);
     }
@@ -85,7 +97,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
         setEvaluacionesPorAlumno(prev => ({ ...prev, [alumnoId]: data }));
       }
     } catch (e) {
-      console.error("Error cargando evaluaciones del alumno:", e);
+      console.error("Error loading student evaluations:", e);
     }
   };
 
@@ -97,7 +109,6 @@ export default function ProfesorTecnicas({ user, onClose }) {
     load();
   }, [user?.user_id]);
 
-  // Nuevo useEffect: cuando cambia la lista de alumnos, cargar sus evaluaciones
   useEffect(() => {
     alumnos.forEach(a => {
       if (!evaluacionesPorAlumno[a.user_id]) {
@@ -134,7 +145,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('video/')) {
-        alert(t.alertValidVideo);
+        alert("Please select a valid video file.");
         return;
       }
       setSelectedFile(file);
@@ -145,11 +156,11 @@ export default function ProfesorTecnicas({ user, onClose }) {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedFile && !previewUrl) {
-      alert('Debes subir el video de referencia para esta técnica.');
+      alert('You must upload the reference video for this technique.');
       return;
     }
     if (!formData.mensaje_profesor.trim()) {
-      alert('Escribe el mensaje para explicar la técnica a tus alumnos.');
+      alert('Write a message explaining the technique to your students.');
       return;
     }
     setSaving(true);
@@ -175,7 +186,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Error guardando la técnica.");
+        throw new Error(err.detail || "Error saving technique.");
       }
 
       const savedTecnica = await res.json();
@@ -192,7 +203,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
         });
         if (!frameRes.ok) {
           const err = await frameRes.json().catch(() => ({}));
-          throw new Error(err.detail || "Técnica creada, pero no se pudo procesar el video.");
+          throw new Error(err.detail || "Technique created, but video could not be processed.");
         }
         const frame = await frameRes.json();
         setPersonaSelection({
@@ -205,14 +216,14 @@ export default function ProfesorTecnicas({ user, onClose }) {
       }
 
       if (!selectedFile) {
-        alert("Técnica actualizada correctamente.");
+        alert("Technique updated successfully.");
         setShowModal(false);
       }
       fetchTecnicas();
 
     } catch (err) {
       console.error(err);
-      alert(err.message || "Error de conexión al guardar la técnica.");
+      alert(err.message || "Connection error saving technique.");
     } finally {
       setSaving(false);
     }
@@ -231,7 +242,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
       });
       if (!selectionRes.ok) {
         const err = await selectionRes.json().catch(() => ({}));
-        throw new Error(err.detail || 'No se pudo confirmar la persona seleccionada.');
+        throw new Error(err.detail || 'Could not confirm selected person.');
       }
 
       const patronForm = new FormData();
@@ -244,21 +255,21 @@ export default function ProfesorTecnicas({ user, onClose }) {
       });
       if (!patronRes.ok) {
         const err = await patronRes.json().catch(() => ({}));
-        throw new Error(err.detail || 'No se pudo registrar el patrón biomecánico.');
+        throw new Error(err.detail || 'Could not register biomechanical pattern.');
       }
       const patron = await patronRes.json();
-      alert(`Patrón biomecánico activo: ${patron.total_frames} frames.`);
+      alert(`Biomechanical pattern active: ${patron.total_frames} frames.`);
       setPersonaSelection(null);
       fetchTecnicas();
     } catch (err) {
-      setPersonaSelectionError(err.message || 'Error registrando el patrón.');
+      setPersonaSelectionError(err.message || 'Error registering pattern.');
     } finally {
       setConfirmingPersona(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t.confirmDeleteTecnica)) return;
+    if (!confirm('Are you sure you want to delete this technique?')) return;
     try {
       const res = await fetch(`http://localhost:8000/api/v1/tecnicas/${id}`, {
         method: 'DELETE',
@@ -278,22 +289,22 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
   return (
     <div className="profesor-tecnicas-container glass-panel" style={{ width: '100%', boxSizing: 'border-box' }}>
-      {/* Header Principal */}
+      {/* Main Header */}
       <div className="tecnicas-header" style={{ marginBottom: '1.5rem' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
-            Panel de Control del Profesor
+            Instructor Control Panel
           </h2>
           <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-            Bienvenido, {user?.nombre_completo || 'Mestre'} — {user?.sucursal_nombre}
+            Welcome, {user?.nombre_completo || 'Instructor'} — {user?.sucursal_nombre}
           </span>
         </div>
         <div>
-          <button className="btn-secondary" onClick={onClose}>{t.btnClose}</button>
+          <button className="btn-secondary" onClick={onClose}>Close</button>
         </div>
       </div>
 
-      {/* Pestañas de Navegación del Profesor */}
+      {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
         <button
           onClick={() => setActiveTab('alumnos')}
@@ -304,7 +315,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
             fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
           }}
         >
-          Progreso de Mis Alumnos ({alumnos.length})
+          Student Progress ({alumnos.length})
         </button>
         <button
           onClick={() => setActiveTab('tecnicas')}
@@ -315,26 +326,26 @@ export default function ProfesorTecnicas({ user, onClose }) {
             fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
           }}
         >
-          Mis Técnicas y Videos ({tecnicas.length})
+          My Techniques & Videos ({tecnicas.length})
         </button>
       </div>
 
-      {/* PESTAÑA 1: PROGRESO DE ALUMNOS (VISTA PRINCIPAL) */}
+      {/* TAB 1: STUDENT PROGRESS */}
       {activeTab === 'alumnos' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>
-              Seguimiento Biomecánico de Alumnos en Jiu-Jitsu
+              Biomechanical Student Tracking in Jiu-Jitsu
             </h3>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Alumnos registrados en tu sucursal
+              Students registered in your branch
             </span>
           </div>
 
           {loadingAlumnos ? (
-            <p>Cargando información de alumnos...</p>
+            <p>Loading student information...</p>
           ) : alumnos.length === 0 ? (
-            <p style={{ opacity: 0.7 }}>No hay alumnos registrados aún en esta sucursal.</p>
+            <p style={{ opacity: 0.7 }}>No students registered yet in this branch.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {alumnos.map(alumno => {
@@ -346,7 +357,6 @@ export default function ProfesorTecnicas({ user, onClose }) {
                     className="glass-panel" 
                     style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)' }}
                   >
-                    {/* Encabezado del Alumno */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem', marginBottom: '1rem' }}>
                       <div style={{
                         width: '48px', height: '48px', borderRadius: '50%', background: 'var(--brand-red)',
@@ -360,26 +370,26 @@ export default function ProfesorTecnicas({ user, onClose }) {
                       </div>
                       <div style={{ flex: 1 }}>
                         <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>{alumno.nombre_completo}</h4>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{alumno.username} • Sucursal: {alumno.sucursal_nombre}</span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{alumno.username} • Branch: {alumno.sucursal_nombre}</span>
                       </div>
                     </div>
 
                     <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#4da6ff' }}>
-                      Progreso Biomecánico ({evaluacionesReales.length} {evaluacionesReales.length === 1 ? 'evaluación' : 'evaluaciones'}):
+                      Biomechanical Progress ({evaluacionesReales.length} {evaluacionesReales.length === 1 ? 'evaluation' : 'evaluations'}):
                     </h5>
 
                     {evaluacionesReales.length === 0 ? (
                       <p style={{ fontSize: '0.85rem', opacity: 0.6, fontStyle: 'italic' }}>
-                        Este alumno aún no ha subido ningún video para evaluación.
+                        This student has not uploaded any video for evaluation yet.
                       </p>
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                         {evaluacionesReales.map((evalItem, idx) => {
                           const similitud = parseFloat(evalItem.porcentaje_similitud) || 0;
-                          const estadoLabel = similitud >= 85 ? 'Excelente' : (similitud >= 70 ? 'Bueno' : 'Requiere Ajuste');
+                          const estadoLabel = similitud >= 85 ? 'Excellent' : (similitud >= 70 ? 'Good' : 'Needs Work');
                           const fecha = evalItem.fecha_evaluacion
-                            ? new Date(evalItem.fecha_evaluacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-                            : 'Fecha desconocida';
+                            ? new Date(evalItem.fecha_evaluacion).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : 'Unknown date';
 
                           return (
                             <div 
@@ -403,7 +413,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
                                 <div style={{ marginBottom: '0.75rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.2rem' }}>
-                                    <span>Similitud Vectorial:</span>
+                                    <span>Vector Similarity:</span>
                                     <strong style={{ color: getScoreColor(similitud) }}>{similitud}%</strong>
                                   </div>
                                   <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
@@ -419,12 +429,12 @@ export default function ProfesorTecnicas({ user, onClose }) {
                               </div>
 
                               <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Evaluado: {fecha}</span>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Evaluated: {fecha}</span>
                                 <button 
                                   onClick={() => setSelectedAlumnoDetail({ alumno, evalItem })}
                                   style={{ background: 'none', border: 'none', color: '#4da6ff', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
                                 >
-                                  Ver Detalle Keypoints
+                                  View Keypoints Detail
                                 </button>
                               </div>
                             </div>
@@ -440,18 +450,18 @@ export default function ProfesorTecnicas({ user, onClose }) {
         </div>
       )}
 
-      {/* PESTAÑA 2: MIS TÉCNICAS Y VIDEOS */}
+      {/* TAB 2: MY TECHNIQUES & VIDEOS */}
       {activeTab === 'tecnicas' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>Técnicas y Videos de Referencia</h3>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>Techniques and Reference Videos</h3>
             <div style={{ display: 'flex', gap: '.65rem', flexWrap: 'wrap' }}>
-              <button className="btn-secondary" onClick={() => setShowGlobalKnowledge(true)}>Manuales y fuentes globales</button>
-              <button className="btn-primary" onClick={handleOpenNewModal}>{t.btnNewTecnica}</button>
+              <button className="btn-secondary" onClick={() => setShowGlobalKnowledge(true)}>Manuals & Global Sources</button>
+              <button className="btn-primary" onClick={handleOpenNewModal}>New Technique</button>
             </div>
           </div>
 
-          {loading ? <p>{t.loadingTecnicas}</p> : (
+          {loading ? <p>Loading techniques...</p> : (
             <div className="tecnicas-grid">
               {tecnicas.map(tech => (
                 <div key={tech.id} className="tecnica-card">
@@ -463,7 +473,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
                     {(tech.tiene_patron || tech.tiene_video) ? (
                       <div style={{ marginTop: '0.5rem' }}>
                         <div className="video-status has-video" style={{ marginBottom: '0.5rem' }}>
-                          {tech.tiene_patron ? '✅ Patrón biomecánico activo' : t.hasVideoStatus}
+                          {tech.tiene_patron ? '✅ Biomechanical pattern active' : 'Has reference video'}
                         </div>
                         {tech.video_url && (
                           <div className="card-video-preview" style={{ marginTop: '0.5rem' }}>
@@ -485,12 +495,12 @@ export default function ProfesorTecnicas({ user, onClose }) {
                         )}
                         {tech.tiene_patron && !tech.video_url && (
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
-                            El patrón está activo, pero no se encontró un video reproducible del profesor.
+                            Pattern is active, but no playable video found.
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="video-status no-video">{t.noVideoStatus}</div>
+                      <div className="video-status no-video">No reference video</div>
                     )}
                   </div>
                   <div className="tecnica-actions">
@@ -498,10 +508,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
                       className="btn-icon theory-btn"
                       onClick={() => setTheoryModalTecnica(tech)}
                     >
-                      📖 Ver Teoría
+                      📖 View Theory
                     </button>
-                    <button className="btn-icon edit" onClick={() => handleEdit(tech)}>{t.btnEdit}</button>
-                    <button className="btn-icon delete" onClick={() => handleDelete(tech.id)}>{t.btnDelete}</button>
+                    <button className="btn-icon edit" onClick={() => handleEdit(tech)}>Edit</button>
+                    <button className="btn-icon delete" onClick={() => handleDelete(tech.id)}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -510,85 +520,85 @@ export default function ProfesorTecnicas({ user, onClose }) {
         </div>
       )}
 
-      {/* Modal de Detalle de Keypoints del Alumno */}
+      {/* Modal Keypoints Detail */}
       {selectedAlumnoDetail && (
         <div className="modal-overlay">
           <div className="modal-content glass-panel" style={{ maxWidth: '500px', padding: '1.5rem' }}>
             <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--brand-red)' }}>
-              Detalle Biomecánico — {selectedAlumnoDetail.alumno.nombre_completo}
+              Biomechanical Detail — {selectedAlumnoDetail.alumno.nombre_completo}
             </h3>
             <p style={{ fontSize: '0.9rem', margin: '0 0 1rem 0' }}>
-              Técnica: <strong>{selectedAlumnoDetail.evalItem.tecnica_nombre}</strong>
+              Technique: <strong>{selectedAlumnoDetail.evalItem.tecnica_nombre}</strong>
             </p>
 
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#4da6ff' }}>
-                Resumen de la Evaluación:
+                Evaluation Summary:
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <span>Similitud:</span>
+                <span>Similarity:</span>
                 <strong style={{ color: '#69db7c' }}>{parseFloat(selectedAlumnoDetail.evalItem.porcentaje_similitud || 0).toFixed(1)}%</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
-                <span>Estado:</span>
+                <span>Status:</span>
                 <strong>{selectedAlumnoDetail.evalItem.estado}</strong>
               </div>
             </div>
 
             <div style={{ fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.04)', padding: '0.8rem', borderRadius: '6px' }}>
-              <strong>Retroalimentación Automática IA:</strong>
+              <strong>AI Automatic Feedback:</strong>
               <p style={{ margin: '0.3rem 0 0 0', opacity: 0.8 }}>
-                {selectedAlumnoDetail.evalItem.feedback_gemini_es || selectedAlumnoDetail.evalItem.feedback_gemini_pt || "Sin feedback disponible."}
+                {selectedAlumnoDetail.evalItem.feedback_gemini_es || selectedAlumnoDetail.evalItem.feedback_gemini_pt || "No feedback available."}
               </p>
             </div>
 
             <button className="btn-primary" onClick={() => setSelectedAlumnoDetail(null)} style={{ width: '100%' }}>
-              Cerrar Detalle
+              Close Detail
             </button>
           </div>
         </div>
       )}
 
-      {/* Modal Form (Crear / Editar Técnica) */}
+      {/* Modal Form (Create / Edit Technique) */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content glass-panel" style={{ maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3>{editingId ? t.modalEditTitle : t.modalNewTitle}</h3>
+            <h3>{editingId ? "Edit Technique" : "New Technique"}</h3>
             
             <form onSubmit={handleSave}>
               <div className="form-group">
-                <label>{t.labelTecnicaNombre}</label>
-                <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} placeholder={t.placeholderTecnicaNombre} />
+                <label>Technique Name *</label>
+                <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} placeholder="e.g. Armbar from Guard" />
               </div>
 
               <div className="form-group">
-                <label>{t.labelNivelCinturon}</label>
+                <label>Belt Level</label>
                 <select name="nivel_cinturon" value={formData.nivel_cinturon} onChange={handleChange}>
                   {OPACIONES_CINTURON.map(nivel => (
                     <option key={nivel} value={nivel}>
-                      {t.belts[nivel] || nivel}
+                      {getBeltLabel(nivel)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="form-group">
-                <label htmlFor="mensaje_profesor">Mensaje del profesor para sus alumnos *</label>
+                <label htmlFor="mensaje_profesor">Instructor message for students *</label>
                 <textarea
                   id="mensaje_profesor"
                   name="mensaje_profesor"
                   value={formData.mensaje_profesor}
                   onChange={handleChange}
-                  placeholder="Explica con tus palabras cómo deben realizar esta técnica."
+                  placeholder="Explain in your own words how to execute this technique."
                   rows={5}
                   required
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', resize: 'vertical' }}
                 />
-                <small style={{ color: 'var(--text-secondary)' }}>Este mensaje aparecerá al alumno junto a la técnica.</small>
+                <small style={{ color: 'var(--text-secondary)' }}>This message will be shown to the student with the technique.</small>
               </div>
 
               <div className="form-group">
-                <label>Video de referencia * (obligatorio)</label>
+                <label>Reference Video * (required)</label>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -602,15 +612,15 @@ export default function ProfesorTecnicas({ user, onClose }) {
                   style={{ width: '100%', padding: '0.6rem' }} 
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {selectedFile ? ` Video: ${selectedFile.name}` : (editingId && previewUrl ? t.btnReplaceVideo : t.btnUploadVideo)}
+                  {selectedFile ? ` Video: ${selectedFile.name}` : (editingId && previewUrl ? "Replace Video" : "Upload Video")}
                 </button>
-                <small style={{ display: 'block', marginTop: '.4rem', color: 'var(--text-secondary)' }}>El video se usará como referencia al analizar los videos de los alumnos.</small>
+                <small style={{ display: 'block', marginTop: '.4rem', color: 'var(--text-secondary)' }}>The video will be used as reference when analyzing student executions.</small>
               </div>
 
               {previewUrl && (
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                    {t.modalPreviewTitle}
+                    Video Preview
                   </label>
                   <video 
                     src={previewUrl} 
@@ -623,10 +633,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
 
               <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} disabled={saving}>
-                  {t.btnClose}
+                  Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? "Guardando..." : "Guardar Técnica"}
+                  {saving ? "Saving..." : "Save Technique"}
                 </button>
               </div>
             </form>
@@ -637,16 +647,16 @@ export default function ProfesorTecnicas({ user, onClose }) {
       {personaSelection && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="persona-selection-title">
           <div className="modal-content glass-panel" style={{ maxWidth: '760px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 id="persona-selection-title" style={{ marginTop: 0 }}>Selecciona a la persona del patrón</h3>
+            <h3 id="persona-selection-title" style={{ marginTop: 0 }}>Select the person for the pattern</h3>
             <p style={{ color: 'var(--text-secondary)' }}>
-              La técnica ya fue creada. Selecciona a quien ejecuta el movimiento para registrar su patrón biomecánico.
+              The technique has been created. Select who executes the movement to register their biomechanical pattern.
             </p>
             <SelectorPersonaVideo
               sessionData={personaSelection.sessionData}
               selectedPersonaIdx={personaSelection.selectedIdx}
               onSelect={(selectedIdx) => setPersonaSelection((current) => ({ ...current, selectedIdx }))}
-              candidateLabel="Persona"
-              selectedLabel="Seleccionada"
+              candidateLabel="Person"
+              selectedLabel="Selected"
             />
             {personaSelectionError && (
               <div role="alert" style={{ marginTop: '1rem', padding: '.75rem', borderRadius: '8px', background: 'rgba(208,17,24,.2)', color: '#ff8787' }}>
@@ -655,10 +665,10 @@ export default function ProfesorTecnicas({ user, onClose }) {
             )}
             <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
               <button type="button" className="btn-secondary" onClick={() => setPersonaSelection(null)} disabled={confirmingPersona}>
-                Cerrar
+                Close
               </button>
               <button type="button" className="btn-primary" onClick={handleConfirmPersona} disabled={personaSelection.selectedIdx === null || confirmingPersona}>
-                {confirmingPersona ? 'Registrando patrón…' : 'Confirmar y crear patrón'}
+                {confirmingPersona ? 'Registering pattern...' : 'Confirm & Create Pattern'}
               </button>
             </div>
           </div>

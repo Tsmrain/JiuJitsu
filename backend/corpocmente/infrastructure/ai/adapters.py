@@ -130,6 +130,26 @@ def _cargar_imagen_evidencia_rag(media_path: str, payload: Dict):
 class YOLOPoseAdapter:
     def __init__(self, colab_url: str = None):
         self.colab_url = colab_url if colab_url is not None else os.getenv("COLAB_TUNNEL_URL", "").strip()
+        self._model_cache = None
+
+    def _get_model(self):
+        if not hasattr(self, "_model_cache") or self._model_cache is None:
+            import torch
+            from ultralytics import YOLO
+            _orig = torch.load
+            def _safe_load(*a, **kw):
+                kw["weights_only"] = False
+                return _orig(*a, **kw)
+            torch.load = _safe_load
+            candidates = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__))))), "yolo26n-pose.pt"),
+                "storage/models/yolo26n-pose.pt",
+                "yolo26n-pose.pt",
+            ]
+            weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-pose.pt")
+            self._model_cache = YOLO(weights)
+        return self._model_cache
 
     def extraer_secuencia(
         self,
@@ -565,14 +585,13 @@ from corpocmente.config import settings
 
 class GeminiApiAdapter:
     """
-    Adaptador (GoF Adapter) para encapsular las llamadas a la API de Google Gemini
-    utilizando el SDK oficial google-genai.
-    
-    Aísla al dominio de los detalles de red, autenticación y manejo de tokens.
+    [DEPRECATED] Adaptador para llamadas a Google Gemini.
+    Reemplazado por LocalSpamFilter y LocalVLMAdapter (Qwen3-VL-Instruct vía mlx-vlm).
+    Conservado temporalmente para compatibilidad con tests legacy.
     """
     
     def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-3.5-flash-lite"):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+        self.api_key = api_key or os.getenv("API_KEY", "")
         if not self.api_key:
             raise ValueError("Se requiere una API Key válida para instanciar GeminiApiAdapter.")
         

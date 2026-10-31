@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -19,8 +20,6 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from urllib.parse import quote, quote_plus
-
-from corpocmente.infrastructure.ai.adapters import GeminiApiAdapter
 from corpocmente.application.use_cases.ingest_knowledge_use_case import IngestKnowledgeUseCase
 from corpocmente.application.dtos.knowledge_dtos import IngestionRequest
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
@@ -125,14 +124,15 @@ def ejecutar_evaluacion_background(
     logger = logging.getLogger(__name__)
     try:
         from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
-        from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
+        from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+        from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
         from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
         from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
         from corpocmente.domain.services.session_manager import SessionStateManager
 
         yolo = YOLOPoseAdapter()
         qdrant = QdrantVectorAdapter()
-        gemini = GeminiApiAdapter()
+        gemini = LocalVLMAdapter()
         qwen = QwenEmbeddingAdapter()
 
         facade = IntelligenceAnalysisFacade(
@@ -467,8 +467,12 @@ async def validar_spam(video: UploadFile = File(...), authorization: Optional[st
         temp_video_path = temp_video.name
 
     try:
-        gemini_adapter = GeminiApiAdapter()
-        es_valido = gemini_adapter.validar_es_jiujitsu(temp_video_path)
+        from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+        from corpocmente.infrastructure.ai.local_spam_filter import LocalSpamFilter
+
+        yolo = YOLOPoseAdapter()
+        filtro = LocalSpamFilter(yolo)
+        es_valido = filtro.validar_es_jiujitsu(temp_video_path)
         if not es_valido:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

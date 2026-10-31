@@ -4,7 +4,8 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from corpocmente.domain.entities.models import AnalisisResultDTO
-from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
+from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
 from corpocmente.domain.strategies.prompt_strategies import EnglishPromptStrategy
@@ -19,7 +20,7 @@ class IntelligenceAnalysisFacade:
     def __init__(self, 
                  yolo_adapter: YOLOPoseAdapter, 
                  qdrant_adapter: QdrantVectorAdapter, 
-                 gemini_adapter: GeminiApiAdapter,
+                 gemini_adapter: LocalVLMAdapter,
                  qwen_adapter: QwenEmbeddingAdapter = None):
         self.yolo = yolo_adapter
         self.qdrant = qdrant_adapter

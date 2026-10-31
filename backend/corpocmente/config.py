@@ -23,9 +23,6 @@ class Settings(BaseSettings):
     APP_NAME: str = "Corpo e Mente Biomechanics AI"
     ENVIRONMENT: str = "development"
     
-    # Gemini API
-    GEMINI_API_KEY: str = ""
-    
     # Qdrant DB
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
@@ -66,7 +63,7 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-    @field_validator("GEMINI_API_KEY", "POSTGREST_JWT_SECRET")
+    @field_validator("POSTGREST_JWT_SECRET")
     @classmethod
     def check_not_empty(cls, v: str, info):
         if not v or v.strip() == "":

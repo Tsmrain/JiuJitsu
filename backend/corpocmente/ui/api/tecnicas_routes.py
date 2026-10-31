@@ -13,6 +13,7 @@ from corpocmente.infrastructure.persistence.postgrest_client import PostgrestCli
 from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_staff
 
 router = APIRouter(prefix="/api/v1/tecnicas", tags=["Técnicas"])
+logger = logging.getLogger(__name__)
 
 
 class TecnicaCreate(BaseModel):

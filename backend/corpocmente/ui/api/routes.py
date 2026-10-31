@@ -200,6 +200,8 @@ def ejecutar_evaluacion_background(
             "timestamp_error_segundos": timestamp_error_segundos,
             "frame_alumno_idx": res.frame_alumno_idx,
             "url_video_alumno": video_alumno_path,
+            "articulaciones_criticas": res.articulaciones_criticas or [],
+            "nombres_articulaciones_criticas": res.nombres_articulaciones_criticas or [],
         }
         os.makedirs(FRAMES_DIR, exist_ok=True)
         meta_path = os.path.join(FRAMES_DIR, f"meta_{eval_id}.json")
@@ -479,6 +481,8 @@ async def consultar_evaluacion(
     meta_candidate = os.path.join(FRAMES_DIR, f"meta_{evaluacion_id}.json")
     timestamp_error_segundos = eval_data.get("timestamp_error_segundos")
     raw_video_alumno = eval_data.get("url_video_alumno") or ""
+    articulaciones_criticas = eval_data.get("articulaciones_criticas") or []
+    nombres_articulaciones_criticas = eval_data.get("nombres_articulaciones_criticas") or []
 
     if os.path.exists(meta_candidate):
         try:
@@ -488,8 +492,19 @@ async def consultar_evaluacion(
                     timestamp_error_segundos = meta_json.get("timestamp_error_segundos", 0.0)
                 if not raw_video_alumno:
                     raw_video_alumno = meta_json.get("url_video_alumno") or ""
+                if not articulaciones_criticas:
+                    articulaciones_criticas = meta_json.get("articulaciones_criticas") or []
+                if not nombres_articulaciones_criticas:
+                    nombres_articulaciones_criticas = meta_json.get("nombres_articulaciones_criticas") or []
         except Exception:
             pass
+
+    if not nombres_articulaciones_criticas and articulaciones_criticas:
+        from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
+        nombres_articulaciones_criticas = [
+            COCO_JOINT_NAMES_EN[idx] if 0 <= idx < len(COCO_JOINT_NAMES_EN) else f"Joint {idx}"
+            for idx in articulaciones_criticas
+        ]
 
     if timestamp_error_segundos is None:
         timestamp_error_segundos = 0.0
@@ -535,6 +550,8 @@ async def consultar_evaluacion(
         "video_referencia_nombre": os.path.basename(raw_video_path) if raw_video_path else None,
         "video_referencia_profesor_nombre": eval_data.get("video_referencia_profesor_nombre"),
         "frame_error_url": frame_error_url,
+        "articulaciones_criticas": articulaciones_criticas,
+        "nombres_articulaciones_criticas": nombres_articulaciones_criticas,
         "practice_url": practice_url,
     }
 

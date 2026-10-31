@@ -1062,6 +1062,75 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
     ```
   - **Suite de Pruebas Pytest:** **81 passed, 6 skipped** en 6.62s (100% verde).
 
+---
+
+### 🔹 Iteración Transition-3F (Fase de Transición): UI de Frame Crítico y Nombres de Articulaciones
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3f-antes` (commit `e133ab2`)
+
+- **Objetivos:**
+  1. Mapear los índices articulares numéricos COCO (`articulaciones_criticas`) a nombres legibles en inglés/español (`nombres_articulaciones_criticas`: ej. `["Left Knee", "Right Knee", "Right Hip"]`).
+  2. Exponer `nombres_articulaciones_criticas` y `articulaciones_criticas` en `GET /api/v1/evaluaciones/{id}` y `GET /api/v1/auth/alumnos/{id}/evaluaciones`.
+  3. Enriquecer la interacción de usuario con el botón "Jump to Error":
+     - Pausar el reproductor de video en el segundo del fallo biomecánico (`timestamp_error_segundos`).
+     - Desplegar una ventana modal emergente de alta fidelidad con el fotograma crítico anotado en grande (`frame_error_url`).
+     - Mostrar bajo la imagen la indicación en rojo de las articulaciones exactas afectadas: `Articulaciones afectadas: Left Knee, Right Knee, Right Hip`.
+     - Proporcionar botón de cierre ("Cerrar" / `&times;`) para regresar fluidamente al video.
+
+- **Entregables:**
+  - `backend/corpocmente/domain/entities/models.py`: Campo `nombres_articulaciones_criticas: Optional[List[str]] = Field(default_factory=list)` en `AnalisisResultDTO`.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`: Conversión de índices COCO (`arts_criticas`) a `nombres_articulaciones_criticas` usando la constante `COCO_JOINT_NAMES_EN`.
+  - `backend/corpocmente/ui/api/routes.py`:
+    - Persistencia de `nombres_articulaciones_criticas` y `articulaciones_criticas` en `meta_{eval_id}.json`.
+    - Retorno de ambos campos en la respuesta de `consultar_evaluacion`.
+  - `backend/corpocmente/ui/api/auth_routes.py`: Carga y retorno de `nombres_articulaciones_criticas`, `articulaciones_criticas` y `frame_error_url` en `listar_evaluaciones_alumno`.
+  - `backend/tests/domain/test_threshold_prompt_regression.py`: Suite `TestNombresArticulacionesCriticas` validando tanto el DTO como el mapeo en la fachada.
+  - `frontend/src/App.jsx`: Desempaquetado de `articulaciones_criticas` y `nombres_articulaciones_criticas` al recibir la evaluación finalizada.
+  - `frontend/src/pages/FeedbackView.jsx`: Estado `showFrameModal`, pausa del video en `timestampError`, modal de fotograma ampliado con banner de articulaciones afectadas y botón de cierre.
+  - `frontend/src/pages/StudentProgress.jsx`: Componente `StudentVideoPlayer` actualizado con modal idéntico, soporte para `frameErrorUrl` y visualización de articulaciones afectadas en el historial del alumno.
+
+- **Evidencia Empírica y Validación E2E (`04_e2e_vlm_evaluacion.py`):**
+  - **Tiempo Total de Análisis:** **22.50 segundos** (dentro del límite de 30.0s).
+  - **Estado:** `completado`.
+  - **Técnica Evaluada:** Escaping Closed Guard Stand UP.
+  - **`timestamp_error_segundos`:** **2.52s**.
+  - **`articulaciones_criticas`:** `[13, 14, 12]`.
+  - **`nombres_articulaciones_criticas`:** `["Left Knee", "Right Knee", "Right Hip"]`.
+  - **`frame_error_url`:** `"/static/frames/critico_6a28adac-37d4-452b-b5f5-2d3bbff75054.jpg"`.
+  - **JSON Crudo de Respuesta:**
+    ```json
+    {
+      "id": "6a28adac-37d4-452b-b5f5-2d3bbff75054",
+      "estado": "completado",
+      "similitud": 55.66,
+      "feedback": "Keep elbows tight to your sides. **Control hips** to prevent submission angles.",
+      "feedback_summary": "Elbow flaring, lose hip connection",
+      "timestamp_error_segundos": 2.52,
+      "url_video_alumno": "/static/videos/f50f9d1c-ddb4-45c5-94a9-55b5246f27ca.mp4",
+      "tecnica_id": "59760071-a3ce-46ec-b9d9-75b6dc47eba7",
+      "tecnica_nombre": "Escaping Closed Guard Stand UP",
+      "video_referencia_url": "/static/videos/67beb825-87d1-4c46-8380-9b0cb6ef0489.mp4",
+      "video_referencia_nombre": "67beb825-87d1-4c46-8380-9b0cb6ef0489.mp4",
+      "video_referencia_profesor_nombre": "Coach Mike Baigorria",
+      "frame_error_url": "/static/frames/critico_6a28adac-37d4-452b-b5f5-2d3bbff75054.jpg",
+      "articulaciones_criticas": [
+        13,
+        14,
+        12
+      ],
+      "nombres_articulaciones_criticas": [
+        "Left Knee",
+        "Right Knee",
+        "Right Hip"
+      ],
+      "practice_url": "https://www.youtube.com/results?search_query=Escaping+Closed+Guard+Stand+UP+jiu-jitsu+tutorial"
+    }
+    ```
+  - **Suite de Pruebas Pytest:** **83 passed, 6 skipped** en 13.46s (100% verde).
+
+
 
 
 

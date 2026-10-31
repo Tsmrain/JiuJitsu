@@ -580,17 +580,38 @@ async def listar_evaluaciones_alumno(
         if not evaluacion.get("feedback_summary"):
             evaluacion["feedback_summary"] = clean_fallback_summary(evaluacion.get("feedback_gemini_es") or evaluacion.get("feedback_gemini_pt"))
 
-        # Recuperar metadata del timestamp del error si existe
+        # Recuperar metadata del timestamp del error y articulaciones si existe
         eval_id_str = str(evaluacion.get("id"))
         meta_file = f"/tmp/corpocmente_frames/meta_{eval_id_str}.json"
+        evaluacion["articulaciones_criticas"] = evaluacion.get("articulaciones_criticas") or []
+        evaluacion["nombres_articulaciones_criticas"] = evaluacion.get("nombres_articulaciones_criticas") or []
+
         if os.path.exists(meta_file):
             try:
                 with open(meta_file, "r", encoding="utf-8") as mf:
-                    evaluacion["timestamp_error_segundos"] = json.load(mf).get("timestamp_error_segundos", 0.0)
+                    meta_json = json.load(mf)
+                    evaluacion["timestamp_error_segundos"] = meta_json.get("timestamp_error_segundos", 0.0)
+                    if not evaluacion["articulaciones_criticas"]:
+                        evaluacion["articulaciones_criticas"] = meta_json.get("articulaciones_criticas", [])
+                    if not evaluacion["nombres_articulaciones_criticas"]:
+                        evaluacion["nombres_articulaciones_criticas"] = meta_json.get("nombres_articulaciones_criticas", [])
             except Exception:
                 evaluacion["timestamp_error_segundos"] = 0.0
         else:
             evaluacion["timestamp_error_segundos"] = evaluacion.get("timestamp_error_segundos", 0.0)
+
+        if not evaluacion["nombres_articulaciones_criticas"] and evaluacion["articulaciones_criticas"]:
+            from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
+            evaluacion["nombres_articulaciones_criticas"] = [
+                COCO_JOINT_NAMES_EN[idx] if 0 <= idx < len(COCO_JOINT_NAMES_EN) else f"Joint {idx}"
+                for idx in evaluacion["articulaciones_criticas"]
+            ]
+
+        critico_frame = f"/tmp/corpocmente_frames/critico_{eval_id_str}.jpg"
+        if os.path.exists(critico_frame):
+            evaluacion["frame_error_url"] = f"/static/frames/critico_{eval_id_str}.jpg"
+        else:
+            evaluacion["frame_error_url"] = None
 
         for campo in ("url_video_alumno", "video_referencia_url"):
             ruta = evaluacion.get(campo)

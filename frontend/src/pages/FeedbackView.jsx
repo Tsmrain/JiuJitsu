@@ -7,6 +7,7 @@ const API_BASE = 'http://localhost:8000';
 export default function FeedbackView({ user, result, tecnica, onReset }) {
   const [videoError, setVideoError] = useState(false);
   const [videoAlumnoError, setVideoAlumnoError] = useState(false);
+  const [showFrameModal, setShowFrameModal] = useState(false);
   const videoRef = useRef(null);
 
   if (!result) return null;
@@ -112,8 +113,9 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
                 onClick={() => {
                   if (videoRef.current) {
                     videoRef.current.currentTime = timestampError;
-                    videoRef.current.play().catch(() => {});
+                    videoRef.current.pause();
                   }
+                  setShowFrameModal(true);
                 }}
                 style={{
                   background: 'var(--brand-red, #d01118)',
@@ -132,6 +134,99 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
             </div>
           )}
         </section>
+
+        {showFrameModal && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+              backdropFilter: 'blur(4px)',
+            }}
+            onClick={() => setShowFrameModal(false)}
+          >
+            <div
+              className="glass-panel"
+              style={{
+                maxWidth: '720px',
+                width: '100%',
+                backgroundColor: '#12141a',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '1.15rem' }}>
+                  Fotograma Crítico del Error Biomecánico ({timestampError.toFixed(2)}s)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowFrameModal(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '1.5rem',
+                    lineHeight: 1,
+                    cursor: 'pointer',
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              {frameErrorUrl ? (
+                <div style={{ width: '100%', maxHeight: '440px', display: 'flex', justifyContent: 'center', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+                  <img
+                    src={frameErrorUrl}
+                    alt="Fotograma con articulaciones en error resaltadas"
+                    style={{ maxWidth: '100%', maxHeight: '440px', objectFit: 'contain' }}
+                  />
+                </div>
+              ) : (
+                <p style={{ color: '#94a3b8', textAlign: 'center' }}>Fotograma crítico no disponible.</p>
+              )}
+
+              <div style={{ padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.12)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
+                <p style={{ margin: 0, color: '#ef4444', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                  Articulaciones afectadas: {(result.nombres_articulaciones_criticas && result.nombres_articulaciones_criticas.length > 0) ? result.nombres_articulaciones_criticas.join(', ') : 'No especificadas'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowFrameModal(false)}
+                  style={{
+                    background: '#d01118',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '0.5rem 1.25rem',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 3. Bottom-Left: AI Analysis Card */}
         <section className="glass-panel feedback-card ai-feedback-card">

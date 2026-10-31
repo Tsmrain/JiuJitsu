@@ -44,6 +44,7 @@ class AnalisisResultDTO(BaseModel):
     frame_alumno_idx: Optional[int] = None
     discrepancias: Optional[List[str]] = Field(default_factory=list)
     articulaciones_criticas: Optional[List[int]] = Field(default_factory=list)
+    nombres_articulaciones_criticas: Optional[List[str]] = Field(default_factory=list)
     dtw_distance: Optional[float] = None
     dtw_normalizado: Optional[float] = None
     timestamp_error_segundos: Optional[float] = None

@@ -237,6 +237,14 @@ class IntelligenceAnalysisFacade:
             except Exception as e_fps:
                 logger.warning("No se pudo calcular FPS para timestamp_error_segundos: %s", e_fps)
 
+        from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
+        nombres_articulaciones_criticas = []
+        for idx in (arts_criticas or []):
+            if 0 <= idx < len(COCO_JOINT_NAMES_EN):
+                nombres_articulaciones_criticas.append(COCO_JOINT_NAMES_EN[idx])
+            else:
+                nombres_articulaciones_criticas.append(f"Joint {idx}")
+
         return AnalisisResultDTO(
             similitud=similitud,
             feedback=feedback_texto,
@@ -247,6 +255,7 @@ class IntelligenceAnalysisFacade:
             timestamp_error_segundos=timestamp_error_segundos,
             discrepancias=discrepancias_detectadas,
             articulaciones_criticas=arts_criticas,
+            nombres_articulaciones_criticas=nombres_articulaciones_criticas,
             dtw_distance=dtw_distance,
             dtw_normalizado=dtw_normalizado
         )

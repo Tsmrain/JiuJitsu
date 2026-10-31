@@ -112,6 +112,8 @@ function App() {
                 practice_url: data.practice_url,
                 timestamp_error_segundos: data.timestamp_error_segundos,
                 url_video_alumno: data.url_video_alumno,
+                articulaciones_criticas: data.articulaciones_criticas || [],
+                nombres_articulaciones_criticas: data.nombres_articulaciones_criticas || [],
               });
               setAppState('FEEDBACK');
               setCurrentEvaluacionId(null);

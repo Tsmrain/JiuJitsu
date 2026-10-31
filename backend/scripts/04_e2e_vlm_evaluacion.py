@@ -95,6 +95,8 @@ print(json.dumps(eval_data, indent=2, ensure_ascii=False))
 assert eval_data.get("estado") == "completado", f"Evaluación no completada: {eval_data}"
 assert eval_data.get("feedback_summary"), "feedback_summary está vacío"
 assert eval_data.get("feedback"), "feedback está vacío"
+assert "nombres_articulaciones_criticas" in eval_data, "nombres_articulaciones_criticas falta en respuesta"
+assert eval_data.get("frame_error_url"), "frame_error_url falta en respuesta"
 assert tiempo_total < 30.0, f"El tiempo total ({tiempo_total:.2f}s) superó los 30 segundos requeridos"
 
 print("\n✅ PRUEBA E2E MANUAL VALIDADA EXITOSAMENTE (< 30s con VLM local y feedback no vacío)")

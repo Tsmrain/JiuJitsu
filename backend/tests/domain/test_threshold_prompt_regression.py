@@ -6,7 +6,7 @@ Cubre:
   - Fix 3.2: SpanishPromptStrategy incluye "FOTOGRAMA CRÍTICO" y pide articulaciones
 """
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
@@ -136,3 +136,47 @@ class TestEnglishPromptStrategyMensajeProfesor:
             mensaje_profesor=""
         )
         assert "The instructor has provided the following specific instructions" not in prompt
+
+
+class TestNombresArticulacionesCriticas:
+    """Tests para Iteración 3F: Mapeo legible de articulaciones críticas."""
+
+    def test_nombres_articulaciones_dto_support(self):
+        from corpocmente.domain.entities.models import AnalisisResultDTO
+        dto = AnalisisResultDTO(
+            similitud=75.0,
+            feedback="Fix your posture.",
+            articulaciones_criticas=[7, 13, 8],
+            nombres_articulaciones_criticas=["Left Elbow", "Left Knee", "Right Elbow"]
+        )
+        assert dto.articulaciones_criticas == [7, 13, 8]
+        assert dto.nombres_articulaciones_criticas == ["Left Elbow", "Left Knee", "Right Elbow"]
+
+    def test_nombres_articulaciones_facade_mapping(self):
+        from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
+        from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+        from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
+        from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter, VectorSearchResultDTO
+        from corpocmente.domain.entities.models import EsqueletoBiomecanico
+
+        mock_yolo = Mock(spec=YOLOPoseAdapter)
+        mock_qdrant = Mock(spec=QdrantVectorAdapter)
+        mock_gemini = Mock(spec=LocalVLMAdapter)
+
+        mock_esqueleto = Mock(spec=EsqueletoBiomecanico)
+        mock_esqueleto.to_vector_array.return_value = [0.1] * 133
+        mock_yolo.extraer_keypoints.return_value = [mock_esqueleto]
+
+        vec_result = VectorSearchResultDTO(
+            score=95.0,
+            frame_path="/tmp/frame.jpg",
+            discrepancias=[]
+        )
+        vec_result.articulaciones_criticas = [7, 13]
+        mock_qdrant.buscar_maxima_diferencia.return_value = vec_result
+
+        facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
+        resultado = facade.ejecutar_analisis_completo("/tmp/nonexistent.mp4", uuid4(), "Mount Escape")
+        assert resultado.articulaciones_criticas == [7, 13]
+        assert resultado.nombres_articulaciones_criticas == ["Left Elbow", "Left Knee"]
+

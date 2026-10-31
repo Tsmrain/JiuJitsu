@@ -103,7 +103,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
         </div>
 
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
-          These are the theory excerpts you uploaded. Gemini references them to provide technical feedback to students.
+          These are the theory excerpts you uploaded. The AI Coach references them to provide technical feedback to students.
         </p>
 
         {error && (

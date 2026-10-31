@@ -579,6 +579,19 @@ async def listar_evaluaciones_alumno(
         evaluacion["practice_url"] = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(tec_nom + ' jiu-jitsu tutorial')}"
         if not evaluacion.get("feedback_summary"):
             evaluacion["feedback_summary"] = clean_fallback_summary(evaluacion.get("feedback_gemini_es") or evaluacion.get("feedback_gemini_pt"))
+
+        # Recuperar metadata del timestamp del error si existe
+        eval_id_str = str(evaluacion.get("id"))
+        meta_file = f"/tmp/corpocmente_frames/meta_{eval_id_str}.json"
+        if os.path.exists(meta_file):
+            try:
+                with open(meta_file, "r", encoding="utf-8") as mf:
+                    evaluacion["timestamp_error_segundos"] = json.load(mf).get("timestamp_error_segundos", 0.0)
+            except Exception:
+                evaluacion["timestamp_error_segundos"] = 0.0
+        else:
+            evaluacion["timestamp_error_segundos"] = evaluacion.get("timestamp_error_segundos", 0.0)
+
         for campo in ("url_video_alumno", "video_referencia_url"):
             ruta = evaluacion.get(campo)
             if ruta:

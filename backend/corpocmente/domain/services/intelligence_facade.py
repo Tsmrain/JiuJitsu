@@ -34,7 +34,8 @@ class IntelligenceAnalysisFacade:
         tecnica_nombre: str,
         video_referencia_path: Optional[str] = None,
         evaluacion_id: Optional[str] = None,
-        persona_idx: Optional[int] = None
+        persona_idx: Optional[int] = None,
+        mensaje_profesor: str = ""
     ) -> AnalisisResultDTO:
         from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
@@ -200,7 +201,11 @@ class IntelligenceAnalysisFacade:
                     logger.warning("Fallo en recuperación RAG multimodal (no bloqueante): %s", e_rag)
 
             strategy = EnglishPromptStrategy()
-            prompt = strategy.construir_prompt_evaluacion(tecnica_nombre, discrepancias_detectadas)
+            prompt = strategy.construir_prompt_evaluacion(
+                tecnica_nombre,
+                discrepancias_detectadas,
+                mensaje_profesor=mensaje_profesor
+            )
             if contexto_profundo:
                 prompt += contexto_profundo
 
@@ -220,6 +225,18 @@ class IntelligenceAnalysisFacade:
                 feedback_summary = partes[0].strip() if partes else "Technique error"
                 feedback_correction = feedback_texto
 
+        timestamp_error_segundos = None
+        if os.path.exists(video_path) and frame_alumno_critico is not None:
+            try:
+                import cv2
+                cap = cv2.VideoCapture(video_path)
+                fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
+                cap.release()
+                if fps > 0:
+                    timestamp_error_segundos = round(frame_alumno_critico / fps, 2)
+            except Exception as e_fps:
+                logger.warning("No se pudo calcular FPS para timestamp_error_segundos: %s", e_fps)
+
         return AnalisisResultDTO(
             similitud=similitud,
             feedback=feedback_texto,
@@ -227,6 +244,7 @@ class IntelligenceAnalysisFacade:
             feedback_correction=feedback_correction,
             frame_critico_path=frame_resaltado,
             frame_alumno_idx=frame_alumno_critico,
+            timestamp_error_segundos=timestamp_error_segundos,
             discrepancias=discrepancias_detectadas,
             articulaciones_criticas=arts_criticas,
             dtw_distance=dtw_distance,

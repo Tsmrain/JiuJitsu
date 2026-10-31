@@ -3,12 +3,12 @@ from typing import List
 
 class IPromptStrategy(ABC):
     @abstractmethod
-    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str]) -> str:
+    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str], mensaje_profesor: str = "") -> str:
         """Construye el prompt en el idioma correspondiente."""
         pass
 
 class SpanishPromptStrategy(IPromptStrategy):
-    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str]) -> str:
+    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str], mensaje_profesor: str = "") -> str:
         prompt = (
             f"Eres un maestro cinturón negro de Jiu-Jitsu Brasileño. "
             f"La técnica evaluada es: {tecnica_nombre}. "
@@ -17,6 +17,11 @@ class SpanishPromptStrategy(IPromptStrategy):
         )
         for d in discrepancias:
             prompt += f"- {d}\n"
+        if mensaje_profesor and mensaje_profesor.strip():
+            prompt += (
+                f"\nEl profesor ha dejado la siguiente instrucción técnica específica: "
+                f"'{mensaje_profesor.strip()}'. Asegúrate de alinear tu corrección estrictamente con estas instrucciones.\n"
+            )
         prompt += (
             "Responde en español con máximo 2 frases y 45 palabras. Indica el principal error "
             "visible y una corrección concreta mencionando la articulación o postura afectada. Usa lenguaje simple, respetuoso y directo. "
@@ -27,7 +32,7 @@ class SpanishPromptStrategy(IPromptStrategy):
         return prompt
 
 class EnglishPromptStrategy(IPromptStrategy):
-    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str]) -> str:
+    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str], mensaje_profesor: str = "") -> str:
         prompt = (
             f"You are a black belt Brazilian Jiu-Jitsu coach. "
             f"The technique being evaluated is: {tecnica_nombre}. "
@@ -36,6 +41,11 @@ class EnglishPromptStrategy(IPromptStrategy):
         )
         for d in discrepancias:
             prompt += f"- {d}\n"
+        if mensaje_profesor and mensaje_profesor.strip():
+            prompt += (
+                f"\nThe instructor has provided the following specific instructions for this technique: "
+                f"'{mensaje_profesor.strip()}'. Ensure your correction aligns strictly with these instructions.\n"
+            )
         prompt += (
             "Reply in English. Provide a JSON object with exactly two fields: "
             "'summary' (max 8 words, a short label of the main error, e.g. 'Elbow flaring, lose hip connection') "

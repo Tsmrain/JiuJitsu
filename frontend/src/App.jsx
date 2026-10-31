@@ -104,10 +104,14 @@ function App() {
               setResult({
                 similitud: data.similitud,
                 feedback: data.feedback,
+                feedback_summary: data.feedback_summary,
                 video_referencia_url: data.video_referencia_url,
                 video_referencia_nombre: data.video_referencia_nombre,
                 video_referencia_profesor_nombre: data.video_referencia_profesor_nombre,
                 frame_error_url: data.frame_error_url,
+                practice_url: data.practice_url,
+                timestamp_error_segundos: data.timestamp_error_segundos,
+                url_video_alumno: data.url_video_alumno,
               });
               setAppState('FEEDBACK');
               setCurrentEvaluacionId(null);

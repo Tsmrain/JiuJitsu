@@ -46,3 +46,4 @@ class AnalisisResultDTO(BaseModel):
     articulaciones_criticas: Optional[List[int]] = Field(default_factory=list)
     dtw_distance: Optional[float] = None
     dtw_normalizado: Optional[float] = None
+    timestamp_error_segundos: Optional[float] = None

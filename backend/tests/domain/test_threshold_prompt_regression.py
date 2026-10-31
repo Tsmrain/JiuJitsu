@@ -14,7 +14,7 @@ from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
 from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter, VectorSearchResultDTO
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
-from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrategy
+from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrategy, EnglishPromptStrategy
 
 
 class TestUmbralAceptableEscala:
@@ -111,3 +111,28 @@ class TestSpanishPromptStrategyEnhanced:
         strategy = SpanishPromptStrategy()
         prompt = strategy.construir_prompt_evaluacion("Kimura", ["Hombro rotado"])
         assert "articulación" in prompt.lower()
+
+
+class TestEnglishPromptStrategyMensajeProfesor:
+    """Tests para Iteración 3E: Inyección del mensaje del profesor en el prompt VLM."""
+
+    def test_english_prompt_injects_mensaje_profesor(self):
+        strategy = EnglishPromptStrategy()
+        mensaje = "Keep your hips low and elbows tight against the ribcage."
+        prompt = strategy.construir_prompt_evaluacion(
+            "Mount Escape",
+            ["Elbow flared out"],
+            mensaje_profesor=mensaje
+        )
+        assert "The instructor has provided the following specific instructions for this technique:" in prompt
+        assert mensaje in prompt
+        assert "Ensure your correction aligns strictly with these instructions." in prompt
+
+    def test_english_prompt_omits_instruction_when_empty(self):
+        strategy = EnglishPromptStrategy()
+        prompt = strategy.construir_prompt_evaluacion(
+            "Mount Escape",
+            ["Elbow flared out"],
+            mensaje_profesor=""
+        )
+        assert "The instructor has provided the following specific instructions" not in prompt

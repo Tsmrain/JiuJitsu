@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './FeedbackView.css';
 
@@ -6,6 +6,9 @@ const API_BASE = 'http://localhost:8000';
 
 export default function FeedbackView({ user, result, tecnica, onReset }) {
   const [videoError, setVideoError] = useState(false);
+  const [videoAlumnoError, setVideoAlumnoError] = useState(false);
+  const videoRef = useRef(null);
+
   if (!result) return null;
 
   const similitud = typeof result.similitud === 'number' ? result.similitud : 0;
@@ -14,9 +17,16 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
   const videoUrl = result.video_referencia_url
     ? `${API_BASE}${result.video_referencia_url}`
     : null;
+  const videoAlumnoUrl = result.url_video_alumno
+    ? (result.url_video_alumno.startsWith('http') ? result.url_video_alumno : `${API_BASE}${result.url_video_alumno}`)
+    : null;
   const frameErrorUrl = result.frame_error_url
     ? `${API_BASE}${result.frame_error_url}`
     : null;
+
+  const timestampError = typeof result.timestamp_error_segundos === 'number'
+    ? result.timestamp_error_segundos
+    : Number(result.timestamp_error_segundos || 0);
 
   const tecnicaNombre = tecnica?.nombre || result.tecnica_nombre || 'Jiu-Jitsu';
   const practiceUrl = result.practice_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(tecnicaNombre + ' jiu-jitsu tutorial')}`;
@@ -68,21 +78,59 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
           </div>
         </section>
 
-        {/* 2. Top-Right: Student Critical Frame */}
+        {/* 2. Top-Right: Student Video with Jump to Error & Critical Frame */}
         <section className="glass-panel feedback-card">
           <div className="card-header">
-            <span className="card-label">STUDENT CRITICAL FRAME</span>
-            <h3>Biomechanic Error</h3>
+            <span className="card-label">STUDENT VIDEO</span>
+            <h3>Biomechanic Execution</h3>
           </div>
           <div className="media-wrapper">
-            {frameErrorUrl ? (
+            {videoAlumnoUrl && !videoAlumnoError ? (
+              <video
+                ref={videoRef}
+                src={videoAlumnoUrl}
+                controls
+                playsInline
+                preload="metadata"
+                onError={() => setVideoAlumnoError(true)}
+              />
+            ) : frameErrorUrl ? (
               <img src={frameErrorUrl} alt="Analyzed student critical frame" />
             ) : (
               <div className="media-placeholder" role="status">
-                The analyzed critical frame is not available.
+                The analyzed student video is not available.
               </div>
             )}
           </div>
+          {timestampError > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.6rem', padding: '0.5rem 0.75rem', background: 'rgba(0, 0, 0, 0.4)', borderRadius: '6px', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span style={{ color: '#ffd43b', fontSize: '0.85rem', fontWeight: '500' }}>
+                ⚠️ Error detectado en el segundo {timestampError.toFixed(2)}s
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = timestampError;
+                    videoRef.current.play().catch(() => {});
+                  }
+                }}
+                style={{
+                  background: 'var(--brand-red, #d01118)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '0.3rem 0.75rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                Jump to Error
+              </button>
+            </div>
+          )}
         </section>
 
         {/* 3. Bottom-Left: AI Analysis Card */}

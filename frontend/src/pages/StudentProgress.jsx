@@ -1,7 +1,60 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 const API_BASE = 'http://localhost:8000';
+
+function StudentVideoPlayer({ videoSrc, timestampError }) {
+  const videoRef = useRef(null);
+  const ts = typeof timestampError === 'number' ? timestampError : Number(timestampError || 0);
+
+  return (
+    <div>
+      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>My Video</h4>
+      {videoSrc ? (
+        <>
+          <video
+            ref={videoRef}
+            src={videoSrc}
+            controls
+            playsInline
+            preload="metadata"
+            style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
+          />
+          {ts > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem', padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', borderRadius: 6, flexWrap: 'wrap' }}>
+              <span style={{ color: '#ffd43b', fontSize: '0.82rem' }}>
+                ⚠️ Error detectado en el segundo {ts.toFixed(2)}s
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = ts;
+                    videoRef.current.play().catch(() => {});
+                  }
+                }}
+                style={{
+                  background: '#d01118',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '0.25rem 0.55rem',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                Jump to Error
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <p>Student video not available.</p>
+      )}
+    </div>
+  );
+}
 
 export default function StudentProgress({ user }) {
   const [evaluaciones, setEvaluaciones] = useState([]);
@@ -54,14 +107,7 @@ export default function StudentProgress({ user }) {
                 </strong>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>My Video</h4>
-                  {videoAlumno ? (
-                    <video src={videoAlumno} controls playsInline preload="metadata" style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }} />
-                  ) : (
-                    <p>Student video not available.</p>
-                  )}
-                </div>
+                <StudentVideoPlayer videoSrc={videoAlumno} timestampError={item.timestamp_error_segundos} />
                 <div>
                   <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
                     Coach Demonstration · {coachNombre}

@@ -142,14 +142,72 @@ def ejecutar_evaluacion_background(
             qwen_adapter=qwen
         )
 
+        # Obtener mensaje del profesor para la técnica si está configurado
+        mensaje_profesor = ""
+        try:
+            db_tec = get_db()
+            tec_rows = db_tec.get("tecnicas", {"id": f"eq.{tecnica_id}", "select": "mensaje_profesor"})
+            if tec_rows and isinstance(tec_rows, list) and len(tec_rows) > 0:
+                mensaje_profesor = tec_rows[0].get("mensaje_profesor") or ""
+        except Exception as e_msg:
+            logger.debug("Fallo consultando mensaje_profesor via PostgREST: %s", e_msg)
+
+        if not mensaje_profesor:
+            try:
+                import psycopg2
+                from corpocmente.config import settings
+                db_url = getattr(settings, "DATABASE_URL", "postgres://postgres:postgres@localhost:5432/corpocmente")
+                conn = psycopg2.connect(db_url)
+                cur = conn.cursor()
+                cur.execute("SELECT mensaje_profesor FROM tecnicas WHERE id = %s", (str(tecnica_id),))
+                row = cur.fetchone()
+                cur.close()
+                conn.close()
+                if row and row[0]:
+                    mensaje_profesor = str(row[0])
+            except Exception as e_sql:
+                logger.debug("Fallo consultando mensaje_profesor via SQL fallback: %s", e_sql)
+
         res = facade.ejecutar_analisis_completo(
             video_path=video_alumno_path,
             tecnica_id=tecnica_id,
             tecnica_nombre=tecnica_nombre,
             video_referencia_path=video_referencia_path,
             evaluacion_id=eval_id,
-            persona_idx=persona_idx
+            persona_idx=persona_idx,
+            mensaje_profesor=mensaje_profesor
         )
+
+        # Calcular timestamp del error en segundos
+        timestamp_error_segundos = res.timestamp_error_segundos
+        if timestamp_error_segundos is None and os.path.exists(video_alumno_path):
+            try:
+                import cv2
+                cap = cv2.VideoCapture(video_alumno_path)
+                fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
+                cap.release()
+                if fps > 0 and res.frame_alumno_idx is not None:
+                    timestamp_error_segundos = round(float(res.frame_alumno_idx) / fps, 2)
+            except Exception as e_fps:
+                logger.warning("Error calculando FPS para timestamp_error_segundos: %s", e_fps)
+
+        if timestamp_error_segundos is None:
+            timestamp_error_segundos = 0.0
+
+        # Guardar metadata de la evaluación para consulta inmediata en GET /evaluaciones/{id}
+        meta_data = {
+            "evaluacion_id": str(eval_id),
+            "timestamp_error_segundos": timestamp_error_segundos,
+            "frame_alumno_idx": res.frame_alumno_idx,
+            "url_video_alumno": video_alumno_path,
+        }
+        os.makedirs(FRAMES_DIR, exist_ok=True)
+        meta_path = os.path.join(FRAMES_DIR, f"meta_{eval_id}.json")
+        try:
+            with open(meta_path, "w", encoding="utf-8") as mf:
+                json.dump(meta_data, mf)
+        except Exception as e_meta:
+            logger.warning("No se pudo guardar meta JSON: %s", e_meta)
 
         db = get_db()
         db.rpc("worker_update_result", {
@@ -417,6 +475,36 @@ async def consultar_evaluacion(
             detail="No tienes permiso para consultar esta evaluación."
         )
 
+    # Convertir ruta local del video del alumno a URL pública estática y recuperar timestamp del error
+    meta_candidate = os.path.join(FRAMES_DIR, f"meta_{evaluacion_id}.json")
+    timestamp_error_segundos = eval_data.get("timestamp_error_segundos")
+    raw_video_alumno = eval_data.get("url_video_alumno") or ""
+
+    if os.path.exists(meta_candidate):
+        try:
+            with open(meta_candidate, "r", encoding="utf-8") as mf:
+                meta_json = json.load(mf)
+                if timestamp_error_segundos is None:
+                    timestamp_error_segundos = meta_json.get("timestamp_error_segundos", 0.0)
+                if not raw_video_alumno:
+                    raw_video_alumno = meta_json.get("url_video_alumno") or ""
+        except Exception:
+            pass
+
+    if timestamp_error_segundos is None:
+        timestamp_error_segundos = 0.0
+
+    video_alumno_url = None
+    if raw_video_alumno:
+        filename_alumno = os.path.basename(raw_video_alumno)
+        target_video = os.path.join(VIDEOS_DIR, filename_alumno)
+        if not os.path.exists(target_video) and os.path.exists(raw_video_alumno) and target_video != raw_video_alumno:
+            try:
+                shutil.copy2(raw_video_alumno, target_video)
+            except Exception:
+                pass
+        video_alumno_url = f"/static/videos/{filename_alumno}"
+
     # Convertir ruta local del video de referencia a URL pública estática
     raw_video_path = eval_data.get("video_referencia_url") or ""
     video_ref_url = None
@@ -439,6 +527,8 @@ async def consultar_evaluacion(
         "similitud": eval_data["porcentaje_similitud"],
         "feedback": eval_data.get("feedback_gemini_es") or eval_data.get("feedback_gemini_pt"),
         "feedback_summary": eval_data.get("feedback_summary") or clean_fallback_summary(eval_data.get("feedback_gemini_es") or eval_data.get("feedback_gemini_pt")),
+        "timestamp_error_segundos": timestamp_error_segundos,
+        "url_video_alumno": video_alumno_url,
         "tecnica_id": eval_data["tecnica_id"],
         "tecnica_nombre": eval_data["tecnica_nombre"],
         "video_referencia_url": video_ref_url,

@@ -1008,6 +1008,61 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - **Articulaciones Críticas Identificadas:** `[13, 9, 8]` (rodilla izquierda, muñeca izquierda, codo derecho).
   - **Pytest:** 79 passed, 6 skipped en 6.89s.
 
+---
+
+### 🔹 Iteración Transition-3E (Fase de Transición): Contexto Temporal, Prompt del Profesor y UI Limpia
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3e-antes` (commit `96af21a`)
+
+- **Objetivos:**
+  1. Exponer la métrica temporal exacta (`timestamp_error_segundos = frame_alumno_critico / fps`) en el backend y retornarla en `GET /api/v1/evaluaciones/{id}` y `GET /api/v1/evaluaciones/alumno/{id}`.
+  2. Inyectar las instrucciones técnicas del profesor (`tecnicas.mensaje_profesor`) en la estrategia de prompt del VLM local (`EnglishPromptStrategy` y `SpanishPromptStrategy`) para que las correcciones sigan estrictamente la pedagogía del instructor.
+  3. Limpieza de texto obsoleto en frontend (`TheoryManagerModal.jsx`): reemplazar `"Gemini references them..."` por `"The AI Coach references them..."`.
+  4. Reproducción y navegación temporal en frontend (`FeedbackView.jsx` y `StudentProgress.jsx`): control de video con `useRef`, cartel de advertencia de error y botón `Jump to Error` que reposiciona el video exactamente en el segundo del error biomecánico.
+
+- **Entregables:**
+  - `backend/corpocmente/domain/entities/models.py`: Campo `timestamp_error_segundos: Optional[float] = None` en `AnalisisResultDTO`.
+  - `backend/corpocmente/domain/strategies/prompt_strategies.py`: Parámetro `mensaje_profesor: str = ""` en `IPromptStrategy`, `SpanishPromptStrategy` e `EnglishPromptStrategy` con inyección explícita en el prompt enviado al VLM.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`: Paso de `mensaje_profesor` a la estrategia de prompt, cálculo de `timestamp_error_segundos` vía FPS de video con fallback resiliente, y propagación en `AnalisisResultDTO`.
+  - `backend/corpocmente/ui/api/routes.py`:
+    - Consulta de `mensaje_profesor` desde Postgres/PostgREST en la tarea en segundo plano.
+    - Persistencia de metadatos de evaluación y exposición de `timestamp_error_segundos` y `url_video_alumno` en `consultar_evaluacion`.
+  - `backend/corpocmente/ui/api/auth_routes.py`: Exposición de `timestamp_error_segundos` y URL de video en `listar_evaluaciones_alumno`.
+  - `frontend/src/components/TheoryManagerModal.jsx`: Limpieza de texto deprecado de Gemini por AI Coach.
+  - `frontend/src/App.jsx`: Desempaquetado de `timestamp_error_segundos` y `url_video_alumno` en el estado de resultado tras polling.
+  - `frontend/src/pages/FeedbackView.jsx`: Referencia de video interactiva, alerta visual de tiempo de error y botón `Jump to Error`.
+  - `frontend/src/pages/StudentProgress.jsx`: Componente `StudentVideoPlayer` con `useRef`, banner de segundo de error y salto automático al segundo del fallo en el historial del alumno.
+  - `backend/tests/domain/test_threshold_prompt_regression.py`: Tests unitarios `TestEnglishPromptStrategyMensajeProfesor` validando la inyección de las directrices del docente.
+
+- **Evidencia Empírica y Validación E2E (`04_e2e_vlm_evaluacion.py`):**
+  - **Tiempo Total de Análisis:** **22.07 segundos** (requerido < 30.0s).
+  - **Estado:** `completado`.
+  - **`timestamp_error_segundos`:** **1.02s** (segundo exacto del error biomecánico).
+  - **Feedback Pedagógico Generado por VLM:** `"Use **bridge** to create space. Push hips left with controlled force."` (alineado directamente con la directriz del profesor: *"Escape from mount using bridge and shrimp"*).
+  - **JSON Crudo de Respuesta:**
+    ```json
+    {
+      "id": "3880f2e4-0542-4cfb-8dfe-054c553f76bc",
+      "estado": "completado",
+      "similitud": 62.07,
+      "feedback": "Use **bridge** to create space. Push hips left with controlled force.",
+      "feedback_summary": "Elbow flaring, lose hip connection",
+      "timestamp_error_segundos": 1.02,
+      "url_video_alumno": "/static/videos/6ceb1220-61df-48cb-a2dc-c6af4cc96176.mp4",
+      "tecnica_id": "30a4afe4-23cc-4479-9f14-4f6d867de7dd",
+      "tecnica_nombre": "Mount Escape",
+      "video_referencia_url": "/static/videos/8f073747-e99a-4927-aede-1fed6fe893a3.mp4",
+      "video_referencia_nombre": "8f073747-e99a-4927-aede-1fed6fe893a3.mp4",
+      "video_referencia_profesor_nombre": "Coach Mike Baigorria",
+      "frame_error_url": "/static/frames/critico_3880f2e4-0542-4cfb-8dfe-054c553f76bc.jpg",
+      "practice_url": "https://www.youtube.com/results?search_query=Mount+Escape+jiu-jitsu+tutorial"
+    }
+    ```
+  - **Suite de Pruebas Pytest:** **81 passed, 6 skipped** en 6.62s (100% verde).
+
+
 
 
 

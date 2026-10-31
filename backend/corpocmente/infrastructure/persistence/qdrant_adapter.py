@@ -476,7 +476,7 @@ class QdrantVectorAdapter:
         de libros o manuales más relevante para la query textual del análisis.
 
         Retorna los top-3 chunks concatenados con separador '---' para dar contexto
-        enriquecido a Gemini. Retorna cadena vacía si no hay resultados o si falla.
+        enriquecido al VLM. Retorna cadena vacía si no hay resultados o si falla.
         """
         if len(vector_multimodal) != RAG_VECTOR_DIM:
             raise ValueError(f"Embedding RAG inválido: se esperaban {RAG_VECTOR_DIM} dimensiones.")

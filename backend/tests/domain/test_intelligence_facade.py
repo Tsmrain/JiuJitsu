@@ -3,7 +3,8 @@ from unittest.mock import Mock, MagicMock, patch
 from uuid import uuid4
 
 from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
-from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
+from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter, VectorSearchResultDTO
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
@@ -17,7 +18,7 @@ def test_ejecutar_analisis_completo_flujo_exitoso():
     tecnica_id = uuid4()
     mock_yolo = Mock(spec=YOLOPoseAdapter)
     mock_qdrant = Mock(spec=QdrantVectorAdapter)
-    mock_gemini = Mock(spec=GeminiApiAdapter)
+    mock_gemini = Mock(spec=LocalVLMAdapter)
     
     # Simular extraccion YOLO
     mock_esqueleto = Mock(spec=EsqueletoBiomecanico)
@@ -31,7 +32,7 @@ def test_ejecutar_analisis_completo_flujo_exitoso():
         discrepancias=["Cadera muy baja", "Agarre suelto"]
     )
     
-    # Simular respuesta Gemini
+    # Simular respuesta VLM
     mock_gemini.generar_texto_feedback.return_value = "Feedback generado por IA."
     
     facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
@@ -51,7 +52,7 @@ def test_ejecutar_analisis_construye_query_y_recupera_rag_multimodal():
     tecnica_id = uuid4()
     mock_yolo = Mock(spec=YOLOPoseAdapter)
     mock_qdrant = Mock(spec=QdrantVectorAdapter)
-    mock_gemini = Mock(spec=GeminiApiAdapter)
+    mock_gemini = Mock(spec=LocalVLMAdapter)
     mock_qwen = Mock(spec=QwenEmbeddingAdapter)
 
     mock_esqueleto = Mock(spec=EsqueletoBiomecanico)
@@ -174,7 +175,7 @@ def test_facade_separa_frame_limpio_para_rag_y_frame_resaltado_para_gemini(tmp_p
     tecnica_id = uuid4()
     mock_yolo = Mock(spec=YOLOPoseAdapter)
     mock_qdrant = Mock(spec=QdrantVectorAdapter)
-    mock_gemini = Mock(spec=GeminiApiAdapter)
+    mock_gemini = Mock(spec=LocalVLMAdapter)
     mock_qwen = Mock(spec=QwenEmbeddingAdapter)
 
     mock_esqueleto = Mock(spec=EsqueletoBiomecanico)
@@ -225,7 +226,7 @@ def test_facade_separa_frame_limpio_para_rag_y_frame_resaltado_para_gemini(tmp_p
     img_llamada = mock_qwen.generar_embedding.call_args.kwargs.get("image_path") or mock_qwen.generar_embedding.call_args.args[0]
     assert "clean_" in img_llamada
 
-    # Gemini debe recibir el frame crítico anotado para feedback visual pedagógico
+    # VLM debe recibir el frame crítico anotado para feedback visual pedagógico
     gemini_frame = mock_gemini.generar_texto_feedback.call_args.args[1]
     assert "critico_" in gemini_frame
     assert res.feedback == "Feedback corregido."
@@ -235,7 +236,7 @@ def test_facade_no_rompe_si_ambos_embeddings_fallan(tmp_path):
     tecnica_id = uuid4()
     mock_yolo = Mock(spec=YOLOPoseAdapter)
     mock_qdrant = Mock(spec=QdrantVectorAdapter)
-    mock_gemini = Mock(spec=GeminiApiAdapter)
+    mock_gemini = Mock(spec=LocalVLMAdapter)
     mock_qwen = Mock(spec=QwenEmbeddingAdapter)
 
     mock_esqueleto = Mock(spec=EsqueletoBiomecanico)

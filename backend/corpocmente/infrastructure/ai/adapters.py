@@ -5,18 +5,9 @@ import re
 import json
 import mimetypes
 from pathlib import Path
-from google import genai
-from google.genai import types
-from google.genai.errors import APIError
-
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
-from corpocmente.config import storage_root
 
 logger = logging.getLogger(__name__)
-
-class GeminiRateLimitError(Exception):
-    """Excepción lanzada cuando se supera el límite de cuota (Rate Limit 429) de Gemini API."""
-    pass
 
 COCO_JOINT_NAMES = [
     "Nariz",
@@ -82,49 +73,6 @@ COCO_SKELETON_PAIRS = [
 
 FRAMES_DIR = "/tmp/corpocmente_frames"
 os.makedirs(FRAMES_DIR, exist_ok=True)
-RAG_MEDIA_STORAGE_ROOTS = (
-    storage_root() / "rag_frames",
-    storage_root() / "manuales",
-    storage_root() / "manuales" / "video_frames",
-)
-MAX_RAG_IMAGE_BYTES = 8 * 1024 * 1024
-ALLOWED_RAG_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
-
-
-def _cargar_imagen_evidencia_rag(media_path: str, payload: Dict):
-    """Lee evidencia visual solo desde el almacenamiento de la aplicación."""
-    path = Path(media_path).resolve(strict=True)
-    allowed = False
-    for storage_root in RAG_MEDIA_STORAGE_ROOTS:
-        try:
-            path.relative_to(storage_root.resolve())
-            allowed = True
-            break
-        except ValueError:
-            continue
-    if not allowed:
-        raise ValueError("La evidencia visual está fuera del almacenamiento permitido.")
-
-    if path.suffix.lower() == ".pdf":
-        import fitz
-        document = fitz.open(path)
-        try:
-            if document.page_count < 1:
-                raise ValueError("El PDF de evidencia no contiene páginas.")
-            page_number = max(1, int(payload.get("pagina") or 1))
-            page = document[min(page_number - 1, document.page_count - 1)]
-            return page.get_pixmap(dpi=120, alpha=False).tobytes("jpeg"), "image/jpeg"
-        finally:
-            document.close()
-
-    if path.suffix.lower() not in ALLOWED_RAG_IMAGE_EXTENSIONS:
-        raise ValueError("El tipo de archivo de evidencia visual no está permitido.")
-    if path.stat().st_size > MAX_RAG_IMAGE_BYTES:
-        raise ValueError("La imagen de evidencia supera el límite de tamaño.")
-    mime_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
-    if not mime_type.startswith("image/"):
-        raise ValueError("El tipo MIME de la evidencia no es una imagen.")
-    return path.read_bytes(), mime_type
 
 
 class YOLOPoseAdapter:
@@ -142,6 +90,9 @@ class YOLOPoseAdapter:
                 return _orig(*a, **kw)
             torch.load = _safe_load
             candidates = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__))))), "storage/models/yolo26s_bjj_pose/weights/best.pt"),
+                "storage/models/yolo26s_bjj_pose/weights/best.pt",
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
                     os.path.abspath(__file__))))), "yolo26n-pose.pt"),
                 "storage/models/yolo26n-pose.pt",
@@ -581,187 +532,5 @@ class YOLOPoseAdapter:
             logger.error(f"Error dibujando sobre frame: {e}")
             return frame_path
 
-from corpocmente.config import settings
-
-class GeminiApiAdapter:
-    """
-    [DEPRECATED] Adaptador para llamadas a Google Gemini.
-    Reemplazado por LocalSpamFilter y LocalVLMAdapter (Qwen3-VL-Instruct vía mlx-vlm).
-    Conservado temporalmente para compatibilidad con tests legacy.
-    """
-    
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-3.5-flash-lite"):
-        self.api_key = api_key or os.getenv("API_KEY", "")
-        if not self.api_key:
-            raise ValueError("Se requiere una API Key válida para instanciar GeminiApiAdapter.")
-        
-        self.model_name = model_name
-        self.client = genai.Client(api_key=self.api_key)
-
-    def validar_es_jiujitsu(self, video_path: str) -> bool:
-        """
-        Valida mediante visión multimodal de Gemini si el video corresponde a una técnica de Jiu-Jitsu.
-        Resuelve el paso 2 del Flujo Principal y el Flujo Alternativo 2a (Prevención de SPAM).
-        """
-        if not os.path.exists(video_path):
-            logger.error(f"El archivo de video no existe en la ruta: {video_path}")
-            return False
-
-        prompt_validacion = (
-            "Analiza brevemente este video. ¿El contenido muestra a personas practicando o ejecutando "
-            "una técnica, movimiento o lucha de Jiu-Jitsu Brasileño (BJJ) o Artes Marciales Grappling? "
-            "Responde estrictamente con la palabra 'SI' o 'NO'."
-        )
-
-        try:
-            # Cargar el archivo utilizando la Files API de Gemini para procesamiento multimodal
-            video_file = self.client.files.upload(path=video_path)
-            
-            # Si el video está en estado PROCESSING, esperar a que pase a ACTIVE
-            import time
-            while video_file.state == "PROCESSING":
-                time.sleep(1)
-                video_file = self.client.files.get(name=video_file.name)
-
-            if video_file.state == "FAILED":
-                logger.error("El archivo de video falló en el procesamiento de Gemini.")
-                return False
-
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=[video_file, prompt_validacion]
-            )
-            
-            # Limpieza del archivo temporal en la nube de Google
-            try:
-                self.client.files.delete(name=video_file.name)
-            except Exception as del_err:
-                logger.warning(f"No se pudo eliminar el archivo temporal de Gemini: {del_err}")
-            
-            resultado = response.text.strip().upper() if response.text else "NO"
-            return "SI" in resultado or "SÍ" in resultado
-
-        except APIError as e:
-            if getattr(e, "code", None) == 429 or "RESOURCE_EXHAUSTED" in str(e):
-                logger.warning("Límite de cuota superado en la API de Gemini durante la validación.")
-                raise GeminiRateLimitError("Cuota de Gemini API agotada (429).") from e
-            logger.error(f"Error de API al validar video con Gemini: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"Error inesperado en validar_es_jiujitsu: {e}")
-            return False
-
-    def generar_texto_feedback(
-        self,
-        prompt: str,
-        frame_image_path: str,
-        evidencias_visuales: Optional[List[Dict]] = None,
-    ) -> str:
-        """
-        Genera la evaluación cualitativa estructurada en el idioma seleccionado (ES/PT)
-        enviando el prompt de la estrategia y la imagen del fotograma con la discrepancia clave.
-        """
-        if not os.path.exists(frame_image_path):
-            raise FileNotFoundError(f"Fotograma de análisis no encontrado en: {frame_image_path}")
-
-        try:
-            with open(frame_image_path, "rb") as f_img:
-                image_bytes = f_img.read()
-            image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
-            contents = [image_part]
-            for evidencia in (evidencias_visuales or [])[:3]:
-                payload = evidencia.get("payload", evidencia)
-                media_path = payload.get("media_path")
-                if not media_path:
-                    continue
-                try:
-                    visual_bytes, mime_type = _cargar_imagen_evidencia_rag(media_path, payload)
-                    contents.append(types.Part.from_bytes(data=visual_bytes, mime_type=mime_type))
-                except Exception as evidence_error:
-                    logger.warning("No se pudo cargar una imagen recuperada del RAG: %s", evidence_error)
-            contents.append(prompt)
-
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2, # Baja temperatura para respuestas consistentes y técnicas
-                    max_output_tokens=500
-                )
-            )
-
-            if response.text:
-                return self._parsear_feedback_json(response.text)
-            else:
-                raise ValueError("Gemini API retornó una respuesta vacía.")
-
-        except APIError as e:
-            if getattr(e, "code", None) == 429 or "RESOURCE_EXHAUSTED" in str(e):
-                logger.warning("Límite de cuota (429) alcanzado al generar feedback.")
-                raise GeminiRateLimitError("Límite de velocidad/cuota excedido en Gemini API.") from e
-            logger.error(f"Error en llamada a Gemini API: {e}")
-            raise e
-
-    @staticmethod
-    def _parsear_feedback_json(texto: str) -> Dict[str, str]:
-        """Parsea la respuesta JSON de Gemini con fallback a texto plano."""
-        raw = texto.strip()
-        raw_clean = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
-        raw_clean = re.sub(r"\s*```$", "", raw_clean)
-        try:
-            parsed = json.loads(raw_clean)
-            if isinstance(parsed, dict) and ("summary" in parsed or "correction" in parsed):
-                summary = str(parsed.get("summary", "")).strip()
-                correction = str(parsed.get("correction", "")).strip()
-                if "(" in correction and ")" not in correction[correction.rfind("("):]:
-                    correction = correction[:correction.rfind("(")].rstrip(" ,;:")
-                if correction and not re.search(r"[.!?]\)?$", correction):
-                    correction = correction.rstrip(" ,;:") + "."
-                return {
-                    "summary": summary or "Technique feedback",
-                    "correction": correction or summary or "Technique executed with minor variance."
-                }
-        except Exception as err:
-            logger.warning(f"No se pudo parsear JSON de Gemini ({err}). Aplicando fallback a texto plano.")
-
-        texto_limpio = raw.replace("\n", " ").strip()
-        frases = re.split(r"(?<=[.!?])\s+", texto_limpio)
-        summary = frases[0].strip() if frases else "Technique feedback"
-        palabras_sum = summary.split()
-        if len(palabras_sum) > 8:
-            summary = " ".join(palabras_sum[:8]) + "..."
-        correction = " ".join(frases[1:]).strip() if len(frases) > 1 else texto_limpio
-        if "(" in correction and ")" not in correction[correction.rfind("("):]:
-            correction = correction[:correction.rfind("(")].rstrip(" ,;:")
-        if correction and not re.search(r"[.!?]\)?$", correction):
-            correction = correction.rstrip(" ,;:") + "."
-
-        return {
-            "summary": summary,
-            "correction": correction
-        }
-
-    @staticmethod
-    def _limpiar_feedback(texto: str) -> str:
-        """Reduce respuestas largas y elimina formato Markdown antes de mostrarlas."""
-        texto = re.sub(r"```[^`]*```", "", texto, flags=re.DOTALL)
-        texto = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", texto)
-        texto = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", texto)
-        texto = re.sub(r"(?m)^\s*[-*+]\s+", "", texto)
-        texto = re.sub(r"(?m)^\s*\d+[.)]\s+", "", texto)
-        texto = re.sub(r"[*_`~]", "", texto)
-        texto = re.sub(r"\s+", " ", texto).strip()
-        frases = re.split(r"(?<=[.!?])\s+(?=[A-Z¿¡])", texto)
-        reducido = " ".join(frases[:2]).strip()
-        palabras = reducido.split()
-        if len(palabras) > 60:
-            reducido = " ".join(palabras[:60]).rstrip(" ,;:")
-        # Protección de citación: si hay paréntesis sin cerrar, retroceder antes del paréntesis
-        if "(" in reducido and ")" not in reducido[reducido.rfind("("):]:
-            reducido = reducido[:reducido.rfind("(")].rstrip(" ,;:")
-        if not re.search(r"[.!?]\)?$", reducido):
-            reducido = reducido.rstrip(" ,;:") + "."
-        return reducido[:500].strip()
 
 

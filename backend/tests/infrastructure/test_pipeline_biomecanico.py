@@ -161,7 +161,7 @@ def test_facade_orquestacion_completa_con_dibujo_y_gemini(tmp_path):
     # Verificar que el fotograma crítico fue extraído y dibujado con OpenCV
     assert os.path.exists(resultado.frame_critico_path)
 
-    # Validar que Gemini fue invocado con el prompt y la imagen del frame crítico
+    # Validar que el VLM fue invocado con el prompt y la imagen del frame crítico
     mock_gemini.generar_texto_feedback.assert_called_once()
     args, _ = mock_gemini.generar_texto_feedback.call_args
     prompt_usado, imagen_usada = args

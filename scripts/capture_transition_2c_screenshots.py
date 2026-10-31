@@ -166,3 +166,4 @@ with sync_playwright() as p:
 
     browser.close()
     print("All screenshots captured and saved successfully.")
+

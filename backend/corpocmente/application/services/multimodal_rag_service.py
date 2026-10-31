@@ -92,7 +92,7 @@ def obtener_evidencias_rag_multimodal(
 
 def formatear_evidencias_texto(evidencias: List[Dict[str, Any]]) -> str:
     """
-    Convierte evidencias RAG a texto para incluir en el prompt de Gemini.
+    Convierte evidencias RAG a texto para incluir en el prompt del VLM.
     Las imágenes se pasan aparte como parts multimodales.
     """
     if not evidencias:

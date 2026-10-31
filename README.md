@@ -9,7 +9,7 @@ Sistema de análisis biomecánico con IA para la academia Corpo e Mente (Jiu-Jit
 ```bash
 # 1. Configurar backend
 cp backend/.env.example backend/.env
-# Editar backend/.env: GEMINI_API_KEY, POSTGREST_JWT_SECRET, JWT_SECRET_KEY
+# Editar backend/.env: POSTGREST_JWT_SECRET, JWT_SECRET_KEY
 
 # 2. Instalar dependencias (solo la primera vez)
 cd backend && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && cd ..
@@ -34,9 +34,8 @@ Abrí http://localhost:5173
 ## Estructura
 
 - `backend/` — FastAPI (dominio/aplicación/infraestructura/ui)
-  - **Inferencia local:** Qwen3-VL 2B (MLX) + YOLO26-pose (MPS)
-- **Feedback:** Gemini 3.5 Flash-Lite (API gratuita, inglés)
-- `frontend/` — React + Vite (i18n con inglés por defecto)
+  - **Inferencia 100% local (Apple Silicon MLX & MPS):** Qwen3-VL 2B (RAG embeddings), Qwen3-VL-4B-Instruct (VLM Feedback), YOLO26-pose (MPS) y Filtro Anti-Spam ViCoS
+- `frontend/` — React + Vite (inglés)
 - `infrastructure/` — docker-compose + scripts SQL de initdb
 - `scripts/` — orquestación local
 - `docs/` — diseño, arquitectura y technical memos

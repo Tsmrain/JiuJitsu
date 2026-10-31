@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 class LocalVLMAdapter:
     """
-    Reemplazo local de GeminiApiAdapter usando Qwen3-VL-Instruct vía mlx-vlm.
-    Misma firma que GeminiApiAdapter.generar_texto_feedback().
+    Adaptador local de VLM usando Qwen3-VL-Instruct vía mlx-vlm.
+    Provee generar_texto_feedback().
     """
 
     def __init__(self, model_name: str = "mlx-community/Qwen3-VL-4B-Instruct-4bit"):

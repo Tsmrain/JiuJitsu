@@ -10,7 +10,8 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
-from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter, GeminiApiAdapter
+from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter, VectorSearchResultDTO
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
 from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrategy
@@ -19,21 +20,21 @@ from corpocmente.domain.strategies.prompt_strategies import SpanishPromptStrateg
 class TestUmbralAceptableEscala:
     """Regression tests para Fix 3.1: el umbral debe estar en escala 0–100."""
 
-    def test_score_75_triggers_gemini(self):
+    def test_score_75_triggers_vlm(self):
         """
         Con score=75.0 (escala 0–100) la similitud está BAJO el umbral (85.0).
-        Gemini DEBE ser invocado. Con el bug anterior (0.85), 75.0 >= 0.85
-        era True → Gemini nunca se llamaba.
+        El VLM DEBE ser invocado. Con el bug anterior (0.85), 75.0 >= 0.85
+        era True → VLM nunca se llamaba.
         """
         mock_yolo = Mock(spec=YOLOPoseAdapter)
         mock_qdrant = Mock(spec=QdrantVectorAdapter)
-        mock_gemini = Mock(spec=GeminiApiAdapter)
+        mock_gemini = Mock(spec=LocalVLMAdapter)
 
         mock_esqueleto = Mock(spec=EsqueletoBiomecanico)
         mock_esqueleto.to_vector_array.return_value = [0.5] * 133
         mock_yolo.extraer_keypoints.return_value = [mock_esqueleto]
 
-        # Score 75 → bajo el umbral → Gemini debería invocarse
+        # Score 75 → bajo el umbral → VLM debería invocarse
         mock_qdrant.buscar_maxima_diferencia.return_value = VectorSearchResultDTO(
             score=75.0,
             frame_path="/tmp/frame.jpg",
@@ -45,19 +46,19 @@ class TestUmbralAceptableEscala:
         facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
         resultado = facade.ejecutar_analisis_completo("/tmp/video.mp4", uuid4(), "Armbar")
 
-        # Gemini DEBE haber sido llamado
+        # VLM DEBE haber sido llamado
         mock_gemini.generar_texto_feedback.assert_called_once()
         assert resultado.feedback == "Feedback correctivo real."
         assert resultado.feedback != "¡Técnica ejecutada correctamente. Excelente trabajo!"
 
-    def test_score_90_skips_gemini(self):
+    def test_score_90_skips_vlm(self):
         """
         Con score=90.0, la similitud está SOBRE el umbral (85.0).
-        Gemini NO debe ser invocado → respuesta genérica positiva.
+        El VLM NO debe ser invocado → respuesta genérica positiva.
         """
         mock_yolo = Mock(spec=YOLOPoseAdapter)
         mock_qdrant = Mock(spec=QdrantVectorAdapter)
-        mock_gemini = Mock(spec=GeminiApiAdapter)
+        mock_gemini = Mock(spec=LocalVLMAdapter)
 
         mock_esqueleto = Mock(spec=EsqueletoBiomecanico)
         mock_esqueleto.to_vector_array.return_value = [0.5] * 133
@@ -80,7 +81,7 @@ class TestSpanishPromptStrategyEnhanced:
     """Regression tests para Fix 3.2: prompt mejorado con contexto de frame."""
 
     def test_prompt_contains_fotograma_critico(self):
-        """El prompt debe mencionar 'FOTOGRAMA CRÍTICO' para dar contexto a Gemini."""
+        """El prompt debe mencionar 'FOTOGRAMA CRÍTICO' para dar contexto al VLM."""
         strategy = SpanishPromptStrategy()
         prompt = strategy.construir_prompt_evaluacion(
             "Armbar desde guardia",
@@ -106,7 +107,7 @@ class TestSpanishPromptStrategyEnhanced:
             assert d in prompt, f"Discrepancia '{d}' no encontrada en el prompt"
 
     def test_prompt_asks_for_articulacion(self):
-        """El prompt mejorado debe pedir a Gemini que mencione articulaciones."""
+        """El prompt mejorado debe pedir al VLM que mencione articulaciones."""
         strategy = SpanishPromptStrategy()
         prompt = strategy.construir_prompt_evaluacion("Kimura", ["Hombro rotado"])
         assert "articulación" in prompt.lower()

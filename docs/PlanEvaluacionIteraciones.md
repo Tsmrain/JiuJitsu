@@ -1244,6 +1244,41 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
     - Articulaciones críticas: `[13, 14, 12]` (`["Left Knee", "Right Knee", "Right Hip"]`).
     - Frame crítico URL: `"/static/frames/critico_8cea576b-7a94-47e5-8ab4-fb60e94e0387.jpg"`.
 
+---
+
+### 🔹 Iteración Transition-3J (Fase de Transición): Limpieza y Deduplicación de Bounding Boxes en Selección de Persona
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3j-antes` (commit `a3b64d5`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Análisis de Causa Raíz (Ghost/Chimera Boxes y NMS Imperfecto):**
+     - En el frontend (`SelectorPersonaVideo.jsx`), al subir videos con atletas entrelazados (ej. `2026-10-31 09-41-31.mov`), YOLO producía 4 detecciones crudas: Candidate #0 (luchador superior), Candidate #1 (caja fantasma intermedia que abarcaba la cabeza del inferior y los pies del superior), Candidate #2 (duplicado amplio del inferior) y Candidate #3 (duplicado estrecho del inferior).
+     - La deduplicación de parejas implementada en `local_spam_filter.py` no existía en el endpoint interactivo `POST /api/v1/evaluaciones/primer-frame` (`routes.py`).
+  2. **Filtrado y Limpieza Biomecánica en `/primer-frame`:**
+     - Implementar `_bbox_iou` y `_bbox_iomin` para medir solapamiento absoluto y relativo entre cajas candidatas.
+     - **Paso 1 (Detección de Quimeras):** Si existen $\ge 3$ candidatos, identificar cajas intermedias $C$ que solapen significativamente con dos cuerpos independientes $A$ y $B$ ($\text{IoU}(A, B) < 0.30$, $\text{IoMin}(C, A) > 0.50$ o $\text{IoU}(C, A) > 0.35$, e $\text{IoMin}(C, B) > 0.50$ o $\text{IoU}(C, B) > 0.35$). Esto erradica limpiamente la caja fantasma intermedia (Candidate #1).
+     - **Paso 2 (Deduplicación Directa por NMS):** Descartar detecciones duplicadas del mismo atleta evaluando $\text{IoU} > 0.50$, distancia entre centros $< 40\text{px}$, distancia de cabezas $< 40\text{px}$ o distancia de pelvis $< 40\text{px}$. Conserva la detección con mayor confianza y keypoints válidos (Candidate #3).
+     - Mantener el índice original `idx` de cada candidato para garantizar sincronización perfecta con el seguimiento espacial en `adapters.py`.
+  3. **Verificación Empírica Multivideo:**
+     - `2026-10-31 09-41-31.mov`: 4 candidatos iniciales $\to$ **exactamente 2 personas** (Candidate #0 superior y Candidate #3 inferior).
+     - `Alumno.mp4`: 2 candidatos iniciales $\to$ **exactamente 2 personas** (ambos luchadores en guardia preservados).
+     - `Alumno_Gaetamo.mp4`: 2 candidatos iniciales $\to$ **exactamente 2 personas** (preservados).
+     - `profesor salida de Guardia Parandose.mp4`: 1 candidato inicial $\to$ **exactamente 1 persona** (preservado).
+  4. **Suite de Tests y E2E:**
+     - Nuevos tests unitarios dedicados en `backend/tests/ui/api/test_primer_frame_dedup.py`.
+     - 87 tests pasando en verde (0 regresiones).
+     - Prueba E2E `04_e2e_vlm_evaluacion.py` pasando en 21.88s ($< 30\text{s}$) con VLM local.
+
+- **Entregables:**
+  - `backend/corpocmente/ui/api/routes.py`:
+    - Funciones `_bbox_iou`, `_bbox_iomin` y `_limpiar_candidatos_bboxes`.
+    - Integración en `obtener_primer_frame`.
+  - `backend/tests/ui/api/test_primer_frame_dedup.py`:
+    - Tests de IoU/IoMin, deduplicación directa, erradicación de quimeras y preservación de guardia en Jiu-Jitsu.
+
+
 
 
 

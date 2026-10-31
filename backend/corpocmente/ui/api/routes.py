@@ -1266,6 +1266,107 @@ async def eliminar_teoria(
     return {"status": "ok", **resultado}
 
 
+def _bbox_iou(b1: list, b2: list) -> float:
+    x1 = max(b1[0], b2[0])
+    y1 = max(b1[1], b2[1])
+    x2 = min(b1[2], b2[2])
+    y2 = min(b1[3], b2[3])
+    inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    a1 = (b1[2] - b1[0]) * (b1[3] - b1[1])
+    a2 = (b2[2] - b2[0]) * (b2[3] - b2[1])
+    union = a1 + a2 - inter
+    return inter / union if union > 0 else 0.0
+
+
+def _bbox_iomin(b1: list, b2: list) -> float:
+    x1 = max(b1[0], b2[0])
+    y1 = max(b1[1], b2[1])
+    x2 = min(b1[2], b2[2])
+    y2 = min(b1[3], b2[3])
+    inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    a1 = (b1[2] - b1[0]) * (b1[3] - b1[1])
+    a2 = (b2[2] - b2[0]) * (b2[3] - b2[1])
+    m = min(a1, a2)
+    return inter / m if m > 0 else 0.0
+
+
+def _limpiar_candidatos_bboxes(candidates: list, w_img: int, h_img: int) -> list:
+    """
+    Filtra y deduplica detecciones de personas en el primer frame para la selección del usuario.
+    Elimina:
+    1. Quimeras/fantasmas (cajas intermedias solapadas con dos cuerpos independientes).
+    2. Duplicados directos de la misma persona por NMS imperfecto (IoU > 0.50, proximidad < 40px).
+    """
+    if len(candidates) <= 1:
+        return candidates
+
+    # Paso 1: Si hay >= 3 candidatos, detectar y eliminar quimeras
+    if len(candidates) >= 3:
+        sin_quimeras = []
+        for i, c in enumerate(candidates):
+            es_quimera = False
+            for j in range(len(candidates)):
+                if i == j:
+                    continue
+                for k in range(j + 1, len(candidates)):
+                    if i == k:
+                        continue
+                    a, b = candidates[j], candidates[k]
+                    # Si A y B son dos cuerpos independientes
+                    if _bbox_iou(a["bbox_raw"], b["bbox_raw"]) < 0.30:
+                        overlap_a = _bbox_iomin(c["bbox_raw"], a["bbox_raw"]) > 0.50 or _bbox_iou(c["bbox_raw"], a["bbox_raw"]) > 0.35
+                        overlap_b = _bbox_iomin(c["bbox_raw"], b["bbox_raw"]) > 0.50 or _bbox_iou(c["bbox_raw"], b["bbox_raw"]) > 0.35
+                        if overlap_a and overlap_b:
+                            es_quimera = True
+                            logger.info("Descartando candidato quimera/fantasma idx=%s por solapamiento con %s y %s",
+                                        c["idx"], a["idx"], b["idx"])
+                            break
+                if es_quimera:
+                    break
+            if not es_quimera:
+                sin_quimeras.append(c)
+        candidates = sin_quimeras
+
+    # Paso 2: Deduplicación de candidatos restantes (mismo cuerpo detectado dos veces)
+    cands_sorted = sorted(candidates, key=lambda c: (c["confianza"], c["keypoints_validos"]), reverse=True)
+    dedup = []
+    for c in cands_sorted:
+        is_dup = False
+        for d in dedup:
+            iou_val = _bbox_iou(c["bbox_raw"], d["bbox_raw"])
+            d_cent = np.linalg.norm(c["center"] - d["center"])
+            d_head = np.linalg.norm(c["head"] - d["head"]) if c["head"] is not None and d["head"] is not None else float("inf")
+            d_pelv = np.linalg.norm(c["pelvis"] - d["pelvis"]) if c["pelvis"] is not None and d["pelvis"] is not None else float("inf")
+
+            # Reglas de duplicado:
+            # - IoU > 0.50
+            # - Centros a menos de 40px
+            # - Cabezas a menos de 40px con solapamiento
+            # - Pelvis a menos de 40px con solapamiento
+            # - Alto IoMin (> 0.70) y cabeza compartida
+            if iou_val > 0.50:
+                is_dup = True
+                break
+            if d_cent < 40.0:
+                is_dup = True
+                break
+            if d_head < 40.0 and (d_pelv < 80.0 or iou_val > 0.25):
+                is_dup = True
+                break
+            if d_pelv < 40.0 and iou_val > 0.35:
+                is_dup = True
+                break
+            iomin_val = _bbox_iomin(c["bbox_raw"], d["bbox_raw"])
+            if iomin_val > 0.70 and (d_head < 100.0 or (c["head"] is not None and d["head"] is not None and abs(c["head"][0] - d["head"][0]) < 50.0)):
+                is_dup = True
+                break
+
+        if not is_dup:
+            dedup.append(c)
+
+    return sorted(dedup, key=lambda c: c["idx"])
+
+
 @router.post("/evaluaciones/primer-frame", status_code=status.HTTP_200_OK)
 async def obtener_primer_frame(
     video: UploadFile = File(...),
@@ -1316,16 +1417,37 @@ async def obtener_primer_frame(
                     valid_personas.append(p)
 
             if valid_personas:
-                frame_idx_encontrado = target
-                frame_encontrado = frame
-                h_img, w_img = frame.shape[:2]
-
+                candidates = []
                 for idx, p in enumerate(valid_personas):
                     mask = (p[:, 2] > 0.3) & (p[:, 0] > 0)
                     pts = p[mask, :2]
                     min_x, min_y = float(pts[:, 0].min()), float(pts[:, 1].min())
                     max_x, max_y = float(pts[:, 0].max()), float(pts[:, 1].max())
+                    center = np.array([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0])
+                    pelvis = p[[11, 12], :2].mean(axis=0) if ((p[[11, 12], 2] > 0.3).all() and (p[[11, 12], 0] > 0).all()) else None
+                    head = p[0, :2] if (p[0, 2] > 0.3 and p[0, 0] > 0) else None
+                    conf = float(p[mask, 2].mean())
+                    candidates.append({
+                        "idx": idx,
+                        "pose": p,
+                        "bbox_raw": [min_x, min_y, max_x, max_y],
+                        "confianza": round(conf, 3),
+                        "keypoints_validos": int(np.count_nonzero(mask)),
+                        "center": center,
+                        "pelvis": pelvis,
+                        "head": head,
+                    })
 
+                candidatos_limpios = _limpiar_candidatos_bboxes(candidates, frame.shape[1], frame.shape[0])
+                if not candidatos_limpios:
+                    continue
+
+                frame_idx_encontrado = target
+                frame_encontrado = frame
+                h_img, w_img = frame.shape[:2]
+
+                for c in candidatos_limpios:
+                    min_x, min_y, max_x, max_y = c["bbox_raw"]
                     pad_x = (max_x - min_x) * 0.15
                     pad_y = (max_y - min_y) * 0.15
 
@@ -1335,10 +1457,10 @@ async def obtener_primer_frame(
                     y2 = min(float(h_img), max_y + pad_y)
 
                     personas_encontradas.append({
-                        "idx": idx,
+                        "idx": c["idx"],
                         "bbox": [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)],
-                        "confianza": round(float(p[mask, 2].mean()), 3),
-                        "keypoints_validos": int(np.count_nonzero(mask))
+                        "confianza": c["confianza"],
+                        "keypoints_validos": c["keypoints_validos"]
                     })
                 break
 

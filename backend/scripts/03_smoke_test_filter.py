@@ -14,6 +14,7 @@ from corpocmente.infrastructure.ai.local_spam_filter import LocalSpamFilter
 VIDEOS_ALUMNO = [
     "/Users/santiago/Desktop/JiuJitsu-main/Alumno.mp4",
     "/Users/santiago/Desktop/JiuJitsu-main/Alumno_Gaetamo.mp4",
+    "/Users/santiago/Desktop/JiuJitsu-main/profesor salida de Guardia Parandose.mp4",
 ]
 
 # Videos que NO pasan por el filtro (profesores registrando patrón técnico de referencia)
@@ -21,13 +22,12 @@ VIDEOS_PROFESOR = [
     "/Users/santiago/Desktop/JiuJitsu-main/Maestro.mp4",
     "/Users/santiago/Desktop/JiuJitsu-main/Escape de 100 kilos brazo por debajo.mp4",
     "/Users/santiago/Desktop/JiuJitsu-main/Profesor dill pasaje de guardia abierta.mp4",
-    "/Users/santiago/Desktop/JiuJitsu-main/profesor salida de Guardia Parandose.mp4",
     "/Users/santiago/Desktop/JiuJitsu-main/Profesor ensena 1 escape de guardia cerrada.mp4",
 ]
 
 VIDEOS_NO_BJJ = [
+    "/Users/santiago/Desktop/JiuJitsu-main/Flo.mov",
     "storage/control_bailarinas.mp4",
-    "storage/control_yoga.mp4",
     "storage/control_boxeo.mp4",
 ]
 

@@ -1163,6 +1163,87 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
     - Flujo completo de análisis completado en **22.50 segundos** con estado `completado`, feedback pedagógico estructurado y nombres de articulaciones presentes.
   - **Suite Pytest Completa:** **83 passed, 6 skipped** en 15.52s (100% verde).
 
+---
+
+### 🔹 Iteración Transition-3I (Fase de Transición): Inteligencia de Pareja, Umbrales Dinámicos y Fix de Historial
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3i-antes` (commit `95a870b`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Fase 1 (Inteligencia de Pareja en el Filtro):**
+     - En `_extraer_poses` de `local_spam_filter.py`, erradicar la suposición de que solo existen $\le 2$ personas en escena.
+     - Si hay $\ge 2$ personas válidas, deduplicar detecciones duplicadas de la misma persona generadas por imperfecciones de NMS en YOLO (distancia entre pelvis/centro $< 35\text{px}$).
+     - Calcular todas las combinaciones de pares posibles y seleccionar la pareja con la menor distancia euclidiana entre sus centros (los luchadores interactuando activamente, ignorando público, árbitro o profesor observando).
+     - Incorporar la guardia de proximidad física de Jiu-Jitsu: si la distancia entre centros excede $1.2 \times \max(\text{altura}_1, \text{altura}_2)$, los atletas están dispersos y no existe combate/grappling (abstención en ese frame).
+  2. **Fase 2 (Umbral de Interacción Dinámico):**
+     - Sustituir el umbral estático de `min_interaction_frames=5` por un umbral adaptativo al metraje del video: $\max(3, \lfloor \text{total\_muestreados} \times 0.15 \rfloor)$.
+     - Permite que videos técnicos cortos o con tomas de pie como `profesor salida de Guardia Parandose.mp4` (4 frames de interacción) se clasifiquen con éxito sin incurrir en falsos negativos.
+  3. **Fase 3 (Fix de Historial - Erradicación de Race Condition):**
+     - En `routes.py` (`ejecutar_evaluacion_background`), asegurar la persistencia del estado `completado` mediante un bucle de reintento de 3 iteraciones en PostgREST RPC `worker_update_result`.
+     - Implementar fallback directo vía SQL (`psycopg2`) con `conn.commit()` explícito en caso de congestión de red o latencia de base de datos.
+     - Añadir un buffer de 0.5s antes de concluir la tarea en segundo plano para garantizar visibilidad transaccional frente al polling del frontend.
+  4. **Fase 4 (Prueba de Fuego Definitiva y Cero Falsos Positivos/Negativos):**
+     - Evaluar `Flo.mov` (3 bailarinas en estudio de danza): esperado `False`.
+     - Evaluar `profesor salida de Guardia Parandose.mp4`: esperado `True`.
+     - Evaluar controles negativos (`control_bailarinas.mp4`, `control_boxeo.mp4`): esperado `False`.
+     - Evaluar videos de alumnos (`Alumno.mp4`, `Alumno_Gaetamo.mp4`): esperado `True`.
+     - Ejecutar suite Pytest completa y prueba E2E VLM.
+
+- **Entregables:**
+  - `backend/corpocmente/infrastructure/ai/local_spam_filter.py`:
+    - Deduplicación de bounding boxes duplicadas (`dist < 35px`).
+    - Combinatoria de pares euclidianos y selección del par más cercano.
+    - Guardia de proximidad biomecánica ($1.2 \times \max\_h$).
+    - Umbral adaptativo dinámico $\max(3, \lfloor \text{checked} \times 0.15 \rfloor)$.
+  - `backend/corpocmente/ui/api/routes.py`:
+    - Importación de `time`.
+    - Bucle de reintentos y fallback SQL directo con commit explícito en `worker_update_result`.
+    - Buffer de 0.5s para evitar condiciones de carrera en el polling.
+  - `backend/scripts/03_smoke_test_filter.py`:
+    - Incorporación de `Flo.mov` a `VIDEOS_NO_BJJ`.
+    - Incorporación de `profesor salida de Guardia Parandose.mp4` a `VIDEOS_ALUMNO`.
+
+- **Evidencia Empírica de las Pruebas de Fuego:**
+  - **Prueba de Humo Anti-Spam (`03_smoke_test_filter.py`):**
+    ```
+    INFO:corpocmente.infrastructure.ai.local_spam_filter:LocalSpamFilter cargado: accuracy=0.9018555334658714, f1=0.8818170910335679, min_bjj_ratio=0.60, min_interaction_frames=dynamic(min=3, 15%)
+    === VIDEOS PROFESOR (Registran patrón de referencia — NO aplican al filtro anti-spam) ===
+      Maestro.mp4: [EXENTO DEL FILTRO - Flujo Maestro] (✓ Existe)
+      Escape de 100 kilos brazo por debajo.mp4: [EXENTO DEL FILTRO - Flujo Maestro] (✓ Existe)
+      Profesor dill pasaje de guardia abierta.mp4: [EXENTO DEL FILTRO - Flujo Maestro] (✓ Existe)
+      Profesor ensena 1 escape de guardia cerrada.mp4: [EXENTO DEL FILTRO - Flujo Maestro] (✓ Existe)
+
+    === VIDEOS ALUMNO (Evaluación de técnica — SÍ pasan por el filtro anti-spam, esperado: True) ===
+    INFO:corpocmente.infrastructure.ai.local_spam_filter:Spam filter Alumno.mp4: 6/7 frames BJJ (ratio=0.86, umbral=0.60) | muestreados=12, interacción=7, umbral_min=3
+      Alumno.mp4: True ✅
+    INFO:corpocmente.infrastructure.ai.local_spam_filter:Spam filter Alumno_Gaetamo.mp4: 5/5 frames BJJ (ratio=1.00, umbral=0.60) | muestreados=13, interacción=5, umbral_min=3
+      Alumno_Gaetamo.mp4: True ✅
+    INFO:corpocmente.infrastructure.ai.local_spam_filter:Spam filter profesor salida de Guardia Parandose.mp4: 4/4 frames BJJ (ratio=1.00, umbral=0.60) | muestreados=13, interacción=4, umbral_min=3
+      profesor salida de Guardia Parandose.mp4: True ✅
+
+    === NO-BJJ / CONTROLES NEGATIVOS (esperado: False) ===
+    WARNING:corpocmente.infrastructure.ai.local_spam_filter:Spam filter Flo.mov: RECHAZADO por evidencia insuficiente (solo 2 frames con interacción, mínimo dinámico 3)
+      Flo.mov: False ✅
+    INFO:corpocmente.infrastructure.ai.local_spam_filter:Spam filter control_bailarinas.mp4: 4/13 frames BJJ (ratio=0.31, umbral=0.60) | muestreados=13, interacción=13, umbral_min=3
+      control_bailarinas.mp4: False ✅
+    WARNING:corpocmente.infrastructure.ai.local_spam_filter:Spam filter control_boxeo.mp4: RECHAZADO por evidencia insuficiente (solo 0 frames con interacción, mínimo dinámico 3)
+      control_boxeo.mp4: False ✅
+    ```
+
+  - **Suite de Pruebas Pytest (`pytest backend/tests/`):**
+    - **83 passed, 6 skipped** en 12.88s (100% verde).
+
+  - **Prueba E2E Integral (`04_e2e_vlm_evaluacion.py`):**
+    - Tiempo Total de Análisis: **22.42 segundos** ($< 30\text{s}$).
+    - Estado: `completado`.
+    - Similitud: `55.66%`.
+    - Feedback: `"Prioritize **vertical posture** by angling your body away from the opponent's grip. Keep elbows tight to your sides to control hips and avoid submission danger."`
+    - Timestamp de error: `2.52s`.
+    - Articulaciones críticas: `[13, 14, 12]` (`["Left Knee", "Right Knee", "Right Hip"]`).
+    - Frame crítico URL: `"/static/frames/critico_8cea576b-7a94-47e5-8ab4-fb60e94e0387.jpg"`.
+
 
 
 

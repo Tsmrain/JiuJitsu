@@ -10,6 +10,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 import hashlib
 import threading
+import time
 from pathlib import Path
 from uuid import UUID, uuid4
 from typing import Optional
@@ -211,14 +212,54 @@ def ejecutar_evaluacion_background(
         except Exception as e_meta:
             logger.warning("No se pudo guardar meta JSON: %s", e_meta)
 
+        # Guardar en base de datos con reintentos y fallback SQL con commit explícito (evita Race Condition)
         db = get_db()
-        db.rpc("worker_update_result", {
-            "p_evaluacion_id": str(eval_id),
-            "p_similitud": res.similitud,
-            "p_feedback_es": res.feedback,
-            "p_estado": "completado",
-            "p_feedback_summary": res.feedback_summary or "Technique feedback",
-        })
+        actualizado = False
+        for intento in range(3):
+            try:
+                rpc_res = db.rpc("worker_update_result", {
+                    "p_evaluacion_id": str(eval_id),
+                    "p_similitud": res.similitud,
+                    "p_feedback_es": res.feedback,
+                    "p_estado": "completado",
+                    "p_feedback_summary": res.feedback_summary or "Technique feedback",
+                })
+                if rpc_res is True or (isinstance(rpc_res, list) and len(rpc_res) > 0):
+                    actualizado = True
+                    break
+            except Exception as e_rpc:
+                logger.warning("Intento %d de worker_update_result via PostgREST falló: %s", intento + 1, e_rpc)
+            time.sleep(0.2)
+
+        if not actualizado:
+            try:
+                import psycopg2
+                from corpocmente.config import settings
+                db_url = getattr(settings, "DATABASE_URL", "postgres://postgres:postgres@localhost:5432/corpocmente")
+                conn = psycopg2.connect(db_url)
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    UPDATE evaluaciones_alumnos
+                    SET porcentaje_similitud = %s,
+                        feedback_gemini_es = %s,
+                        estado = %s,
+                        feedback_summary = %s
+                    WHERE id = %s;
+                    """,
+                    (res.similitud, res.feedback, "completado", res.feedback_summary or "Technique feedback", str(eval_id))
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+                actualizado = True
+                logger.info("worker_update_result confirmado vía fallback psycopg2 con commit explícito.")
+            except Exception as e_sql:
+                logger.error("Fallo definitivo guardando resultado en Postgres: %s", e_sql)
+
+        # Esperar 0.5s para asegurar visibilidad en PostgREST/transacciones antes de que el frontend haga polling
+        time.sleep(0.5)
+
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=True, eliminar_video=False)
         logger.info(f"Evaluación {eval_id} completada en background con similitud {res.similitud}%.")

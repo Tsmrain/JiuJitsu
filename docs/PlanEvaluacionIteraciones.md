@@ -975,6 +975,40 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - **Valor Académico para Defensa de Tesis:** Este experimento y sus 5 fases empíricas constituyen un aporte metodológico clave para el informe de grado, demostrando rigor en el control de calidad, rollback automatizado ante regresiones y validación empírica contra domain shift en IA aplicada al deporte.
   - **Suite de Pruebas:** 79 passed, 6 skipped en 6.36s.
 
+---
+
+### 🔹 Iteración Transition-3D (Fase de Transición): Integración de Normalización Biomecánica en DTW (Técnica Invariante vs. Píxeles)
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag:** `iter-3d-antes`
+
+- **Objetivo:**
+  Corregir el problema estructural de comparación de esqueletos en píxeles absolutos. Integrar [`pose_normalizer.py`](file:///Users/santiago/Desktop/JiuJitsu-main/backend/corpocmente/domain/biomechanics/pose_normalizer.py) en [`dtw_comparator.py`](file:///Users/santiago/Desktop/JiuJitsu-main/backend/corpocmente/domain/biomechanics/dtw_comparator.py) para que la comparación DTW opere sobre vectores canónicos de 46 dimensiones (34 posiciones centradas en pelvis, escaladas por torso y rotadas a vertical, más 12 ángulos articulares invariantes a traslación, escala y sensor).
+
+- **Diagnóstico del Fallo Previo:**
+  - `dtw_comparator.py` calculaba distancias euclidianas directamente sobre coordenadas de pantalla `(x, y)` crudas.
+  - Si el alumno y el profesor estaban en posiciones o escalas diferentes, la distancia DTW sumaba **16,806.60 px**, colapsando la similitud artificialmente a **~25.7%** a pesar de que la técnica de BJJ estuviese bien ejecutada.
+
+- **Entregables:**
+  - `backend/corpocmente/domain/biomechanics/dtw_comparator.py`:
+    - Proyección previa de cada frame crudo a vector canónico normalizado de 46 dimensiones (`_normalizar_frame_para_dtw`).
+    - DTW multidimensional alineando el espacio normalizado.
+    - `_similitud_frame`: Similitud combinada (posiciones canónicas + ángulos articulares con tolerancia a oclusiones).
+    - `detectar_articulaciones_criticas`: Detección en frame canónico ponderando desviaciones angulares y posicionales, descartando articulaciones no visibles.
+    - Selección del fotograma crítico acotada a fotogramas con detección real.
+  - `backend/scripts/10_test_normalized_dtw.py`: Script de prueba de fuego y control negativo.
+  - `docs/technical_memos/2026-10-31-transition-3d-biomechanical-dtw-normalization.md`: Memo técnico detallado con formulación matemática.
+
+- **Resultados de la Prueba de Fuego (`10_test_normalized_dtw.py`):**
+  - **Distancia DTW Alumno:** Se redujo de **16,806.60 px** a **212.95 unidades biomecánicas** (-98.7%).
+  - **Similitud Alumno (`Alumno.mp4`):** Subió de **25.72%** a **50.51%** (aprobado y coherente con ejecución real).
+  - **Control Negativo (`control_bailarinas.mp4`):** Obtuvo **18.67%** (muy por debajo del umbral, confirmando **0 falsos positivos**).
+  - **Auto-comparación Maestro:** 0.0 de distancia y **100.0%** de similitud (determinismo garantizado).
+  - **Articulaciones Críticas Identificadas:** `[13, 9, 8]` (rodilla izquierda, muñeca izquierda, codo derecho).
+  - **Pytest:** 79 passed, 6 skipped en 6.89s.
+
+
 
 
 

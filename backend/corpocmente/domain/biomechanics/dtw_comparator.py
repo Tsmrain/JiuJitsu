@@ -4,6 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from corpocmente.domain.biomechanics.pose_normalizer import (
+    normalizar,
+    similitud_esqueletos,
+    ANGLE_TRIPLETS,
+)
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -39,12 +45,68 @@ def _distancia_local(a: List[float], b: List[float]) -> float:
     return float(np.linalg.norm(av - bv))
 
 
-def _similitud_frame(a: List[float], b: List[float]) -> float:
+def _normalizar_frame_para_dtw(frame: List[float]) -> List[float]:
     """
-    Similitud combinada:
-    - distancia euclidiana normalizada por saturación
-    - coseno sobre componentes no nulas
+    Convierte un esqueleto crudo (>= 51 dims) a vector canónico normalizado
+    de 46 dimensiones (34 posiciones centradas/escaladas/rotadas + 12 ángulos).
+    Si el vector ya tiene 46 dims o es sintético (< 51), se preserva.
     """
+    if len(frame) >= 51:
+        return normalizar(frame)["vector"].tolist()
+    return frame
+
+
+def _similitud_frame(
+    a: List[float],
+    b: List[float],
+    dist_local: Optional[float] = None
+) -> float:
+    """
+    Similitud biomecánica normalizada entre dos fotogramas:
+    - Si dist_local < 1e-6 (fotogramas idénticos), retorna 1.0.
+    - Si son esqueletos COCO (>= 51 dims), calcula la similitud combinada
+      de posiciones canónicas (coseno) y ángulos articulares (invariantes a escala/cámara).
+    - Si son vectores normalizados de 46 dims, evalúa posición + ángulos escalados.
+    - Fallback: distancia euclidiana + coseno para dimensiones sintéticas arbitrarias.
+    """
+    if dist_local is not None and dist_local < 1e-6:
+        return 1.0
+
+    # 1. Esqueletos COCO crudos (>= 51 dims)
+    if len(a) >= 51 and len(b) >= 51:
+        arr_a = np.asarray(a[:51], dtype=np.float32).reshape(17, 3)
+        arr_b = np.asarray(b[:51], dtype=np.float32).reshape(17, 3)
+        has_a = np.any((arr_a[:, 0] > 0) | (arr_a[:, 1] > 0))
+        has_b = np.any((arr_b[:, 0] > 0) | (arr_b[:, 1] > 0))
+
+        if has_a and has_b:
+            sim_obj = similitud_esqueletos(a, b)
+            return float(sim_obj["score"] / 100.0)
+        elif not has_a and not has_b:
+            return 1.0
+        else:
+            return 0.0
+
+    # 2. Vectores ya normalizados de 46 dimensiones
+    if len(a) == 46 and len(b) == 46:
+        av = np.asarray(a, dtype=np.float32)
+        bv = np.asarray(b, dtype=np.float32)
+        pos_a, pos_b = av[:34], bv[:34]
+        norm_pa = float(np.linalg.norm(pos_a))
+        norm_pb = float(np.linalg.norm(pos_b))
+        if norm_pa > 1e-6 and norm_pb > 1e-6:
+            sim_pos = max(0.0, min(1.0, float(np.dot(pos_a, pos_b) / (norm_pa * norm_pb))))
+        elif norm_pa <= 1e-6 and norm_pb <= 1e-6:
+            sim_pos = 1.0
+        else:
+            sim_pos = 0.0
+
+        ang_a, ang_b = av[34:], bv[34:]
+        diffs = np.abs(ang_a - ang_b)
+        sim_ang = max(0.0, 1.0 - float(np.mean(diffs)))
+        return float(0.55 * sim_pos + 0.45 * sim_ang)
+
+    # 3. Fallback para vectores sintéticos arbitrarios
     av = np.asarray(a, dtype=np.float32)
     bv = np.asarray(b, dtype=np.float32)
 
@@ -56,17 +118,13 @@ def _similitud_frame(a: List[float], b: List[float]) -> float:
         return 1.0
 
     base = 1.0 / (1.0 + dist)
-
     mask = (np.abs(av) > 1e-6) | (np.abs(bv) > 1e-6)
     cos = 0.0
-
     if int(mask.sum()) > 0:
         av_valid = av[mask]
         bv_valid = bv[mask]
-
         norm_a = float(np.linalg.norm(av_valid))
         norm_b = float(np.linalg.norm(bv_valid))
-
         if norm_a > 1e-9 and norm_b > 1e-9:
             cos = float(np.dot(av_valid, bv_valid) / (norm_a * norm_b))
             cos = max(0.0, min(1.0, cos))
@@ -80,46 +138,68 @@ def detectar_articulaciones_criticas(
     top_k: int = 3,
 ) -> List[int]:
     """
-    Asume que los primeros 51 dims son x,y,conf para 17 keypoints COCO.
-    Devuelve índices de articulación con mayor discrepancia.
+    Identifica las articulaciones con mayor discrepancia biomecánica.
+    Si son esqueletos COCO (>= 51 dims), proyecta al frame canónico invariante
+    y combina la desviación posicional normalizada con las discrepancias angulares.
     """
+    if len(vec_maestro) >= 51 and len(vec_alumno) >= 51:
+        raw_m = np.asarray(vec_maestro[:51], dtype=np.float32).reshape(17, 3)
+        raw_a = np.asarray(vec_alumno[:51], dtype=np.float32).reshape(17, 3)
+
+        has_m = (raw_m[:, 0] > 0) | (raw_m[:, 1] > 0)
+        has_a = (raw_a[:, 0] > 0) | (raw_a[:, 1] > 0)
+
+        if not np.any(has_m) or not np.any(has_a):
+            return []
+
+        nm = normalizar(vec_maestro)
+        na = normalizar(vec_alumno)
+
+        pm = nm["posiciones"].reshape(17, 2)
+        pa = na["posiciones"].reshape(17, 2)
+
+        dists = np.linalg.norm(pm - pa, axis=1)
+        pesos = np.array([0.4] * 5 + [1.0] * 12)
+        dists = dists * pesos
+
+        # Incorporar desviaciones angulares en articulaciones de flexión/extensión
+        ang_m = nm["angulos"]
+        ang_a = na["angulos"]
+        for idx, (name, a_idx, b_idx, c_idx) in enumerate(ANGLE_TRIPLETS):
+            if not np.isnan(ang_m[idx]) and not np.isnan(ang_a[idx]):
+                diff_ang = abs(ang_m[idx] - ang_a[idx]) / 90.0
+                dists[b_idx] += float(diff_ang * pesos[b_idx])
+
+        # Descartar articulaciones no detectadas en coordenadas reales
+        invalidos = (~has_m) | (~has_a)
+        dists[invalidos] = -1.0
+
+        orden = np.argsort(dists)[::-1]
+        return [int(i) for i in orden[:top_k] if dists[i] > 0]
+
+    # Fallback para dimensiones menores
     a = np.asarray(vec_maestro, dtype=np.float32)
     b = np.asarray(vec_alumno, dtype=np.float32)
-
     if len(a) < COORD_DIMS or len(b) < COORD_DIMS:
         return []
 
     diffs: List[Tuple[float, int]] = []
-
     for joint_idx in range(COCO_KEYPOINT_COUNT):
         base = joint_idx * 3
-
-        ax = float(a[base])
-        ay = float(a[base + 1])
-        ac = float(a[base + 2])
-
-        bx = float(b[base])
-        by = float(b[base + 1])
-        bc = float(b[base + 2])
-
-        # Si alguno está muy ocluido/no confiable, ignorar.
+        ax, ay, ac = float(a[base]), float(a[base + 1]), float(a[base + 2])
+        bx, by, bc = float(b[base]), float(b[base + 1]), float(b[base + 2])
         if ac < 0.2 or bc < 0.2:
             continue
-
         d = math.hypot(ax - bx, ay - by)
         diffs.append((d, joint_idx))
 
     if not diffs:
         return []
-
     diffs.sort(key=lambda x: x[0], reverse=True)
     max_diff = diffs[0][0]
-
     if max_diff <= 1e-6:
         return []
-
     threshold = max(1e-6, max_diff * 0.05)
-
     return [joint_idx for d, joint_idx in diffs[:top_k] if d >= threshold]
 
 
@@ -262,9 +342,13 @@ def comparar_secuencias_con_dtw(
     if len(real_f_alumno) != len(sec_alumno):
         raise ValueError("frame_idxs_alumno debe tener un índice por cada frame de la secuencia alumno.")
 
+    # Proyectar secuencias crudas al espacio invariante canónico (46 dims)
+    norm_maestro = [_normalizar_frame_para_dtw(f) for f in sec_maestro]
+    norm_alumno = [_normalizar_frame_para_dtw(f) for f in sec_alumno]
+
     dtw_distance, warp_path = _dtw_distance_and_path(
-        sec_maestro,
-        sec_alumno,
+        norm_maestro,
+        norm_alumno,
         window=window,
     )
 
@@ -282,14 +366,16 @@ def comparar_secuencias_con_dtw(
     articulaciones_criticas_globales: List[int] = []
 
     for i, j in warp_path:
-        kp_maestro = sec_maestro[i]
-        kp_alumno = sec_alumno[j]
+        kp_maestro_raw = sec_maestro[i]
+        kp_alumno_raw = sec_alumno[j]
+        kp_maestro_norm = norm_maestro[i]
+        kp_alumno_norm = norm_alumno[j]
 
-        distancia_local = _distancia_local(kp_maestro, kp_alumno)
-        similitud = _similitud_frame(kp_maestro, kp_alumno)
+        distancia_local = _distancia_local(kp_maestro_norm, kp_alumno_norm)
+        similitud = _similitud_frame(kp_maestro_raw, kp_alumno_raw, dist_local=distancia_local)
         artes = detectar_articulaciones_criticas(
-            kp_maestro,
-            kp_alumno,
+            kp_maestro_raw,
+            kp_alumno_raw,
             top_k=top_k_articulaciones,
         )
 
@@ -310,7 +396,10 @@ def comparar_secuencias_con_dtw(
             }
         )
 
-        if similitud < peor_sim:
+        # Seleccionar como fotograma crítico el punto de menor similitud con articulaciones válidas
+        # (evitando seleccionar fotogramas vacíos con similitud 0.0 a menos que sea la única opción)
+        es_candidato_valido = (similitud > 0.0) or (peor_sim == 2.0)
+        if es_candidato_valido and similitud < peor_sim:
             peor_sim = similitud
             seq_maestro_critico = int(i)
             seq_alumno_critico = int(j)

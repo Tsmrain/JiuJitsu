@@ -107,3 +107,32 @@ def test_limpiar_candidatos_preserva_pareja_jiujitsu_en_guardia():
     limpios = _limpiar_candidatos_bboxes([atleta_arriba, atleta_abajo], 1080, 720)
     assert len(limpios) == 2
     assert [c["idx"] for c in limpios] == [0, 1]
+
+
+def test_limpiar_candidatos_elimina_reflejo_espejo_diminuto():
+    # Atleta principal en primer plano: área 400x600 = 240,000 px^2
+    atleta_principal = {
+        "idx": 0,
+        "pose": np.zeros((17, 3)),
+        "bbox_raw": [100.0, 100.0, 500.0, 700.0],
+        "confianza": 0.95,
+        "keypoints_validos": 16,
+        "center": np.array([300.0, 400.0]),
+        "head": np.array([300.0, 150.0]),
+        "pelvis": np.array([300.0, 450.0]),
+    }
+    # Reflejo en espejo del fondo (Instructor #2): área 50x70 = 3,500 px^2 (< 10% del área principal)
+    reflejo_espejo = {
+        "idx": 2,
+        "pose": np.zeros((17, 3)),
+        "bbox_raw": [800.0, 50.0, 850.0, 120.0],
+        "confianza": 0.65,
+        "keypoints_validos": 8,
+        "center": np.array([825.0, 85.0]),
+        "head": np.array([825.0, 60.0]),
+        "pelvis": np.array([825.0, 100.0]),
+    }
+
+    limpios = _limpiar_candidatos_bboxes([atleta_principal, reflejo_espejo], 1920, 1080)
+    assert len(limpios) == 1
+    assert limpios[0]["idx"] == 0

@@ -278,6 +278,28 @@ class YOLOPoseAdapter:
                     secuencia_kpts.append([0.0] * 133)
                     continue
 
+                # Filtrar reflejos de espejos o figuras distantes diminutas
+                # Si una caja delimitadora es menor al 10% del área de la caja mayor, se descarta
+                if len(candidatos) > 1:
+                    areas = []
+                    for c in candidatos:
+                        mask = (c[:, 2] > 0.3) & (c[:, 0] > 0)
+                        pts = c[mask, :2]
+                        if len(pts) >= 2:
+                            w_box = float(pts[:, 0].max() - pts[:, 0].min())
+                            h_box = float(pts[:, 1].max() - pts[:, 1].min())
+                            areas.append(w_box * h_box)
+                        else:
+                            areas.append(0.0)
+                    max_area = max(areas) if areas else 0.0
+                    if max_area > 0.0:
+                        sin_reflejos = [
+                            c for c, a in zip(candidatos, areas)
+                            if a >= 0.10 * max_area
+                        ]
+                        if sin_reflejos:
+                            candidatos = sin_reflejos
+
                 assigned_trackers = set()
                 if not personas_rastreadas:
                     candidatos.sort(key=lambda p: float(p[p[:, 2] > 0.3, 1].mean()), reverse=True)

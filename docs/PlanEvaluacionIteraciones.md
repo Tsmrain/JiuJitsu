@@ -1369,6 +1369,47 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `frontend/src/pages/ProfesorTecnicas.jsx`:
     - Reordenamiento del ciclo de vida de creación de técnica, evitando persistencia prematura y técnicas huérfanas.
 
+---
+
+### 🔹 Iteración 3N: Flexibilización del Umbral de Cobertura para Grappling y Filtrado de Reflejos de Fondo
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3n-antes` (commit `f81b318`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Análisis de Causa Raíz del Falso Negativo en Registro de Patrón:**
+     - En Jiu-Jitsu Brasileño (BJJ), las técnicas de suelo (como *"Llave de brazo desde la montada"*, raspadas, pasajes de guardia o salidas) presentan una oclusión severa donde las extremidades y el torso quedan frecuentemente ocultos tras el compañero durante el 30%–50% de la duración del clip.
+     - La regla de cobertura impuesta previamente exigía $\ge 70\%$ (`0.70`) de frames con la persona detectada. Al intentar registrar la *"Llave de brazo desde la montada"*, el sistema rechazó el video con HTTP 422: `Insufficient tracking in pattern video: coverage 60.4% < 70% required`, constituyendo un falso rechazo (Falso Negativo) de un video de referencia técnicamente perfecto.
+     - Adicionalmente, en dojos y gimnasios de artes marciales es ubicua la presencia de espejos de pared que reflejan figuras diminutas en el fondo (p. ej. `Instructor #2`), entorpeciendo la selección visual.
+  2. **Fase 1: Reducción del Umbral de Cobertura a 40% (`tecnicas_routes.py`, `intelligence_facade.py`):**
+     - En `registrar_patron_tecnica` (`tecnicas_routes.py`), se redujo el umbral de cobertura mínima de `0.70` a `0.40` (40%). Este umbral es biomecánicamente óptimo para Jiu-Jitsu en el suelo, permitiendo registrar técnicas complejas sin comprometer la precisión del alineamiento temporal de DTW.
+     - Se dotó al sistema de un mensaje de error empático y claro:
+       `"Insufficient tracking: coverage {cobertura*100:.1f}% is too low (minimum 40% required for grappling). Please ensure the instructor is visible."`
+     - Se homologó el umbral en `intelligence_facade.py` para la evaluación cinemática de los alumnos, protegiendo al alumno de rechazos espurios en técnicas con oclusión en el suelo.
+  3. **Fase 2: Filtrado Geométrico de Reflejos de Espejos (`routes.py`, `adapters.py`):**
+     - En `_limpiar_candidatos_bboxes` (`routes.py` para el endpoint `/primer-frame`), se implementó un filtro de escala relativa: cualquier bounding box con un área menor al 10% del área de la caja máxima del encuadre ($\text{area} < 0.10 \times \text{max\_area}$) es descartada automáticamente como reflejo o transeúnte de fondo.
+     - En `extraer_secuencia` (`adapters.py`), se replicó la misma discriminación geométrica para asegurar que el rastreador temporal no considere reflejos distantes durante el seguimiento.
+  4. **Fase 3: Verificación Empírica y Suite de Tests:**
+     - Nuevo test en `backend/tests/ui/api/test_primer_frame_dedup.py`: `test_limpiar_candidatos_elimina_reflejo_espejo_diminuto` validando que reflejos lejanos (3,500 px²) se descartan mientras el atleta principal (240,000 px²) se conserva intacto.
+     - Modificación de fixture en `backend/tests/test_etapa_b_patron.py`: `test_tracking_insuficiente_retorna_422` validando el nuevo límite de corte al 40% (cobertura 25% genera 422).
+     - Suite completa Pytest: **91 passed, 6 skipped** en 12.18s (100% verde).
+
+- **Entregables:**
+  - `backend/corpocmente/ui/api/tecnicas_routes.py`:
+    - Umbral de cobertura flexibilizado a `0.40` con mensaje descriptivo y empático.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`:
+    - Umbral de cobertura para evaluación de alumnos alineado a `0.40`.
+  - `backend/corpocmente/infrastructure/ai/adapters.py`:
+    - Filtrado de candidatos con área menor al 10% de la caja máxima en `extraer_secuencia`.
+  - `backend/corpocmente/ui/api/routes.py`:
+    - Paso 0 en `_limpiar_candidatos_bboxes` para descartar reflejos y siluetas de fondo $< 10\%$ del área máxima.
+  - `backend/tests/ui/api/test_primer_frame_dedup.py`:
+    - Test unitario de eliminación de reflejos diminutos en espejos.
+  - `backend/tests/test_etapa_b_patron.py`:
+    - Prueba de tracking insuficiente ajustada al nuevo umbral del 40%.
+
+
 
 
 

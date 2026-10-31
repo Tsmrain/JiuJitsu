@@ -97,19 +97,19 @@ def test_patron_inexistente_get_retorna_404():
 
 
 def test_tracking_insuficiente_retorna_422():
-    """Si la cobertura del tracking es < 70%, debe retornar 422 Unprocessable Entity."""
+    """Si la cobertura del tracking es < 40%, debe retornar 422 Unprocessable Entity."""
     prof_token = make_token(role="profesor")
     res_t = client.get("/api/v1/tecnicas")
     tecnicas = res_t.json() if res_t.status_code == 200 else []
     tecnica_id = tecnicas[0]["id"] if tecnicas else "30a4afe4-23cc-4479-9f14-4f6d867de7dd"
 
-    # Mockear YOLO para retornar cobertura baja
+    # Mockear YOLO para retornar cobertura baja (< 40%)
     with patch("corpocmente.infrastructure.ai.adapters.YOLOPoseAdapter.extraer_secuencia") as mock_ext:
         mock_ext.return_value = {
             "secuencia_kpts": [[0.0] * 133],
             "total_frames": 100,
-            "frames_con_persona": 40,
-            "cobertura": 0.40
+            "frames_con_persona": 25,
+            "cobertura": 0.25
         }
         res = client.post(
             f"/api/v1/tecnicas/{tecnica_id}/patron",

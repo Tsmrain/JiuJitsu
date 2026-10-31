@@ -77,8 +77,8 @@ class IntelligenceAnalysisFacade:
                 cobertura = ext_res.get("cobertura", 0.0)
                 total_frames = ext_res.get("total_frames", 0)
                 if isinstance(total_frames, (int, float)) and isinstance(cobertura, (int, float)):
-                    if total_frames == 0 or cobertura < 0.70:
-                        raise ValueError(f"Tracking insuficiente en el video del alumno: cobertura {cobertura*100:.1f}% < 70%.")
+                    if total_frames == 0 or cobertura < 0.40:
+                        raise ValueError(f"Tracking insuficiente en el video del alumno: cobertura {cobertura*100:.1f}% < 40%.")
 
         esqueletos_frames = None
         if secuencia_alumno is None:

@@ -335,7 +335,7 @@ async def registrar_patron_tecnica(
     Registra el patrón biomecánico de una técnica a partir del video del profesor.
     Requiere rol profesor o admin (alumno recibe 403).
     Sigue el flujo de 5 pasos verificables con gestión de fallos parciales:
-      1. Extraer y validar secuencia (cobertura >= 70%).
+      1. Extraer y validar secuencia (cobertura >= 40%).
       2. Insertar nuevo patrón en Qdrant (133 dims).
       3. Verificar recuperación completa y ordenada.
       4. Activar patrón en PostgreSQL (fuente de verdad).
@@ -432,12 +432,12 @@ async def registrar_patron_tecnica(
 
     cobertura = ext_res.get("cobertura", 0.0)
     total_frames = ext_res.get("total_frames", 0)
-    if total_frames == 0 or cobertura < 0.70:
+    if total_frames == 0 or cobertura < 0.40:
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=False, error="Tracking insuficiente")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Insufficient tracking in pattern video: coverage {cobertura*100:.1f}% < 70% required."
+            detail=f"Insufficient tracking: coverage {cobertura*100:.1f}% is too low (minimum 40% required for grappling). Please ensure the instructor is visible."
         )
 
     secuencia_kpts = ext_res["secuencia_kpts"]

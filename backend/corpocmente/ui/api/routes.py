@@ -1300,6 +1300,22 @@ def _limpiar_candidatos_bboxes(candidates: list, w_img: int, h_img: int) -> list
     if len(candidates) <= 1:
         return candidates
 
+    # Paso 0: Filtrar reflejos (espejos) y figuras diminutas en el fondo
+    # Si una caja delimitadora tiene un área menor al 10% de la caja más grande del frame, descartarla
+    areas = []
+    for c in candidates:
+        min_x, min_y, max_x, max_y = c["bbox_raw"]
+        area = max(0.0, max_x - min_x) * max(0.0, max_y - min_y)
+        areas.append(area)
+    max_area = max(areas) if areas else 0.0
+    if max_area > 0.0:
+        sin_reflejos = [c for c, a in zip(candidates, areas) if a >= 0.10 * max_area]
+        if sin_reflejos:
+            candidates = sin_reflejos
+
+    if len(candidates) <= 1:
+        return candidates
+
     # Paso 1: Si hay >= 3 candidatos, detectar y eliminar quimeras
     if len(candidates) >= 3:
         sin_quimeras = []

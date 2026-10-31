@@ -132,24 +132,62 @@ def normalizar(kpts_flat: List[float]) -> Dict[str, np.ndarray]:
 def similitud_esqueletos(
     kpts_a: List[float],
     kpts_b: List[float],
-    w_pos: float = 0.55,
-    w_ang: float = 0.45,
+    w_pos: float = 0.30,
+    w_ang: float = 0.70,
 ) -> Dict[str, object]:
-    """Similitud combinada entre dos esqueletos crudos, ignorando articulaciones ocluidas."""
+    """
+    Similitud biomecánica combinada entre dos esqueletos COCO.
+    Pondera 70% los ángulos articulares (invariantes a escala y distancia de cámara)
+    y 30% las posiciones normalizadas alineadas al torso.
+    """
+    if kpts_a == kpts_b or np.allclose(kpts_a, kpts_b):
+        na = normalizar(kpts_a)
+        return {
+            "score": 100.0,
+            "sim_pos": 1.0,
+            "sim_ang": 1.0,
+            "angulos_a": {name: None if np.isnan(v) else round(float(v), 2)
+                          for (name, *_), v in zip(ANGLE_TRIPLETS, na["angulos"])},
+            "angulos_b": {name: None if np.isnan(v) else round(float(v), 2)
+                          for (name, *_), v in zip(ANGLE_TRIPLETS, na["angulos"])},
+        }
+
+    raw_a = _extract_xy(kpts_a)
+    raw_b = _extract_xy(kpts_b)
     na, nb = normalizar(kpts_a), normalizar(kpts_b)
 
-    va, vb = na["posiciones"], nb["posiciones"]
-    sim_pos = float(np.dot(va, vb) / (np.linalg.norm(va) * np.linalg.norm(vb) + 1e-9))
-    sim_pos = max(0.0, min(1.0, sim_pos))
+    # 1. Comparar posiciones canónicas de articulaciones detectadas en AMBOS esqueletos
+    valid_a = (raw_a[:, 0] > 0) | (raw_a[:, 1] > 0)
+    valid_b = (raw_b[:, 0] > 0) | (raw_b[:, 1] > 0)
+    common = valid_a & valid_b
 
+    if np.count_nonzero(common) >= 3:
+        pa = na["posiciones"].reshape(17, 2)[common].flatten()
+        pb = nb["posiciones"].reshape(17, 2)[common].flatten()
+        norm_a, norm_b = float(np.linalg.norm(pa)), float(np.linalg.norm(pb))
+        if norm_a > 1e-6 and norm_b > 1e-6:
+            sim_pos = float(np.dot(pa, pb) / (norm_a * norm_b))
+            sim_pos = max(0.0, min(1.0, sim_pos))
+        else:
+            sim_pos = 0.5
+    else:
+        va, vb = na["posiciones"], nb["posiciones"]
+        norm_va, norm_vb = float(np.linalg.norm(va)), float(np.linalg.norm(vb))
+        if norm_va > 1e-6 and norm_vb > 1e-6:
+            sim_pos = max(0.0, min(1.0, float(np.dot(va, vb) / (norm_va * norm_vb))))
+        else:
+            sim_pos = 0.5
+
+    # 2. Comparar ángulos articulares (invariantes a perspectiva/distancia)
     ang_a, ang_b = na["angulos"], nb["angulos"]
     valid_angles = ~np.isnan(ang_a) & ~np.isnan(ang_b)
     if np.any(valid_angles):
         diffs = np.abs(ang_a[valid_angles] - ang_b[valid_angles])
         mean_diff = float(np.mean(diffs))
-        sim_ang = max(0.0, 1.0 - mean_diff / 90.0)
+        # Escala biomecánica tolerante a ángulo de grabación (+-15-20° de perspectiva)
+        sim_ang = max(0.0, 1.0 - mean_diff / 120.0)
     else:
-        sim_ang = 0.5
+        sim_ang = sim_pos
 
     score = (w_pos * sim_pos + w_ang * sim_ang) * 100.0
 

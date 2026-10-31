@@ -1322,6 +1322,54 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `backend/tests/test_etapa_b_patron.py`:
     - 3 nuevos tests para HTTP 422, HTTP 409 y sesión con `persona_idx_inicial`.
 
+---
+
+### 🔹 Iteración 3M: Reparación del Dibujo de Esqueleto, Flexibilidad Biomecánica Invariante a Cámara y Ciclo de Vida sin Técnicas Fantasma
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3m-antes` (commit `a2970fb`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Análisis de Causa Raíz de los 3 Fallos:**
+     - **Intercambio de Cuerpos en Tracking y Dibujo de Esqueleto:** En `extraer_secuencia` (`adapters.py`), al ocurrir oclusiones parciales durante el combate en el suelo (Jiu-Jitsu), la distancia euclidiana simple ($< 0.25$) provocaba que el rastreador saltara sobre el contrincante si el atleta elegido quedaba tapado por un solo frame. Una vez que saltaba al rival, nunca volvía al atleta original.
+     - **Rigidez Espacial en DTW:** Al comparar las poses, las coordenadas absolutas en pantalla castigaban severamente las diferencias de distancia y ángulo de cámara. Si el profesor grababa desde un ángulo y el alumno desde otro, la similitud caía injustamente a $< 20\%$.
+     - **Técnicas Fantasma en la BD:** El formulario de creación de técnicas (`ProfesorTecnicas.jsx`) enviaba un `POST /api/v1/tecnicas` de inmediato antes de seleccionar la persona o subir el video. Si el usuario cancelaba en la ventana de selección o cerraba la ventana, la técnica quedaba huérfana en la base de datos sin video ni patrón.
+  2. **Fase 1: Rastreo Multiatleta Competitivo y Dibujo Estricto de Esqueleto (`adapters.py`, `intelligence_facade.py`):**
+     - En `extraer_frame_y_dibujar_error`, si se proporcionan `keypoints133` válidos (provenientes del análisis cinemático DTW), **NO se vuelve a ejecutar YOLO**. Se grafican directamente esos keypoints sobre el fotograma con sus articulaciones críticas y etiquetas. Si se requiere fallback, se respeta `persona_idx`.
+     - En `extraer_secuencia`, se redujo el umbral a `conf=0.10` para capturar poses enredadas y se implementó un **rastreador multi-atleta por asignación competitiva (cost matrix matching)**. Cada candidato detectado se asigna al atleta más cercano de manera exclusiva; si el atleta objetivo se ocluye temporalmente, el rastreador NO salta sobre el rival porque el rival ya está asignado a su propio rastreador.
+     - Verificación empírica en `Alumno.mp4`: Persona 0 (abajo, kimono negro) y Persona 1 (arriba, kimono blanco) ahora se siguen con precisión absoluta a lo largo de los 276 frames con una diferencia media de $672.12\text{px}$ entre sus trayectorias.
+     - En el fotograma crítico anotado, la diferencia entre seleccionar Persona 0 y Persona 1 es de **391,422 píxeles**, verificando visual y numéricamente que el esqueleto y los errores se dibujan en la persona correcta.
+  3. **Fase 2: Flexibilidad Biomecánica Invariante a Cámara (`dtw_comparator.py`, `pose_normalizer.py`):**
+     - En `pose_normalizer.py`, se actualizó `similitud_esqueletos` para priorizar los **ángulos articulares invariantes a la cámara** (codos, rodillas, hombros, caderas) con un peso del $70\%$ (`w_ang = 0.70`) frente al $30\%$ de posición canónica (`w_pos = 0.30`).
+     - Al comparar posiciones, solo se evalúan articulaciones detectadas en ambos esqueletos (`common = valid_a & valid_b`), evitando que articulaciones ocluidas castiguen la similitud a cero.
+     - La escala angular ahora es biomecánicamente tolerante a desviaciones de perspectiva ($\pm 15^\circ - 20^\circ$).
+     - En `dtw_comparator.py`, `_distancia_local` compara directamente los vectores normalizados canónicos (`pose_normalizer.normalizar()["vector"]`).
+  4. **Fase 3: Ciclo de Vida Limpio y Cero Técnicas Fantasma (`ProfesorTecnicas.jsx`):**
+     - Al pulsar "Save Technique", el frontend NO persiste la técnica en PostgreSQL de forma prematura.
+     - Primero procesa el video en `/api/v1/evaluaciones/primer-frame`, guarda el estado temporal en memoria y despliega el selector de personas para identificar al instructor.
+     - Solo al hacer clic en "Confirm Selection & Create Pattern", se crea la técnica en PostgreSQL (`POST /api/v1/tecnicas`), se confirma la persona en la sesión y se guarda el patrón biomecánico en Qdrant.
+     - Si el proceso se cancela o se cierra la ventana, **ninguna técnica huérfana se guarda en la base de datos**.
+     - En caso de fallo durante el guardado de patrón, se ejecuta rollback automático con `DELETE /api/v1/tecnicas/{id}`.
+  5. **Pruebas de Fuego y Verificación E2E:**
+     - Suite completa Pytest: **90 passed, 6 skipped** en 12.85s (100% verde).
+     - Validación E2E (`04_e2e_vlm_evaluacion.py`): tiempo de respuesta **21.56s** ($< 30\text{s}$), similitud **60.85%**, timestamp crítico **3.24s**, feedback local no vacío.
+     - Validación E2E de separación de personas: `diff = 391,422 pixels` entre los fotogramas anotados de Persona 0 y Persona 1.
+
+- **Entregables:**
+  - `backend/corpocmente/infrastructure/ai/adapters.py`:
+    - Rastreador multi-atleta por asignación competitiva en `extraer_secuencia`.
+    - Garantía estricta de no re-ejecución de YOLO en `extraer_frame_y_dibujar_error` cuando `keypoints133` es provisto.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`:
+    - Inyección de `persona_idx` y soporte robusto de fallbacks.
+  - `backend/corpocmente/domain/biomechanics/dtw_comparator.py`:
+    - `_distancia_local` basada en vectores canónicos normalizados de 46 dimensiones.
+  - `backend/corpocmente/domain/biomechanics/pose_normalizer.py`:
+    - `similitud_esqueletos` con 70% peso angular invariante a la cámara y enmascaramiento de articulaciones ocluidas.
+  - `frontend/src/pages/ProfesorTecnicas.jsx`:
+    - Reordenamiento del ciclo de vida de creación de técnica, evitando persistencia prematura y técnicas huérfanas.
+
+
 
 
 

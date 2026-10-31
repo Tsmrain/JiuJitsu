@@ -140,18 +140,32 @@ class IntelligenceAnalysisFacade:
                     output_path=out_frame_path,
                     clean_output_path=out_clean_path,
                     tecnica_nombre=tecnica_nombre,
+                    persona_idx=persona_idx,
                 )
                 if os.path.isfile(out_clean_path):
                     frame_limpio = out_clean_path
             except TypeError:
-                frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
-                    video_path=video_path,
-                    frame_idx=frame_alumno_critico,
-                    keypoints133=kpts_critico,
-                    articulaciones_criticas=arts_criticas,
-                    output_path=out_frame_path,
-                    tecnica_nombre=tecnica_nombre,
-                )
+                try:
+                    frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
+                        video_path=video_path,
+                        frame_idx=frame_alumno_critico,
+                        keypoints133=kpts_critico,
+                        articulaciones_criticas=arts_criticas,
+                        output_path=out_frame_path,
+                        clean_output_path=out_clean_path,
+                        tecnica_nombre=tecnica_nombre,
+                    )
+                    if os.path.isfile(out_clean_path):
+                        frame_limpio = out_clean_path
+                except TypeError:
+                    frame_resaltado = self.yolo.extraer_frame_y_dibujar_error(
+                        video_path=video_path,
+                        frame_idx=frame_alumno_critico,
+                        keypoints133=kpts_critico,
+                        articulaciones_criticas=arts_criticas,
+                        output_path=out_frame_path,
+                        tecnica_nombre=tecnica_nombre,
+                    )
         elif hasattr(self.yolo, "dibujar_error_en_frame"):
             frame_resaltado = self.yolo.dibujar_error_en_frame(
                 out_frame_path,

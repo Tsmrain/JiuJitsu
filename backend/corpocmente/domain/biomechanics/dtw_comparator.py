@@ -36,13 +36,13 @@ def _limpiar_secuencia(secuencia: List[List[float]]) -> List[List[float]]:
 
 
 def _distancia_local(a: List[float], b: List[float]) -> float:
-    av = np.asarray(a, dtype=np.float32)
-    bv = np.asarray(b, dtype=np.float32)
+    vec_a = normalizar(a)["vector"] if len(a) >= 51 else np.asarray(a, dtype=np.float32)
+    vec_b = normalizar(b)["vector"] if len(b) >= 51 else np.asarray(b, dtype=np.float32)
 
-    if av.shape != bv.shape:
-        raise ValueError(f"Dimensiones incompatibles en DTW local: {av.shape} vs {bv.shape}")
+    if vec_a.shape != vec_b.shape:
+        raise ValueError(f"Dimensiones incompatibles en DTW local: {vec_a.shape} vs {vec_b.shape}")
 
-    return float(np.linalg.norm(av - bv))
+    return float(np.linalg.norm(vec_a - vec_b))
 
 
 def _normalizar_frame_para_dtw(frame: List[float]) -> List[float]:
@@ -104,7 +104,7 @@ def _similitud_frame(
         ang_a, ang_b = av[34:], bv[34:]
         diffs = np.abs(ang_a - ang_b)
         sim_ang = max(0.0, 1.0 - float(np.mean(diffs)))
-        return float(0.55 * sim_pos + 0.45 * sim_ang)
+        return float(0.30 * sim_pos + 0.70 * sim_ang)
 
     # 3. Fallback para vectores sintéticos arbitrarios
     av = np.asarray(a, dtype=np.float32)

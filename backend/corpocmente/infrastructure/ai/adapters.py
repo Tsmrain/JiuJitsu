@@ -255,71 +255,74 @@ class YOLOPoseAdapter:
             log_ram_usage("pre_yolo_load")
             model = YOLO(_weights)
             log_ram_usage("post_yolo_load")
-            results = model.predict(source=video_path, stream=True, verbose=False, conf=0.3, device=_device)
+            results = model.predict(source=video_path, stream=True, verbose=False, conf=0.10, device=_device)
 
             secuencia_kpts = []
-            persona_anterior = None
+            personas_rastreadas = {}
             frames_con_persona = 0
             frames_evaluados = 0
-            frames_sin_deteccion = 0
+            target_idx = persona_idx_inicial if persona_idx_inicial is not None else 0
 
             for f_idx, r in enumerate(results):
                 frames_evaluados += 1
                 if r.keypoints is None or len(r.keypoints.data) == 0:
                     secuencia_kpts.append([0.0] * 133)
-                    frames_sin_deteccion += 1
                     continue
 
                 raw = r.keypoints.data.cpu().numpy()
                 candidatos = [
                     p for p in raw
-                    if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 8
+                    if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 4
                 ]
                 if not candidatos:
                     secuencia_kpts.append([0.0] * 133)
-                    frames_sin_deteccion += 1
                     continue
 
-                if persona_anterior is None:
-                    if persona_idx_inicial is not None:
-                        idx = min(persona_idx_inicial, len(candidatos) - 1)
-                    else:
-                        confianzas = [float(p[:, 2].mean()) for p in candidatos]
-                        idx = int(np.argmax(confianzas))
-                    persona_actual = candidatos[idx]
+                assigned_trackers = set()
+                if not personas_rastreadas:
+                    candidatos.sort(key=lambda p: float(p[p[:, 2] > 0.3, 1].mean()), reverse=True)
+                    for c_idx, c in enumerate(candidatos):
+                        personas_rastreadas[c_idx] = c
+                    assigned_trackers.update(personas_rastreadas.keys())
                 else:
-                    distancias = []
-                    for c in candidatos:
-                        mask = (c[:, 2] > 0.3) & (persona_anterior[:, 2] > 0.3) & (c[:, 0] > 0) & (persona_anterior[:, 0] > 0)
-                        if np.count_nonzero(mask) >= 5:
-                            dx = (c[mask, 0] - persona_anterior[mask, 0]) / w
-                            dy = (c[mask, 1] - persona_anterior[mask, 1]) / h
-                            d = float(np.mean(np.sqrt(dx**2 + dy**2)))
-                        else:
-                            c1 = c[c[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
-                            c0 = persona_anterior[persona_anterior[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
-                            d = float(np.linalg.norm(c1 - c0))
-                        distancias.append(d)
+                    cost_matrix = {}
+                    for t_idx, t_pose in personas_rastreadas.items():
+                        for c_idx, c in enumerate(candidatos):
+                            mask = (c[:, 2] > 0.3) & (t_pose[:, 2] > 0.3) & (c[:, 0] > 0) & (t_pose[:, 0] > 0)
+                            if np.count_nonzero(mask) >= 5:
+                                dx = (c[mask, 0] - t_pose[mask, 0]) / w
+                                dy = (c[mask, 1] - t_pose[mask, 1]) / h
+                                cost = float(np.mean(np.sqrt(dx**2 + dy**2)))
+                            else:
+                                c1 = c[c[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
+                                c0 = t_pose[t_pose[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
+                                cost = float(np.linalg.norm(c1 - c0))
+                            cost_matrix[(t_idx, c_idx)] = cost
 
-                    mejor_idx = int(np.argmin(distancias))
-                    if distancias[mejor_idx] > max_disp_norm:
-                        # Salto espacial excesivo (probable salto al fondo/espectador)
-                        secuencia_kpts.append([0.0] * 133)
-                        frames_sin_deteccion += 1
-                        if frames_sin_deteccion > 5:
-                            persona_anterior = None
-                        continue
+                    sorted_pairs = sorted(cost_matrix.items(), key=lambda item: item[1])
+                    assigned_cands = set()
+                    new_poses = {}
+                    for (t_idx, c_idx), cost in sorted_pairs:
+                        if t_idx in assigned_trackers or c_idx in assigned_cands:
+                            continue
+                        if cost <= max_disp_norm:
+                            assigned_trackers.add(t_idx)
+                            assigned_cands.add(c_idx)
+                            new_poses[t_idx] = candidatos[c_idx]
 
-                    persona_actual = candidatos[mejor_idx]
+                    for t_idx, c_pose in new_poses.items():
+                        personas_rastreadas[t_idx] = c_pose
 
-                persona_anterior = persona_actual
-                frames_con_persona += 1
-                frames_sin_deteccion = 0
-
-                kpts = persona_actual.flatten().tolist()
-                if len(kpts) < 133:
-                    kpts.extend([0.0] * (133 - len(kpts)))
-                secuencia_kpts.append(kpts[:133])
+                t_key = min(target_idx, len(personas_rastreadas) - 1)
+                if t_key in assigned_trackers:
+                    persona_actual = personas_rastreadas[t_key]
+                    frames_con_persona += 1
+                    kpts = persona_actual.flatten().tolist()
+                    if len(kpts) < 133:
+                        kpts.extend([0.0] * (133 - len(kpts)))
+                    secuencia_kpts.append(kpts[:133])
+                else:
+                    secuencia_kpts.append([0.0] * 133)
 
             total = max(1, frames_evaluados)
             cobertura = frames_con_persona / total
@@ -396,12 +399,20 @@ class YOLOPoseAdapter:
         articulaciones_criticas: List[int],
         output_path: str,
         clean_output_path: Optional[str] = None,
-        tecnica_nombre: str = ""
+        tecnica_nombre: str = "",
+        persona_idx: Optional[int] = None,
     ) -> str:
         """
         Extrae el fotograma exacto con mayor diferencia biomecánica del video del alumno
         y dibuja el esqueleto COCO con las articulaciones en error resaltadas visualmente.
         Si clean_output_path es provisto, guarda primero el fotograma limpio sin anotaciones.
+
+        REGLA ESTRICTA (Larman):
+        Si keypoints133 contiene datos válidos (>= 51 floats con algún valor > 0),
+        se usan directamente esos keypoints (los de la persona seleccionada).
+        NO se vuelve a ejecutar YOLO.
+        Solo si keypoints133 no fue provisto o es nulo/cero, se invoca YOLO como fallback,
+        usando persona_idx para seleccionar al atleta correcto.
         """
         import cv2
         import numpy as np
@@ -435,9 +446,11 @@ class YOLOPoseAdapter:
 
         h, w = frame.shape[:2]
 
-        # 2. Parsear keypoints si están disponibles
+        # 2. Parsear keypoints si están disponibles (NO re-ejecutar YOLO si vienen keypoints133)
         pts: dict[int, tuple[int, int, float]] = {}
-        if keypoints133 and len(keypoints133) >= 51:
+        has_kpts = keypoints133 is not None and len(keypoints133) >= 51 and any(v > 0.0 for v in keypoints133[:51])
+
+        if has_kpts:
             for i in range(17):
                 x = keypoints133[i * 3]
                 y = keypoints133[i * 3 + 1]
@@ -450,6 +463,30 @@ class YOLOPoseAdapter:
                 px = max(0, min(w - 1, px))
                 py = max(0, min(h - 1, py))
                 pts[i] = (px, py, conf)
+        elif os.path.exists(video_path) and frame is not None:
+            # Fallback excepcional solo si keypoints133 no fue provisto
+            try:
+                from ultralytics import YOLO
+                _candidates = [
+                    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "yolo26n-pose.pt"),
+                    os.path.join("storage", "models", "yolo26n-pose.pt"),
+                    "yolo26n-pose.pt",
+                ]
+                _weights = next((c for c in _candidates if os.path.exists(c)), "yolo26n-pose.pt")
+                model = YOLO(_weights)
+                results = model.predict(source=frame, conf=0.15, verbose=False)
+                if results and results[0].keypoints is not None and len(results[0].keypoints.data) > 0:
+                    raw = results[0].keypoints.data.cpu().numpy()
+                    cands = [p for p in raw if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 4]
+                    if cands:
+                        p_idx = persona_idx if (persona_idx is not None and 0 <= persona_idx < len(cands)) else 0
+                        chosen = cands[p_idx]
+                        for i in range(17):
+                            px = max(0, min(w - 1, int(chosen[i, 0])))
+                            py = max(0, min(h - 1, int(chosen[i, 1])))
+                            pts[i] = (px, py, float(chosen[i, 2]))
+            except Exception as e_yolo_fb:
+                logger.warning(f"Fallback YOLO en extraer_frame_y_dibujar_error falló: {e_yolo_fb}")
 
         # 3. Dibujar conexiones del esqueleto (huesos)
         for p1, p2 in COCO_SKELETON_PAIRS:

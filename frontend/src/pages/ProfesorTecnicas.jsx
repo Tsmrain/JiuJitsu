@@ -166,35 +166,9 @@ export default function ProfesorTecnicas({ user, onClose }) {
     }
     setSaving(true);
 
-    const url = editingId 
-      ? `http://localhost:8000/api/v1/tecnicas/${editingId}`
-      : `http://localhost:8000/api/v1/tecnicas`;
-    const method = editingId ? "PUT" : "POST";
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${user.token}`
-        },
-        body: JSON.stringify({
-          nombre: formData.nombre,
-          nivel_cinturon: formData.nivel_cinturon,
-          mensaje_profesor: formData.mensaje_profesor.trim(),
-        })
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Error saving technique.");
-      }
-
-      const savedTecnica = await res.json();
-      setEditingId(savedTecnica.id);
-      if (!editingId) fetchTecnicas();
-
-      if (selectedFile) {
+      if (!editingId) {
+        // Nueva técnica: primero procesar el video y obtener el primer frame
         const frameData = new FormData();
         frameData.append("video", selectedFile);
         const frameRes = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
@@ -204,24 +178,71 @@ export default function ProfesorTecnicas({ user, onClose }) {
         });
         if (!frameRes.ok) {
           const err = await frameRes.json().catch(() => ({}));
-          throw new Error(err.detail || "Technique created, but video could not be processed.");
+          throw new Error(err.detail || "Error processing video. Could not extract initial frame.");
         }
         const frame = await frameRes.json();
         setPersonaSelection({
-          tecnicaId: savedTecnica.id,
+          tecnicaId: null,
+          pendingTecnica: {
+            nombre: formData.nombre,
+            nivel_cinturon: formData.nivel_cinturon,
+            mensaje_profesor: formData.mensaje_profesor.trim(),
+          },
           sessionData: frame,
           selectedIdx: frame.personas?.length === 1 ? frame.personas[0].idx : null,
         });
         setPersonaSelectionError('');
         setShowModal(false);
+      } else {
+        // Editando técnica existente
+        if (selectedFile) {
+          const frameData = new FormData();
+          frameData.append("video", selectedFile);
+          const frameRes = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${user.token}` },
+            body: frameData
+          });
+          if (!frameRes.ok) {
+            const err = await frameRes.json().catch(() => ({}));
+            throw new Error(err.detail || "Error processing video.");
+          }
+          const frame = await frameRes.json();
+          setPersonaSelection({
+            tecnicaId: editingId,
+            pendingTecnica: {
+              nombre: formData.nombre,
+              nivel_cinturon: formData.nivel_cinturon,
+              mensaje_profesor: formData.mensaje_profesor.trim(),
+            },
+            sessionData: frame,
+            selectedIdx: frame.personas?.length === 1 ? frame.personas[0].idx : null,
+          });
+          setPersonaSelectionError('');
+          setShowModal(false);
+        } else {
+          // Solo actualizar datos de texto de la técnica existente
+          const res = await fetch(`http://localhost:8000/api/v1/tecnicas/${editingId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${user.token}`
+            },
+            body: JSON.stringify({
+              nombre: formData.nombre,
+              nivel_cinturon: formData.nivel_cinturon,
+              mensaje_profesor: formData.mensaje_profesor.trim(),
+            })
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || "Error updating technique.");
+          }
+          alert("Technique updated successfully.");
+          setShowModal(false);
+          fetchTecnicas();
+        }
       }
-
-      if (!selectedFile) {
-        alert("Technique updated successfully.");
-        setShowModal(false);
-      }
-      fetchTecnicas();
-
     } catch (err) {
       console.error(err);
       alert(err.message || "Connection error saving technique.");
@@ -234,8 +255,42 @@ export default function ProfesorTecnicas({ user, onClose }) {
     if (!personaSelection || personaSelection.selectedIdx === null) return;
     setConfirmingPersona(true);
     setPersonaSelectionError('');
+    let createdTecnicaId = null;
+
     try {
-      const { tecnicaId, sessionData, selectedIdx } = personaSelection;
+      const { tecnicaId, pendingTecnica, sessionData, selectedIdx } = personaSelection;
+      let targetTecnicaId = tecnicaId;
+
+      // 1. Si es nueva técnica, crear la entidad en la base de datos ahora
+      if (!targetTecnicaId && pendingTecnica) {
+        const createRes = await fetch("http://localhost:8000/api/v1/tecnicas", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${user.token}`
+          },
+          body: JSON.stringify(pendingTecnica)
+        });
+        if (!createRes.ok) {
+          const err = await createRes.json().catch(() => ({}));
+          throw new Error(err.detail || "Error creating technique in database.");
+        }
+        const savedTecnica = await createRes.json();
+        targetTecnicaId = savedTecnica.id;
+        createdTecnicaId = savedTecnica.id;
+      } else if (targetTecnicaId && pendingTecnica) {
+        // Si estamos editando, actualizar campos
+        await fetch(`http://localhost:8000/api/v1/tecnicas/${targetTecnicaId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${user.token}`
+          },
+          body: JSON.stringify(pendingTecnica)
+        });
+      }
+
+      // 2. Confirmar persona seleccionada en la sesión
       const selectionRes = await fetch(`http://localhost:8000/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' },
@@ -246,10 +301,11 @@ export default function ProfesorTecnicas({ user, onClose }) {
         throw new Error(err.detail || 'Could not confirm selected person.');
       }
 
+      // 3. Registrar el patrón biomecánico
       const patronForm = new FormData();
       patronForm.append('session_id', sessionData.session_id);
       patronForm.append('persona_idx', String(selectedIdx));
-      const patronRes = await fetch(`http://localhost:8000/api/v1/tecnicas/${tecnicaId}/patron`, {
+      const patronRes = await fetch(`http://localhost:8000/api/v1/tecnicas/${targetTecnicaId}/patron`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
         body: patronForm,
@@ -263,6 +319,15 @@ export default function ProfesorTecnicas({ user, onClose }) {
       setPersonaSelection(null);
       fetchTecnicas();
     } catch (err) {
+      // Si falló el registro del patrón para una técnica recién creada, eliminarla como rollback
+      if (createdTecnicaId) {
+        try {
+          await fetch(`http://localhost:8000/api/v1/tecnicas/${createdTecnicaId}`, {
+            method: 'DELETE',
+            headers: { "Authorization": `Bearer ${user.token}` }
+          });
+        } catch (_) {}
+      }
       setPersonaSelectionError(err.message || 'Error registering pattern.');
     } finally {
       setConfirmingPersona(false);
@@ -675,14 +740,12 @@ export default function ProfesorTecnicas({ user, onClose }) {
                 type="button" 
                 className="btn-secondary" 
                 onClick={() => {
-                  if (confirm("Warning: If you close without selecting the instructor, this technique will have NO reference pattern and students will not be able to evaluate against it. Are you sure?")) {
-                    setPersonaSelection(null);
-                    fetchTecnicas();
-                  }
+                  setPersonaSelection(null);
+                  fetchTecnicas();
                 }} 
                 disabled={confirmingPersona}
               >
-                Close
+                Cancel
               </button>
               <button 
                 type="button" 

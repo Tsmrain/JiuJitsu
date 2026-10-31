@@ -114,7 +114,8 @@ def test_tracking_insuficiente_retorna_422():
         res = client.post(
             f"/api/v1/tecnicas/{tecnica_id}/patron",
             headers={"Authorization": f"Bearer {prof_token}"},
-            files={"video": ("test.mp4", b"dummy video content", "video/mp4")}
+            files={"video": ("test.mp4", b"dummy video content", "video/mp4")},
+            data={"persona_idx": 0}
         )
         assert res.status_code == 422
         detail = res.json()["detail"]
@@ -153,7 +154,8 @@ def test_fallo_postgres_limpia_patron_huerfano_en_qdrant():
                 res = client.post(
                     f"/api/v1/tecnicas/{tecnica_id}/patron",
                     headers={"Authorization": f"Bearer {prof_token}"},
-                    files={"video": ("test.mp4", b"dummy", "video/mp4")}
+                    files={"video": ("test.mp4", b"dummy", "video/mp4")},
+                    data={"persona_idx": 0}
                 )
                 assert res.status_code == 500
                 detail = res.json()["detail"]
@@ -198,7 +200,8 @@ def test_registro_y_reemplazo_patron_exitoso():
         res1 = client.post(
             f"/api/v1/tecnicas/{tecnica_id}/patron",
             headers={"Authorization": f"Bearer {prof_token}"},
-            files={"video": ("patron1.mp4", b"video1", "video/mp4")}
+            files={"video": ("patron1.mp4", b"video1", "video/mp4")},
+            data={"persona_idx": 0}
         )
         assert res1.status_code == 201
         data1 = res1.json()
@@ -219,7 +222,8 @@ def test_registro_y_reemplazo_patron_exitoso():
         res2 = client.post(
             f"/api/v1/tecnicas/{tecnica_id}/patron",
             headers={"Authorization": f"Bearer {prof_token}"},
-            files={"video": ("patron2.mp4", b"video2", "video/mp4")}
+            files={"video": ("patron2.mp4", b"video2", "video/mp4")},
+            data={"persona_idx": 0}
         )
         assert res2.status_code == 201
         data2 = res2.json()
@@ -271,8 +275,107 @@ def test_fallo_insercion_qdrant_mantiene_patron_anterior():
         res = client.post(
             f"/api/v1/tecnicas/{tecnica_id}/patron",
             headers={"Authorization": f"Bearer {prof_token}"},
-            files={"video": ("test.mp4", b"dummy", "video/mp4")}
+            files={"video": ("test.mp4", b"dummy", "video/mp4")},
+            data={"persona_idx": 0}
         )
         assert res.status_code == 500
         detail = res.json()["detail"]
         assert "Failed to insert pattern in Qdrant" in detail or "Fallo al insertar patrón en Qdrant" in detail
+
+
+def test_registro_patron_sin_persona_idx_retorna_422():
+    """Si no se envía persona_idx al subir un video directo, debe retornar 422 Unprocessable Entity."""
+    prof_token = make_token(role="profesor")
+    tecnica_id = str(uuid4())
+
+    with patch("corpocmente.infrastructure.persistence.postgrest_client.PostgrestClient.rpc", return_value=True):
+        res = client.post(
+            f"/api/v1/tecnicas/{tecnica_id}/patron",
+            headers={"Authorization": f"Bearer {prof_token}"},
+            files={"video": ("test.mp4", b"dummy video content", "video/mp4")}
+        )
+        assert res.status_code == 422
+        assert "persona_idx is required" in res.json()["detail"]
+
+
+def test_registro_patron_con_session_id_sin_persona_seleccionada_retorna_409(tmp_path):
+    """Si se pasa session_id pero aún no se confirmó persona_idx en la sesión, retorna 409 Conflict."""
+    from corpocmente.domain.services.session_manager import SessionStateManager
+    prof_token = make_token(role="profesor")
+    tecnica_id = str(uuid4())
+    session_id = str(uuid4())
+
+    fake_video = str(tmp_path / "vid.mp4")
+    with open(fake_video, "wb") as f:
+        f.write(b"fake")
+
+    SessionStateManager.crear_sesion(
+        session_id=session_id,
+        video_path=fake_video,
+        personas_detectadas=[{"idx": 0, "bbox": [0, 0, 10, 10], "confianza": 0.9, "keypoints_validos": 15}],
+        frame_idx=0
+    )
+
+    with patch("corpocmente.infrastructure.persistence.postgrest_client.PostgrestClient.rpc", return_value=True):
+        res = client.post(
+            f"/api/v1/tecnicas/{tecnica_id}/patron",
+            headers={"Authorization": f"Bearer {prof_token}"},
+            data={"session_id": session_id}
+        )
+        assert res.status_code == 409
+        assert "PERSONA_SELECTED" in res.json()["detail"]
+
+
+def test_registro_patron_con_session_id_exitoso(tmp_path):
+    """Registra patrón usando session_id con persona_idx previamente confirmada."""
+    from corpocmente.domain.services.session_manager import SessionStateManager
+    prof_token = make_token(role="profesor")
+    tecnica_id = str(uuid4())
+    session_id = str(uuid4())
+
+    fake_video = str(tmp_path / "vid2.mp4")
+    with open(fake_video, "wb") as f:
+        f.write(b"fake2")
+
+    SessionStateManager.crear_sesion(
+        session_id=session_id,
+        video_path=fake_video,
+        personas_detectadas=[
+            {"idx": 0, "bbox": [0, 0, 10, 10], "confianza": 0.9, "keypoints_validos": 15},
+            {"idx": 1, "bbox": [20, 20, 50, 50], "confianza": 0.85, "keypoints_validos": 14}
+        ],
+        frame_idx=0
+    )
+    # Profesor selecciona explícitamente a la persona 1
+    SessionStateManager.seleccionar_persona(session_id=session_id, persona_idx=1)
+
+    frames = [[1.2] * 133 for _ in range(8)]
+    with patch("corpocmente.infrastructure.ai.adapters.YOLOPoseAdapter.extraer_secuencia") as mock_ext, \
+         patch("corpocmente.infrastructure.persistence.postgrest_client.PostgrestClient.rpc") as mock_rpc:
+
+        def rpc_side_effect(fn_name, params):
+            if fn_name == "tecnica_exists":
+                return True
+            if fn_name == "admin_activar_patron_tecnica":
+                return [{"tecnica_id": tecnica_id, "patron_activo_id": str(uuid4()), "patron_anterior_id": None}]
+            if fn_name == "admin_save_video_referencia":
+                return True
+            return None
+
+        mock_rpc.side_effect = rpc_side_effect
+        mock_ext.return_value = {
+            "secuencia_kpts": frames,
+            "total_frames": 8,
+            "frames_con_persona": 8,
+            "cobertura": 1.0
+        }
+
+        res = client.post(
+            f"/api/v1/tecnicas/{tecnica_id}/patron",
+            headers={"Authorization": f"Bearer {prof_token}"},
+            data={"session_id": session_id, "persona_idx": 1}
+        )
+        assert res.status_code == 201
+        assert res.json()["total_frames"] == 8
+        # Verificar que a extraer_secuencia se le pasó persona_idx_inicial=1
+        mock_ext.assert_called_once_with(fake_video, persona_idx_inicial=1)

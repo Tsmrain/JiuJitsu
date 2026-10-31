@@ -387,6 +387,11 @@ async def registrar_patron_tecnica(
                 detail=f"Session is in state '{sesion.get('estado')}'. State 'PERSONA_SELECTED' is required."
             )
         target_persona_idx = sesion.get("persona_idx_seleccionada")
+        if target_persona_idx is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="persona_idx is required. Instructor must be selected in the session."
+            )
         if persona_idx is not None and persona_idx != target_persona_idx:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -400,10 +405,15 @@ async def registrar_patron_tecnica(
     elif video:
         if not video.filename.endswith(('.mp4', '.avi', '.mov', '.webm')):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported video format.")
+        if persona_idx is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="persona_idx is required to identify the instructor in the video."
+            )
+        target_persona_idx = persona_idx
         video_path = os.path.join(UPLOAD_DIR, f"patron_{uuid4()}_{video.filename}")
         with open(video_path, "wb") as buffer:
             shutil.copyfileobj(video.file, buffer)
-        target_persona_idx = persona_idx if persona_idx is not None else 0
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

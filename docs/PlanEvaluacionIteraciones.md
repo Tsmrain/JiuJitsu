@@ -1278,6 +1278,51 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `backend/tests/ui/api/test_primer_frame_dedup.py`:
     - Tests de IoU/IoMin, deduplicación directa, erradicación de quimeras y preservación de guardia en Jiu-Jitsu.
 
+---
+
+### 🔹 Iteración Transition-3K (Fase de Transición): Selección Obligatoria de Persona en el Flujo del Profesor y Blindaje 422
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3k-antes` (commit `644f91a`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Análisis de Causa Raíz (Riesgo de Inversión Biomecánica en Técnicas Multiatleta):**
+     - En el flujo de creación y registro de patrones biomecánicos del profesor (`ProfesorTecnicas.jsx` y `tecnicas_routes.py`), el backend permitía registrar un patrón sin especificar qué atleta del video era el instructor.
+     - Si `persona_idx` no se enviaba en un upload directo, el backend asumía ciegamente `target_persona_idx = 0`. En videos con sparring o demostración en pareja (ej. `Alumno.mp4`), el instructor podía ser `Candidate #1` (abajo en la guardia), resultando en que la técnica de referencia guardaba el movimiento del sparring/oponente en lugar del instructor, arruinando la comparación DTW de todos los alumnos futuros.
+  2. **Blindaje Backend y Protocolo Estricto de Registro (`tecnicas_routes.py`):**
+     - Se añadió validación obligatoria: si `persona_idx` es `None` tanto en uploads directos como en sesiones de extracción, el endpoint `POST /api/v1/tecnicas/{tecnica_id}/patron` rechaza inmediatamente la petición con `HTTP 422 Unprocessable Entity` y el mensaje `"persona_idx is required to identify the instructor in the video."`.
+     - Si se utiliza sesión (`session_id`), la sesión debe estar en estado `PERSONA_SELECTED` y tener `persona_idx_seleccionada` válido.
+     - `target_persona_idx` se envía explícitamente a `yolo.extraer_secuencia(video_path, persona_idx_inicial=target_persona_idx)` para inicializar el seguimiento en el centroide y bounding box de la persona seleccionada.
+  3. **Experiencia de Usuario e Identificación Visual (`ProfesorTecnicas.jsx`):**
+     - En el modal "New Technique", se añadió un aviso visual anticipando que al guardar se seleccionará la persona del instructor en el frame inicial.
+     - Al hacer clic en "Save Technique", el sistema procesa el video, extrae los candidatos del primer frame y abre el modal `<SelectorPersonaVideo>` con títulos y etiquetas específicas para el rol de instructor:
+       - Título: *"Identify Yourself (Instructor) in the Reference Video"*
+       - Etiquetas: *"Instructor"* y *"Instructor Selected"*.
+       - Subtítulo dinámico indicando si hay múltiples atletas y solicitando confirmar quién es el instructor.
+     - Botón de confirmación *"Confirm Selection & Create Pattern"*, deshabilitado si `selectedIdx === null`.
+     - Cuadro de advertencia al intentar cerrar sin seleccionar, previniendo dejar la técnica huérfana sin patrón biomecánico.
+  4. **Verificación Empírica y Suite de Tests:**
+     - 3 nuevos tests en `backend/tests/test_etapa_b_patron.py`:
+       - `test_registro_patron_sin_persona_idx_retorna_422`: rechazo estricto HTTP 422 cuando falta `persona_idx`.
+       - `test_registro_patron_con_session_id_sin_persona_seleccionada_retorna_409`: rechazo HTTP 409 cuando la sesión no ha completado la selección.
+       - `test_registro_patron_con_session_id_exitoso`: registro exitoso enviando `persona_idx=1` y validando que YOLO inicialice el tracking en el candidato 1.
+     - Suite completa Pytest: **90 passed, 6 skipped** en 12.79s (100% verde).
+     - Validación E2E del flujo del profesor con video de 1 persona (`profesor salida de Guardia Parandose.mp4`): 897 frames de patrón guardados en Qdrant (HTTP 201).
+     - Validación E2E del flujo del profesor con video de 2 personas (`Alumno.mp4`): selección manual de Candidate #1 (luchador inferior), 276 frames de patrón guardados en Qdrant para el luchador exacto.
+     - Prueba E2E de evaluación del alumno (`04_e2e_vlm_evaluacion.py`): tiempo total 22.56s ($< 30\text{s}$), estado `completado`, similitud válida con VLM local.
+
+- **Entregables:**
+  - `backend/corpocmente/ui/api/tecnicas_routes.py`:
+    - Validación y rechazo 422 de registros de patrón sin `persona_idx`.
+    - Paso garantizado de `target_persona_idx` a `extraer_secuencia`.
+  - `frontend/src/pages/ProfesorTecnicas.jsx`:
+    - Flujo interactivo obligatorio con `<SelectorPersonaVideo>` etiquetado para el instructor.
+    - Prevención de patrones huérfanos y advertencia de confirmación en cierre.
+  - `backend/tests/test_etapa_b_patron.py`:
+    - 3 nuevos tests para HTTP 422, HTTP 409 y sesión con `persona_idx_inicial`.
+
+
 
 
 

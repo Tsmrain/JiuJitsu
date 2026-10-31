@@ -628,6 +628,9 @@ export default function ProfesorTecnicas({ user, onClose }) {
                     playsInline 
                     style={{ width: '100%', maxHeight: '200px', borderRadius: '8px', backgroundColor: '#000' }} 
                   />
+                  <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.8rem', background: 'rgba(208,17,24,0.12)', borderLeft: '3px solid var(--brand-red)', borderRadius: '4px', fontSize: '0.8rem', color: '#ffc9c9', textAlign: 'left' }}>
+                    ℹ️ <strong>Next Step:</strong> Upon clicking "Save Technique", you will identify yourself (the Instructor) on the initial video frame to generate the reference biomechanical pattern.
+                  </div>
                 </div>
               )}
 
@@ -636,7 +639,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : "Save Technique"}
+                  {saving ? "Processing video & detecting instructor..." : "Save Technique"}
                 </button>
               </div>
             </form>
@@ -647,16 +650,20 @@ export default function ProfesorTecnicas({ user, onClose }) {
       {personaSelection && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="persona-selection-title">
           <div className="modal-content glass-panel" style={{ maxWidth: '760px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 id="persona-selection-title" style={{ marginTop: 0 }}>Select the person for the pattern</h3>
+            <h3 id="persona-selection-title" style={{ marginTop: 0, color: 'var(--brand-red)' }}>
+              Identify Yourself (Instructor) in the Reference Video
+            </h3>
             <p style={{ color: 'var(--text-secondary)' }}>
-              The technique has been created. Select who executes the movement to register their biomechanical pattern.
+              The technique has been created. Select which person is the <strong>Instructor</strong> executing the movement to extract and register their biomechanical reference pattern.
             </p>
             <SelectorPersonaVideo
               sessionData={personaSelection.sessionData}
               selectedPersonaIdx={personaSelection.selectedIdx}
               onSelect={(selectedIdx) => setPersonaSelection((current) => ({ ...current, selectedIdx }))}
-              candidateLabel="Person"
-              selectedLabel="Selected"
+              candidateLabel="Instructor"
+              selectedLabel="Instructor Selected"
+              heading="Select the Instructor executing the technique"
+              subtitle={personaSelection.sessionData.personas?.length > 1 ? "Detected multiple persons in the video. Click on the box representing the Instructor." : "Confirm that the detected person is the instructor."}
             />
             {personaSelectionError && (
               <div role="alert" style={{ marginTop: '1rem', padding: '.75rem', borderRadius: '8px', background: 'rgba(208,17,24,.2)', color: '#ff8787' }}>
@@ -664,11 +671,26 @@ export default function ProfesorTecnicas({ user, onClose }) {
               </div>
             )}
             <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn-secondary" onClick={() => setPersonaSelection(null)} disabled={confirmingPersona}>
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={() => {
+                  if (confirm("Warning: If you close without selecting the instructor, this technique will have NO reference pattern and students will not be able to evaluate against it. Are you sure?")) {
+                    setPersonaSelection(null);
+                    fetchTecnicas();
+                  }
+                }} 
+                disabled={confirmingPersona}
+              >
                 Close
               </button>
-              <button type="button" className="btn-primary" onClick={handleConfirmPersona} disabled={personaSelection.selectedIdx === null || confirmingPersona}>
-                {confirmingPersona ? 'Registering pattern...' : 'Confirm & Create Pattern'}
+              <button 
+                type="button" 
+                className="btn-primary" 
+                onClick={handleConfirmPersona} 
+                disabled={personaSelection.selectedIdx === null || confirmingPersona}
+              >
+                {confirmingPersona ? 'Registering pattern in Qdrant...' : 'Confirm Selection & Create Pattern'}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import './VideoUpload.css';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
@@ -120,66 +120,8 @@ export default function VideoUpload({ user, onUploadStart }) {
   const [userRejectedPersona, setUserRejectedPersona] = useState(false);
   const [confirmingSelection, setConfirmingSelection] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [comparisonLoading, setComparisonLoading] = useState(false);
-  const [comparisonResult, setComparisonResult] = useState(null);
-  const [comparisonVideoUrl, setComparisonVideoUrl] = useState(null);
-  const [comparisonError, setComparisonError] = useState(null);
-  const [selectedAlignment, setSelectedAlignment] = useState(null);
-  const comparisonPlayerRef = useRef(null);
-
-  const selectAlignmentFrame = (pair) => {
-    setSelectedAlignment(pair);
-    if (comparisonPlayerRef.current && Number.isFinite(pair.video_idx)) {
-      comparisonPlayerRef.current.currentTime = pair.video_idx / 24;
-    }
-  };
-
-  const handleCompareVideos = async () => {
-    if (!file || !selectedTecnica?.video_url || selectedPersonaIdx === null) return;
-    setComparisonLoading(true);
-    setComparisonResult(null);
-    if (comparisonVideoUrl) URL.revokeObjectURL(comparisonVideoUrl);
-    setComparisonVideoUrl(null);
-    setComparisonError(null);
-    try {
-      const referenceUrl = new URL(selectedTecnica.video_url, 'http://localhost:8000');
-      const teacherResponse = await fetch(referenceUrl);
-      if (!teacherResponse.ok) throw new Error('Could not load instructor reference video.');
-      const teacherBlob = await teacherResponse.blob();
-      const teacherFile = new File([teacherBlob], `reference_${selectedTecnica.nombre || 'technique'}.mp4`, { type: teacherBlob.type || 'video/mp4' });
-      const form = new FormData();
-      form.append('video_alumno', file);
-      form.append('video_maestro', teacherFile);
-      form.append('tecnica_id', selectedTecnica.id);
-      form.append('persona_idx_alumno', String(selectedPersonaIdx));
-      form.append('idioma', 'en');
-      form.append('video_maestro_nombre', `${selectedProfesor?.nombre_completo || 'Instructor'} — ${selectedTecnica.nombre || 'Technique'}`);
-      const headers = { Authorization: `Bearer ${user?.token}` };
-      const start = await fetch('http://localhost:8000/api/v1/comparaciones/video-a-video', { method: 'POST', headers, body: form });
-      const startData = await start.json().catch(() => ({}));
-      if (!start.ok) throw new Error(startData.detail || 'Could not start video comparison.');
-      let result;
-      for (let attempt = 0; attempt < 180; attempt += 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const response = await fetch(`http://localhost:8000/api/v1/comparaciones/${startData.comparacion_id}`, { headers });
-        result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.detail || 'Could not retrieve video comparison.');
-        if (result.estado === 'completado') break;
-        if (result.estado === 'error_procesamiento') throw new Error(result.error_message || 'Video analysis failed.');
-      }
-      if (result?.estado !== 'completado') throw new Error('Comparison is still processing. Please check back later.');
-      if (result.video_url) {
-        const videoResponse = await fetch(`http://localhost:8000${result.video_url}`, { headers });
-        if (!videoResponse.ok) throw new Error('Could not load comparison video.');
-        setComparisonVideoUrl(URL.createObjectURL(await videoResponse.blob()));
-      }
-      setComparisonResult(result);
-    } catch (err) {
-      setComparisonError(err.message || 'Error comparing videos.');
-    } finally {
-      setComparisonLoading(false);
-    }
-  };
+  const [validatingSpam, setValidatingSpam] = useState(false);
+  const [spamError, setSpamError] = useState(null);
 
   const handleFile = async (selectedFile) => {
     if (!selectedFile.type.startsWith('video/')) {
@@ -191,12 +133,37 @@ export default function VideoUpload({ user, onUploadStart }) {
     setSelectedPersonaIdx(null);
     setUserRejectedPersona(false);
     setErrorMessage(null);
-    setExtractingPrimerFrame(true);
-
-    const formData = new FormData();
-    formData.append("video", selectedFile);
+    setSpamError(null);
+    setValidatingSpam(true);
 
     try {
+      // 1. Validar video con filtro anti-spam (YOLO + Clasificador ViCoS)
+      const spamForm = new FormData();
+      spamForm.append("video", selectedFile);
+      const spamRes = await fetch("http://localhost:8000/api/v1/evaluaciones/validar-spam", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${user?.token}` },
+        body: spamForm,
+      });
+
+      if (spamRes.status === 422 || !spamRes.ok) {
+        const spamData = await spamRes.json().catch(() => ({}));
+        const msg = spamRes.status === 422
+          ? "The video does not appear to be Brazilian Jiu-Jitsu. Please upload a valid training video."
+          : (spamData.detail || "Error validating video content.");
+        setSpamError(msg);
+        setFile(null);
+        setValidatingSpam(false);
+        alert(msg);
+        return;
+      }
+      setValidatingSpam(false);
+
+      // 2. Extraer primer frame y detectar personas
+      setExtractingPrimerFrame(true);
+      const formData = new FormData();
+      formData.append("video", selectedFile);
+
       const res = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
         method: "POST",
         headers: { "Authorization": `Bearer ${user?.token}` },
@@ -216,9 +183,10 @@ export default function VideoUpload({ user, onUploadStart }) {
         setSelectedPersonaIdx(null);
       }
     } catch (err) {
-      console.error("Error getting first frame:", err);
+      console.error("Error processing video:", err);
       setErrorMessage(err.message || "Error processing initial video frame.");
     } finally {
+      setValidatingSpam(false);
       setExtractingPrimerFrame(false);
     }
   };
@@ -229,6 +197,8 @@ export default function VideoUpload({ user, onUploadStart }) {
     setSelectedPersonaIdx(null);
     setUserRejectedPersona(false);
     setErrorMessage(null);
+    setSpamError(null);
+    setValidatingSpam(false);
     setExtractingPrimerFrame(false);
   };
 
@@ -460,6 +430,12 @@ export default function VideoUpload({ user, onUploadStart }) {
       </div>
 
       {/* Step 3: Video Upload & Interactive Calibration */}
+      {spamError && (
+        <div style={{ background: 'rgba(208, 17, 24, 0.2)', border: '1px solid var(--brand-red)', padding: '0.85rem 1.25rem', borderRadius: '10px', color: '#ff8787', fontSize: '0.9rem', marginBottom: '1rem', textAlign: 'center' }}>
+          ⚠️ {spamError}
+        </div>
+      )}
+
       {!file ? (
         <div
           className={`drop-zone glass-panel ${dragActive ? 'active' : ''}`}
@@ -505,31 +481,12 @@ export default function VideoUpload({ user, onUploadStart }) {
             </div>
           )}
 
-          {selectedTecnica?.video_url && selectedPersonaIdx !== null && (
-            <button type="button" className="btn-secondary" onClick={handleCompareVideos} disabled={comparisonLoading}>
-              {comparisonLoading ? 'Comparing videos...' : 'Compare with Instructor Video'}
-            </button>
-          )}
-          {comparisonError && <div role="alert" style={{ color: '#ff8787' }}>{comparisonError}</div>}
-          {comparisonResult && (
-            <section className="glass-panel" aria-live="polite" style={{ padding: '1rem', borderRadius: '10px' }}>
-              <h3>Comparison with {selectedTecnica?.nombre}</h3>
-              <p>Instructor video: {comparisonResult.video_maestro_nombre} · Your video: {comparisonResult.video_alumno_nombre}</p>
-              <p>Movement similarity: {comparisonResult.score_similitud}%</p>
-              {comparisonVideoUrl && <video ref={comparisonPlayerRef} controls src={comparisonVideoUrl} style={{ width: '100%', maxHeight: '480px' }} />}
-              {Array.isArray(comparisonResult.alineacion) && comparisonResult.alineacion.length > 0 && (
-                <div aria-label="Temporal alignment between both videos" style={{ display: 'flex', alignItems: 'end', gap: '2px', height: '44px', marginTop: '0.75rem' }}>
-                  {comparisonResult.alineacion.filter((_, i) => i % Math.max(1, Math.ceil(comparisonResult.alineacion.length / 100)) === 0).map((pair, i) => (
-                    <button key={i} type="button" onClick={() => selectAlignmentFrame(pair)} aria-label={`View comparison: student frame ${pair.frame_alumno_idx}, instructor frame ${pair.frame_maestro_idx}`} title={`Student frame ${pair.frame_alumno_idx ?? '?'} · Instructor frame ${pair.frame_maestro_idx ?? '?'}`} style={{ flex: 1, minWidth: '2px', height: `${Math.max(5, Math.min(100, (pair.similitud_frame ?? 0) * 100))}%`, padding: 0, border: selectedAlignment?.video_idx === pair.video_idx ? '1px solid white' : 0, background: (pair.similitud_frame ?? 0) >= 0.7 ? '#35c878' : '#e04444', cursor: 'pointer' }} />
-                  ))}
-                </div>
-              )}
-              {selectedAlignment && <p>Aligned frames: student #{selectedAlignment.frame_alumno_idx} · instructor #{selectedAlignment.frame_maestro_idx}</p>}
-              <small>The timeline summarizes how the student frames align with the instructor frames throughout the movement.</small>
-            </section>
-          )}
-
-          {extractingPrimerFrame ? (
+          {validatingSpam ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem' }}>
+              <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--brand-red)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Validating video content...</p>
+            </div>
+          ) : extractingPrimerFrame ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem' }}>
               <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--brand-red)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Extracting first frame and detecting persons...</p>

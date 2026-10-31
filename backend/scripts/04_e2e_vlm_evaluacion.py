@@ -30,6 +30,29 @@ tecnica_id = tecnica["id"]
 tecnica_nombre = tecnica["nombre"]
 print(f"   Técnica: {tecnica_nombre} (ID: {tecnica_id})")
 
+print("2.1. Validar filtro anti-spam HTTP (/evaluaciones/validar-spam)...")
+bailarinas_path = Path(__file__).resolve().parents[1] / "storage" / "control_bailarinas.mp4"
+if bailarinas_path.exists():
+    with open(bailarinas_path, "rb") as bf:
+        spam_b_resp = requests.post(
+            f"{API_BASE}/evaluaciones/validar-spam",
+            files={"video": ("control_bailarinas.mp4", bf, "video/mp4")},
+            headers=headers,
+            timeout=30
+        )
+    print(f"   Control Bailarinas -> Status: {spam_b_resp.status_code} (Esperado 422: Rechazado)")
+    assert spam_b_resp.status_code == 422, f"Filtro anti-spam no rechazó bailarinas: {spam_b_resp.text}"
+
+with open(VIDEO_PATH, "rb") as vf:
+    spam_a_resp = requests.post(
+        f"{API_BASE}/evaluaciones/validar-spam",
+        files={"video": ("Alumno.mp4", vf, "video/mp4")},
+        headers=headers,
+        timeout=30
+    )
+print(f"   Alumno BJJ -> Status: {spam_a_resp.status_code} (Esperado 200: Aceptado)")
+assert spam_a_resp.status_code == 200, f"Filtro anti-spam rechazó Alumno.mp4: {spam_a_resp.text}"
+
 print("3. Subir primer frame para sesión de detección de persona...")
 with open(VIDEO_PATH, "rb") as vf:
     frame_resp = requests.post(

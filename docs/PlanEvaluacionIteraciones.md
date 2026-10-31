@@ -1130,6 +1130,40 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
     ```
   - **Suite de Pruebas Pytest:** **83 passed, 6 skipped** en 13.46s (100% verde).
 
+---
+
+### 🔹 Iteración Transition-3G (Fase de Transición): Cierre de Falso Positivo y Limpieza de UI
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-10-31
+- **Tag Previo:** `iter-3g-antes` (commit `c186eda`)
+
+- **Objetivos:**
+  1. Integrar obligatoriamente la validación del filtro anti-spam (`POST /api/v1/evaluaciones/validar-spam`) en el frontend (`VideoUpload.jsx`) de forma previa a la extracción de frames y selección de persona, bloqueando en la puerta de entrada cualquier contenido ajeno al Jiu-Jitsu (0 falsos positivos).
+  2. Eliminar completamente el código obsoleto del botón "Compare with Instructor Video" y su sección de alineación lado a lado de la iteración C12, consolidando el flujo exclusivo de evaluación pedagógica con VLM local.
+
+- **Entregables:**
+  - `frontend/src/pages/VideoUpload.jsx`:
+    - Invocación temprana a `POST /api/v1/evaluaciones/validar-spam` al soltar o seleccionar un video en `handleFile`.
+    - Estado de carga interactivo (`validatingSpam`): `"Validating video content..."`.
+    - Captura de error HTTP 422 con bloqueo inmediato de subida, limpieza de archivo y alerta al usuario: `"The video does not appear to be Brazilian Jiu-Jitsu. Please upload a valid training video."`.
+    - Eliminación de estados (`comparisonLoading`, `comparisonResult`, `comparisonVideoUrl`, `comparisonError`, `selectedAlignment`), funciones (`handleCompareVideos`, `selectAlignmentFrame`), referencias no utilizadas (`useRef`, `comparisonPlayerRef`) y bloques JSX asociados.
+  - `backend/scripts/04_e2e_vlm_evaluacion.py`:
+    - Paso 2.1 incorporado verificando explícitamente que `control_bailarinas.mp4` retorne HTTP 422 y `Alumno.mp4` retorne HTTP 200 en cada ejecución E2E.
+
+- **Resultados de las Pruebas de Fuego:**
+  - **Prueba de Humo Anti-Spam (`03_smoke_test_filter.py`):**
+    - `Alumno.mp4`: `True ✅` (ratio=0.86 $\ge$ 0.60, aceptado).
+    - `Alumno_Gaetamo.mp4`: `True ✅` (ratio=1.00 $\ge$ 0.60, aceptado).
+    - `control_bailarinas.mp4`: `False ✅` (ratio=0.31 $<$ 0.60, **bloqueado con 422**).
+    - `control_boxeo.mp4`: `False ✅` (0 frames con interacción, bloqueado).
+  - **Prueba E2E Integral (`04_e2e_vlm_evaluacion.py`):**
+    - HTTP 422 validado en caliente contra `control_bailarinas.mp4`.
+    - HTTP 200 validado en caliente contra `Alumno.mp4`.
+    - Flujo completo de análisis completado en **22.50 segundos** con estado `completado`, feedback pedagógico estructurado y nombres de articulaciones presentes.
+  - **Suite Pytest Completa:** **83 passed, 6 skipped** en 15.52s (100% verde).
+
+
 
 
 

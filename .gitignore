@@ -50,5 +50,6 @@ Codigo.py
 Contexto.py
 *.pdf
 *.mp4
+*.mov
 *.zip
 salida de entrenamiento.txt

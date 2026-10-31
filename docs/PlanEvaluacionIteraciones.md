@@ -909,5 +909,72 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
     - `docs/visual_evidence/transition-2c/after/profesor_modal.png`
     - `docs/visual_evidence/transition-2c/after/student_progress.png`
 
+---
+
+### 🔹 Iteración Transition-3 (Fase de Transición): Migración 100% Local y Eliminación de Deuda Técnica Gemini
+
+- **Estado:** COMPLETADA ✅
+- **Fecha:** 2026-10-30
+- **Tag:** `transition-3`
+- **Objetivo:**
+  1. Eliminar la totalidad de la deuda técnica de Google Gemini API (adaptadores, dependencias y tests de integración).
+  2. Migrar la arquitectura a un funcionamiento 100% autónomo y local (Apple Silicon / MLX / MPS).
+  3. Implementar un filtro anti-spam local (`LocalSpamFilter`) entrenando un clasificador de posiciones relativas (`MLPClassifier`) sobre el dataset ViCoS con particionado temporal estricto (`GroupShuffleSplit`) para erradicar data leakage.
+  4. Validar el flujo End-to-End con el modelo local de visión-lenguaje (`Qwen3-VL-4B-Instruct` vía MLX).
+
+- **Entregables:**
+  - `backend/corpocmente/infrastructure/ai/adapters.py`: Remoción completa de `GeminiApiAdapter` y `GeminiRateLimitError`.
+  - `backend/tests/infrastructure/test_gemini_adapter.py`: Eliminado del repositorio.
+  - `backend/requirements.txt`: Desinstalado `google-genai`.
+  - `backend/corpocmente/infrastructure/ai/local_spam_filter.py`: Filtro anti-spam local por interacción biomecánica y ratio de BJJ.
+  - `backend/scripts/02c_reentrenar_agrupado.py`: Pipeline de entrenamiento agrupado en bloques de 30 frames (`BLOQUE = 30`).
+  - `docs/technical_memos/2026-10-30-transition-3-local-migration.md`: Memo técnico formal de la migración local.
+
+- **Evidencia Cruda de Verificación:**
+  - **Grep de Control:** 0 referencias a `GeminiApiAdapter` o `google.genai` en el código fuente y tests de backend.
+  - **Métricas del Clasificador ViCoS:** Accuracy: `90.19%`, F1-Macro: `88.18%`.
+  - **Smoke Test Anti-Spam:** `Alumno.mp4` aprobado (ratio 0.86 >= 0.60), `control_bailarinas.mp4` rechazado (ratio 0.31 < 0.60), `control_boxeo.mp4` rechazado (0 frames con 2 personas).
+  - **Pytest:** 79 passed, 6 skipped en 6.17s.
+
+---
+
+### 🔹 Iteración Transition-3C (Fase de Transición): Evaluación Empírica de YOLO26s Fine-Tuning (ViCoS) e Iteración 3C.5 (Prueba Comparativa best.pt vs yolo26n-pose)
+
+- **Estado:** COMPLETADA (MODELO RECHAZADO / BASELINE RETENIDO EN PRODUCCIÓN) 🛡️
+- **Fecha:** 2026-10-31
+- **Tags de Checkpoint / Rollback:** `iter-3c-antes`, `iter-3c2-antes`, `iter-3c3-antes`
+
+- **Objetivo:**
+  Evaluar si los pesos fine-tuneados `storage/models/yolo26n_bjj_pose/weights/best.pt` (entrenados en Google Colab con GPU NVIDIA A100 durante 51 épocas sobre el dataset ViCoS de 20,775 anotaciones) superan al modelo base `yolo26n-pose.pt` en precisión de keypoints e inferencia de interacción en combate.
+
+- **Ciclo de Hipótesis y Sub-iteraciones Empíricas:**
+  1. **Iteración 3C.1 (Integración Directa, conf=0.30):** En videos reales de alumnos (`Alumno.mp4`, `Alumno_Gaetamo.mp4`), `best.pt` falló al detectar 2 personas simultáneamente en todos los frames muestreados (0 frames con interacción), gatillando falsos negativos en el `LocalSpamFilter`. **Rollback ejecutado a `iter-3c-antes`**.
+  2. **Iteración 3C.2 (Calibración Dinámica de Umbrales, conf=0.15 y conf=0.20):** Se testeó si las cajas tenían logits más bajos. En 276 frames de `Alumno.mp4`, solo 1 frame tuvo $\ge 2$ poses válidas. **Rollback ejecutado a `iter-3c2-antes`**.
+  3. **Iteración 3C.3 (Inferencia a Alta Resolución, imgsz=1280, rect=True):** Se testeó la hipótesis de que la relación de aspecto vertical (9:16) encogía excesivamente a los atletas al aplicar letterbox cuadrado. Incluso a 1280px rectangulares, las detecciones de cajas se mantuvieron en 0. **Rollback ejecutado a `iter-3c3-antes`**.
+  4. **Iteración 3C.4 (Zoom Test en Primer Plano, /tmp/alumno_zoom.mp4):** Se recortó el video al 85% de la pantalla para simular la escala de ViCoS. `best.pt` obtuvo 0.0% de frames con $\ge 2$ personas entre `conf=0.15` y `0.30`, mientras el modelo base detectó al 100%.
+  5. **Iteración 3C.5 (Prueba Aislada con Video de YouTube en Toma Media Horizontal - `2026-10-31 09-41-31.mov`):** Evaluación definitiva y aislada con `backend/scripts/09_test_best_pt_custom.py` para descartar factores ambientales (distancia de cámara o encuadre de gimnasio).
+
+- **Resultados Comparativos Crudos — Iteración 3C.5 (Video HD 1920x1080 @ 60fps, 24 frames muestreados):**
+
+| Métrica de Evaluación | `best.pt` (Fine-tuned, conf=0.15, imgsz=1280) | `yolo26n-pose.pt` (Base Original, conf=0.30, imgsz=640) |
+| :--- | :---: | :---: |
+| **Frames con $\ge 2$ personas detectadas** | **2 / 24 (8.3%)** | **14 / 24 (58.3%)** |
+| **Frames con 1 persona** | 16 / 24 (66.7%) | 10 / 24 (41.7%) |
+| **Frames con 0 personas (ceguera)** | **6 / 24 (25.0%)** | **0 / 24 (0.0%)** |
+| **Confianza media de cajas delimitadoras** | 0.5414 | 0.6877 |
+| **Confianza media de keypoints detectados** | 0.8857 | 0.8654 |
+
+- **Veredicto Empírico y Causa Raíz Científica:**
+  - **ESCENARIO B CONFIRMADO:** `best.pt` continúa fallando sistemáticamente incluso en tomas medias y videos HD horizontales externos.
+  - **Catastrophic Forgetting & Domain Shift:** El entrenamiento de 51 épocas sin mezclar datos de COCO general sobrescribió los pesos convolucionales de representación humana. El modelo quedó ultra-especializado en el sensor, ángulo y piso de tatami del laboratorio de ViCoS, perdiendo la capacidad de generalizar a combates reales de Jiu-Jitsu.
+  - En contraposición, el modelo base `yolo26n-pose.pt` demostró robustez absoluta (0% frames vacíos, 58.3% interacción directa, sin falsos negativos).
+
+- **Decisión de Arquitectura y Cierre del Experimento (Craig Larman):**
+  - **Cierre definitivo del experimento ViCoS:** Se descarta el reemplazo del modelo en producción.
+  - **Estabilidad de Producción:** El código de producción permanece 100% blindado con `yolo26n-pose.pt` en `adapters.py` y `local_spam_filter.py`.
+  - **Valor Académico para Defensa de Tesis:** Este experimento y sus 5 fases empíricas constituyen un aporte metodológico clave para el informe de grado, demostrando rigor en el control de calidad, rollback automatizado ante regresiones y validación empírica contra domain shift en IA aplicada al deporte.
+  - **Suite de Pruebas:** 79 passed, 6 skipped en 6.36s.
+
+
 
 

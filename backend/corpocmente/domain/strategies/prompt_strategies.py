@@ -56,3 +56,39 @@ class EnglishPromptStrategy(IPromptStrategy):
             "If the image does not allow confirming a detail, do not invent it."
         )
         return prompt
+
+class PortuguesePromptStrategy(IPromptStrategy):
+    def construir_prompt_evaluacion(self, tecnica_nombre: str, discrepancias: List[str], mensaje_profesor: str = "") -> str:
+        prompt = (
+            f"Você é um mestre faixa-preta de Jiu-Jitsu Brasileiro. "
+            f"A técnica avaliada é: {tecnica_nombre}. "
+            f"A imagem em anexo é O FRAME CRÍTICO onde o aluno cometeu o maior erro biomecânico. "
+            f"Os erros detectados pela análise de pose são:\n"
+        )
+        for d in discrepancias:
+            prompt += f"- {d}\n"
+        if mensaje_profesor and mensaje_profesor.strip():
+            prompt += (
+                f"\nO professor deixou a seguinte instrução técnica específica: "
+                f"'{mensaje_profesor.strip()}'. Certifique-se de alinhar sua correção estritamente com estas instruções.\n"
+            )
+        prompt += (
+            "Responda em português. Forneça um objeto JSON com exatamente dois campos: "
+            "'summary' (resumo curto do erro principal em até 8 palavras) "
+            "e 'correction' (correção técnica em até 2 frases e 45 palavras). "
+            "Se o erro for mínimo, defina summary como 'Boa técnica' e correction como um breve elogio. "
+            "Cite a fonte se o contexto incluir uma (ex: 'como ensinado na Jiu-Jitsu University'). "
+            "Não mencione ferramentas, modelos, algoritmos ou tecnologias. "
+            "Se o contexto ou imagem não permitir confirmar um detalhe, não invente."
+        )
+        return prompt
+
+def obtener_estrategia_prompt(idioma: str = "en") -> IPromptStrategy:
+    """Retorna la estrategia de prompt correspondiente según el idioma ('es', 'pt', 'en')."""
+    idioma_clean = (idioma or "en").lower().strip()
+    if idioma_clean in ("es", "spanish", "español"):
+        return SpanishPromptStrategy()
+    elif idioma_clean in ("pt", "portuguese", "português", "portugues"):
+        return PortuguesePromptStrategy()
+    return EnglishPromptStrategy()
+

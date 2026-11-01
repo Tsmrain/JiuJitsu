@@ -9,6 +9,7 @@ from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
 from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
 from corpocmente.domain.strategies.prompt_strategies import EnglishPromptStrategy
+from corpocmente.domain.services.rag_reranker import rerank_evidencias_multilingue
 from corpocmente.application.services.multimodal_rag_service import (
     formatear_evidencias_texto,
     obtener_evidencias_rag_multimodal,
@@ -195,7 +196,7 @@ class IntelligenceAnalysisFacade:
             evidencias_rag = []
             if self.qwen:
                 try:
-                    evidencias_rag = obtener_evidencias_rag_multimodal(
+                    evidencias_candidatas = obtener_evidencias_rag_multimodal(
                         qwen_adapter=self.qwen,
                         qdrant_adapter=self.qdrant,
                         tecnica_id=tecnica_id,
@@ -203,7 +204,15 @@ class IntelligenceAnalysisFacade:
                         discrepancias=discrepancias_detectadas,
                         frame_critico_path=frame_para_embedding,
                         video_referencia_path=video_referencia_path,
-                        limit=5,
+                        limit=6,
+                    )
+                    # Reranking multilingüe (Iteración 3P)
+                    query_rerank = f"{tecnica_nombre}. {', '.join(discrepancias_detectadas)}. {mensaje_profesor}".strip()
+                    evidencias_rag = rerank_evidencias_multilingue(
+                        query_texto=query_rerank,
+                        evidencias=evidencias_candidatas,
+                        qwen_adapter=self.qwen,
+                        top_k=3,
                     )
                     contexto_profundo = formatear_evidencias_texto(evidencias_rag)
                     if contexto_profundo:
@@ -212,7 +221,7 @@ class IntelligenceAnalysisFacade:
                             + contexto_profundo
                         )
                 except Exception as e_rag:
-                    logger.warning("Fallo en recuperación RAG multimodal (no bloqueante): %s", e_rag)
+                    logger.warning("Fallo en recuperación RAG multimodal o reranking (no bloqueante): %s", e_rag)
 
             strategy = EnglishPromptStrategy()
             prompt = strategy.construir_prompt_evaluacion(
@@ -238,6 +247,36 @@ class IntelligenceAnalysisFacade:
                 partes = feedback_texto.split(".")
                 feedback_summary = partes[0].strip() if partes else "Technique error"
                 feedback_correction = feedback_texto
+
+            # Mecanismo de Grounding (Anti-Alucinaciones con LLM-as-a-Judge)
+            if hasattr(self.gemini, "evaluar_fidelidad_grounding") and (contexto_profundo or mensaje_profesor):
+                try:
+                    eval_grounding = self.gemini.evaluar_fidelidad_grounding(
+                        respuesta={"summary": feedback_summary, "correction": feedback_correction},
+                        contexto=contexto_profundo,
+                        mensaje_profesor=mensaje_profesor,
+                    )
+                    if (
+                        isinstance(eval_grounding, dict)
+                        and "faithfulness_score" in eval_grounding
+                        and isinstance(eval_grounding["faithfulness_score"], (int, float))
+                    ):
+                        faith_score = float(eval_grounding["faithfulness_score"])
+                        unsupported = eval_grounding.get("unsupported_claims") or []
+                        if faith_score < 0.85 or (isinstance(unsupported, list) and len(unsupported) > 0):
+                            logger.warning(
+                                "Alucinación detectada por LLM-Judge (score=%.2f, claims=%s). Aplicando fallback seguro.",
+                                faith_score,
+                                unsupported,
+                            )
+                            feedback_summary = "Insuficiente contexto"
+                            feedback_correction = (
+                                "No hay suficiente información en los manuales para generar una corrección detallada. "
+                                "Consulta con tu instructor."
+                            )
+                            feedback_texto = feedback_correction
+                except Exception as e_judge:
+                    logger.warning("Fallo en evaluación de fidelidad grounding (no bloqueante): %s", e_judge)
 
         timestamp_error_segundos = None
         if os.path.exists(video_path) and frame_alumno_critico is not None:

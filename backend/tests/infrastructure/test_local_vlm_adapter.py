@@ -23,3 +23,30 @@ def test_parsear_fallback_texto_plano():
     assert "elbow is flaring" in result["summary"].lower()
     assert "keep it tight" in result["correction"].lower()
 
+
+def test_parsear_json_judge_fiel():
+    raw = '{"faithfulness_score": 0.95, "unsupported_claims": [], "reasoning": "Respaldado por el manual."}'
+    result = LocalVLMAdapter._parsear_json_judge(raw)
+    assert result["faithfulness_score"] == 0.95
+    assert result["unsupported_claims"] == []
+    assert "Respaldado" in result["reasoning"]
+
+
+def test_parsear_json_judge_con_alucinaciones_castiga_score():
+    raw = '{"faithfulness_score": 0.90, "unsupported_claims": ["Patada voladora"], "reasoning": "Inventa patada."}'
+    result = LocalVLMAdapter._parsear_json_judge(raw)
+    assert result["faithfulness_score"] < 0.85
+    assert "Patada voladora" in result["unsupported_claims"]
+
+
+def test_evaluar_fidelidad_tecnica_correcta_retorna_1():
+    adapter = object.__new__(LocalVLMAdapter)
+    res = adapter.evaluar_fidelidad_grounding(
+        respuesta={"summary": "Good technique", "correction": "Excellent form."},
+        contexto="Cualquier contexto",
+        mensaje_profesor="Cualquier mensaje",
+    )
+    assert res["faithfulness_score"] == 1.0
+    assert res["unsupported_claims"] == []
+
+

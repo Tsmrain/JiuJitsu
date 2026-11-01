@@ -52,3 +52,40 @@ def test_rerank_ordena_por_afinidad_semantica_multilingue():
     assert res[0]["id"] == "1"
     assert res[1]["id"] == "2"
     assert res[0]["rerank_score"] > res[1]["rerank_score"]
+
+
+def test_rerank_con_cross_encoder_real_o_mockeado():
+    from unittest.mock import patch
+    from corpocmente.domain.services.rag_reranker import Qwen3VLRerankerCrossEncoder
+
+    evidencias = [
+        {"id": "c1", "score": 0.3, "contenido_texto": "Receta de cocina"},
+        {"id": "c2", "score": 0.4, "contenido_texto": "Técnica de armbar desde la montada"},
+    ]
+
+    with patch.object(Qwen3VLRerankerCrossEncoder, "rerank_pairs", return_value=[0.05, 0.95]):
+        res = rerank_evidencias_multilingue("armbar mount", evidencias, None, top_k=2)
+        assert len(res) == 2
+        assert res[0]["id"] == "c2"
+        assert res[0]["cross_encoder_score"] == 0.95
+        assert res[1]["id"] == "c1"
+        assert res[1]["cross_encoder_score"] == 0.05
+
+
+def test_cross_encoder_desactiva_think_mode():
+    from unittest.mock import patch, MagicMock
+    from corpocmente.domain.services.rag_reranker import Qwen3VLRerankerCrossEncoder
+
+    mock_model = MagicMock()
+    mock_proc = MagicMock()
+    mock_model.rerank.return_value = MagicMock(tolist=lambda: [0.85])
+
+    with patch.object(Qwen3VLRerankerCrossEncoder, "get_instance", return_value=(mock_model, mock_proc)):
+        scores = Qwen3VLRerankerCrossEncoder.rerank_pairs("query", ["doc 1"])
+        assert scores == [0.85]
+        # Verificar que el payload contiene enable_thinking: False
+        call_args = mock_model.rerank.call_args[0]
+        payload = call_args[0]
+        assert payload.get("enable_thinking") is False
+        assert "Given a jiu-jitsu technique question" in payload.get("instruction")
+

@@ -204,15 +204,21 @@ class IntelligenceAnalysisFacade:
                         discrepancias=discrepancias_detectadas,
                         frame_critico_path=frame_para_embedding,
                         video_referencia_path=video_referencia_path,
-                        limit=6,
+                        limit=20,  # top_k_recall=20 para Cross-Encoder (Iteración 3R)
                     )
-                    # Reranking multilingüe (Iteración 3P)
-                    query_rerank = f"{tecnica_nombre}. {', '.join(discrepancias_detectadas)}. {mensaje_profesor}".strip()
+                    # Reranking multilingüe con Cross-Encoder real Qwen3-VL (Iteración 3R)
+                    partes_q = [tecnica_nombre]
+                    if discrepancias_detectadas:
+                        partes_q.append(", ".join(discrepancias_detectadas))
+                    if mensaje_profesor:
+                        partes_q.append(mensaje_profesor[:120])
+                    query_rerank = ". ".join(partes_q).strip()
                     evidencias_rag = rerank_evidencias_multilingue(
                         query_texto=query_rerank,
                         evidencias=evidencias_candidatas,
                         qwen_adapter=self.qwen,
                         top_k=3,
+                        instruction="Given a jiu-jitsu technique question, retrieve the manual passage that answers it.",
                     )
                     contexto_profundo = formatear_evidencias_texto(evidencias_rag)
                     if contexto_profundo:

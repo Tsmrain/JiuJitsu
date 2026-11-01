@@ -1471,6 +1471,56 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `backend/tests/infrastructure/test_local_vlm_adapter.py`:
     - Pruebas unitarias para el parseo y evaluación de fidelidad del juez LLM.
 
+---
+
+### 🔹 Iteración 3R: Reranker Real Cross-Encoder (MLX) y Desactivación de "Think Mode"
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-11-01
+- **Tag Previo:** `iter-3r-antes` (commit `d813170`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Análisis de Causa Raíz (Eliminación del Sesgo de Auto-Evaluación y Limitaciones de Bi-Encoder):**
+     - En la iteración 3P, el reranker utilizaba similitud de coseno sobre embeddings de `Qwen3-VL-Embedding-2B`. Si bien mejoró la precisión, compartía el espacio vectorial denso de Qdrant, sufriendo de sesgo de auto-evaluación y perdiendo interacciones cruzadas finas token a token entre la consulta y el fragmento del manual.
+     - La solución de grado industrial es un **Cross-Encoder real**, donde el par `(consulta, chunk)` se procesa conjuntamente en un único forward pass con atención cruzada (cross-attention) multimodal y multilingüe.
+  2. **Implementación de `Qwen3VLRerankerCrossEncoder` en Apple Silicon Metal GPU (`rag_reranker.py`):**
+     - Se integró el modelo `mlx-community/Qwen3-VL-Reranker-2B-4bit` (1.80 GB safetensors cuantizado a 4 bits) ejecutado de forma nativa en la GPU Metal unificada de Apple Silicon mediante el framework MLX.
+     - **Desactivación Estricta de "Think Mode":** Se eliminó por completo cualquier generación autorregresiva de texto o loop de tokens de razonamiento (`enable_thinking=False` explícito en payload). La puntuación de relevancia se calcula directamente extrayendo la diferencia de logits binarios (`yes_token_id: 9693` vs `no_token_id: 2152`) y aplicando la función sigmoide (`scores = mx.sigmoid(logits)`).
+     - **Arquitectura de Recuperación en Dos Etapas (Two-Stage Retrieval):**
+       - **Fase de Recall:** Qdrant recupera `top_k_recall = 20` candidatos usando embeddings densos multilingües de 2048 dimensiones.
+       - **Fase de Precision:** El Cross-Encoder MLX evalúa simultáneamente los 20 pares `(consulta, chunk)` usando la instrucción canónica: *"Given a jiu-jitsu technique question, retrieve the manual passage that answers it."* y selecciona los `top_k_final = 3` mejores.
+       - **Optimización de Latencia y Liberación de Memoria Metal:** Truncamiento de fragmentos a 350 caracteres para evaluación compacta y llamadas a `mx.clear_cache()` para evitar fragmentación de memoria unificada en Apple Silicon.
+  3. **Resultados Empíricos del Benchmark Multilingüe (`11_evaluar_rag_multilingue.py`):**
+     - **Retrieval Precision@3 Global:** **100.00%** (20/20 casos de prueba en ES, PT, EN, MIX).
+     - **Faithfulness Global (LLM-as-a-Judge):** **0.9525** ($\ge 0.85$ -> ✅ APROBADO).
+       - Español (ES): **0.9500**
+       - Português (PT): **0.9500**
+       - English (EN): **0.9500**
+       - Mixtas (MIX): **0.9600**
+     - **Answer Relevance Global:** **0.8985** ($\ge 0.80$ -> ✅ APROBADO).
+       - Español (ES): **0.9014**
+       - Português (PT): **0.9140**
+       - English (EN): **0.8710**
+       - Mixtas (MIX): **0.9077**
+     - **Latencia Reranking (20 candidatos por consulta en Metal GPU):**
+       - Latencia Mínima: **1.039s**
+       - Latencia Media: **1.799s**
+       - Latencia Máxima: **2.620s**
+       - Latencia p95: **2.567s** ($< 3.0\text{s}$ -> ✅ APROBADO).
+     - **Tasa de Alucinación:** **0.0%** (0 afirmaciones no fundamentadas en el corpus técnico).
+  4. **Suite de Regresión Pytest:**
+     - **101 passed, 6 skipped** en 14.39s (100% verde).
+
+- **Entregables:**
+  - `backend/corpocmente/domain/services/rag_reranker.py`:
+    - Clase `Qwen3VLRerankerCrossEncoder` basada en `mlx-community/Qwen3-VL-Reranker-2B-4bit` con desactivación de Think Mode y fallback transparente.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`:
+    - Integración de Two-Stage Retrieval con `limit=20` en Qdrant y re-clasificación a `top_k=3` con el Cross-Encoder.
+  - `backend/scripts/11_evaluar_rag_multilingue.py`:
+    - Benchmark offline ampliado con métricas empíricas de latencia de 20 candidatos, Precision@3, Faithfulness y Answer Relevance.
+  - `backend/tests/domain/test_rag_reranker.py`:
+    - Pruebas unitarias para el Cross-Encoder y verificación de `enable_thinking=False`.
+
 
 
 

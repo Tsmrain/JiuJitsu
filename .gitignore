@@ -1,6 +1,8 @@
 # Datos locales (NUNCA commitear)
-data/
+/data/
 data/manuales/
+!backend/data/
+!backend/data/golden_test.jsonl
 storage/
 backend/storage/
 ProyectoGrado/pg_data/

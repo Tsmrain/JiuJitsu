@@ -67,6 +67,22 @@ def obtener_evidencias_rag_multimodal(
         logger.warning("No hay vectores de consulta para recuperar evidencia RAG.")
         return []
 
+    retrieval_mode = os.getenv("RETRIEVAL_MODE", "hybrid").lower()
+    if retrieval_mode in ("hybrid", "bm25"):
+        try:
+            from corpocmente.domain.services.hybrid_retriever import HybridRetriever
+            return HybridRetriever.recuperar(
+                query_texto=query_textual,
+                qdrant_adapter=qdrant_adapter,
+                qwen_adapter=qwen_adapter,
+                tecnica_id=tecnica_id,
+                limit=limit,
+                modo=retrieval_mode,
+                vectores_consulta=vectores_consulta,
+            )
+        except Exception as exc_h:
+            logger.warning("Fallo en recuperación híbrida (%s), fallback a denso: %s", retrieval_mode, exc_h)
+
     if hasattr(qdrant_adapter, "recuperar_evidencias_rag_multimodal"):
         return qdrant_adapter.recuperar_evidencias_rag_multimodal(
             vectores_consulta=vectores_consulta,

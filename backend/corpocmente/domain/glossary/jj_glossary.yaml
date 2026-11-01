@@ -1,0 +1,123 @@
+# Glosario Multilingüe de Jiu-Jitsu Brasileño (BJJ)
+# Mapeo semántico entre Español (ES), Portugués (PT) e Inglés (EN)
+# Utilizado para expansión léxica en Recuperación Híbrida (BM25 + Dense)
+
+sinonimos:
+  # --- POSICIONES Y CONTROLES ---
+  - canonical: "closed guard"
+    es: ["guardia cerrada", "cerrar guardia"]
+    pt: ["guarda fechada", "fechar a guarda"]
+    en: ["closed guard", "close guard"]
+    tags: ["posicion", "defensa"]
+
+  - canonical: "side control"
+    es: ["control lateral", "100 kilos", "cien kilos", "inmovilización lateral"]
+    pt: ["cem quilos", "100 quilos", "controle lateral", "cem kilos"]
+    en: ["side control", "side mount", "cross body", "side ride"]
+    tags: ["posicion", "control"]
+
+  - canonical: "mount"
+    es: ["montada", "posición montada", "monta"]
+    pt: ["montada", "posição montada"]
+    en: ["mount", "mounted position", "full mount"]
+    tags: ["posicion", "control"]
+
+  - canonical: "s-mount"
+    es: ["montada en s", "s-mount", "montada s"]
+    pt: ["s-montada", "montada em s", "s mount"]
+    en: ["s-mount", "s mount", "s mounted"]
+    tags: ["posicion", "transicion"]
+
+  - canonical: "half guard"
+    es: ["media guardia", "media"]
+    pt: ["meia guarda", "meia"]
+    en: ["half guard", "half-guard"]
+    tags: ["posicion", "defensa"]
+
+  - canonical: "back control"
+    es: ["control de espalda", "espalda", "tomar la espalda"]
+    pt: ["costas", "pegar as costas", "controle de costas"]
+    en: ["back control", "back take", "rear mount", "back mount"]
+    tags: ["posicion", "control"]
+
+  # --- FINALIZACIONES Y SUMISIONES ---
+  - canonical: "armbar"
+    es: ["llave de brazo", "armbar", "palanca de brazo", "armlock"]
+    pt: ["chave de braço", "armlock", "armbar", "chave de braco"]
+    en: ["armbar", "straight armlock", "armlock", "arm bar"]
+    tags: ["finalizacion", "articulacion"]
+
+  - canonical: "triangle"
+    es: ["triángulo", "triangulo", "estrangulamiento de triángulo"]
+    pt: ["triângulo", "triangulo"]
+    en: ["triangle choke", "triangle", "sankaku"]
+    tags: ["finalizacion", "estrangulamiento"]
+
+  - canonical: "americana"
+    es: ["americana", "llave americana", "llave de hombro"]
+    pt: ["americana", "chave americana"]
+    en: ["americana", "keylock", "bent armlock", "paint brush"]
+    tags: ["finalizacion", "articulacion"]
+
+  - canonical: "kimura"
+    es: ["kimura", "doble palanca de muñeca"]
+    pt: ["kimura", "chave de ombro reversa"]
+    en: ["kimura", "reverse keylock", "figure-four armlock"]
+    tags: ["finalizacion", "articulacion"]
+
+  # --- ESCAPES Y MOVIMIENTOS TÉCNICOS ---
+  - canonical: "underhook"
+    es: ["esgrima", "underhook", "gancho interior", "esgrima profunda"]
+    pt: ["esgrima", "underhook", "esgrimar", "abraço por baixo"]
+    en: ["underhook", "under hook", "pummel underhook", "deep underhook"]
+    tags: ["movimiento", "escape", "control"]
+
+  - canonical: "bridge"
+    es: ["puente", "bump", "hacer puente", "puenteo"]
+    pt: ["ponte", "barrigada", "fazer ponte", "bump"]
+    en: ["bridge", "hip bump", "bridging", "bump"]
+    tags: ["movimiento", "escape"]
+
+  - canonical: "hip escape"
+    es: ["escape de cadera", "camarón", "fuga de cadera"]
+    pt: ["fuga de quadril", "saída de quadril", "camarão"]
+    en: ["hip escape", "shrimping", "hip getaway", "shrimp"]
+    tags: ["movimiento", "escape"]
+
+  - canonical: "break closed guard standing"
+    es: ["abrir guardia de pie", "ponerse de pie", "pararse para abrir guardia", "salida de guardia parándose"]
+    pt: ["levantar para abrir a guarda", "abrir guarda em pé", "saída de guarda em pé"]
+    en: ["stand up guard pass", "breaking closed guard standing", "standing guard break", "stand up escape"]
+    tags: ["movimiento", "transicion"]
+
+  - canonical: "elbow-knee escape"
+    es: ["escape codo-rodilla", "fuga codo rodilla", "recuperación de guardia"]
+    pt: ["saída cotovelo-joelho", "fuga cotovelo joelho", "recompor guarda"]
+    en: ["elbow-knee escape", "elbow escape", "knee slide escape"]
+    tags: ["movimiento", "escape"]
+
+  # --- CLAVES BIOMECÁNICAS Y ANATOMÍA ---
+  - canonical: "knees and heels"
+    es: ["apretar rodillas", "talones a los glúteos", "rodillas y talones"]
+    pt: ["apertar joelhos", "calcanhares nos glúteos", "joelhos e calcanhares"]
+    en: ["pinch knees", "pull heels", "knees and heels", "hamstring tension"]
+    tags: ["biomecanica", "detalles"]
+
+  - canonical: "elbows to ribs"
+    es: ["codos pegados", "codos a las costillas", "no abrir codos"]
+    pt: ["cotovelos colados", "cotovelos nas costelas", "não abrir cotovelos"]
+    en: ["elbows tight", "elbows to ribs", "flaring elbows"]
+    tags: ["biomecanica", "defensa"]
+
+  - canonical: "vertical posture"
+    es: ["postura vertical", "no inclinarse adelante", "alineación de columna"]
+    pt: ["postura vertical", "não inclinar para frente", "coluna alinhada"]
+    en: ["vertical posture", "upright posture", "don't lean forward"]
+    tags: ["biomecanica", "postura"]
+
+  - canonical: "thumb orientation"
+    es: ["pulgar al techo", "pulgar hacia arriba", "rotación de muñeca"]
+    pt: ["polegar para o teto", "polegar para cima", "rotação do punho"]
+    en: ["thumb to ceiling", "thumb pointing up", "wrist control"]
+    tags: ["biomecanica", "palanca"]
+

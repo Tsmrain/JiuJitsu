@@ -25,6 +25,7 @@ class LocalVLMAdapter:
         prompt: str,
         frame_image_path: str,
         evidencias_visuales: Optional[List[Dict]] = None,
+        idioma: str = "es",
     ) -> Dict[str, str]:
         from mlx_vlm import generate
 
@@ -56,16 +57,40 @@ class LocalVLMAdapter:
                     except Exception as err:
                         logger.warning("No se pudo renderizar página del PDF %s: %s", media_path, err)
 
-        full_prompt = (
-            prompt
-            + "\n\nLas imágenes adjuntas, después del fotograma del alumno, son páginas recuperadas del manual. "
-              "Básate en el mensaje del profesor y en las imágenes de las páginas del manual adjuntas para dar la corrección. "
-              "Menciona la indicación del profesor y cita la página del libro como '(p. X)' de donde sacaste la referencia o corrección visual. "
-              "Si la información no está en el texto, en la imagen o en el mensaje del profesor, abstente de inventar."
-            + "\n\nResponde EXCLUSIVAMENTE con un objeto JSON válido "
-              "con las claves 'summary' y 'correction'. "
-              "No agregues markdown, ni texto fuera del JSON."
-        )
+        lang = (idioma or "es").lower().strip()
+        if lang in ("pt", "portuguese", "português", "portugues"):
+            instruccion_rag = (
+                "\n\nAs imagens anexadas, após o fotograma do aluno, são páginas recuperadas do manual. "
+                "Baseie-se na mensagem do professor e nas imagens das páginas do manual anexadas para dar a correção. "
+                "Mencione a indicação do professor e cite a página do livro como '(p. X)' de onde tirou a referência visual. "
+                "Se a informação não estiver no texto, na imagem ou na mensagem do professor, abstenha-se de inventar. "
+                "RESPONDA ESTRITAMENTE EM PORTUGUÊS. "
+                "\n\nResponda EXCLUSIVAMENTE com um objeto JSON válido "
+                "com as chaves 'summary' e 'correction'. Não use markdown nem texto fora do JSON."
+            )
+        elif lang in ("en", "english"):
+            instruccion_rag = (
+                "\n\nThe attached images, after the student's frame, are retrieved manual pages. "
+                "Base your correction on the instructor's message and the attached manual page images. "
+                "Mention the instructor's instructions and cite the manual page as '(p. X)' where you retrieved the visual reference or correction. "
+                "If the information is not in the text, the image, or the instructor's message, refrain from inventing details. "
+                "REPLY STRICTLY IN ENGLISH. "
+                "\n\nReply EXCLUSIVELY with a valid JSON object "
+                "containing keys 'summary' and 'correction'. Do not include markdown or text outside the JSON."
+            )
+        else:
+            instruccion_rag = (
+                "\n\nLas imágenes adjuntas, después del fotograma del alumno, son páginas recuperadas del manual. "
+                "Básate en el mensaje del profesor y en las imágenes de las páginas del manual adjuntas para dar la corrección. "
+                "Menciona la indicación del profesor y cita la página del libro como '(p. X)' de donde sacaste la referencia o corrección visual. "
+                "Si la información no está en el texto, en la imagen o en el mensaje del profesor, abstente de inventar. "
+                "RESPONDE ESTRICTAMENTE EN ESPAÑOL. "
+                "\n\nResponde EXCLUSIVAMENTE con un objeto JSON válido "
+                "con las claves 'summary' y 'correction'. "
+                "No agregues markdown, ni texto fuera del JSON."
+            )
+
+        full_prompt = prompt + instruccion_rag
 
         if hasattr(self.processor, "apply_chat_template"):
             content = [{"type": "image"} for _ in images] + [{"type": "text", "text": full_prompt}]
@@ -86,18 +111,85 @@ class LocalVLMAdapter:
             verbose=False,
         )
 
-        return self._parsear_json(raw)
+        try:
+            return self._parsear_json(raw, idioma=idioma)
+        except ValueError as err_lang:
+            logger.warning("VLM respondió en idioma incorrecto (%s). Reintentando con instrucción estricta...", err_lang)
+            prompt_reintento = formatted_prompt + (
+                f"\n\nATENCIÓN: Tu respuesta previa fue rechazada porque no estaba en el idioma '{idioma}'. "
+                f"RESPONDE OBLIGATORIAMENTE Y ÚNICAMENTE EN EL IDIOMA '{idioma}'. No uses ningún otro idioma."
+            )
+            raw_retry = generate(
+                self.model,
+                self.processor,
+                prompt_reintento,
+                images,
+                max_tokens=400,
+                temperature=0.0,
+                verbose=False,
+            )
+            return self._parsear_json(raw_retry, idioma=idioma)
 
     @staticmethod
-    def _parsear_json(text) -> Dict[str, str]:
+    def _validar_idioma(texto: str, idioma: Optional[str]) -> None:
+        """
+        Valida que la respuesta del VLM respete el idioma solicitado ('es', 'pt', 'en').
+        Si el VLM responde en otro idioma, lanza ValueError para que el parseador lo rechace.
+        """
+        if not idioma or not texto:
+            return
+        lang = idioma.lower().strip()
+        if lang in ("portuguese", "português", "portugues"):
+            lang = "pt"
+        elif lang in ("spanish", "español"):
+            lang = "es"
+        elif lang in ("english",):
+            lang = "en"
+
+        if lang not in ("es", "pt", "en"):
+            return
+
+        tokens = re.findall(r"\b[a-záéíóúãõâêîôûàèìòùçñ]+\b", texto.lower())
+        if not tokens:
+            return
+        tokens_set = set(tokens)
+
+        pt_strict_markers = {"do", "da", "dos", "das", "no", "na", "nos", "nas", "não", "você", "quadril", "cotovelo", "mantenha"}
+        es_strict_markers = {"del", "al", "cadera", "codo", "mantén", "mantener", "mantenga", "buena", "bueno"}
+        en_strict_markers = {"the", "is", "are", "keep", "your", "tight", "with", "avoid", "good", "should", "close"}
+
+        pt_hits = len(tokens_set.intersection(pt_strict_markers))
+        es_hits = len(tokens_set.intersection(es_strict_markers))
+        en_hits = len(tokens_set.intersection(en_strict_markers))
+
+        if lang == "pt":
+            if en_hits >= 2 and pt_hits == 0:
+                raise ValueError(f"Respuesta del VLM rechazada: se esperaba idioma 'pt' pero respondió en inglés ({texto[:60]}...).")
+            if es_hits >= 2 and pt_hits == 0:
+                raise ValueError(f"Respuesta del VLM rechazada: se esperaba idioma 'pt' pero respondió en español ({texto[:60]}...).")
+        elif lang == "es":
+            if en_hits >= 2 and es_hits == 0:
+                raise ValueError(f"Respuesta del VLM rechazada: se esperaba idioma 'es' pero respondió en inglés ({texto[:60]}...).")
+            if pt_hits >= 2 and es_hits == 0:
+                raise ValueError(f"Respuesta del VLM rechazada: se esperaba idioma 'es' pero respondió en portugués ({texto[:60]}...).")
+        elif lang == "en":
+            if es_hits >= 2 and en_hits == 0:
+                raise ValueError(f"Respuesta del VLM rechazada: se esperaba idioma 'en' pero respondió en español ({texto[:60]}...).")
+            if pt_hits >= 2 and en_hits == 0:
+                raise ValueError(f"Respuesta del VLM rechazada: se esperaba idioma 'en' pero respondió en portugués ({texto[:60]}...).")
+
+    @staticmethod
+    def _parsear_json(text, idioma: Optional[str] = None) -> Dict[str, str]:
         if hasattr(text, "text"):
             text = text.text
         text = str(text).strip()
+        parsed_result = None
+
         # Nivel 1: JSON directo
         try:
             parsed = json.loads(text)
             if isinstance(parsed, dict):
-                return {
+                parsed_result = {
                     "summary": str(parsed.get("summary", "Technique feedback")).strip(),
                     "correction": str(parsed.get("correction", "")).strip(),
                 }
@@ -105,21 +197,29 @@ class LocalVLMAdapter:
             pass
 
         # Nivel 2: bloque ```json ... ```
-        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-        if match:
-            try:
-                parsed = json.loads(match.group(1))
-                return {
-                    "summary": str(parsed.get("summary", "Technique feedback")).strip(),
-                    "correction": str(parsed.get("correction", "")).strip(),
-                }
-            except json.JSONDecodeError:
-                pass
+        if not parsed_result:
+            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+            if match:
+                try:
+                    parsed = json.loads(match.group(1))
+                    parsed_result = {
+                        "summary": str(parsed.get("summary", "Technique feedback")).strip(),
+                        "correction": str(parsed.get("correction", "")).strip(),
+                    }
+                except json.JSONDecodeError:
+                    pass
 
         # Nivel 3: fallback texto plano
-        sentences = re.split(r"(?<=[.!?])\s+", text)
-        summary = sentences[0][:80] if sentences else "Technique feedback"
-        return {"summary": summary, "correction": text[:500]}
+        if not parsed_result:
+            sentences = re.split(r"(?<=[.!?])\s+", text)
+            summary = sentences[0][:80] if sentences else "Technique feedback"
+            parsed_result = {"summary": summary, "correction": text[:500]}
+
+        if idioma:
+            texto_completo = f"{parsed_result['summary']} {parsed_result['correction']}"
+            LocalVLMAdapter._validar_idioma(texto_completo, idioma)
+
+        return parsed_result
 
     def evaluar_fidelidad_grounding(
         self,
@@ -176,7 +276,8 @@ class LocalVLMAdapter:
             "3. Si la respuesta contiene afirmaciones técnicas ajenas, inventa nombres de llaves o movimientos ausentes en el contexto, agrégalas a 'unsupported_claims'.\n"
             "4. Si 'unsupported_claims' NO está vacío, 'faithfulness_score' DEBE ser menor a 0.70 (por ejemplo 0.0 a 0.50).\n"
             "5. Si todas las afirmaciones técnicas están respaldadas por el contexto, 'unsupported_claims' debe ser [] y 'faithfulness_score' entre 0.90 y 1.0.\n"
-            "6. Responde EXCLUSIVAMENTE con un JSON con el siguiente formato:\n"
+            "6. La respuesta puede estar redactada en un idioma diferente al del contexto (por ejemplo, respuesta en portugués o español con manuales en inglés). Evalúa la equivalencia semántica y biomecánica entre idiomas. NO consideres como no respaldada una afirmación por el solo hecho de ser una traducción o sinónimo en otro idioma.\n"
+            "7. Responde EXCLUSIVAMENTE con un JSON con el siguiente formato:\n"
             "{\"faithfulness_score\": <float entre 0.0 y 1.0>, \"unsupported_claims\": [<lista de strings>], \"reasoning\": \"<breve explicación>\"}"
         )
 

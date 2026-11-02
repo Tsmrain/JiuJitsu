@@ -1574,6 +1574,60 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `backend/scripts/11_evaluar_rag_multilingue.py`: Harness de evaluación comparativa offline y auditoría de recursos de hardware.
   - `backend/tests/domain/test_hybrid_retriever.py`: Suite de 6 pruebas unitarias para indexación, tokenización, búsqueda y ponderación RRF.
 
+---
+
+### 🔹 Iteración 3V: Biblioteca Pública Multimodal y Soporte Multi-idioma (i18n)
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-11-01
+- **Tag Previo:** `iter-3v-antes` (commit `28b2b36`)
+
+- **Objetivos y Mitigación de Riesgos (Larman):**
+  1. **Apertura de la Biblioteca Multimodal al Alumno y Profesor:**
+     - Exposición del corpus de manuales técnicos PDF mediante el endpoint seguro `POST /api/v1/conocimiento/biblioteca/buscar`.
+     - Búsqueda semántica densa impulsada por QwenEmbeddingAdapter filtrando `fuente_tipo: "manual_pdf"` en la colección Qdrant `rag_knowledge` (713 fragmentos indexados).
+     - Respuesta completa con fragmento textual (`contenido_texto`), número de página (`pagina`), cita formal (`cita`), relevancia semántica (`score`) y ruta de fotograma estático (`media_url`).
+  2. **Internacionalización y Soporte Multi-Idioma (i18n):**
+     - Soporte integral de tres idiomas: Español (`es`), Portugués (`pt`) e Inglés (`en`).
+     - Almacenamiento y persistencia del campo `idioma_preferido` en la tabla `usuarios` vía RPCs `get_user_idioma` y `set_user_idioma`, así como endpoints `PUT /auth/usuarios/{user_id}` y `PUT /auth/usuarios/{user_id}/idioma`.
+     - Sistema frontend de internacionalización (`frontend/src/i18n/translations.js`) con selector global en el header y sincronización automática en el perfil de usuario (`UserProfileModal.jsx`).
+     - Vista interactiva de la biblioteca (`LibraryView.jsx`) con búsqueda semántica, visor modal de imágenes de alta resolución y tarjetas de citas directas de los libros.
+  3. **Estrategias de Prompting Estrictas y Validación de Lenguaje en Parseador:**
+     - Modificación de `SpanishPromptStrategy`, `PortuguesePromptStrategy` y `EnglishPromptStrategy` forzando al VLM local a responder exclusivamente en el idioma especificado en formato estructurado JSON (`summary`, `correction`).
+     - Validación léxica en `LocalVLMAdapter._parsear_json` con rechazo mediante `ValueError` si el modelo responde en un idioma distinto, con un reintento a temperatura cero e instrucción reforzada.
+     - Adaptación multilingüe de mensajes de fallback del LLM-as-a-Judge ante alucinaciones o insuficiente contexto.
+  4. **Suite de Pruebas y Pruebas de Fuego:**
+     - `04_e2e_vlm_evaluacion.py` validado con `idioma_preferido: "pt"`, obteniendo feedback y summary 100% en portugués.
+     - `curl` validado con éxito sobre `/api/v1/conocimiento/biblioteca/buscar` devolviendo 10 resultados para "armbar" con citas de *Jiu-Jitsu University* y *BJJ-GuiaCompleto*.
+     - Suite completa Pytest: **120 passed, 6 skipped** en 12.28s (100% verde).
+
+- **Entregables:**
+  - `backend/corpocmente/infrastructure/ai/local_vlm_adapter.py`:
+    - Validador y parseador de idiomas (`_validar_idioma`, `_parsear_json`) con rechazo estricto.
+    - Soporte multi-idioma en LLM-Judge para evaluar equivalencia semántica y biomecánica entre manuales en inglés y respuestas en portugués/español.
+  - `backend/corpocmente/domain/strategies/prompt_strategies.py`:
+    - Estrategias de prompts en ES, PT, EN exigiendo respuesta estricta en el idioma indicado.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`:
+    - Recepción y propagación de `idioma`, fallbacks de juez contextualizados por idioma y feedback de alta similitud en idioma del usuario.
+  - `backend/corpocmente/ui/api/routes.py`:
+    - Endpoint público autenticado `POST /api/v1/conocimiento/biblioteca/buscar`.
+    - Servicio de fotogramas de manuales `GET /conocimiento/media/paginas/{asset_path:path}` compatible con token de autenticación.
+  - `backend/corpocmente/ui/api/auth_routes.py`:
+    - Endpoint `PUT /auth/usuarios/{user_id}/idioma` y retorno de `idioma_preferido` en perfiles y login.
+  - `backend/tests/ui/api/test_biblioteca_api.py`:
+    - Tests de autenticación y búsqueda semántica en la biblioteca.
+  - `backend/tests/infrastructure/test_local_vlm_adapter.py`:
+    - Tests unitarios de validación y rechazo por discrepancia de idioma.
+  - `frontend/src/i18n/translations.js`:
+    - Sistema de diccionario y función `getTranslation` para ES, PT y EN.
+  - `frontend/src/pages/LibraryView.jsx`:
+    - Vista de biblioteca multimodal con búsqueda semántica, visor de páginas y citas.
+  - `frontend/src/components/UserProfileModal.jsx`:
+    - Selector y persistencia del idioma preferido en perfil de usuario.
+  - `frontend/src/App.jsx`:
+    - Navegación, selector de idioma en header, integración de `LibraryView` y propagación de `idioma` en solicitudes de análisis.
+
+
 
 
 

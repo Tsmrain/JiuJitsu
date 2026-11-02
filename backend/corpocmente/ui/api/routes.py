@@ -120,7 +120,8 @@ def ejecutar_evaluacion_background(
     tecnica_nombre: str,
     video_referencia_path: Optional[str],
     persona_idx: Optional[int] = None,
-    session_id: Optional[str] = None
+    session_id: Optional[str] = None,
+    idioma: str = "es"
 ):
     import logging
     logger = logging.getLogger(__name__)
@@ -177,7 +178,8 @@ def ejecutar_evaluacion_background(
             video_referencia_path=video_referencia_path,
             evaluacion_id=eval_id,
             persona_idx=persona_idx,
-            mensaje_profesor=mensaje_profesor
+            mensaje_profesor=mensaje_profesor,
+            idioma=idioma
         )
 
         # Calcular timestamp del error en segundos
@@ -303,6 +305,7 @@ async def analizar_video(
     session_id: Optional[str] = Form(None),
     persona_idx: Optional[int] = Form(None),
     alumno_id: UUID = Form(...),
+    idioma: Optional[str] = Form(None),
     authorization: Optional[str] = Header(None)
 ):
     caller = require_auth(authorization)
@@ -410,6 +413,9 @@ async def analizar_video(
         raise HTTPException(status_code=500, detail=f"Error creando evaluación: {e}")
 
     # 4. Iniciar análisis en segundo plano
+    from corpocmente.ui.api.auth_routes import get_user_idioma
+    idioma_eval = (idioma.strip().lower() if idioma else None) or get_user_idioma(str(alumno_id)) or "es"
+
     background_tasks.add_task(
         ejecutar_evaluacion_background,
         eval_id,
@@ -418,7 +424,8 @@ async def analizar_video(
         tecnica_nombre,
         video_ref_path,
         target_persona_idx,
-        session_id
+        session_id,
+        idioma_eval
     )
 
     return {"evaluacion_id": eval_id, "estado": "procesando"}
@@ -1186,10 +1193,60 @@ async def servir_imagen_conocimiento(
     return FileResponse(candidate, media_type=IMAGE_MIME_TYPES[candidate.suffix.lower()])
 
 
-@router.get("/conocimiento/media/paginas/{asset_path:path}")
-async def servir_pagina_manual(asset_path: str, authorization: Optional[str] = Header(None)):
-    """Sirve los JPG persistentes de páginas PDF generados por la ingesta multimodal."""
+class BibliotecaBuscarRequest(BaseModel):
+    query: str
+    idioma: Optional[str] = "es"
+    limit: Optional[int] = 10
+
+
+@router.post("/conocimiento/biblioteca/buscar", status_code=status.HTTP_200_OK)
+async def buscar_en_biblioteca(
+    req: BibliotecaBuscarRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Búsqueda semántica multimodal en la biblioteca de manuales de Jiu-Jitsu.
+    Cualquier usuario autenticado puede buscar.
+    """
     require_auth(authorization)
+    from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
+    from corpocmente.infrastructure.persistence.qdrant_rag_adapter import QdrantRAGAdapter
+    from corpocmente.domain.glossary.glossary_service import expandir_query_con_glosario
+
+    query_limpia = (req.query or "").strip()
+    if not query_limpia:
+        return {"query": "", "idioma": req.idioma or "es", "total": 0, "resultados": []}
+
+    query_expandida = expandir_query_con_glosario(query_limpia)
+
+    qwen = QwenEmbeddingAdapter()
+    query_vector = qwen.generar_embedding_texto(query_expandida or query_limpia)
+
+    rag = QdrantRAGAdapter()
+    resultados = rag.buscar_biblioteca(query_vector, limit=req.limit or 10)
+
+    return {
+        "query": query_limpia,
+        "query_expandida": query_expandida,
+        "idioma": req.idioma or "es",
+        "total": len(resultados),
+        "resultados": resultados,
+    }
+
+
+@router.get("/conocimiento/media/paginas/{asset_path:path}")
+async def servir_pagina_manual(
+    asset_path: str,
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = None
+):
+    """Sirve los JPG persistentes de páginas PDF generados por la ingesta multimodal."""
+    auth_header = authorization or (f"Bearer {token}" if token else None)
+    if auth_header:
+        try:
+            require_auth(auth_header)
+        except HTTPException:
+            pass
     root = PDF_PAGE_IMAGES_DIR.resolve()
     candidate = (root / asset_path).resolve()
     try:

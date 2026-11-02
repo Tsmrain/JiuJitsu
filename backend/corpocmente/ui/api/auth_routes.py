@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
-from typing import List, Optional
+from typing import List, Optional, Union, Dict, Any
 from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException, status, Header
 from pydantic import BaseModel, EmailStr
@@ -37,6 +37,7 @@ class LoginResponse(BaseModel):
     avatar_url: Optional[str] = None
     sucursal_id: Optional[UUID] = None
     sucursal_nombre: str
+    idioma_preferido: Optional[str] = "es"
 
 class SucursalCreate(BaseModel):
     nombre: str
@@ -79,10 +80,37 @@ class UserUpdateRequest(BaseModel):
     nombre_completo: Optional[str] = None
     password: Optional[str] = None
     avatar_url: Optional[str] = None
+    idioma_preferido: Optional[str] = None
+
+class IdiomaUpdateRequest(BaseModel):
+    idioma: str
 
 
 def get_db():
     return PostgrestClient()
+
+def get_user_idioma(user_id: Union[str, UUID]) -> str:
+    db = get_db()
+    try:
+        res = db.rpc("get_user_idioma", {"p_user_id": str(user_id)})
+        if res and isinstance(res, str) and res.strip():
+            return res.strip().lower()
+    except Exception as e:
+        logger.debug(f"Error getting user idioma: {e}")
+    return "es"
+
+def set_user_idioma(user_id: Union[str, UUID], idioma: str) -> str:
+    db = get_db()
+    clean_lang = idioma.strip().lower() if idioma else "es"
+    if clean_lang not in ["es", "pt", "en"]:
+        clean_lang = "es"
+    try:
+        res = db.rpc("set_user_idioma", {"p_user_id": str(user_id), "p_idioma": clean_lang})
+        if res:
+            return res.strip().lower()
+    except Exception as e:
+        logger.warning(f"Error setting user idioma: {e}")
+    return clean_lang
 
 def clean_fallback_summary(feedback: Optional[str]) -> str:
     if not feedback:
@@ -226,6 +254,8 @@ async def login(req: LoginRequest):
     except Exception:
         profile = None
 
+    idioma_actual = get_user_idioma(legacy_payload["uid"])
+
     if not profile:
         return LoginResponse(
             token=signed_token,
@@ -236,7 +266,8 @@ async def login(req: LoginRequest):
             rol=legacy_payload.get("role", "alumno"),
             avatar_url=None,
             sucursal_id=UUID(legacy_payload["sucursal_id"]) if legacy_payload.get("sucursal_id") else None,
-            sucursal_nombre="Sucursal Principal"
+            sucursal_nombre="Sucursal Principal",
+            idioma_preferido=idioma_actual
         )
 
     sucursal_nombre = "Sucursal Eliminada"
@@ -257,7 +288,8 @@ async def login(req: LoginRequest):
         rol=profile["rol"],
         avatar_url=profile.get("avatar_url"),
         sucursal_id=UUID(profile["sucursal_id"]) if profile.get("sucursal_id") else None,
-        sucursal_nombre=sucursal_nombre
+        sucursal_nombre=sucursal_nombre,
+        idioma_preferido=idioma_actual
     )
 
 
@@ -389,6 +421,9 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
 
     db = get_db()
 
+    if req.idioma_preferido is not None:
+        set_user_idioma(user_id, req.idioma_preferido)
+
     updated_list = db.rpc("admin_update_user", {
         "p_user_id": str(user_id),
         "p_nombre": req.nombre_completo,
@@ -398,6 +433,7 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
     if not updated_list:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     updated = updated_list[0]
+    idioma_actual = get_user_idioma(updated["id"])
 
     signed_token = _sign_token({
         "uid": str(updated["id"]),
@@ -415,7 +451,87 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
         rol=updated["rol"],
         avatar_url=updated.get("avatar_url"),
         sucursal_id=UUID(updated["sucursal_id"]) if updated.get("sucursal_id") else None,
-        sucursal_nombre=updated.get("sucursal_nombre") or "Sucursal Eliminada"
+        sucursal_nombre=updated.get("sucursal_nombre") or "Sucursal Eliminada",
+        idioma_preferido=idioma_actual
+    )
+
+@router.put("/auth/usuarios/{user_id}/idioma", response_model=Dict[str, Any], status_code=status.HTTP_200_OK)
+async def actualizar_idioma_usuario(
+    user_id: UUID,
+    req: IdiomaUpdateRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Actualiza la preferencia de idioma del usuario ('es', 'pt', 'en').
+    Cualquier usuario autenticado puede cambiar su propio idioma, o admin a cualquiera.
+    """
+    caller = require_auth(authorization)
+    caller_uid = caller.get("uid")
+    caller_role = caller.get("role")
+    if caller_role != "admin" and str(user_id) != str(caller_uid):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to modify this preference."
+        )
+
+    clean_lang = req.idioma.lower().strip()
+    if clean_lang not in ["es", "pt", "en"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Idioma no soportado. Valores permitidos: 'es', 'pt', 'en'."
+        )
+
+    res = set_user_idioma(user_id, clean_lang)
+    return {"user_id": str(user_id), "idioma_preferido": res}
+
+@router.get("/auth/me", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def get_mi_perfil(authorization: Optional[str] = Header(None)):
+    """Retorna el perfil completo del usuario autenticado actual, incluyendo su idioma_preferido."""
+    caller = require_auth(authorization)
+    uid = caller.get("uid")
+    db = get_db()
+    try:
+        profile_list = db.rpc("get_user_profile", {"user_id": str(uid)})
+        profile = profile_list[0] if profile_list else None
+    except Exception:
+        profile = None
+
+    idioma = get_user_idioma(uid)
+
+    if not profile:
+        return LoginResponse(
+            token="",
+            user_id=UUID(uid),
+            nombre_completo=caller.get("email", "").split("@")[0].replace(".", " ").title(),
+            username=caller.get("email", "").split("@")[0],
+            email=caller.get("email", ""),
+            rol=caller.get("role", "alumno"),
+            avatar_url=None,
+            sucursal_id=UUID(caller["sucursal_id"]) if caller.get("sucursal_id") else None,
+            sucursal_nombre="Sucursal Principal",
+            idioma_preferido=idioma
+        )
+
+    sucursal_nombre = "Sucursal Eliminada"
+    if profile.get("sucursal_id"):
+        try:
+            sucursales = db.get("sucursales", {"id": f"eq.{profile['sucursal_id']}"})
+            if sucursales:
+                sucursal_nombre = sucursales[0]["nombre"]
+        except Exception:
+            pass
+
+    return LoginResponse(
+        token="",
+        user_id=UUID(profile["id"]),
+        nombre_completo=profile["nombre_completo"],
+        username=profile["username"],
+        email=profile["email"],
+        rol=profile["rol"],
+        avatar_url=profile.get("avatar_url"),
+        sucursal_id=UUID(profile["sucursal_id"]) if profile.get("sucursal_id") else None,
+        sucursal_nombre=sucursal_nombre,
+        idioma_preferido=idioma
     )
 
 @router.post("/auth/impersonate/{user_id}", response_model=LoginResponse, status_code=status.HTTP_200_OK)
@@ -436,6 +552,7 @@ async def impersonate_user(user_id: UUID, authorization: Optional[str] = Header(
         "email": user["email"],
         "sucursal_id": str(user["sucursal_id"]) if user.get("sucursal_id") else ""
     })
+    idioma = get_user_idioma(user["id"])
 
     return LoginResponse(
         token=signed_token,
@@ -446,7 +563,8 @@ async def impersonate_user(user_id: UUID, authorization: Optional[str] = Header(
         rol=user["rol"],
         avatar_url=user.get("avatar_url"),
         sucursal_id=UUID(user["sucursal_id"]) if user.get("sucursal_id") else None,
-        sucursal_nombre=user.get("sucursal_nombre") or "Sucursal Eliminada"
+        sucursal_nombre=user.get("sucursal_nombre") or "Sucursal Eliminada",
+        idioma_preferido=idioma
     )
 
 @router.get("/sucursales", response_model=List[SucursalResponse], status_code=status.HTTP_200_OK)

@@ -23,11 +23,15 @@ class SpanishPromptStrategy(IPromptStrategy):
                 f"'{mensaje_profesor.strip()}'. Asegúrate de alinear tu corrección estrictamente con estas instrucciones.\n"
             )
         prompt += (
-            "Responde en español con máximo 2 frases y 45 palabras. Indica el principal error "
-            "visible y una corrección concreta mencionando la articulación o postura afectada. Usa lenguaje simple, respetuoso y directo. "
-            "Básate en el mensaje del profesor y en las imágenes del manual adjuntas para dar la corrección. Cita la página (p. X) de donde sacaste la información. "
+            "RESPONDE ESTRICTAMENTE EN ESPAÑOL (NO USES INGLÉS NI PORTUGUÉS). "
+            "Proporciona un objeto JSON con exactamente dos campos: "
+            "'summary' (resumen corto del error principal en español, máximo 8 palabras) "
+            "y 'correction' (corrección técnica en español con máximo 2 frases y 45 palabras mencionando la articulación o postura afectada). "
+            "Si el error es mínimo, pon en summary 'Buena técnica' y en correction un breve elogio. "
+            "Básate en el mensaje del profesor y en las imágenes del manual adjuntas para dar la corrección. "
+            "Cita la página del libro como '(p. X)' de donde sacaste la referencia visual. "
             "No uses Markdown, títulos, listas, saludos ni explicaciones largas. No menciones "
-            "herramientas, modelos, algoritmos, tecnologías ni cómo se hizo el análisis. "
+            "herramientas, modelos, algoritmos o tecnologías. "
             "Si la imagen o el contexto no permite confirmar un detalle, no lo inventes."
         )
         return prompt
@@ -48,11 +52,12 @@ class EnglishPromptStrategy(IPromptStrategy):
                 f"'{mensaje_profesor.strip()}'. Ensure your correction aligns strictly with these instructions.\n"
             )
         prompt += (
-            "Reply in English. Provide a JSON object with exactly two fields: "
-            "'summary' (max 8 words, a short label of the main error, e.g. 'Elbow flaring, lose hip connection') "
-            "and 'correction' (max 2 sentences, 45 words, Markdown format with one bold keyword and one bullet point if helpful). "
+            "REPLY STRICTLY IN ENGLISH (DO NOT USE SPANISH OR PORTUGUESE). "
+            "Provide a JSON object with exactly two fields: "
+            "'summary' (max 8 words in English, a short label of the main error) "
+            "and 'correction' (max 2 sentences, 45 words in English). "
             "If the error is minor, set summary to 'Good technique' and correction to a brief praise. "
-            "Your correction must explicitly align with the instructor's message and cite the manual page from the context: e.g. '(p. 108)'. "
+            "Your correction must explicitly align with the instructor's message and cite the manual page from the context: e.g. '(p. X)'. "
             "Do not mention tools, models, algorithms, or how the analysis was performed. "
             "If the image does not allow confirming a detail, do not invent it."
         )
@@ -74,11 +79,13 @@ class PortuguesePromptStrategy(IPromptStrategy):
                 f"'{mensaje_profesor.strip()}'. Certifique-se de alinhar sua correção estritamente com estas instruções.\n"
             )
         prompt += (
-            "Responda em português. Forneça um objeto JSON com exatamente dois campos: "
-            "'summary' (resumo curto do erro principal em até 8 palavras) "
-            "e 'correction' (correção técnica em até 2 frases e 45 palavras). "
+            "RESPONDA ESTRITAMENTE EM PORTUGUÊS (NÃO USE ESPANHOL NEM INGLÊS). "
+            "Forneça um objeto JSON com exatamente dois campos: "
+            "'summary' (resumo curto do erro principal em português, até 8 palavras) "
+            "e 'correction' (correção técnica em português, até 2 frases e 45 palavras). "
             "Se o erro for mínimo, defina summary como 'Boa técnica' e correction como um breve elogio. "
-            "Cite a fonte se o contexto incluir uma (ex: 'como ensinado na Jiu-Jitsu University'). "
+            "Baseie-se na mensagem do professor e nas imagens anexadas das páginas do manual para dar a correção. "
+            "Cite a página do livro como '(p. X)' de onde tirou a referência visual. "
             "Não mencione ferramentas, modelos, algoritmos ou tecnologias. "
             "Se o contexto ou imagem não permitir confirmar um detalhe, não invente."
         )

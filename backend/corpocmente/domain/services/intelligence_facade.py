@@ -37,7 +37,8 @@ class IntelligenceAnalysisFacade:
         video_referencia_path: Optional[str] = None,
         evaluacion_id: Optional[str] = None,
         persona_idx: Optional[int] = None,
-        mensaje_profesor: str = ""
+        mensaje_profesor: str = "",
+        idioma: str = "es"
     ) -> AnalisisResultDTO:
         from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
@@ -189,8 +190,16 @@ class IntelligenceAnalysisFacade:
         # 4. Evaluación y feedback condicional (IA sólo si hay errores)
         UMBRAL_ACEPTABLE = 85.0
         if similitud >= UMBRAL_ACEPTABLE:
-            feedback_summary = "Good technique"
-            feedback_correction = "Technique executed correctly. Excellent work!"
+            lang_clean = (idioma or "es").lower().strip()
+            if lang_clean in ("pt", "portuguese", "português", "portugues"):
+                feedback_summary = "Boa técnica"
+                feedback_correction = "Técnica executada corretamente. Excelente trabalho!"
+            elif lang_clean in ("es", "spanish", "español"):
+                feedback_summary = "Buena técnica"
+                feedback_correction = "¡Técnica ejecutada correctamente. Excelente trabajo!"
+            else:
+                feedback_summary = "Good technique"
+                feedback_correction = "Technique executed correctly. Excellent work!"
             feedback_texto = feedback_correction
         else:
             contexto_profundo = ""
@@ -233,7 +242,8 @@ class IntelligenceAnalysisFacade:
                 except Exception as e_rag:
                     logger.warning("Fallo en recuperación RAG multimodal o reranking (no bloqueante): %s", e_rag)
 
-            strategy = EnglishPromptStrategy()
+            from corpocmente.domain.strategies.prompt_strategies import obtener_estrategia_prompt
+            strategy = obtener_estrategia_prompt(idioma)
             prompt = strategy.construir_prompt_evaluacion(
                 tecnica_nombre,
                 discrepancias_detectadas,
@@ -246,6 +256,7 @@ class IntelligenceAnalysisFacade:
                 prompt,
                 frame_resaltado,
                 evidencias_visuales=evidencias_rag,
+                idioma=idioma,
             )
 
             if isinstance(res_gemini, dict):
@@ -279,11 +290,25 @@ class IntelligenceAnalysisFacade:
                                 faith_score,
                                 unsupported,
                             )
-                            feedback_summary = "Insuficiente contexto"
-                            feedback_correction = (
-                                "No hay suficiente información en los manuales para generar una corrección detallada. "
-                                "Consulta con tu instructor."
-                            )
+                            lang_clean = (idioma or "es").lower().strip()
+                            if lang_clean in ("pt", "portuguese", "português", "portugues"):
+                                feedback_summary = "Contexto insuficiente"
+                                feedback_correction = (
+                                    "Não há informações suficientes nos manuais para gerar uma correção detalhada. "
+                                    "Consulte seu instrutor."
+                                )
+                            elif lang_clean in ("en", "english"):
+                                feedback_summary = "Insufficient context"
+                                feedback_correction = (
+                                    "There is not enough information in the manuals to generate a detailed correction. "
+                                    "Please consult with your instructor."
+                                )
+                            else:
+                                feedback_summary = "Insuficiente contexto"
+                                feedback_correction = (
+                                    "No hay suficiente información en los manuales para generar una corrección detallada. "
+                                    "Consulta con tu instructor."
+                                )
                             feedback_texto = feedback_correction
                 except Exception as e_judge:
                     logger.warning("Fallo en evaluación de fidelidad grounding (no bloqueante): %s", e_judge)

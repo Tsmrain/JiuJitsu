@@ -50,3 +50,36 @@ def test_evaluar_fidelidad_tecnica_correcta_retorna_1():
     assert res["unsupported_claims"] == []
 
 
+def test_parsear_json_valida_idioma_portugues_exitoso():
+    raw = '{"summary": "Cotovelo aberto", "correction": "Mantenha o cotovelo colado ao corpo e abaixe o quadril (p. 555)."}'
+    res = LocalVLMAdapter._parsear_json(raw, idioma="pt")
+    assert res["summary"] == "Cotovelo aberto"
+    assert "quadril" in res["correction"]
+
+
+def test_parsear_json_rechaza_ingles_cuando_pide_portugues():
+    raw = '{"summary": "Elbow flaring", "correction": "Keep your elbow tight against the ribs and lower hips."}'
+    with pytest.raises(ValueError, match="Respuesta del VLM rechazada.*se esperaba idioma 'pt'"):
+        LocalVLMAdapter._parsear_json(raw, idioma="pt")
+
+
+def test_parsear_json_rechaza_espanol_cuando_pide_portugues():
+    raw = '{"summary": "Codo abierto", "correction": "Mantén el codo pegado a las costillas del alumno y baja la cadera (p. 555)."}'
+    with pytest.raises(ValueError, match="Respuesta del VLM rechazada.*se esperaba idioma 'pt'"):
+        LocalVLMAdapter._parsear_json(raw, idioma="pt")
+
+
+def test_parsear_json_valida_idioma_espanol_exitoso():
+    raw = '{"summary": "Codo abierto", "correction": "Mantén el codo pegado a las costillas y baja la cadera (p. 555)."}'
+    res = LocalVLMAdapter._parsear_json(raw, idioma="es")
+    assert res["summary"] == "Codo abierto"
+    assert "cadera" in res["correction"]
+
+
+def test_parsear_json_rechaza_ingles_cuando_pide_espanol():
+    raw = '{"summary": "Elbow flaring", "correction": "Keep your elbow tight against the ribs and lower hips."}'
+    with pytest.raises(ValueError, match="Respuesta del VLM rechazada.*se esperaba idioma 'es'"):
+        LocalVLMAdapter._parsear_json(raw, idioma="es")
+
+
+

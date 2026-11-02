@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { getTranslation } from '../i18n/translations';
 
-export default function UserProfileModal({ isOpen, user, onClose, onUpdateSuccess, onLogout }) {
+export default function UserProfileModal({ isOpen, user, onClose, onUpdateSuccess, onLogout, idioma, onLanguageChange }) {
   const [nombre, setNombre] = useState(user?.nombre_completo || '');
   const [password, setPassword] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
+  const [selectedIdioma, setSelectedIdioma] = useState(user?.idioma_preferido || idioma || 'es');
   const [loading, setLoading] = useState(false);
+
+  const t = (key) => getTranslation(selectedIdioma || idioma, key);
 
   if (!isOpen || !user) return null;
 
@@ -31,7 +35,8 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
     try {
       const payload = {
         nombre_completo: nombre,
-        avatar_url: avatarUrl || null
+        avatar_url: avatarUrl || null,
+        idioma_preferido: selectedIdioma,
       };
 
       if (password.trim() !== '') {
@@ -49,8 +54,11 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
 
       if (res.ok) {
         const updatedUser = await res.json();
+        if (onLanguageChange) {
+          onLanguageChange(selectedIdioma);
+        }
         onUpdateSuccess(updatedUser);
-        alert("Profile updated successfully!");
+        alert(t('profileSuccess'));
         onClose();
       } else {
         const errorData = await res.json();
@@ -58,7 +66,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
       }
     } catch (err) {
       console.error(err);
-      alert("Connection error to server.");
+      alert(t('connectionError'));
     } finally {
       setLoading(false);
     }
@@ -66,8 +74,8 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ padding: '2rem', maxWidth: '400px', width: '90%', borderRadius: '12px' }}>
-        <h2 style={{ margin: '0 0 1.5rem 0', textAlign: 'center', color: 'var(--brand-red)' }}>My Profile</h2>
+      <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ padding: '2rem', maxWidth: '420px', width: '90%', borderRadius: '12px' }}>
+        <h2 style={{ margin: '0 0 1.5rem 0', textAlign: 'center', color: 'var(--brand-red)' }}>{t('profileTitle')}</h2>
         
         <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
@@ -87,14 +95,14 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
             
             <div>
               <label htmlFor="avatar-upload" style={{ cursor: 'pointer', padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>
-                Change Photo (Max 2MB)
+                {t('changePhoto')}
               </label>
               <input id="avatar-upload" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Username / Email</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>{t('usernameEmail')}</label>
             <input 
               type="text" value={`@${user.username} | ${user.email}`} disabled
               style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'gray', boxSizing: 'border-box' }}
@@ -102,24 +110,49 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Full Name</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>{t('fullName')}</label>
             <input 
               type="text" required value={nombre} onChange={e => setNombre(e.target.value)}
               style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
             />
           </div>
 
+          {/* Selector de Idioma (i18n) */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>New Password (Optional)</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+              🌐 {t('languagePreference')}
+            </label>
+            <select
+              value={selectedIdioma}
+              onChange={(e) => setSelectedIdioma(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.65rem',
+                borderRadius: '8px',
+                background: '#161b22',
+                border: '1px solid rgba(255,255,255,0.25)',
+                color: 'white',
+                boxSizing: 'border-box',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="es">🇪🇸 Español</option>
+              <option value="pt">🇧🇷 Português</option>
+              <option value="en">🇺🇸 English</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>{t('newPassword')}</label>
             <input 
               type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="Leave blank to keep current password"
+              placeholder={t('passwordPlaceholder')}
               style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
             />
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.75rem', marginTop: '0.5rem' }}>
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? t('saving') : t('saveChanges')}
           </button>
         </form>
 
@@ -130,7 +163,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
           className="btn-secondary" 
           style={{ width: '100%', padding: '0.75rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}
         >
-          Sign Out
+          {t('signOut')}
         </button>
       </div>
     </div>

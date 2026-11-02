@@ -21,6 +21,16 @@ alumno_id = user_data["user_id"]
 headers = {"Authorization": f"Bearer {token}"}
 print(f"   Logueado OK. Alumno ID: {alumno_id}")
 
+print("1.1. Configurar idioma_preferido='pt' (Portugués) para el usuario...")
+idioma_resp = requests.put(
+    f"{API_BASE}/auth/usuarios/{alumno_id}/idioma",
+    json={"idioma": "pt"},
+    headers=headers,
+    timeout=10
+)
+assert idioma_resp.status_code == 200, f"Error actualizando idioma: {idioma_resp.text}"
+print(f"   Idioma configurado a: {idioma_resp.json().get('idioma_preferido')}")
+
 print("2. Obtener técnica activa...")
 tecnicas_resp = requests.get(f"{API_BASE}/tecnicas", headers=headers, timeout=10)
 assert tecnicas_resp.status_code == 200, f"Error listando tecnicas: {tecnicas_resp.text}"
@@ -84,7 +94,8 @@ analizar_resp = requests.post(
         "tecnica_nombre": tecnica_nombre,
         "session_id": session_id,
         "alumno_id": alumno_id,
-        "persona_idx": 0
+        "persona_idx": 0,
+        "idioma": "pt"
     },
     headers=headers,
     timeout=10

@@ -141,3 +141,39 @@ class QdrantRAGAdapter:
             points_selector=FilterSelector(filter=filtro),
         )
 
+    def buscar_biblioteca(self, query_embedding: list, limit: int = 10) -> list:
+        """
+        Búsqueda semántica en la colección RAG filtrando exclusivamente por manuales PDF.
+        Retorna lista de diccionarios con contenido_texto, media_url, pagina, fuente_nombre, cita y score.
+        """
+        if len(query_embedding) != EXPECTED_RAG_DIM:
+            raise ValueError(f"Embedding de consulta inválido: se esperaban {EXPECTED_RAG_DIM} dimensiones.")
+        filtro = Filter(must=[
+            FieldCondition(key="fuente_tipo", match=MatchValue(value="manual_pdf")),
+        ])
+        resultados = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=("dense", query_embedding),
+            query_filter=filtro,
+            limit=limit,
+        )
+        items = []
+        for r in resultados:
+            payload = r.payload or {}
+            pagina = payload.get("pagina")
+            fuente_nom = payload.get("fuente_nombre") or "Manual"
+            cita = f"{fuente_nom}, p. {pagina}" if pagina else fuente_nom
+            items.append({
+                "id": str(r.id),
+                "score": float(r.score),
+                "contenido_texto": payload.get("contenido_texto", ""),
+                "media_url": payload.get("media_url"),
+                "media_path": payload.get("media_path"),
+                "pagina": pagina,
+                "fuente_nombre": fuente_nom,
+                "fuente_referencia": payload.get("fuente_referencia"),
+                "cita": cita,
+            })
+        return items
+
+

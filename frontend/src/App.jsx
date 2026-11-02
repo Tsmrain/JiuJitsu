@@ -5,22 +5,53 @@ import FeedbackView from './pages/FeedbackView'
 import AdminSucursales from './pages/AdminSucursales'
 import ProfesorTecnicas from './pages/ProfesorTecnicas'
 import StudentProgress from './pages/StudentProgress'
+import LibraryView from './pages/LibraryView'
 import ProgressRing from './components/ProgressRing'
 import LoginModal from './components/LoginModal'
 import UserProfileModal from './components/UserProfileModal'
+import { getTranslation } from './i18n/translations'
 
 function App() {
-  const [appState, setAppState] = useState('ADMIN_PANEL'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL, PROFESOR_PANEL
+  const [appState, setAppState] = useState('ADMIN_PANEL'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL, PROFESOR_PANEL, STUDENT_PROGRESS, LIBRARY
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [selectedTecnica, setSelectedTecnica] = useState(null);
   const [currentEvaluacionId, setCurrentEvaluacionId] = useState(null);
+
+  // Estado de Idioma (i18n)
+  const [idioma, setIdioma] = useState(() => {
+    return localStorage.getItem('app_idioma') || 'es';
+  });
+
+  const t = (key) => getTranslation(idioma, key);
 
   // Estado de Autenticación
   const [user, setUser] = useState(null);
   const [originalAdminUser, setOriginalAdminUser] = useState(null); // Para despersonalización
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleLanguageChange = async (newLang) => {
+    if (!newLang) return;
+    const clean = newLang.toLowerCase().trim();
+    setIdioma(clean);
+    localStorage.setItem('app_idioma', clean);
+
+    if (user?.user_id && user?.token) {
+      try {
+        await fetch(`http://localhost:8000/api/v1/auth/usuarios/${user.user_id}/idioma`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          },
+          body: JSON.stringify({ idioma: clean })
+        });
+      } catch (err) {
+        console.warn('Could not persist language to user profile:', err);
+      }
+    }
+  };
 
   const handleUploadStart = async (uploadData) => {
     // Supports uploadData object ({ sessionId, personaIdx, tecnica, file }) and classic args (file, tecnica)
@@ -39,7 +70,7 @@ function App() {
       file = uploadData.file;
     }
 
-    console.log("Starting analysis:", { sessionId, personaIdx, tecnica: tecnica?.nombre });
+    console.log("Starting analysis:", { sessionId, personaIdx, tecnica: tecnica?.nombre, idioma });
     if (tecnica) setSelectedTecnica(tecnica);
     setAppState('UPLOADING');
     setUploadProgress(10);
@@ -59,7 +90,7 @@ function App() {
         formData.append("profesor_id", tecnica.profesor_id);
       }
     }
-    formData.append("idioma", "en");
+    formData.append("idioma", idioma);
     formData.append("alumno_id", user.user_id);
 
     try {
@@ -84,7 +115,7 @@ function App() {
 
     } catch (error) {
       console.error("Error uploading video:", error);
-      alert("Connection error with server. Make sure the backend is running.");
+      alert(t('connectionError'));
       setAppState('IDLE');
       setUploadProgress(0);
     }
@@ -141,12 +172,12 @@ function App() {
     <div className="app-container">
       {originalAdminUser && (
         <div style={{ background: '#d01118', color: 'white', textAlign: 'center', padding: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', zIndex: 100 }}>
-          Impersonation Mode: You are using the account of {user?.nombre_completo}.
+          {t('impersonationNotice')} {user?.nombre_completo}.
           <button 
             onClick={() => { setUser(originalAdminUser); setOriginalAdminUser(null); setAppState('IDLE'); }} 
             style={{ marginLeft: '1rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid white', background: 'transparent', color: 'white', cursor: 'pointer' }}
           >
-            Return to Admin Account
+            {t('returnToAdmin')}
           </button>
         </div>
       )}
@@ -157,14 +188,33 @@ function App() {
           </span>
         </div>
 
-        <div className="user-nav" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="user-nav" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Botón de Biblioteca (Pública para usuarios autenticados) */}
+          {user && (
+            <button
+              className="btn-secondary"
+              onClick={() => setAppState(appState === 'LIBRARY' ? 'IDLE' : 'LIBRARY')}
+              style={{
+                fontSize: '0.8rem',
+                padding: '0.4rem 0.8rem',
+                borderColor: appState === 'LIBRARY' ? '#ffd43b' : 'rgba(255, 212, 59, 0.6)',
+                color: appState === 'LIBRARY' ? '#ffd43b' : 'white',
+                background: appState === 'LIBRARY' ? 'rgba(255, 212, 59, 0.15)' : 'transparent',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              📖 {t('library')}
+            </button>
+          )}
+
           {user && user.rol !== 'profesor' && (
             <button 
               className="btn-secondary"
               onClick={() => setAppState('IDLE')}
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
             >
-              Analyze Video
+              {t('analyzeVideo')}
             </button>
           )}
 
@@ -174,7 +224,7 @@ function App() {
               onClick={() => setAppState(appState === 'STUDENT_PROGRESS' ? 'IDLE' : 'STUDENT_PROGRESS')}
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
             >
-              My Progress
+              {t('myProgress')}
             </button>
           )}
 
@@ -185,7 +235,7 @@ function App() {
               onClick={() => setAppState(appState === 'ADMIN_PANEL' ? 'IDLE' : 'ADMIN_PANEL')}
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
             >
-              Admin Panel
+              {t('adminPanel')}
             </button>
           )}
 
@@ -196,9 +246,30 @@ function App() {
               onClick={() => setAppState(appState === 'PROFESOR_PANEL' ? 'IDLE' : 'PROFESOR_PANEL')}
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
             >
-              Instructor Panel
+              {t('instructorPanel')}
             </button>
           )}
+
+          {/* Selector Global de Idioma (i18n) en Header */}
+          <select
+            value={idioma}
+            onChange={(e) => handleLanguageChange(e.target.value)}
+            style={{
+              background: 'rgba(0, 0, 0, 0.45)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              borderRadius: '6px',
+              padding: '0.35rem 0.5rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+            title="Idioma / Language"
+          >
+            <option value="es">🇪🇸 ES</option>
+            <option value="pt">🇧🇷 PT</option>
+            <option value="en">🇺🇸 EN</option>
+          </select>
 
           <div style={{ textAlign: 'right' }}>
             {user ? (
@@ -207,14 +278,14 @@ function App() {
               </span>
             ) : (
               <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                Guest
+                {t('guest')}
               </span>
             )}
           </div>
 
           <div 
             onClick={() => user ? setIsProfileOpen(true) : setIsLoginOpen(true)}
-            title={user ? "My Profile" : "Sign In"}
+            title={user ? t('myProfile') : t('signIn')}
             style={{
               width: '36px', height: '36px', borderRadius: '50%', 
               background: user?.rol === 'admin' ? 'var(--brand-red)' : 'var(--glass-bg)', 
@@ -233,7 +304,15 @@ function App() {
         </div>
       </header>
 
-      <main style={{flex: 1, display: 'flex', alignItems: ['ADMIN_PANEL', 'PROFESOR_PANEL', 'STUDENT_PROGRESS'].includes(appState) ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
+      <main style={{flex: 1, display: 'flex', alignItems: ['ADMIN_PANEL', 'PROFESOR_PANEL', 'STUDENT_PROGRESS', 'LIBRARY'].includes(appState) ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
+        {appState === 'LIBRARY' && (
+          <LibraryView
+            user={user}
+            idioma={idioma}
+            onClose={() => setAppState(user?.rol === 'profesor' ? 'PROFESOR_PANEL' : 'IDLE')}
+          />
+        )}
+
         {appState === 'ADMIN_PANEL' && (
           <AdminSucursales 
             user={user} 
@@ -247,6 +326,9 @@ function App() {
             onImpersonate={(newUser, currentAdmin) => { 
               setOriginalAdminUser(currentAdmin); 
               setUser(newUser); 
+              if (newUser?.idioma_preferido) {
+                handleLanguageChange(newUser.idioma_preferido);
+              }
               if (newUser?.rol === 'profesor') {
                 setAppState('PROFESOR_PANEL');
               } else {
@@ -265,9 +347,9 @@ function App() {
         )}
         {appState === 'IDLE' && !user && (
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-             <h2>Restricted Access</h2>
-             <p>You must sign in to analyze videos with artificial intelligence.</p>
-             <button className="btn-primary" onClick={() => setIsLoginOpen(true)} style={{ marginTop: '1rem' }}>Sign In</button>
+             <h2>{t('restrictedAccess')}</h2>
+             <p>{t('restrictedMsg')}</p>
+             <button className="btn-primary" onClick={() => setIsLoginOpen(true)} style={{ marginTop: '1rem' }}>{t('signIn')}</button>
           </div>
         )}
 
@@ -275,11 +357,11 @@ function App() {
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem'}}>
             <ProgressRing 
               value={appState === 'UPLOADING' ? uploadProgress : 'indeterminate'} 
-              statusText={appState === 'UPLOADING' ? 'Uploading Video...' : 'Processing with AI...'} 
+              statusText={appState === 'UPLOADING' ? t('uploadingVideo') : t('processingAI')} 
             />
             {appState === 'PROCESSING' && (
               <p style={{color: 'var(--text-secondary)', maxWidth: '400px', textAlign: 'center'}}>
-                Extracting poses and comparing against the instructor's biomechanical reference...
+                {t('processingDesc')}
               </p>
             )}
           </div>
@@ -300,6 +382,9 @@ function App() {
         onClose={() => setIsLoginOpen(false)} 
         onLoginSuccess={(userData) => {
           setUser(userData);
+          if (userData?.idioma_preferido) {
+            handleLanguageChange(userData.idioma_preferido);
+          }
           if (userData.rol === 'profesor') {
             setAppState('PROFESOR_PANEL');
           }
@@ -311,8 +396,15 @@ function App() {
         <UserProfileModal 
           isOpen={isProfileOpen} 
           user={user}
+          idioma={idioma}
+          onLanguageChange={handleLanguageChange}
           onClose={() => setIsProfileOpen(false)} 
-          onUpdateSuccess={(userData) => setUser(userData)}
+          onUpdateSuccess={(userData) => {
+            setUser(userData);
+            if (userData?.idioma_preferido) {
+              handleLanguageChange(userData.idioma_preferido);
+            }
+          }}
           onLogout={() => { setUser(null); setOriginalAdminUser(null); setIsProfileOpen(false); setAppState('IDLE'); }}
         />
       )}

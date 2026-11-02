@@ -78,7 +78,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
         <button 
           onClick={onClose}
           aria-label="Close"
-          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', width: '44px', height: '44px', background: 'transparent', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           ✕
         </button>
@@ -158,7 +158,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.75rem', marginTop: '0.5rem' }}>
+          <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.75rem', marginTop: '0.5rem', minHeight: '44px' }}>
             {loading ? t('saving') : t('saveChanges')}
           </button>
         </form>
@@ -168,7 +168,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
         <button 
           onClick={onLogout} 
           className="btn-secondary" 
-          style={{ width: '100%', padding: '0.75rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}
+          style={{ width: '100%', padding: '0.75rem', color: '#ff6b6b', borderColor: '#ff6b6b', minHeight: '44px' }}
         >
           {t('signOut')}
         </button>

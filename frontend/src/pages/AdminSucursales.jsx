@@ -394,7 +394,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
   };
 
   return (
-    <div style={{ padding: '1.5rem', width: '100%', maxWidth: '100%', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
+    <div style={{ padding: '1rem 0.5rem', width: '100%', maxWidth: '100%', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
@@ -410,8 +410,10 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
             fontWeight: 'bold', 
             borderRadius: '30px', 
             boxShadow: '0 0 20px rgba(208,17,24,0.7)', 
-            display: 'flex', 
+            display: 'inline-flex', 
             alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: '44px',
             gap: '0.5rem',
             cursor: 'pointer',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease'
@@ -551,7 +553,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>
           {user?.rol === 'admin' ? `${t('registeredBranches')} (${sucursales.length})` : `${t('exploreOurBranches')} (${sucursales.length})`}
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
           {sucursales.map((s) => (
             <div 
               key={s.id} 

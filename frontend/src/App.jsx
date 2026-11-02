@@ -32,6 +32,7 @@ function App() {
   const [originalAdminUser, setOriginalAdminUser] = useState(null); // Para despersonalización
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Hook de testing visual para automatizaciones Playwright / E2E
@@ -188,11 +189,11 @@ function App() {
   return (
     <div className="app-container">
       {originalAdminUser && (
-        <div style={{ background: '#d01118', color: 'white', textAlign: 'center', padding: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', zIndex: 100 }}>
-          {t('impersonationNotice')} {user?.nombre_completo}.
+        <div className="impersonation-banner">
+          <span>{t('impersonationNotice')} {user?.nombre_completo}.</span>
           <button 
             onClick={() => { setUser(originalAdminUser); setOriginalAdminUser(null); setAppState('IDLE'); }} 
-            style={{ marginLeft: '1rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid white', background: 'transparent', color: 'white', cursor: 'pointer' }}
+            className="impersonation-return-btn"
           >
             {t('returnToAdmin')}
           </button>
@@ -202,10 +203,12 @@ function App() {
         <div className="brand" onClick={() => setAppState('ADMIN_PANEL')} style={{ cursor: 'pointer' }}>
           <img src="/logo.jpeg" alt="Corpo e Mente Logo" className="brand-logo" />
           <span className="brand-text">
+            Corpo <span className="brand-accent">e</span> Mente
           </span>
         </div>
 
-        <div className="user-nav" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        {/* Desktop Navigation Bar */}
+        <div className="nav-desktop">
           {/* Botón de Biblioteca (Pública para usuarios autenticados) */}
           {user && (
             <button
@@ -327,7 +330,183 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Mobile Navigation Controls */}
+        <div className="nav-mobile-right">
+          <div 
+            onClick={() => user ? setIsProfileOpen(true) : setIsLoginOpen(true)}
+            title={user ? t('myProfile') : t('signIn')}
+            style={{
+              width: '38px', height: '38px', borderRadius: '50%', 
+              background: user?.rol === 'admin' ? 'var(--brand-red)' : 'var(--glass-bg)', 
+              border: '2px solid var(--brand-red)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 'bold', cursor: 'pointer', color: 'white',
+              overflow: 'hidden'
+            }}
+          >
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <>{user ? user.rol[0].toUpperCase() : "?"}</>
+            )}
+          </div>
+
+          <button 
+            type="button"
+            className="hamburger-btn"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            title="Menu"
+          >
+            ☰
+          </button>
+        </div>
       </header>
+
+      {/* Mobile Drawer (Touch UI) */}
+      {isMobileMenuOpen && (
+        <div className="drawer-backdrop" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <div className="drawer-user-info">
+                <div 
+                  onClick={() => { setIsMobileMenuOpen(false); user ? setIsProfileOpen(true) : setIsLoginOpen(true); }}
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--glass-bg)', border: '2px solid var(--brand-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}
+                >
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span>{user ? user.rol[0].toUpperCase() : '?'}</span>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{user ? user.nombre_completo : t('guest')}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    {user ? user.rol.toUpperCase() : (idioma === 'pt' ? 'Visitante' : idioma === 'en' ? 'Visitor' : 'Invitado')}
+                  </div>
+                </div>
+              </div>
+              <button 
+                type="button"
+                className="drawer-close-btn" 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="drawer-links">
+              {user && (
+                <button
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => {
+                    setLibraryInitialQuery(null);
+                    setAppState('LIBRARY');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{
+                    borderColor: appState === 'LIBRARY' ? '#ffd43b' : 'rgba(255, 212, 59, 0.4)',
+                    color: appState === 'LIBRARY' ? '#ffd43b' : 'white',
+                    background: appState === 'LIBRARY' ? 'rgba(255, 212, 59, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                  }}
+                >
+                  📖 {t('library')}
+                </button>
+              )}
+
+              {user && user.rol !== 'profesor' && (
+                <button 
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => { setAppState('IDLE'); setIsMobileMenuOpen(false); }}
+                  style={{ borderColor: appState === 'IDLE' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
+                >
+                  📹 {t('analyzeVideo')}
+                </button>
+              )}
+
+              {user?.rol === 'alumno' && (
+                <button
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => { setAppState('STUDENT_PROGRESS'); setIsMobileMenuOpen(false); }}
+                  style={{ borderColor: appState === 'STUDENT_PROGRESS' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
+                >
+                  📊 {t('myProgress')}
+                </button>
+              )}
+
+              {user?.rol === 'admin' && (
+                <button 
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => { setAppState('ADMIN_PANEL'); setIsMobileMenuOpen(false); }}
+                  style={{ borderColor: appState === 'ADMIN_PANEL' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
+                >
+                  ⚙️ {t('adminPanel')}
+                </button>
+              )}
+
+              {user?.rol === 'profesor' && (
+                <button 
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => { setAppState('PROFESOR_PANEL'); setIsMobileMenuOpen(false); }}
+                  style={{ borderColor: appState === 'PROFESOR_PANEL' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
+                >
+                  🥋 {t('instructorPanel')}
+                </button>
+              )}
+            </div>
+
+            <div className="drawer-footer">
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>🌐 {t('languagePreference')}:</label>
+              <select
+                value={idioma}
+                onChange={(e) => { handleLanguageChange(e.target.value); }}
+                style={{
+                  width: '100%',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  borderRadius: '8px',
+                  padding: '0.65rem',
+                  fontSize: '0.9rem',
+                  minHeight: '44px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <option value="es">🇪🇸 Español</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="en">🇺🇸 English</option>
+              </select>
+
+              {user ? (
+                <button
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => { setIsMobileMenuOpen(false); setIsProfileOpen(true); }}
+                  style={{ marginTop: '0.5rem', justifyContent: 'center' }}
+                >
+                  👤 {t('myProfile')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primary drawer-nav-btn"
+                  onClick={() => { setIsMobileMenuOpen(false); setIsLoginOpen(true); }}
+                  style={{ marginTop: '0.5rem', justifyContent: 'center' }}
+                >
+                  🔑 {t('signIn')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <main style={{flex: 1, display: 'flex', alignItems: ['ADMIN_PANEL', 'PROFESOR_PANEL', 'STUDENT_PROGRESS', 'LIBRARY'].includes(appState) ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
         {appState === 'LIBRARY' && (

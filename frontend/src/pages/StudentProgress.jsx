@@ -23,13 +23,13 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
             playsInline
             preload="metadata"
             key={videoSrc}
-            style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
+            style={{ width: '100%', height: 'auto', minHeight: 200, maxHeight: 280, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
           >
             <source src={videoSrc} type="video/mp4" />
             {t('videoNotSupported')}
           </video>
           {ts > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem', padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', borderRadius: 6, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem', padding: '0.5rem 0.6rem', background: 'rgba(0,0,0,0.3)', borderRadius: 6, flexWrap: 'wrap' }}>
               <span style={{ color: '#ffd43b', fontSize: '0.82rem' }}>
                 ⚠️ {t('errorDetectedAt')} {ts.toFixed(2)}s
               </span>
@@ -46,11 +46,15 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
                   background: '#d01118',
                   color: 'white',
                   border: 'none',
-                  borderRadius: 4,
-                  padding: '0.25rem 0.55rem',
-                  fontSize: '0.78rem',
+                  borderRadius: 6,
+                  padding: '0.4rem 0.75rem',
+                  fontSize: '0.82rem',
                   cursor: 'pointer',
                   fontWeight: 'bold',
+                  minHeight: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 {t('jumpToError')}
@@ -185,7 +189,7 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
   }, [user.user_id, user.token]);
 
   return (
-    <section style={{ width: 'min(1100px, 100%)', margin: '2rem auto', padding: '1.5rem', color: 'white' }}>
+    <section style={{ width: 'min(1100px, 100%)', margin: '1rem auto', padding: '1rem 0.5rem', color: 'white', boxSizing: 'border-box' }}>
       <h2 style={{ color: 'var(--brand-red)', marginTop: 0 }}>{t('myProgress')}</h2>
       <p style={{ color: 'var(--text-secondary)' }}>{t('progressSubtitle')}</p>
       {loading && <p>{t('loadingProgress')}</p>}
@@ -202,7 +206,7 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
             : (lang === 'pt' ? rawCoach.replace(/Profesor|Coach/gi, 'Mestre') : rawCoach.replace(/Mestre|Coach/gi, 'Profesor'));
 
           return (
-            <article key={item.id} className="glass-panel" style={{ padding: '1.25rem', borderRadius: 12 }}>
+            <article key={item.id} className="glass-panel" style={{ padding: '1.25rem', borderRadius: 12, boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{item.tecnica_nombre || 'Jiu-Jitsu'}</h3>
@@ -210,23 +214,25 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
                     {item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleString(dateLocale) : t('dateUnavailable')}
                   </small>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', width: 'auto' }}>
                   <button
                     type="button"
                     onClick={() => onViewTheory && onViewTheory(item.tecnica_nombre, item.frame_error_url)}
                     className="btn-secondary"
                     style={{
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '0.4rem',
                       background: 'rgba(208, 17, 24, 0.15)',
                       border: '1px solid var(--brand-red)',
                       color: '#ffffff',
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '6px',
-                      fontSize: '0.82rem',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
                       cursor: 'pointer',
                       fontWeight: 'bold',
+                      minHeight: '44px',
                       transition: 'all 0.2s',
                     }}
                     title={t('techniqueTheory')}
@@ -238,7 +244,7 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
                   </strong>
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem', marginTop: '1rem' }}>
                 <StudentVideoPlayer
                   videoSrc={videoAlumno}
                   timestampError={item.timestamp_error_segundos}
@@ -256,7 +262,7 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
                       playsInline
                       preload="metadata"
                       key={videoProfesor}
-                      style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
+                      style={{ width: '100%', height: 'auto', minHeight: 200, maxHeight: 280, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
                     >
                       <source src={videoProfesor} type="video/mp4" />
                       {t('videoNotSupported')}

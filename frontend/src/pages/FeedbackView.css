@@ -264,12 +264,41 @@
   font-weight: 600;
 }
 
-/* Responsive breakpoint */
+/* Responsive breakpoint for Tablets and Mobile */
 @media (max-width: 860px) {
+  .feedback-container {
+    padding: 0 0.25rem 2rem 0.25rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
   .feedback-grid-2x2 {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   .media-wrapper {
-    height: 300px;
+    width: 100%;
+    height: auto;
+    min-height: 220px;
+    max-height: 360px;
+  }
+  .media-wrapper video,
+  .media-wrapper img {
+    width: 100%;
+    height: auto;
+    max-height: 340px;
+    object-fit: contain;
+  }
+  .reset-btn {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-youtube {
+    min-height: 44px;
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
   }
 }

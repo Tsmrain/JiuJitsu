@@ -120,3 +120,23 @@
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.05);
 }
+
+/* Mobile Breakpoint for VideoUpload */
+@media (max-width: 600px) {
+  .upload-container {
+    padding: 0 0.5rem;
+    gap: 1.25rem;
+  }
+  .drop-zone {
+    min-height: 190px;
+    padding: 1.25rem 0.75rem;
+  }
+  .file-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .file-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}

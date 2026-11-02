@@ -2,6 +2,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 :root {
   /* Brand Colors from Logo */
   --brand-red: #d01118;
@@ -136,4 +141,16 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--brand-red);
 }
+
+/* Touch UI - Rule of Thumb for Mobile (Minimum 44px touch targets) */
+@media (max-width: 768px) {
+  button, 
+  input[type="text"], 
+  input[type="password"], 
+  input[type="email"], 
+  select {
+    min-height: 44px;
+  }
+}
+
 

@@ -451,7 +451,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                         {t('noEvaluationsForStudent')}
                       </p>
                     ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
                         {evaluacionesReales.map((evalItem, idx) => {
                           const similitud = parseFloat(evalItem.porcentaje_similitud) || 0;
                           const estadoLabel = similitud >= 85 ? 'Excellent' : (similitud >= 70 ? 'Good' : 'Needs Work');

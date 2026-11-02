@@ -134,11 +134,15 @@ export default function FeedbackView({ user, result, tecnica, onReset, idioma })
                   background: 'var(--brand-red, #d01118)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
-                  padding: '0.3rem 0.75rem',
-                  fontSize: '0.8rem',
+                  borderRadius: '6px',
+                  padding: '0.4rem 0.85rem',
+                  fontSize: '0.85rem',
                   fontWeight: 'bold',
                   cursor: 'pointer',
+                  minHeight: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   transition: 'opacity 0.2s',
                 }}
               >

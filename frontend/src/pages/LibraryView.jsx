@@ -190,30 +190,18 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
         {/* PESTAÑA 1: BÚSQUEDA SEMÁNTICA */}
         {activeTab === 'search' && (
           <div>
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>
+            <form onSubmit={handleSearch} className="library-search-form">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                style={{
-                  flex: 1,
-                  minWidth: '260px',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
+                className="library-search-input"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary"
-                style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', whiteSpace: 'nowrap' }}
+                className="btn-primary library-search-btn"
               >
                 {loading ? t('searching') : t('searchButton')}
               </button>
@@ -296,8 +284,8 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
           {results.length > 0 ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-              gap: '1.5rem',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
+              gap: '1.25rem',
             }}>
               {results.map((item, idx) => {
                 const pageImgUrl = getMediaUrl(item.media_url);
@@ -441,8 +429,8 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '1.5rem',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
+              gap: '1.25rem',
             }}>
               {manuales.map((bookFilename, idx) => {
                 const title = cleanBookName(bookFilename);
@@ -549,16 +537,9 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass-panel"
+            className="glass-panel pdf-modal-wrapper"
             style={{
-              maxWidth: '1100px',
-              width: '100%',
-              height: '92vh',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              background: '#0d1117',
+              backgroundColor: '#0d1117',
               border: '1px solid rgba(255, 255, 255, 0.25)',
               boxShadow: '0 25px 50px rgba(0, 0, 0, 0.8)',
             }}
@@ -571,6 +552,8 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
               justifyContent: 'space-between',
               alignItems: 'center',
               borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
             }}>
               <span style={{ fontWeight: 'bold', color: '#ffd43b', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 📕 {cleanBookName(selectedPdf)}
@@ -581,7 +564,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
-                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}
+                  style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', textDecoration: 'none', minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
                 >
                   ↗ {t('openNewTab')}
                 </a>
@@ -589,7 +572,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                   type="button"
                   onClick={() => setSelectedPdf(null)}
                   className="btn-primary"
-                  style={{ padding: '0.3rem 0.85rem', fontSize: '0.8rem' }}
+                  style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
                 >
                   ✕ {t('closePdf')}
                 </button>
@@ -597,7 +580,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
             </div>
 
             {/* Iframe Viewer */}
-            <div style={{ flex: 1, background: '#1e232a', overflow: 'hidden' }}>
+            <div className="pdf-iframe-holder">
               <iframe
                 src={getPdfUrl(selectedPdf)}
                 title={selectedPdf}

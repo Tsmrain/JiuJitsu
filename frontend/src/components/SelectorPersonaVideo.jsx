@@ -56,7 +56,7 @@ export default function SelectorPersonaVideo({
         })}
       </div>
 
-      {showCandidates && <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+      {showCandidates && <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
         {sessionData.personas.map((persona) => {
           const selected = selectedPersonaIdx === persona.idx;
           return (
@@ -66,6 +66,7 @@ export default function SelectorPersonaVideo({
               onClick={() => onSelect(persona.idx)}
               aria-pressed={selected}
               className={selected ? 'btn-primary' : 'btn-secondary'}
+              style={{ minHeight: '44px', flex: '1 1 auto', minWidth: 'min(100%, 180px)', padding: '0.65rem 1rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {selected ? selectedLabel : `${candidateLabel} #${persona.idx}`} ({Math.round(persona.confianza * 100)}%)
             </button>

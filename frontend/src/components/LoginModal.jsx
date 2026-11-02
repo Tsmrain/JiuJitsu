@@ -136,7 +136,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
       }}>
         <button 
           onClick={onClose}
-          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'white', fontSize: '1.25rem', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', width: '44px', height: '44px', background: 'none', border: 'none', color: 'white', fontSize: '1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           title={t('close')}
         >
           ✕
@@ -150,7 +150,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
               flex: 1, padding: '0.75rem', background: 'none', border: 'none',
               borderBottom: tab === 'login' ? '3px solid var(--brand-red)' : '3px solid transparent',
               color: tab === 'login' ? 'white' : 'var(--text-secondary)',
-              fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
+              fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', minHeight: '44px'
             }}
           >
             {t('loginTab')}
@@ -161,7 +161,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
               flex: 1, padding: '0.75rem', background: 'none', border: 'none',
               borderBottom: tab === 'signup' ? '3px solid var(--brand-red)' : '3px solid transparent',
               color: tab === 'signup' ? 'white' : 'var(--text-secondary)',
-              fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
+              fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', minHeight: '44px'
             }}
           >
             {t('signupTab')}
@@ -205,7 +205,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
 
             <button 
               type="submit" disabled={loading}
-              className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
+              className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {loading ? t('signingIn') : t('signIn')}
             </button>
@@ -292,7 +292,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
 
             <button 
               type="submit" disabled={loading}
-              className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
+              className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {loading ? t('creatingAccount') : t('signupTab')}
             </button>

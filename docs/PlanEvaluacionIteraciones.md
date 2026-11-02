@@ -1773,6 +1773,33 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   3. **Suite Completa de Regresión Pytest:**
      - **132 passed, 6 skipped** en 18.34s (100% verde).
 
+---
+
+### 🔹 Iteración 3Z (Fase de Construcción): Responsive Design (Mobile-First) y Touch UI
+- **Objetivo (Craig Larman):** Transformar la suite web en una aplicación responsive nativa móvil y táctil de grado de producción utilizando exclusivamente **React 19 + Vanilla CSS** (sin frameworks CSS pesados). Garantizar **Cero Scroll Horizontal** (`document.documentElement.scrollWidth <= window.innerWidth`) y **Touch Targets de al menos 44px** en todos los componentes interactivos.
+- **Riesgos Mitigados:**
+  - *Desbordamiento y scroll horizontal en móviles:* Reemplazo de anchos fijos y minmax inflexibles (`minmax(360px, 1fr)`) por patrones fluidos (`minmax(min(100%, 280px), 1fr)`), control estricto de padding y contención `overflow-x: hidden`.
+  - *Saturación de navegación en pantallas estrechas:* Sustitución de la botonera desktop por un **Menú Hamburguesa táctil (44x44px)** y un **Mobile Drawer** con backdrop difuminado y botones verticales de 100% de ancho.
+  - *Experiencia táctil imprecisa:* Implementación del estándar de accesibilidad táctil WCAG (mínimo 44px de alto en inputs, selects y botones en resoluciones `< 768px`).
+- **Entregables Principales:**
+  1. **Navegación Móvil y Header (`App.jsx`, `App.css`):**
+     - Ocultamiento de la barra desktop en `@media (max-width: 768px)` y renderizado del botón Hamburguesa accesible.
+     - Drawer lateral deslizable con selector de idioma, navegación vertical (Biblioteca, Analizar, Progreso, Admin, Instructor) y cierre táctil por backdrop o botón `✕`.
+     - Banner de personificación adaptado para apilarse verticalmente en móviles sin romper el layout.
+  2. **Adaptación de Vistas Clave:**
+     - `FeedbackView.jsx` & `FeedbackView.css`: Cuadrícula 2x2 colapsa a 1 columna apilada (`1fr`) en pantallas `< 860px`. Videos con `width: 100%`, `height: auto` y altura máxima contenida.
+     - `StudentProgress.jsx`: Cuadrícula de videos alumno vs. profesor apilada en móvil. Botones *"📖 Teoría de la Técnica"* y *"⚠️ Saltar al Error"* con touch target $\ge 44$px.
+     - `LibraryView.jsx`: Formulario de búsqueda en columna (`flex-direction: column`) en móvil. Visor modal PDF adaptado a `70vh` para lectura cómoda en smartphones. Rejilla de resultados semánticos y catálogo de libros con `minmax(min(100%, 280px), 1fr)`.
+     - `SelectorPersonaVideo.jsx` & `VideoUpload.css`: Botones de selección de persona y confirmación de subida fluidos con mínimo de 44px de alto. Cajas de detección persistidas en porcentajes relativos (`%`).
+     - `AdminSucursales.jsx` & `ProfesorTecnicas.jsx`: Rejillas de tarjetas de sedes y alumnos fluidas con contención anti-overflow.
+  3. **Verificación Playwright Multi-Viewport E2E (`scripts/verify_iter_3z_playwright.py`):**
+     - 3 viewports simulados: **iPhone 13** (`390x844`), **iPad** (`768x1024`) y **Desktop HD** (`1920x1080`).
+     - Verificación matemática estricta: `scrollWidth <= innerWidth` comprobado en todas las vistas (`FeedbackView`, `StudentProgress`, `LibraryView`, `AdminSucursales`).
+     - 13 capturas de pantalla de alta fidelidad generadas y validadas.
+  4. **Regresión Pytest:**
+     - **132 passed, 6 skipped** (100% verde).
+
+
 
 
 

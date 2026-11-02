@@ -65,13 +65,13 @@ def obtener_evidencias_rag_multimodal(
 
     if not vectores_consulta:
         logger.warning("No hay vectores de consulta para recuperar evidencia RAG.")
-        return []
+        return incluir_mensaje_profesor([], qdrant_adapter, tecnica_id, limit)
 
     retrieval_mode = os.getenv("RETRIEVAL_MODE", "hybrid").lower()
     if retrieval_mode in ("hybrid", "bm25"):
         try:
             from corpocmente.domain.services.hybrid_retriever import HybridRetriever
-            return HybridRetriever.recuperar(
+            resultados = HybridRetriever.recuperar(
                 query_texto=query_textual,
                 qdrant_adapter=qdrant_adapter,
                 qwen_adapter=qwen_adapter,
@@ -80,16 +80,18 @@ def obtener_evidencias_rag_multimodal(
                 modo=retrieval_mode,
                 vectores_consulta=vectores_consulta,
             )
+            return incluir_mensaje_profesor(resultados, qdrant_adapter, tecnica_id, limit)
         except Exception as exc_h:
             logger.warning("Fallo en recuperación híbrida (%s), fallback a denso: %s", retrieval_mode, exc_h)
 
     if hasattr(qdrant_adapter, "recuperar_evidencias_rag_multimodal"):
-        return qdrant_adapter.recuperar_evidencias_rag_multimodal(
+        resultados = qdrant_adapter.recuperar_evidencias_rag_multimodal(
             vectores_consulta=vectores_consulta,
             tecnica_id=tecnica_id,
             limit=limit,
             video_referencia_path=video_referencia_path,
         )
+        return incluir_mensaje_profesor(resultados, qdrant_adapter, tecnica_id, limit)
     elif hasattr(qdrant_adapter, "recuperar_evidencias_rag"):
         return qdrant_adapter.recuperar_evidencias_rag(
             vectores_consulta=vectores_consulta,
@@ -104,6 +106,16 @@ def obtener_evidencias_rag_multimodal(
         return []
 
     return []
+
+
+def incluir_mensaje_profesor(evidencias, qdrant_adapter, tecnica_id, limit):
+    """Conserva el mensaje del profesor como evidencia obligatoria dentro de top_k."""
+    if tecnica_id is None or not hasattr(qdrant_adapter, "obtener_mensaje_profesor_rag"):
+        return list(evidencias)[:limit]
+    mensaje = qdrant_adapter.obtener_mensaje_profesor_rag(tecnica_id)
+    if not isinstance(mensaje, list) or not mensaje or any(e.get("id") == mensaje[0].get("id") for e in evidencias):
+        return list(evidencias)[:limit]
+    return ([mensaje[0]] + list(evidencias))[:limit]
 
 
 def formatear_evidencias_texto(evidencias: List[Dict[str, Any]]) -> str:
@@ -131,6 +143,8 @@ def formatear_evidencias_texto(evidencias: List[Dict[str, Any]]) -> str:
             metadatos.append(f"frame {frame_idx}")
         if ev.get("media_path"):
             metadatos.append("evidencia visual disponible")
+        if ev.get("pagina"):
+            metadatos.append(f"p. {ev['pagina']}")
 
         meta = " | ".join(metadatos)
         bloque = f"[Evidencia {i}] Fuente: {fuente}"

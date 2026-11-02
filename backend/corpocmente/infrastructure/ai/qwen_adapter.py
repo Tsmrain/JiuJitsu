@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import threading
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from PIL import Image
 
 import requests
@@ -293,3 +293,59 @@ class QwenEmbeddingAdapter:
         if self.use_local:
             return self._generar_embeddings_texto_lote_local(textos)
         return [self.generar_embedding_texto(t) for t in textos]
+
+    def _generar_embeddings_multimodal_lote_local(
+        self,
+        items: List[Dict[str, Any]],
+        batch_size: int = 8,
+    ) -> List[List[float]]:
+        if not items:
+            return []
+        model, processor = self._get_local_model_and_processor(self.local_model_id)
+        import mlx.core as mx
+
+        if hasattr(model, "language_model"):
+            model.language_model._position_ids = None
+            model.language_model._rope_deltas = None
+
+        resultados = []
+        for i in range(0, len(items), batch_size):
+            batch = items[i : i + batch_size]
+            batch_inputs = []
+            for item in batch:
+                img = item.get("image")
+                prompt = item.get("text") or "consulta_visual"
+                if isinstance(img, str) and not os.path.isfile(img):
+                    raise FileNotFoundError(f"No existe la imagen para vectorizar: {img}")
+                batch_inputs.append({"image": img, "text": prompt})
+            inputs = processor.prepare_embedding_inputs(batch_inputs)
+            outputs = model(**inputs)
+            mx.eval(outputs.text_embeds)
+            for v in outputs.text_embeds:
+                resultados.append(self._validar_vector(v.tolist()))
+            if hasattr(mx, "clear_cache"):
+                mx.clear_cache()
+            elif hasattr(mx.metal, "clear_cache"):
+                mx.metal.clear_cache()
+        return resultados
+
+    def generar_embeddings_multimodal_lote(
+        self,
+        items: List[Dict[str, Any]],
+        batch_size: int = 8,
+    ) -> List[List[float]]:
+        """Vectoriza un lote de elementos multimodales [{'image': ..., 'text': ...}]."""
+        if not items:
+            return []
+        if self.use_local:
+            try:
+                return self._generar_embeddings_multimodal_lote_local(items, batch_size=batch_size)
+            except Exception as e:
+                logger.error("Error en inferencia local MLX para lote multimodal: %s", e)
+                if not self.colab_url or "placeholder" in self.colab_url:
+                    raise
+                logger.warning("Intentando fallback a llamadas individuales remotas...")
+        return [
+            self.generar_embedding_imagen(it["image"], prompt=it.get("text", "consulta_visual"))
+            for it in items
+        ]

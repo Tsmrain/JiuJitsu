@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from corpocmente.config import settings
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
 from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_staff
+from corpocmente.application.services.instructor_message_ingestion import sincronizar_mensaje_profesor
 
 router = APIRouter(prefix="/api/v1/tecnicas", tags=["Técnicas"])
 logger = logging.getLogger(__name__)
@@ -119,7 +120,7 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
 
 
 @router.post("", response_model=TecnicaResponse, status_code=status.HTTP_201_CREATED)
-async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Header(None)):
+async def crear_tecnica(req: TecnicaCreate, background_tasks: BackgroundTasks, authorization: Optional[str] = Header(None)):
     """
     Agrega una nueva técnica al catálogo global.
     Requiere token de admin o profesor. Usa RPC SECURITY DEFINER.
@@ -134,6 +135,7 @@ async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Heade
     if not created:
         raise HTTPException(status_code=500, detail="Error creating technique.")
     c = created[0] if isinstance(created, list) else created
+    background_tasks.add_task(sincronizar_mensaje_profesor, str(c["id"]), c.get("mensaje_profesor") or req.mensaje_profesor)
     return TecnicaResponse(
         id=UUID(c["id"]),
         nombre=c["nombre"],
@@ -143,7 +145,7 @@ async def crear_tecnica(req: TecnicaCreate, authorization: Optional[str] = Heade
 
 
 @router.put("/{tecnica_id}", response_model=TecnicaResponse, status_code=status.HTTP_200_OK)
-async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, authorization: Optional[str] = Header(None)):
+async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, background_tasks: BackgroundTasks, authorization: Optional[str] = Header(None)):
     """
     Edita una técnica del catálogo. Requiere token de admin o profesor.
     """
@@ -158,6 +160,7 @@ async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, authorization
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Technique not found.")
     c = updated[0] if isinstance(updated, list) else updated
+    background_tasks.add_task(sincronizar_mensaje_profesor, str(tecnica_id), c.get("mensaje_profesor") or req.mensaje_profesor)
     return TecnicaResponse(
         id=UUID(c["id"]),
         nombre=c["nombre"],

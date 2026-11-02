@@ -34,6 +34,7 @@ from corpocmente.domain.services.session_manager import (
 logger = logging.getLogger(__name__)
 MANUALES_DIR = settings.manuales_dir
 MANUALES_DIR.mkdir(parents=True, exist_ok=True)
+PDF_PAGE_IMAGES_DIR = Path(__file__).resolve().parents[3] / "storage" / "manuales" / "paginas"
 MAX_MANUAL_BYTES = 100 * 1024 * 1024
 WORKER_HEADERS = {
     "ngrok-skip-browser-warning": "1",
@@ -871,7 +872,8 @@ async def ingerir_archivo_teoria(
         if use_local_qwen:
             try:
                 from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
-                qwen_local = QwenEmbeddingAdapter(use_local=True)
+                # Si hay worker configurado, evitar importar MLX/Metal antes del fallback.
+                qwen_local = QwenEmbeddingAdapter(use_local=not bool(worker_url), colab_url=worker_url)
                 bloques_texto = [texto[i:i + 8000] for i in range(0, len(texto), 8000)]
                 texto_embeddings = {"chunks": [], "embeddings": [], "dimension": 2048}
                 for indice, bloque in enumerate(bloques_texto, start=1):
@@ -930,7 +932,8 @@ async def ingerir_archivo_teoria(
                     import io
                     from PIL import Image
                     from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter
-                    qwen_local = QwenEmbeddingAdapter(use_local=True)
+                    # Si hay worker configurado, evitar importar MLX/Metal antes del fallback.
+                    qwen_local = QwenEmbeddingAdapter(use_local=not bool(worker_url), colab_url=worker_url)
                     lote_embs = []
                     for item in lote:
                         if item.get("pagina"):
@@ -940,7 +943,10 @@ async def ingerir_archivo_teoria(
                             image_bytes = item["bytes"]
                         item["imagen_hash"] = item.get("imagen_hash") or hashlib.sha256(image_bytes).hexdigest()
                         img_pil = Image.open(io.BytesIO(image_bytes))
-                        emb = qwen_local.generar_embedding_imagen(img_pil, prompt=item.get("label", "Página/Imagen"))
+                        emb = qwen_local.generar_embedding_imagen(
+                            img_pil,
+                            prompt=f"{item.get('label', 'Página/Imagen')}. {item.get('texto', '')[:6000]}",
+                        )
                         lote_embs.append(emb)
                     datos_imagen = {
                         "chunks": [f"[Imagen: {item['label']}]" for item in lote],
@@ -1178,6 +1184,21 @@ async def servir_imagen_conocimiento(
     if candidate.suffix.lower() not in IMAGE_MIME_TYPES or not candidate.is_file():
         raise HTTPException(status_code=404, detail="Imagen de conocimiento no encontrada.")
     return FileResponse(candidate, media_type=IMAGE_MIME_TYPES[candidate.suffix.lower()])
+
+
+@router.get("/conocimiento/media/paginas/{asset_path:path}")
+async def servir_pagina_manual(asset_path: str, authorization: Optional[str] = Header(None)):
+    """Sirve los JPG persistentes de páginas PDF generados por la ingesta multimodal."""
+    require_auth(authorization)
+    root = PDF_PAGE_IMAGES_DIR.resolve()
+    candidate = (root / asset_path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Ruta de página inválida.") from exc
+    if candidate.suffix.lower() not in {".jpg", ".jpeg"} or not candidate.is_file():
+        raise HTTPException(status_code=404, detail="Página del manual no encontrada.")
+    return FileResponse(candidate, media_type="image/jpeg")
 
 
 @router.get("/conocimiento/media/{tecnica_id}/{filename}")

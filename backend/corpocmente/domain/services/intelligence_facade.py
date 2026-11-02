@@ -12,6 +12,7 @@ from corpocmente.domain.strategies.prompt_strategies import EnglishPromptStrateg
 from corpocmente.domain.services.rag_reranker import rerank_evidencias_multilingue
 from corpocmente.application.services.multimodal_rag_service import (
     formatear_evidencias_texto,
+    incluir_mensaje_profesor,
     obtener_evidencias_rag_multimodal,
 )
 
@@ -204,7 +205,7 @@ class IntelligenceAnalysisFacade:
                         discrepancias=discrepancias_detectadas,
                         frame_critico_path=frame_para_embedding,
                         video_referencia_path=video_referencia_path,
-                        limit=20,  # top_k_recall=20 para Cross-Encoder (Iteración 3R)
+                        limit=5,
                     )
                     # Reranking multilingüe con Cross-Encoder real Qwen3-VL (Iteración 3R)
                     partes_q = [tecnica_nombre]
@@ -217,8 +218,11 @@ class IntelligenceAnalysisFacade:
                         query_texto=query_rerank,
                         evidencias=evidencias_candidatas,
                         qwen_adapter=self.qwen,
-                        top_k=3,
+                        top_k=5,
                         instruction="Given a jiu-jitsu technique question, retrieve the manual passage that answers it.",
+                    )
+                    evidencias_rag = incluir_mensaje_profesor(
+                        evidencias_rag, self.qdrant, tecnica_id, limit=5
                     )
                     contexto_profundo = formatear_evidencias_texto(evidencias_rag)
                     if contexto_profundo:

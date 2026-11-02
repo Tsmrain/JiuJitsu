@@ -556,7 +556,7 @@ class QdrantVectorAdapter:
         Devuelve resultados priorizando payloads con media_path.
         """
         if not vectores_consulta:
-            return []
+            return self.obtener_mensaje_profesor_rag(tecnica_id)[:limit] if tecnica_id else []
         for index, vector in enumerate(vectores_consulta):
             if len(vector) != RAG_VECTOR_DIM:
                 raise ValueError(
@@ -660,4 +660,45 @@ class QdrantVectorAdapter:
                 }
             )
 
+        # El mensaje vigente del instructor es contexto obligatorio de la evaluación,
+        # incluso si su similitud densa no quedó entre los top-k.
+        if tecnica_id is not None:
+            mensaje = self.obtener_mensaje_profesor_rag(tecnica_id)
+            if mensaje and not any(e["id"] == mensaje[0]["id"] for e in evidencias):
+                evidencias = ([mensaje[0]] + evidencias)[:limit]
         return evidencias
+
+    def obtener_mensaje_profesor_rag(self, tecnica_id: Optional[UUID]) -> List[Dict[str, Any]]:
+        """Obtiene la instrucción exacta del profesor, sin búsqueda semántica."""
+        if tecnica_id is None:
+            return []
+        try:
+            filtro = Filter(must=[
+                FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id))),
+                FieldCondition(key="fuente_tipo", match=MatchValue(value="instructor_message")),
+            ])
+            puntos, _ = self.client.scroll(
+                collection_name=self.rag_collection_name,
+                scroll_filter=filtro,
+                limit=1,
+                with_payload=True,
+                with_vectors=False,
+            )
+            if not puntos:
+                return []
+            punto = puntos[0]
+            payload = punto.payload or {}
+            return [{
+                "id": str(punto.id), "score": 1.0,
+                "contenido_texto": payload.get("contenido_texto", ""),
+                "texto_asociado": payload.get("texto_asociado", ""),
+                "modalidad": payload.get("modalidad", "texto"),
+                "media_path": None, "media_url": None,
+                "tecnica_id": payload.get("tecnica_id"), "alcance": payload.get("alcance"),
+                "fuente_tipo": "instructor_message", "fuente_nombre": payload.get("fuente_nombre"),
+                "fuente_referencia": payload.get("fuente_referencia"), "fuente_url": payload.get("fuente_url"),
+                "pagina": None,
+            }]
+        except Exception as exc:
+            logger.warning("No se pudo recuperar mensaje del profesor: %s", exc)
+            return []

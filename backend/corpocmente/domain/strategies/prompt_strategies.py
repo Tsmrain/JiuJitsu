@@ -25,9 +25,10 @@ class SpanishPromptStrategy(IPromptStrategy):
         prompt += (
             "Responde en español con máximo 2 frases y 45 palabras. Indica el principal error "
             "visible y una corrección concreta mencionando la articulación o postura afectada. Usa lenguaje simple, respetuoso y directo. "
+            "Básate en el mensaje del profesor y en las imágenes del manual adjuntas para dar la corrección. Cita la página (p. X) de donde sacaste la información. "
             "No uses Markdown, títulos, listas, saludos ni explicaciones largas. No menciones "
             "herramientas, modelos, algoritmos, tecnologías ni cómo se hizo el análisis. "
-            "Si la imagen no permite confirmar un detalle, no lo inventes."
+            "Si la imagen o el contexto no permite confirmar un detalle, no lo inventes."
         )
         return prompt
 
@@ -51,7 +52,7 @@ class EnglishPromptStrategy(IPromptStrategy):
             "'summary' (max 8 words, a short label of the main error, e.g. 'Elbow flaring, lose hip connection') "
             "and 'correction' (max 2 sentences, 45 words, Markdown format with one bold keyword and one bullet point if helpful). "
             "If the error is minor, set summary to 'Good technique' and correction to a brief praise. "
-            "Cite the source if the context includes one: e.g. 'as taught in Jiu-Jitsu University (p. 116)'. "
+            "Your correction must explicitly align with the instructor's message and cite the manual page from the context: e.g. '(p. 108)'. "
             "Do not mention tools, models, algorithms, or how the analysis was performed. "
             "If the image does not allow confirming a detail, do not invent it."
         )

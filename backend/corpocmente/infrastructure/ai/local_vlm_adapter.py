@@ -32,7 +32,9 @@ class LocalVLMAdapter:
             raise FileNotFoundError(frame_image_path)
 
         images = [frame_image_path]
-        for ev in (evidencias_visuales or [])[:3]:
+        # top_k de recuperación es cinco: no descartamos páginas recuperadas antes
+        # de que el VLM pueda contrastarlas con el fotograma del alumno.
+        for ev in (evidencias_visuales or [])[:5]:
             payload = ev.get("payload", ev)
             media_path = payload.get("media_path")
             if media_path and os.path.exists(media_path):
@@ -56,6 +58,10 @@ class LocalVLMAdapter:
 
         full_prompt = (
             prompt
+            + "\n\nLas imágenes adjuntas, después del fotograma del alumno, son páginas recuperadas del manual. "
+              "Básate en el mensaje del profesor y en las imágenes de las páginas del manual adjuntas para dar la corrección. "
+              "Menciona la indicación del profesor y cita la página del libro como '(p. X)' de donde sacaste la referencia o corrección visual. "
+              "Si la información no está en el texto, en la imagen o en el mensaje del profesor, abstente de inventar."
             + "\n\nResponde EXCLUSIVAMENTE con un objeto JSON válido "
               "con las claves 'summary' y 'correction'. "
               "No agregues markdown, ni texto fuera del JSON."
@@ -133,8 +139,6 @@ class LocalVLMAdapter:
             "reasoning": str
         }
         """
-        from mlx_vlm import generate
-
         summary = str(respuesta.get("summary", "")).strip()
         correction = str(respuesta.get("correction", "")).strip()
 
@@ -158,6 +162,8 @@ class LocalVLMAdapter:
                 "unsupported_claims": ["No hay contexto de referencia disponible para validar la respuesta."],
                 "reasoning": "Contexto ausente.",
             }
+
+        from mlx_vlm import generate
 
         prompt_juez = (
             "Eres un evaluador de fidelidad (Faithfulness Judge) para sistemas de Jiu-Jitsu Brasileño.\n"

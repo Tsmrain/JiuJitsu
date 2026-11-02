@@ -75,13 +75,18 @@ class Qwen3VLRerankerCrossEncoder:
         }
 
         try:
-            import mlx.core as mx
             scores = model.rerank(payload, processor)
-            mx.eval(scores)
+            # Los doubles de prueba no son tensores MLX; no importamos MLX (que
+            # inicializa Metal) únicamente para materializar un objeto simulado.
+            if scores.__class__.__module__.startswith("mlx"):
+                import mlx.core as mx
+                mx.eval(scores)
+            else:
+                mx = None
             res = [float(s) for s in scores.tolist()]
-            if hasattr(mx, "clear_cache"):
+            if mx is not None and hasattr(mx, "clear_cache"):
                 mx.clear_cache()
-            elif hasattr(mx.metal, "clear_cache"):
+            elif mx is not None and hasattr(mx.metal, "clear_cache"):
                 mx.metal.clear_cache()
             return res
         except Exception as exc:

@@ -1,5 +1,5 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 from typing import List, Dict, Any
 import uuid
 import json
@@ -129,4 +129,15 @@ class QdrantRAGAdapter:
             points_selector=PointIdsList(points=point_ids)
         )
         return len(point_ids)
+
+    def eliminar_mensaje_profesor(self, tecnica_id: str) -> None:
+        """El mensaje es un singleton por técnica; evita recuperar versiones obsoletas."""
+        filtro = Filter(must=[
+            FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id))),
+            FieldCondition(key="fuente_tipo", match=MatchValue(value="instructor_message")),
+        ])
+        self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=FilterSelector(filter=filtro),
+        )
 

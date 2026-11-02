@@ -74,7 +74,14 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ padding: '2rem', maxWidth: '420px', width: '90%', borderRadius: '12px' }}>
+      <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ position: 'relative', padding: '2rem', maxWidth: '420px', width: '90%', borderRadius: '12px' }}>
+        <button 
+          onClick={onClose}
+          aria-label="Close"
+          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer' }}
+        >
+          ✕
+        </button>
         <h2 style={{ margin: '0 0 1.5rem 0', textAlign: 'center', color: 'var(--brand-red)' }}>{t('profileTitle')}</h2>
         
         <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

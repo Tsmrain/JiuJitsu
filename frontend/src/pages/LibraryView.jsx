@@ -3,7 +3,7 @@ import { getTranslation } from '../i18n/translations';
 
 const API_BASE = 'http://localhost:8000';
 
-export default function LibraryView({ user, idioma, onClose, initialQuery }) {
+export default function LibraryView({ user, idioma, onClose, initialQuery, initialImageUrl }) {
   const [activeTab, setActiveTab] = useState('search'); // 'search' | 'catalog'
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,6 +11,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery }) {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [activeImageUrl, setActiveImageUrl] = useState(initialImageUrl || null);
 
   // Estado del Catálogo de Libros PDF
   const [manuales, setManuales] = useState([]);
@@ -19,7 +20,13 @@ export default function LibraryView({ user, idioma, onClose, initialQuery }) {
 
   const t = (key) => getTranslation(idioma, key);
 
-  const handleSearch = async (e, customQuery = null) => {
+  useEffect(() => {
+    if (initialImageUrl) {
+      setActiveImageUrl(initialImageUrl);
+    }
+  }, [initialImageUrl]);
+
+  const handleSearch = async (e, customQuery = null, customImage = undefined) => {
     if (e) e.preventDefault();
     const cleanQuery = (customQuery !== null ? customQuery : query).trim();
     if (!cleanQuery) return;
@@ -27,20 +34,27 @@ export default function LibraryView({ user, idioma, onClose, initialQuery }) {
       setQuery(customQuery);
     }
 
+    const targetImg = customImage !== undefined ? customImage : activeImageUrl;
+
     setLoading(true);
     setErrorMsg('');
     try {
+      const payload = {
+        query: cleanQuery,
+        idioma: idioma || 'es',
+        limit: 12,
+      };
+      if (targetImg) {
+        payload.imagen_url = targetImg;
+      }
+
       const res = await fetch(`${API_BASE}/api/v1/conocimiento/biblioteca/buscar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user?.token || ''}`,
         },
-        body: JSON.stringify({
-          query: cleanQuery,
-          idioma: idioma || 'es',
-          limit: 12,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -82,8 +96,8 @@ export default function LibraryView({ user, idioma, onClose, initialQuery }) {
     // Si viene una consulta inicial desde el botón de teoría, ejecutarla; si no, 'guardia'
     const targetQuery = initialQuery && initialQuery.trim() ? initialQuery.trim() : 'guardia';
     setActiveTab('search');
-    handleSearch(null, targetQuery);
-  }, [initialQuery]);
+    handleSearch(null, targetQuery, initialImageUrl);
+  }, [initialQuery, initialImageUrl]);
 
   useEffect(() => {
     if (activeTab === 'catalog' && manuales.length === 0) {
@@ -175,34 +189,75 @@ export default function LibraryView({ user, idioma, onClose, initialQuery }) {
 
         {/* PESTAÑA 1: BÚSQUEDA SEMÁNTICA */}
         {activeTab === 'search' && (
-          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              style={{
-                flex: 1,
-                minWidth: '260px',
-                padding: '0.75rem 1rem',
+          <div>
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('searchPlaceholder')}
+                style={{
+                  flex: 1,
+                  minWidth: '260px',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary"
+                style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', whiteSpace: 'nowrap' }}
+              >
+                {loading ? t('searching') : t('searchButton')}
+              </button>
+            </form>
+
+            {/* Banner de Fotograma de Error Analizado (Búsqueda Multimodal) */}
+            {activeImageUrl && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                background: 'rgba(208, 17, 24, 0.15)',
+                border: '1px solid rgba(208, 17, 24, 0.4)',
+                padding: '0.55rem 0.9rem',
                 borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                fontSize: '1rem',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary"
-              style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', whiteSpace: 'nowrap' }}
-            >
-              {loading ? t('searching') : t('searchButton')}
-            </button>
-          </form>
+                marginTop: '0.85rem',
+              }}>
+                <img
+                  src={getMediaUrl(activeImageUrl)}
+                  alt="Frame error"
+                  style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ffd43b' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>✨</span> {t('multimodalSearchActive')}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {t('comparingErrorFrame')}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveImageUrl(null);
+                    handleSearch(null, query, null);
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#ff8787', fontSize: '0.85rem', cursor: 'pointer', padding: '0.2rem 0.5rem' }}
+                  title={t('removeImageSearch')}
+                >
+                  ✕ {t('removeImageSearch')}
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* PESTAÑA 2: CATÁLOGO DE LIBROS */}

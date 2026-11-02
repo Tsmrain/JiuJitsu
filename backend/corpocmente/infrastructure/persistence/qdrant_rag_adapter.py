@@ -176,4 +176,30 @@ class QdrantRAGAdapter:
             })
         return items
 
+    def buscar_biblioteca_multimodal(
+        self,
+        text_vector: list,
+        image_vector: list,
+        alpha: float = 0.5,
+        limit: int = 10
+    ) -> list:
+        """
+        Búsqueda multimodal en manuales combinando el vector semántico textual y el
+        vector visual del fotograma de error del alumno.
+        """
+        if len(text_vector) != EXPECTED_RAG_DIM or len(image_vector) != EXPECTED_RAG_DIM:
+            raise ValueError(f"Embeddings inválidos: se esperaban {EXPECTED_RAG_DIM} dimensiones.")
+
+        # Fusión ponderada de vectores densos de Qwen3-VL
+        v_fused = [
+            alpha * tv + (1.0 - alpha) * iv
+            for tv, iv in zip(text_vector, image_vector)
+        ]
+        norm = sum(x * x for x in v_fused) ** 0.5
+        if norm > 1e-9:
+            v_fused = [x / norm for x in v_fused]
+
+        return self.buscar_biblioteca(v_fused, limit=limit)
+
+
 

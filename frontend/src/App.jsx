@@ -18,6 +18,7 @@ function App() {
   const [selectedTecnica, setSelectedTecnica] = useState(null);
   const [currentEvaluacionId, setCurrentEvaluacionId] = useState(null);
   const [libraryInitialQuery, setLibraryInitialQuery] = useState(null);
+  const [libraryInitialImage, setLibraryInitialImage] = useState(null);
 
   // Estado de Idioma (i18n)
   const [idioma, setIdioma] = useState(() => {
@@ -40,6 +41,9 @@ function App() {
       if (tecData) setSelectedTecnica(tecData);
       if (extra && extra.libraryInitialQuery !== undefined) {
         setLibraryInitialQuery(extra.libraryInitialQuery);
+      }
+      if (extra && extra.libraryInitialImage !== undefined) {
+        setLibraryInitialImage(extra.libraryInitialImage);
       }
     };
   }, []);
@@ -331,8 +335,10 @@ function App() {
             user={user}
             idioma={idioma}
             initialQuery={libraryInitialQuery}
+            initialImageUrl={libraryInitialImage}
             onClose={() => {
               setLibraryInitialQuery(null);
+              setLibraryInitialImage(null);
               setAppState(user?.rol === 'profesor' ? 'PROFESOR_PANEL' : 'IDLE');
             }}
           />
@@ -341,6 +347,7 @@ function App() {
         {appState === 'ADMIN_PANEL' && (
           <AdminSucursales 
             user={user} 
+            idioma={idioma}
             onClose={() => {
               if (user?.rol === 'profesor') {
                 setAppState('PROFESOR_PANEL');
@@ -399,8 +406,9 @@ function App() {
           <StudentProgress
             user={user}
             idioma={idioma}
-            onViewTheory={(tecnicaNombre) => {
+            onViewTheory={(tecnicaNombre, frameErrorUrl) => {
               setLibraryInitialQuery(tecnicaNombre);
+              setLibraryInitialImage(frameErrorUrl);
               setAppState('LIBRARY');
             }}
           />
@@ -411,12 +419,12 @@ function App() {
       <LoginModal 
         isOpen={isLoginOpen} 
         user={user}
+        idioma={idioma}
         onClose={() => setIsLoginOpen(false)} 
         onLoginSuccess={(userData) => {
           setUser(userData);
-          if (userData?.idioma_preferido) {
-            handleLanguageChange(userData.idioma_preferido);
-          }
+          const lang = userData?.idioma_preferido || idioma || localStorage.getItem('app_idioma') || 'es';
+          handleLanguageChange(lang);
           if (userData.rol === 'profesor') {
             setAppState('PROFESOR_PANEL');
           }

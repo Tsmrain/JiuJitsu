@@ -213,7 +213,7 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    onClick={() => onViewTheory && onViewTheory(item.tecnica_nombre)}
+                    onClick={() => onViewTheory && onViewTheory(item.tecnica_nombre, item.frame_error_url)}
                     className="btn-secondary"
                     style={{
                       display: 'flex',

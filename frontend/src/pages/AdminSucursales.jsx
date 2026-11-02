@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getTranslation } from '../i18n/translations';
 
 // Función para extraer Latitud, Longitud, Nombre y Código de Plus Code desde cualquier URL de Google Maps o texto
 function parseGoogleMapsUrl(input) {
@@ -61,7 +62,8 @@ function parseGoogleMapsUrl(input) {
   return null;
 }
 
-export default function AdminSucursales({ user, onClose, onImpersonate }) {
+export default function AdminSucursales({ user, onClose, onImpersonate, idioma = 'es' }) {
+  const t = (key) => getTranslation(idioma, key);
   const [activeTab, setActiveTab] = useState('sucursales'); // 'sucursales' | 'usuarios'
   
   // -- BRANCH STATES --
@@ -336,7 +338,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
       });
 
       if (res.ok) {
-        alert(editingId ? "Branch updated successfully!" : "Branch created successfully!");
+        alert(editingId ? t('updateSuccess') : t('createSuccess'));
         resetForm();
         fetchSucursales();
       } else {
@@ -344,7 +346,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
       }
     } catch (e) {
       console.error("Error saving branch:", e);
-      alert("Connection error saving branch.");
+      alert(t('connectionError'));
     } finally {
       setLoading(false);
     }
@@ -352,7 +354,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
   // Delete Branch
   const handleDelete = async (sucursalId, sucursalNombre) => {
-    if (!confirm(`Are you sure you want to delete branch "${sucursalNombre}"?`)) return;
+    if (!confirm(`${t('deleteConfirm')} "${sucursalNombre}"?`)) return;
 
     try {
       const res = await fetch(`http://localhost:8000/api/v1/sucursales/${sucursalId}`, {
@@ -361,7 +363,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
       });
 
       if (res.ok) {
-        alert("Branch deleted successfully.");
+        alert(t('deleteSuccess'));
         if (editingId === sucursalId) resetForm();
         fetchSucursales();
       } else {
@@ -369,7 +371,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
       }
     } catch (e) {
       console.error("Error deleting branch:", e);
-      alert("Connection error deleting branch.");
+      alert(t('connectionError'));
     }
   };
 
@@ -396,7 +398,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
-            {user?.rol === 'admin' ? 'Global Academy Management' : 'Branch Catalog'}
+            {user?.rol === 'admin' ? t('globalAcademyManagement') : t('branchCatalog')}
           </h2>
         </div>
         <button 
@@ -417,7 +419,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1.0)'}
         >
-          Start Training
+          {t('startTraining')}
         </button>
       </div>
 
@@ -431,7 +433,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
             fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
           }}
         >
-          {user?.rol === 'admin' ? 'Branch Management' : 'Our Branches'}
+          {user?.rol === 'admin' ? t('branchManagement') : t('ourBranches')}
         </button>
         {user?.rol === 'admin' && (
           <button
@@ -443,7 +445,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            User Management
+            {t('usersTab')}
           </button>
         )}
       </div>
@@ -454,7 +456,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
           <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>
-              {editingId ? "Edit Branch" : "Register New Branch"}
+              {editingId ? t('editBranch') : t('registerNewBranch')}
             </h3>
             {editingId && (
               <button 
@@ -462,7 +464,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
                 onClick={resetForm}
                 style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
               >
-                Cancel Edit
+                ✕ {t('close')}
               </button>
             )}
           </div>
@@ -471,13 +473,13 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
             {/* Google Maps Link Parser */}
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', boxSizing: 'border-box' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: '#4da6ff', marginBottom: '0.25rem' }}>
-                Extract Coordinates from Google Maps Link:
+                {t('mapUrlHelper')}:
               </label>
               <input 
                 type="text" 
                 value={googleMapsUrl} 
                 onChange={e => handleGoogleMapsUrlChange(e.target.value)}
-                placeholder="Paste Google Maps link here (e.g. https://www.google.com/maps/...)"
+                placeholder="Google Maps link (e.g. https://www.google.com/maps/...)"
                 style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(77,166,255,0.4)', color: 'white', fontSize: '0.8rem', boxSizing: 'border-box' }}
               />
               {mapsFeedback && (
@@ -489,7 +491,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                Branch Name *
+                {t('branchName')}
               </label>
               <input 
                 type="text" required value={nombre} onChange={e => setNombre(e.target.value)}
@@ -500,7 +502,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Country *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>{t('country')}</label>
                 <input 
                   type="text" required value={pais} onChange={e => setPais(e.target.value)}
                   placeholder="e.g. Bolivia"
@@ -508,7 +510,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>City *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>{t('city')}</label>
                 <input 
                   type="text" required value={ciudad} onChange={e => setCiudad(e.target.value)}
                   placeholder="e.g. Santa Cruz de la Sierra"
@@ -518,7 +520,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Address</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>{t('address')}</label>
               <input 
                 type="text" value={direccion} onChange={e => setDireccion(e.target.value)}
                 placeholder="e.g. 450 North Avenue"
@@ -528,17 +530,17 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'rgba(208,17,24,0.1)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(208,17,24,0.3)', boxSizing: 'border-box' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)' }}>Captured Latitude</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)' }}>Latitud</label>
                 <input type="text" readOnly value={latitud} style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)' }}>Captured Longitude</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)' }}>Longitud</label>
                 <input type="text" readOnly value={longitud} style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontWeight: 'bold', boxSizing: 'border-box' }} />
               </div>
             </div>
 
               <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '0.5rem', padding: '0.75rem', width: '100%' }}>
-                {loading ? "Processing..." : (editingId ? "Update Branch" : "Save Global Branch")}
+                {loading ? t('processing') : (editingId ? t('updateBranch') : t('saveGlobalBranch'))}
               </button>
             </form>
           </div>
@@ -547,7 +549,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
       {/* Registered Branches List with CRUD */}
       <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>
-          {user?.rol === 'admin' ? `Registered Branches (${sucursales.length})` : `Explore Our Branches (${sucursales.length})`}
+          {user?.rol === 'admin' ? `${t('registeredBranches')} (${sucursales.length})` : `${t('exploreOurBranches')} (${sucursales.length})`}
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
           {sucursales.map((s) => (
@@ -587,13 +589,13 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
                     onClick={() => handleStartEdit(s)}
                     style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(77,166,255,0.2)', border: '1px solid #4da6ff', color: '#4da6ff', fontSize: '0.8rem', cursor: 'pointer' }}
                   >
-                     Edit
+                     {t('editBranch')}
                   </button>
                   <button
                     onClick={() => handleDelete(s.id, s.nombre)}
                     style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', background: 'rgba(208,17,24,0.2)', border: '1px solid var(--brand-red)', color: '#ff6b6b', fontSize: '0.8rem', cursor: 'pointer' }}
                   >
-                     Delete
+                     {t('deleteConfirm')}
                   </button>
                 </div>
               )}
@@ -605,9 +607,9 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
 
       {activeTab === 'usuarios' && (
         <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Registered Users ({usuarios.length})</h3>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>{t('usersTab')} ({usuarios.length})</h3>
           {loadingUsuarios ? (
-            <p>Loading users...</p>
+            <p>{t('loadingStudents')}</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
               {usuarios.map(u => (
@@ -627,7 +629,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
                     </span>
                   </div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                    Branch: {u.sucursal_nombre}
+                    {t('branchAcademy')}: {u.sucursal_nombre}
                   </div>
                   
                   {u.rol !== 'admin' && (
@@ -636,7 +638,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate }) {
                       className="btn-primary"
                       style={{ marginTop: '0.5rem', padding: '0.5rem', fontSize: '0.8rem', background: 'var(--brand-red)', border: 'none' }}
                     >
-                      Impersonate User
+                      {u.rol === 'profesor' ? t('impersonateInstructor') : t('impersonateStudent')}
                     </button>
                   )}
                 </div>

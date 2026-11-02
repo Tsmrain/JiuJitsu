@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { getTranslation } from '../i18n/translations';
 
-export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
+export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idioma = 'es' }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
+  const t = (key) => getTranslation(idioma, key);
 
   // Login form state
   const [loginUserOrEmail, setLoginUserOrEmail] = useState('admin');
@@ -51,21 +53,23 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({ detail: "Error signing in" }));
-        setErrorMsg(errData.detail || "Incorrect credentials.");
+        const errData = await response.json().catch(() => ({ detail: t('incorrectCredentials') }));
+        setErrorMsg(errData.detail || t('incorrectCredentials'));
         setLoading(false);
         return;
       }
 
       const userData = await response.json();
+      // Respetar idioma_preferido del backend o idioma actual en localStorage (nunca forzar 'en')
+      const targetIdioma = userData?.idioma_preferido || idioma || localStorage.getItem('app_idioma') || 'es';
       onLoginSuccess({
         ...userData,
-        idioma_preferido: 'en'
+        idioma_preferido: targetIdioma
       });
       onClose();
     } catch (err) {
       console.error("Error connecting to Auth API:", err);
-      setErrorMsg("Could not connect to server. Check that backend is running.");
+      setErrorMsg(t('connectionError'));
       setLoading(false);
     } finally {
       setLoading(false);
@@ -78,7 +82,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
     setErrorMsg('');
 
     if (signupRol === 'admin') {
-      setErrorMsg('The Administrator role is exclusive and reserved.');
+      setErrorMsg(t('adminRoleReserved'));
       setLoading(false);
       return;
     }
@@ -97,21 +101,22 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({ detail: "Error registering account" }));
-        setErrorMsg(errData.detail || "Could not register account.");
+        const errData = await response.json().catch(() => ({ detail: t('errorRegistering') }));
+        setErrorMsg(errData.detail || t('errorRegistering'));
         setLoading(false);
         return;
       }
 
       const userData = await response.json();
+      const targetIdioma = userData?.idioma_preferido || idioma || localStorage.getItem('app_idioma') || 'es';
       onLoginSuccess({
         ...userData,
-        idioma_preferido: 'en'
+        idioma_preferido: targetIdioma
       });
       onClose();
     } catch (err) {
       console.error("Error registering account:", err);
-      alert(err.message || "Error registering account");
+      alert(err.message || t('errorRegistering'));
     } finally {
       setLoading(false);
     }
@@ -132,6 +137,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
         <button 
           onClick={onClose}
           style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'white', fontSize: '1.25rem', cursor: 'pointer' }}
+          title={t('close')}
         >
           ✕
         </button>
@@ -147,7 +153,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            Sign In
+            {t('loginTab')}
           </button>
           <button
             onClick={() => { setTab('signup'); setErrorMsg(''); }}
@@ -158,7 +164,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
             }}
           >
-            Create Account
+            {t('signupTab')}
           </button>
         </div>
 
@@ -177,7 +183,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Username or Email
+                {t('usernameOrEmail')}
               </label>
               <input 
                 type="text" required value={loginUserOrEmail} onChange={e => setLoginUserOrEmail(e.target.value)}
@@ -188,7 +194,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                Password
+                {t('password')}
               </label>
               <input 
                 type="password" required value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
@@ -201,7 +207,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               type="submit" disabled={loading}
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t('signingIn') : t('signIn')}
             </button>
           </form>
         )}
@@ -211,7 +217,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
           <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                Full Name
+                {t('fullName')}
               </label>
               <input 
                 type="text" required value={signupNombre} onChange={e => setSignupNombre(e.target.value)}
@@ -223,7 +229,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  Username
+                  {t('usernameField')}
                 </label>
                 <input 
                   type="text" required value={signupUsername} onChange={e => setSignupUsername(e.target.value)}
@@ -235,7 +241,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                Password
+                {t('password')}
               </label>
               <input 
                 type="password" required value={signupPassword} onChange={e => setSignupPassword(e.target.value)}
@@ -246,7 +252,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.3rem' }}>
-                User Role
+                {t('userRole')}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {['alumno', 'profesor'].map((r) => (
@@ -261,7 +267,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
                       color: 'white', cursor: 'pointer', fontWeight: signupRol === r ? 'bold' : 'normal'
                     }}
                   >
-                    {r === 'alumno' ? 'Student' : 'Instructor'}
+                    {r === 'alumno' ? t('studentRole') : t('instructorRole')}
                   </button>
                 ))}
               </div>
@@ -269,7 +275,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                Branch / Academy
+                {t('branchAcademy')}
               </label>
               <select
                 value={signupSucursalId}
@@ -288,7 +294,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess }) {
               type="submit" disabled={loading}
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading ? t('creatingAccount') : t('signupTab')}
             </button>
           </form>
         )}

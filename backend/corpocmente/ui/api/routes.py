@@ -1220,6 +1220,67 @@ class BibliotecaBuscarRequest(BaseModel):
     query: str
     idioma: Optional[str] = "es"
     limit: Optional[int] = 10
+    imagen_url: Optional[str] = None
+
+
+def resolver_ruta_imagen_local(imagen_url: Optional[str]) -> Optional[Path]:
+    """Resuelve la ruta física en disco de una URL de imagen para búsqueda visual multimodal."""
+    if not imagen_url or not isinstance(imagen_url, str):
+        return None
+    url_clean = imagen_url.strip()
+    if not url_clean:
+        return None
+
+    if "://" in url_clean:
+        from urllib.parse import urlparse
+        parsed = urlparse(url_clean)
+        url_path = parsed.path
+    else:
+        url_path = url_clean
+
+    repo_root = Path(__file__).resolve().parents[4]
+
+    # 1. Fotogramas críticos de error (/static/frames/...)
+    if "/static/frames/" in url_path:
+        fname = os.path.basename(url_path)
+        candidate = Path("/tmp/corpocmente_frames") / fname
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    # 2. Fotogramas de manuales (/api/v1/conocimiento/media/paginas/...)
+    if "conocimiento/media/paginas/" in url_path:
+        subpath = url_path.split("conocimiento/media/paginas/")[-1]
+        candidate = repo_root / "backend" / "storage" / "manuales" / "paginas" / subpath
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    # 3. Path directo en filesystem
+    candidate_direct = Path(url_clean)
+    if candidate_direct.exists() and candidate_direct.is_file():
+        return candidate_direct
+
+    # 4. En /tmp
+    if url_path.startswith("/tmp/") or url_path.startswith("/private/tmp/"):
+        cand_tmp = Path(url_path)
+        if cand_tmp.exists() and cand_tmp.is_file():
+            return cand_tmp
+
+    # 5. Descarga remota si es URL externa
+    if url_clean.startswith("http://") or url_clean.startswith("https://"):
+        try:
+            import requests
+            resp = requests.get(url_clean, timeout=5)
+            if resp.status_code == 200:
+                tmp_dir = Path("/tmp/corpocmente_frames")
+                tmp_dir.mkdir(parents=True, exist_ok=True)
+                tmp_file = tmp_dir / f"dl_{os.path.basename(url_path) or 'frame.jpg'}"
+                with open(tmp_file, "wb") as f_dl:
+                    f_dl.write(resp.content)
+                return tmp_file
+        except Exception as e_dl:
+            logger.warning("Fallo al descargar imagen remota %s: %s", url_clean, e_dl)
+
+    return None
 
 
 @router.post("/conocimiento/biblioteca/buscar", status_code=status.HTTP_200_OK)
@@ -1229,6 +1290,7 @@ async def buscar_en_biblioteca(
 ):
     """
     Búsqueda semántica multimodal en la biblioteca de manuales de Jiu-Jitsu.
+    Soporta búsqueda por texto y búsqueda visual multimodal si se provee imagen_url.
     Cualquier usuario autenticado puede buscar.
     """
     require_auth(authorization)
@@ -1237,31 +1299,58 @@ async def buscar_en_biblioteca(
     from corpocmente.domain.glossary.glossary_service import expandir_query_con_glosario
 
     query_limpia = (req.query or "").strip()
-    if not query_limpia:
-        return {"query": "", "idioma": req.idioma or "es", "total": 0, "resultados": []}
+    if not query_limpia and not req.imagen_url:
+        return {
+            "query": "",
+            "idioma": req.idioma or "es",
+            "imagen_url": None,
+            "imagen_procesada": None,
+            "busqueda_multimodal": False,
+            "total": 0,
+            "resultados": []
+        }
 
     # Búsqueda Cognitiva: Reescribir query para diferenciar conceptos de ataque vs defensa
     try:
         from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
         vlm = LocalVLMAdapter()
-        query_cognitiva = vlm.reescribir_query_cognitiva(query_limpia)
+        query_cognitiva = vlm.reescribir_query_cognitiva(query_limpia) if query_limpia else ""
     except Exception as e_cog:
         logger.warning("Fallo en reescritura cognitiva con VLM: %s", e_cog)
         query_cognitiva = query_limpia
 
-    query_expandida = expandir_query_con_glosario(query_cognitiva or query_limpia)
+    query_expandida = expandir_query_con_glosario(query_cognitiva or query_limpia) if (query_cognitiva or query_limpia) else ""
 
     qwen = QwenEmbeddingAdapter()
-    query_vector = qwen.generar_embedding_texto(query_expandida or query_cognitiva or query_limpia)
+    query_vector = qwen.generar_embedding_texto(query_expandida or query_cognitiva or query_limpia or "jiu-jitsu")
+
+    # Resolución de imagen para búsqueda visual multimodal
+    ruta_img = resolver_ruta_imagen_local(req.imagen_url) if req.imagen_url else None
+    busqueda_multimodal = False
+    img_procesada_str = None
 
     rag = QdrantRAGAdapter()
-    resultados = rag.buscar_biblioteca(query_vector, limit=req.limit or 10)
+
+    if ruta_img and ruta_img.exists():
+        try:
+            img_vector = qwen.generar_embedding_imagen(str(ruta_img), prompt=query_limpia or "tecnica")
+            resultados = rag.buscar_biblioteca_multimodal(query_vector, img_vector, alpha=0.5, limit=req.limit or 10)
+            busqueda_multimodal = True
+            img_procesada_str = str(ruta_img)
+        except Exception as e_img:
+            logger.warning("Fallo al generar embedding visual para %s (%s). Fallback a búsqueda textual.", ruta_img, e_img)
+            resultados = rag.buscar_biblioteca(query_vector, limit=req.limit or 10)
+    else:
+        resultados = rag.buscar_biblioteca(query_vector, limit=req.limit or 10)
 
     return {
         "query": query_limpia,
         "query_cognitiva": query_cognitiva,
         "query_expandida": query_expandida,
         "idioma": req.idioma or "es",
+        "imagen_url": req.imagen_url,
+        "imagen_procesada": img_procesada_str,
+        "busqueda_multimodal": busqueda_multimodal,
         "total": len(resultados),
         "resultados": resultados,
     }

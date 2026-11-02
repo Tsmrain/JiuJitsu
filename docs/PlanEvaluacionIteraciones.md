@@ -1734,6 +1734,46 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `backend/tests/test_iter_3x_features.py`: Pruebas automatizadas de reescritura semántica, Data Flywheel y endpoints de manuales.
   - `scripts/verify_iter_3x_playwright.py`: Script automatizado de pruebas E2E con capturas de pantalla para auditoría visual.
 
+---
+
+### 🔹 Iteración 3Y (Fase de Construcción): Erradicación Total de i18n y Búsqueda Visual de Teoría (RAG Multimodal)
+- **Objetivo (Craig Larman):** Erradicar completamente los falsos positivos de internacionalización en los módulos restantes (`LoginModal.jsx`, `AdminSucursales.jsx`, `ProfesorTecnicas.jsx`, `UserProfileModal.jsx`), asegurar la persistencia determinista del idioma (`localStorage` y base de datos multi-tenant), y elevar la consulta teórica de una búsqueda puramente textual a una **búsqueda multimodal híbrida** que combina el vector semántico del texto y el vector visual del fotograma de error del alumno mediante Qwen-VL y Qdrant.
+- **Riesgos Mitigados:**
+  - *Falso positivo de i18n en login:* El login sobrescribía la preferencia del usuario forzando `'en'`. Se corrigió para respetar `userData.idioma_preferido || idioma || localStorage.getItem('app_idioma') || 'es'`.
+  - *Falso positivo de UX en vistas secundarias:* Eliminación de todos los textos hardcodeados en inglés en `AdminSucursales`, `ProfesorTecnicas`, `LoginModal` y modales de perfil, implementando el hook `getTranslation(idioma, key)` para `es`, `pt` y `en`.
+  - *Falsa multimodalidad en RAG:* El botón "Teoría de la Técnica" antes solo enviaba el string de la técnica. Ahora propaga el fotograma crítico de error (`frame_error_url`), calcula su embedding denso visual (`generar_embedding_imagen`) y realiza fusión multimodal lineal balanceada ($\alpha = 0.5$) en Qdrant.
+- **Entregables Principales:**
+  1. **Internacionalización Integral (i18n):**
+     - `frontend/src/i18n/translations.js`: Añadidas más de 80 claves de traducción en español, portugués e inglés para formularios de sedes, creación y edición de sucursales, panel de seguimiento de alumnos por el instructor, login/registro de usuarios y badges de búsqueda multimodal.
+     - `frontend/src/components/LoginModal.jsx`: Soporte completo de traducción dinámica en pestañas de inicio/registro, placeholders, selectores de rol y mensajes de error. Corrección del bug de persistencia de idioma.
+     - `frontend/src/pages/AdminSucursales.jsx`: Localización exhaustiva de encabezados, tarjetas de catálogo, formulario de creación de sedes, pestañas y botones de acción. Recepción de la prop `idioma`.
+     - `frontend/src/pages/ProfesorTecnicas.jsx`: Localización de todas las estadísticas de instructor, lista de alumnos, tarjetas de evaluaciones, badges de similitud y modal de asignación de técnicas.
+     - `frontend/src/components/UserProfileModal.jsx`: Selector de idioma con persistencia en PostgreSQL (`usuarios.idioma_preferido`), soporte de botón de cierre explícito y logout sincronizado.
+  2. **Búsqueda Visual de Teoría (RAG Multimodal Fusionado):**
+     - `backend/corpocmente/infrastructure/persistence/qdrant_rag_adapter.py`: Método `buscar_biblioteca_multimodal` que fusiona la similitud de cosenos del vector textual y el vector visual del fotograma de error en la colección `rag_knowledge`.
+     - `backend/corpocmente/ui/api/routes.py`:
+       - Modelo `BibliotecaBuscarRequest` extendido con campo opcional `imagen_url`.
+       - Función `resolver_ruta_imagen_local` para resolver de forma segura rutas `/static/frames/`, URLs relativas o externas hacia el sistema de archivos local.
+       - Generación de embedding visual con `QwenEmbeddingAdapter.generar_embedding_imagen` y embedding textual con `generar_embedding_texto`.
+       - Fallback resiliente a búsqueda puramente textual si la imagen no puede ser procesada.
+     - `frontend/src/pages/StudentProgress.jsx`: Actualización del botón `"📖 Teoría de la Técnica"` para pasar `(item.tecnica_nombre, item.frame_error_url)` a `onViewTheory`.
+     - `frontend/src/pages/LibraryView.jsx`: Prop `initialImageUrl`, estado `activeImageUrl`, banner multimodal con miniatura del fotograma de error, badge `"✨ Búsqueda Multimodal Activa (Imagen + Texto)"` / `"✨ Busca Multimodal Ativa (Imagem + Texto)"` y botón para desvincular la imagen.
+     - `frontend/src/App.jsx`: Estado `libraryInitialImage`, propagación bidireccional entre `StudentProgress` y `LibraryView`, y sincronización de idioma en login y actualización de perfil.
+- **Pruebas de Fuego Empíricas:**
+  1. **Verificación de Endpoint Multimodal (cURL / Terminal):**
+     - Payload: `{"query": "Escape de Montada", "imagen_url": "/static/frames/critico_test_eval.jpg", "limit": 5}`
+     - Respuesta: `busqueda_multimodal: true`, `imagen_procesada: "/tmp/corpocmente_frames/critico_test_eval.jpg"`, páginas de manuales retornadas con score $> 0.73$.
+  2. **Auditoría Visual Playwright E2E (`scripts/verify_iter_3y_playwright.py`):**
+     - `screenshot_admin_sucursales_es.png`: AdminSucursales en español ("Gestión Global de Sedes", "Catálogo de Sucursales", "Comenzar Entrenamiento").
+     - `screenshot_user_profile_modal_es.png`: UserProfileModal en español ("Mi Perfil", "Idioma de Análisis y Feedback", "Guardar Cambios").
+     - `screenshot_profesor_tecnicas_pt.png`: ProfesorTecnicas cargado nativamente en portugués ("Painel de Controle do Instrutor", "Acompanhamento Biomecânico de Alunos no Jiu-Jitsu") según la preferencia en BD del instructor `mike`.
+     - `screenshot_profesor_tecnicas_es.png`: ProfesorTecnicas traducido dinámicamente a español al cambiar el selector global de idioma.
+     - `screenshot_admin_sucursales_pt.png`: AdminSucursales traducido a portugués ("Catálogo de Unidades", "Nossas Unidades", "Gestão Global de Unidades").
+     - `screenshot_visual_rag_theory.png`: Transición fluida desde la tarjeta de evaluación del alumno `santi` hacia la Biblioteca, desplegando el banner multimodal con la miniatura del fotograma crítico analizado, el badge activo y los resultados teóricos ordenados por afinidad multimodal.
+  3. **Suite Completa de Regresión Pytest:**
+     - **132 passed, 6 skipped** en 18.34s (100% verde).
+
+
 
 
 

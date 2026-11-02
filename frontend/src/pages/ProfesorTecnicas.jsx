@@ -5,6 +5,7 @@ import TheoryManagerModal from '../components/TheoryManagerModal';
 import GlobalKnowledgeModal from '../components/GlobalKnowledgeModal';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
+import { getTranslation } from '../i18n/translations';
 
 const OPACIONES_CINTURON = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
 
@@ -23,7 +24,8 @@ const BELT_LABELS = {
 
 const getBeltLabel = (nivel) => BELT_LABELS[nivel] || `${nivel} Belt`;
 
-export default function ProfesorTecnicas({ user, onClose }) {
+export default function ProfesorTecnicas({ user, onClose, idioma }) {
+  const t = (key) => getTranslation(idioma, key);
   const [activeTab, setActiveTab] = useState('alumnos'); // 'alumnos' (default) | 'tecnicas'
   const [tecnicas, setTecnicas] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
@@ -359,14 +361,14 @@ export default function ProfesorTecnicas({ user, onClose }) {
       <div className="tecnicas-header" style={{ marginBottom: '1.5rem' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'var(--brand-red)' }}>
-            Instructor Control Panel
+            {t('instructorPanel')}
           </h2>
           <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-            Welcome, {user?.nombre_completo || 'Instructor'} — {user?.sucursal_nombre}
+            {user?.nombre_completo || t('coach')} — {user?.sucursal_nombre}
           </span>
         </div>
         <div>
-          <button className="btn-secondary" onClick={onClose}>Close</button>
+          <button className="btn-secondary" onClick={onClose}>{t('close')}</button>
         </div>
       </div>
 
@@ -381,7 +383,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
             fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
           }}
         >
-          Student Progress ({alumnos.length})
+          {t('studentsTab')} ({alumnos.length})
         </button>
         <button
           onClick={() => setActiveTab('tecnicas')}
@@ -392,7 +394,7 @@ export default function ProfesorTecnicas({ user, onClose }) {
             fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
           }}
         >
-          My Techniques & Videos ({tecnicas.length})
+          {t('techniquesTab')} ({tecnicas.length})
         </button>
       </div>
 

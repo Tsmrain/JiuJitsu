@@ -1,31 +1,37 @@
 import { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { getTranslation } from '../i18n/translations';
 
 const API_BASE = 'http://localhost:8000';
 
-function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresArticulaciones }) {
+function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresArticulaciones, t }) {
   const [showFrameModal, setShowFrameModal] = useState(false);
   const videoRef = useRef(null);
   const ts = typeof timestampError === 'number' ? timestampError : Number(timestampError || 0);
-  const articulaciones = nombresArticulaciones || [];
+  const articulaciones = Array.isArray(nombresArticulaciones) ? nombresArticulaciones : [];
 
   return (
     <div>
-      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>My Video</h4>
+      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+        {t('myVideo')}
+      </h4>
       {videoSrc ? (
         <>
           <video
             ref={videoRef}
-            src={videoSrc}
             controls
             playsInline
             preload="metadata"
+            key={videoSrc}
             style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
-          />
+          >
+            <source src={videoSrc} type="video/mp4" />
+            {t('videoNotSupported')}
+          </video>
           {ts > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem', padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', borderRadius: 6, flexWrap: 'wrap' }}>
               <span style={{ color: '#ffd43b', fontSize: '0.82rem' }}>
-                ⚠️ Error detectado en el segundo {ts.toFixed(2)}s
+                ⚠️ {t('errorDetectedAt')} {ts.toFixed(2)}s
               </span>
               <button
                 type="button"
@@ -47,7 +53,7 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
                   fontWeight: 'bold',
                 }}
               >
-                Jump to Error
+                {t('jumpToError')}
               </button>
             </div>
           )}
@@ -86,7 +92,7 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '1.15rem' }}>
-                    Fotograma Crítico del Error Biomecánico ({ts.toFixed(2)}s)
+                    {t('criticalFrameTitle')} ({ts.toFixed(2)}s)
                   </h3>
                   <button
                     type="button"
@@ -108,17 +114,17 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
                   <div style={{ width: '100%', maxHeight: '440px', display: 'flex', justifyContent: 'center', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
                     <img
                       src={frameErrorUrl}
-                      alt="Fotograma con articulaciones en error resaltadas"
+                      alt={t('criticalFrameTitle')}
                       style={{ maxWidth: '100%', maxHeight: '440px', objectFit: 'contain' }}
                     />
                   </div>
                 ) : (
-                  <p style={{ color: '#94a3b8', textAlign: 'center' }}>Fotograma crítico no disponible.</p>
+                  <p style={{ color: '#94a3b8', textAlign: 'center' }}>{t('criticalFrameUnavailable')}</p>
                 )}
 
                 <div style={{ padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.12)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
                   <p style={{ margin: 0, color: '#ef4444', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                    Articulaciones afectadas: {articulaciones.length > 0 ? articulaciones.join(', ') : 'No especificadas'}
+                    {t('affectedJoints')} {articulaciones.length > 0 ? articulaciones.join(', ') : t('notSpecified')}
                   </p>
                 </div>
 
@@ -137,7 +143,7 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
                       cursor: 'pointer',
                     }}
                   >
-                    Cerrar
+                    {t('close')}
                   </button>
                 </div>
               </div>
@@ -145,16 +151,20 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
           )}
         </>
       ) : (
-        <p>Student video not available.</p>
+        <p>{t('studentVideoUnavailable')}</p>
       )}
     </div>
   );
 }
 
-export default function StudentProgress({ user }) {
+export default function StudentProgress({ user, idioma }) {
   const [evaluaciones, setEvaluaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const t = (key) => getTranslation(idioma, key);
+  const lang = (idioma || 'es').toLowerCase();
+  const dateLocale = lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-ES';
 
   useEffect(() => {
     let active = true;
@@ -164,11 +174,11 @@ export default function StudentProgress({ user }) {
       .then(async (response) => {
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
-          throw new Error(body.detail || 'Could not load your progress.');
+          throw new Error(body.detail || t('couldNotLoadProgress'));
         }
         return response.json();
       })
-      .then((data) => { if (active) setEvaluaciones(data); })
+      .then((data) => { if (active) setEvaluaciones(Array.isArray(data) ? data : []); })
       .catch((cause) => { if (active) setError(cause.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -176,29 +186,32 @@ export default function StudentProgress({ user }) {
 
   return (
     <section style={{ width: 'min(1100px, 100%)', margin: '2rem auto', padding: '1.5rem', color: 'white' }}>
-      <h2 style={{ color: 'var(--brand-red)', marginTop: 0 }}>My Progress</h2>
-      <p style={{ color: 'var(--text-secondary)' }}>Review your technical corrections and compare your movement with the coach's demonstration.</p>
-      {loading && <p>Loading your evaluations...</p>}
+      <h2 style={{ color: 'var(--brand-red)', marginTop: 0 }}>{t('myProgress')}</h2>
+      <p style={{ color: 'var(--text-secondary)' }}>{t('progressSubtitle')}</p>
+      {loading && <p>{t('loadingProgress')}</p>}
       {error && <p role="alert" style={{ color: '#ff8787' }}>{error}</p>}
-      {!loading && !error && evaluaciones.length === 0 && <p>You have no evaluations yet. Upload and analyze a video to start your progress history.</p>}
+      {!loading && !error && evaluaciones.length === 0 && <p>{t('noEvaluationsYet')}</p>}
       <div style={{ display: 'grid', gap: '1.25rem' }}>
         {evaluaciones.map((item) => {
           const score = Number(item.porcentaje_similitud || 0);
           const videoAlumno = item.url_video_alumno ? `${API_BASE}${item.url_video_alumno}` : null;
           const videoProfesor = item.video_referencia_url ? `${API_BASE}${item.video_referencia_url}` : null;
-          const coachNombre = (item.video_referencia_profesor_nombre || 'Coach').replace(/Mestre/gi, 'Coach');
+          const rawCoach = item.video_referencia_profesor_nombre || t('coach');
+          const coachNombre = lang === 'en'
+            ? rawCoach.replace(/Mestre|Profesor/gi, 'Coach')
+            : (lang === 'pt' ? rawCoach.replace(/Profesor|Coach/gi, 'Mestre') : rawCoach.replace(/Mestre|Coach/gi, 'Profesor'));
 
           return (
             <article key={item.id} className="glass-panel" style={{ padding: '1.25rem', borderRadius: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{item.tecnica_nombre}</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{item.tecnica_nombre || 'Jiu-Jitsu'}</h3>
                   <small style={{ color: 'var(--text-secondary)' }}>
-                    {item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleString('en-US') : 'Date unavailable'}
+                    {item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleString(dateLocale) : t('dateUnavailable')}
                   </small>
                 </div>
                 <strong style={{ color: score >= 85 ? '#69db7c' : score >= 70 ? '#ffd43b' : '#ff8787', fontSize: '1.25rem' }}>
-                  {Math.round(score)}% similarity
+                  {Math.round(score)}% {t('similarity')}
                 </strong>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
@@ -207,15 +220,25 @@ export default function StudentProgress({ user }) {
                   timestampError={item.timestamp_error_segundos}
                   frameErrorUrl={item.frame_error_url ? (item.frame_error_url.startsWith('http') ? item.frame_error_url : `${API_BASE}${item.frame_error_url}`) : null}
                   nombresArticulaciones={item.nombres_articulaciones_criticas}
+                  t={t}
                 />
                 <div>
                   <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-                    Coach Demonstration · {coachNombre}
+                    {t('coachDemonstration')} · {coachNombre}
                   </h4>
                   {videoProfesor ? (
-                    <video src={videoProfesor} controls playsInline preload="metadata" style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }} />
+                    <video
+                      controls
+                      playsInline
+                      preload="metadata"
+                      key={videoProfesor}
+                      style={{ width: '100%', height: 260, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
+                    >
+                      <source src={videoProfesor} type="video/mp4" />
+                      {t('videoNotSupported')}
+                    </video>
                   ) : (
-                    <p>Reference video not available.</p>
+                    <p>{t('referenceVideoUnavailable')}</p>
                   )}
                 </div>
               </div>
@@ -226,7 +249,9 @@ export default function StudentProgress({ user }) {
                   </p>
                 )}
                 <div style={{ color: '#d1d5db', fontSize: '0.95rem' }}>
-                  <ReactMarkdown>{item.feedback_gemini_es || item.feedback_gemini_pt || 'No correction available yet.'}</ReactMarkdown>
+                  <ReactMarkdown>
+                    {(lang === 'pt' ? item.feedback_gemini_pt : (lang === 'es' ? item.feedback_gemini_es : (item.feedback_gemini_en || item.feedback_gemini_es))) || item.feedback_gemini_es || item.feedback_gemini_pt || t('noCorrectionAvailable')}
+                  </ReactMarkdown>
                 </div>
               </div>
             </article>

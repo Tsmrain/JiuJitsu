@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getTranslation } from '../i18n/translations';
 
 const API_BASE = 'http://localhost:8000';
@@ -13,10 +13,13 @@ export default function LibraryView({ user, idioma, onClose }) {
 
   const t = (key) => getTranslation(idioma, key);
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e, customQuery = null) => {
     if (e) e.preventDefault();
-    const cleanQuery = query.trim();
+    const cleanQuery = (customQuery !== null ? customQuery : query).trim();
     if (!cleanQuery) return;
+    if (customQuery !== null) {
+      setQuery(customQuery);
+    }
 
     setLoading(true);
     setErrorMsg('');
@@ -49,6 +52,11 @@ export default function LibraryView({ user, idioma, onClose }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Estado inicial: cargar técnicas por defecto para que la biblioteca nunca esté vacía
+    handleSearch(null, 'guardia');
+  }, []);
 
   const getMediaUrl = (relativeUrl) => {
     if (!relativeUrl) return '';
@@ -360,3 +368,4 @@ export default function LibraryView({ user, idioma, onClose }) {
     </div>
   );
 }
+

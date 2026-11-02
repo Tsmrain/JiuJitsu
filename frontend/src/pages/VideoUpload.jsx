@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import './VideoUpload.css';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
+import { getTranslation } from '../i18n/translations';
 
-export default function VideoUpload({ user, onUploadStart }) {
+export default function VideoUpload({ user, onUploadStart, idioma }) {
   const [profesores, setProfesores] = useState([]);
   const [selectedProfesor, setSelectedProfesor] = useState(null);
   const [tecnicas, setTecnicas] = useState([]);
@@ -13,6 +14,8 @@ export default function VideoUpload({ user, onUploadStart }) {
 
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
+
+  const t = (key) => getTranslation(idioma, key);
 
   // 1. Load academy instructors
   const fetchProfesores = async () => {
@@ -125,7 +128,7 @@ export default function VideoUpload({ user, onUploadStart }) {
 
   const handleFile = async (selectedFile) => {
     if (!selectedFile.type.startsWith('video/')) {
-      alert("Please select a valid video file.");
+      alert(t('invalidVideoFile'));
       return;
     }
     setFile(selectedFile);
@@ -149,7 +152,7 @@ export default function VideoUpload({ user, onUploadStart }) {
       if (spamRes.status === 422 || !spamRes.ok) {
         const spamData = await spamRes.json().catch(() => ({}));
         const msg = spamRes.status === 422
-          ? "The video does not appear to be Brazilian Jiu-Jitsu. Please upload a valid training video."
+          ? t('spamNotBjj')
           : (spamData.detail || "Error validating video content.");
         setSpamError(msg);
         setFile(null);
@@ -206,7 +209,7 @@ export default function VideoUpload({ user, onUploadStart }) {
     if (!file || !selectedTecnica) return;
 
     if (!sessionData || selectedPersonaIdx === null) {
-      alert("Please select which person you are in the video before continuing.");
+      alert(t('selectPersonPrompt'));
       return;
     }
 
@@ -251,20 +254,20 @@ export default function VideoUpload({ user, onUploadStart }) {
   return (
     <div className="upload-container">
       <div className="upload-header">
-        <h2>Upload Your Execution</h2>
-        <p>Select the instructor from your academy and the technique you want to practice to compare your movement.</p>
+        <h2>{t('uploadTitle')}</h2>
+        <p>{t('uploadSubtitle')}</p>
       </div>
 
       {/* Step 1: Select Instructor */}
       <div className="tecnica-selector-card glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1rem', borderRadius: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          1. SELECT YOUR ACADEMY INSTRUCTOR:
+          {t('selectInstructorStep')}
         </label>
 
         {loadingProfesores ? (
-          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Loading academy instructors...</p>
+          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t('loadingInstructors')}</p>
         ) : profesores.length === 0 ? (
-          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>No instructors found in this branch.</p>
+          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t('noInstructorsFound')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <div className="profesores-container" style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
@@ -367,13 +370,13 @@ export default function VideoUpload({ user, onUploadStart }) {
       {/* Step 2: Select Technique */}
       <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
-          2. SELECT TECHNIQUE TO EVALUATE:
+          {t('selectTechniqueStep')}
         </label>
 
-        {loadingTecnicas ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Loading instructor techniques...</p> : (
+        {loadingTecnicas ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t('loadingTechniques')}</p> : (
           <>
             {tecnicas.length === 0 ? (
-              <p style={{ fontSize: '0.9rem', color: '#ff8787' }}>No techniques registered for this instructor.</p>
+              <p style={{ fontSize: '0.9rem', color: '#ff8787' }}>{t('noTechniquesFound')}</p>
             ) : (
               <select
                 value={selectedTecnica?.id || ''}
@@ -414,12 +417,12 @@ export default function VideoUpload({ user, onUploadStart }) {
                   <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>{selectedTecnica.nombre}</span>
                 </div>
                 <span style={{ marginLeft: 'auto', background: (selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? '#22c55e' : 'var(--brand-red)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', color: 'white' }}>
-                  {(selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? 'With Reference Video' : 'No Reference Video'}
+                  {(selectedTecnica.tiene_patron || selectedTecnica.tiene_video) ? t('withReferenceVideo') : t('noReferenceVideo')}
                 </span>
                 </div>
                 {selectedTecnica.mensaje_profesor && (
                   <div style={{ borderTop: '1px solid rgba(255,255,255,.1)', paddingTop: '.65rem', lineHeight: 1.5 }}>
-                    <strong style={{ color: 'white' }}>Instructor instructions</strong>
+                    <strong style={{ color: 'white' }}>{t('instructorInstructions')}</strong>
                     <p style={{ margin: '.3rem 0 0', color: 'rgba(255,255,255,.78)', whiteSpace: 'pre-wrap' }}>{selectedTecnica.mensaje_profesor}</p>
                   </div>
                 )}
@@ -459,8 +462,8 @@ export default function VideoUpload({ user, onUploadStart }) {
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
             </div>
-            <span className="drop-text">Drag and drop your video here or <strong>browse file</strong></span>
-            <span className="drop-hint">MP4, MOV, WEBM (Max. 100MB)</span>
+            <span className="drop-text">{t('dragDropText')} <strong>{t('browseFile')}</strong></span>
+            <span className="drop-hint">{t('supportedFormats')}</span>
           </label>
         </div>
       ) : (
@@ -471,7 +474,7 @@ export default function VideoUpload({ user, onUploadStart }) {
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
             </div>
             <button type="button" className="btn-secondary" onClick={handleResetVideo} style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
-              Change Video
+              {t('changeVideo')}
             </button>
           </div>
 
@@ -484,12 +487,12 @@ export default function VideoUpload({ user, onUploadStart }) {
           {validatingSpam ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem' }}>
               <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--brand-red)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Validating video content...</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t('validatingVideoContent')}</p>
             </div>
           ) : extractingPrimerFrame ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem' }}>
               <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--brand-red)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Extracting first frame and detecting persons...</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t('extractingFirstFrame')}</p>
             </div>
           ) : sessionData ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -500,10 +503,10 @@ export default function VideoUpload({ user, onUploadStart }) {
                   setSelectedPersonaIdx(idx);
                   setUserRejectedPersona(false);
                 }}
-                heading="Identify Yourself in the Video"
-                subtitle={sessionData.personas.length > 1 ? "Multiple persons detected. Please click on the box that corresponds to you:" : "Single person detected in the frame:"}
-                candidateLabel="Candidate"
-                selectedLabel="Identified"
+                heading={t('identifyYourselfHeading')}
+                subtitle={sessionData.personas.length > 1 ? t('multiplePersonsDetected') : t('singlePersonDetected')}
+                candidateLabel={t('candidate')}
+                selectedLabel={t('identified')}
                 showCandidates={false}
               />
 
@@ -522,12 +525,12 @@ export default function VideoUpload({ user, onUploadStart }) {
                       width: '100%',
                       boxSizing: 'border-box'
                     }}>
-                      Could not find a second person. Please ensure you are visible in the initial frame or record with better framing.
+                      {t('secondPersonNotFound')}
                     </div>
                   ) : (
                     <>
                       <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 'bold' }}>
-                        Is this you in the video?
+                        {t('isThisYou')}
                       </span>
                       <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
                         <button
@@ -546,7 +549,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                             cursor: 'pointer'
                           }}
                         >
-                          No, that's not me
+                          {t('noNotMe')}
                         </button>
                         <button
                           type="button"
@@ -560,7 +563,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                             cursor: confirmingSelection ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          {confirmingSelection ? "Confirming..." : "Yes, analyze this person"}
+                          {confirmingSelection ? t('confirming') : t('yesAnalyzeMe')}
                         </button>
                       </div>
                     </>
@@ -595,7 +598,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                           }}
                         >
                           <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: isSelected ? 'var(--brand-red)' : 'rgba(255,255,255,0.4)' }} />
-                          <span>{isSelected ? "Identified" : `Candidate #${p.idx}`}</span>
+                          <span>{isSelected ? t('identified') : `${t('candidate')} #${p.idx}`}</span>
                           <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>({Math.round(p.confianza * 100)}%)</span>
                         </button>
                       );
@@ -617,7 +620,7 @@ export default function VideoUpload({ user, onUploadStart }) {
                         cursor: selectedPersonaIdx === null || confirmingSelection ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      {confirmingSelection ? "Confirming..." : "Confirm Selection & Analyze"}
+                      {confirmingSelection ? t('confirming') : t('confirmSelectionAndAnalyze')}
                     </button>
                   </div>
                 </>

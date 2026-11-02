@@ -1,14 +1,17 @@
 import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './FeedbackView.css';
+import { getTranslation } from '../i18n/translations';
 
 const API_BASE = 'http://localhost:8000';
 
-export default function FeedbackView({ user, result, tecnica, onReset }) {
+export default function FeedbackView({ user, result, tecnica, onReset, idioma }) {
   const [videoError, setVideoError] = useState(false);
   const [videoAlumnoError, setVideoAlumnoError] = useState(false);
   const [showFrameModal, setShowFrameModal] = useState(false);
   const videoRef = useRef(null);
+
+  const t = (key) => getTranslation(idioma, key);
 
   if (!result) return null;
 
@@ -32,25 +35,29 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
   const tecnicaNombre = tecnica?.nombre || result.tecnica_nombre || 'Jiu-Jitsu';
   const practiceUrl = result.practice_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(tecnicaNombre + ' jiu-jitsu tutorial')}`;
 
-  const rawProfesor = result.video_referencia_profesor_nombre || tecnica?.profesorRef || 'Instructor';
-  const profesorNombre = rawProfesor.replace(/Mestre/gi, 'Coach');
+  const defaultCoach = t('coach');
+  const rawProfesor = result.video_referencia_profesor_nombre || tecnica?.profesorRef || defaultCoach;
+  const lang = (idioma || 'es').toLowerCase();
+  const profesorNombre = lang === 'en'
+    ? rawProfesor.replace(/Mestre|Profesor/gi, 'Coach')
+    : (lang === 'pt' ? rawProfesor.replace(/Profesor|Coach/gi, 'Mestre') : rawProfesor.replace(/Mestre|Coach/gi, 'Profesor'));
 
-  const feedbackSummary = result.feedback_summary || (result.feedback ? result.feedback.split('.')[0].trim() : 'Technique feedback');
+  const feedbackSummary = result.feedback_summary || (result.feedback ? result.feedback.split('.')[0].trim() : t('aiTechnicalAnalysis'));
   const feedbackText = result.feedback || '';
 
   return (
     <div className="feedback-container">
       <div className="feedback-header">
-        <h2>Biomechanical Analysis Completed</h2>
-        <p>Comparison completed against the coach's official reference.</p>
+        <h2>{t('analysisCompleted')}</h2>
+        <p>{t('analysisCompletedDesc')}</p>
       </div>
 
       {tecnica && (
         <div className="tecnica-comparison-card glass-panel">
-          <span className="tecnica-badge">EVALUATED TECHNIQUE</span>
+          <span className="tecnica-badge">{t('evaluatedTechnique')}</span>
           <h3>{tecnicaNombre}</h3>
           <p>
-            <strong>Reference Pattern:</strong> {profesorNombre}
+            <strong>{t('referencePattern')}</strong> {profesorNombre}
           </p>
         </div>
       )}
@@ -59,21 +66,24 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
         {/* 1. Top-Left: Instructor Reference Video */}
         <section className="glass-panel feedback-card">
           <div className="card-header">
-            <span className="card-label">COACH REFERENCE VIDEO</span>
+            <span className="card-label">{t('coachReferenceVideo')}</span>
             <h3>{profesorNombre}</h3>
           </div>
           <div className="media-wrapper">
             {videoUrl && !videoError ? (
               <video
-                src={videoUrl}
                 controls
                 playsInline
                 preload="metadata"
+                key={videoUrl}
                 onError={() => setVideoError(true)}
-              />
+              >
+                <source src={videoUrl} type="video/mp4" />
+                {t('videoNotSupported')}
+              </video>
             ) : (
               <div className="media-placeholder" role="status">
-                The reference video is not available for playback.
+                {t('referenceVideoUnavailable')}
               </div>
             )}
           </div>
@@ -82,31 +92,34 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
         {/* 2. Top-Right: Student Video with Jump to Error & Critical Frame */}
         <section className="glass-panel feedback-card">
           <div className="card-header">
-            <span className="card-label">STUDENT VIDEO</span>
-            <h3>Biomechanic Execution</h3>
+            <span className="card-label">{t('studentVideo')}</span>
+            <h3>{t('biomechanicExecution')}</h3>
           </div>
           <div className="media-wrapper">
             {videoAlumnoUrl && !videoAlumnoError ? (
               <video
                 ref={videoRef}
-                src={videoAlumnoUrl}
                 controls
                 playsInline
                 preload="metadata"
+                key={videoAlumnoUrl}
                 onError={() => setVideoAlumnoError(true)}
-              />
+              >
+                <source src={videoAlumnoUrl} type="video/mp4" />
+                {t('videoNotSupported')}
+              </video>
             ) : frameErrorUrl ? (
-              <img src={frameErrorUrl} alt="Analyzed student critical frame" />
+              <img src={frameErrorUrl} alt={t('criticalFrameTitle')} />
             ) : (
               <div className="media-placeholder" role="status">
-                The analyzed student video is not available.
+                {t('studentVideoUnavailable')}
               </div>
             )}
           </div>
           {timestampError > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.6rem', padding: '0.5rem 0.75rem', background: 'rgba(0, 0, 0, 0.4)', borderRadius: '6px', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span style={{ color: '#ffd43b', fontSize: '0.85rem', fontWeight: '500' }}>
-                ⚠️ Error detectado en el segundo {timestampError.toFixed(2)}s
+                ⚠️ {t('errorDetectedAt')} {timestampError.toFixed(2)}s
               </span>
               <button
                 type="button"
@@ -129,7 +142,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
                   transition: 'opacity 0.2s',
                 }}
               >
-                Jump to Error
+                {t('jumpToError')}
               </button>
             </div>
           )}
@@ -170,7 +183,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '1.15rem' }}>
-                  Fotograma Crítico del Error Biomecánico ({timestampError.toFixed(2)}s)
+                  {t('criticalFrameTitle')} ({timestampError.toFixed(2)}s)
                 </h3>
                 <button
                   type="button"
@@ -192,17 +205,17 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
                 <div style={{ width: '100%', maxHeight: '440px', display: 'flex', justifyContent: 'center', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
                   <img
                     src={frameErrorUrl}
-                    alt="Fotograma con articulaciones en error resaltadas"
+                    alt={t('criticalFrameTitle')}
                     style={{ maxWidth: '100%', maxHeight: '440px', objectFit: 'contain' }}
                   />
                 </div>
               ) : (
-                <p style={{ color: '#94a3b8', textAlign: 'center' }}>Fotograma crítico no disponible.</p>
+                <p style={{ color: '#94a3b8', textAlign: 'center' }}>{t('criticalFrameUnavailable')}</p>
               )}
 
               <div style={{ padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.12)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
                 <p style={{ margin: 0, color: '#ef4444', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                  Articulaciones afectadas: {(result.nombres_articulaciones_criticas && result.nombres_articulaciones_criticas.length > 0) ? result.nombres_articulaciones_criticas.join(', ') : 'No especificadas'}
+                  {t('affectedJoints')} {(result.nombres_articulaciones_criticas && result.nombres_articulaciones_criticas.length > 0) ? result.nombres_articulaciones_criticas.join(', ') : t('notSpecified')}
                 </p>
               </div>
 
@@ -221,7 +234,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
                     cursor: 'pointer',
                   }}
                 >
-                  Cerrar
+                  {t('close')}
                 </button>
               </div>
             </div>
@@ -231,9 +244,9 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
         {/* 3. Bottom-Left: AI Analysis Card */}
         <section className="glass-panel feedback-card ai-feedback-card">
           <div className="ai-card-header">
-            <span className="card-label">AI TECHNICAL ANALYSIS</span>
+            <span className="card-label">{t('aiTechnicalAnalysis')}</span>
             <div className={`similarity-badge ${isPassing ? 'badge-excellent' : similitud >= 70 ? 'badge-good' : 'badge-needs-work'}`}>
-              {Math.round(similitud)}% Match
+              {Math.round(similitud)}% {t('match')}
             </div>
           </div>
           <div className="ai-card-body">
@@ -243,7 +256,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
-                <p className="pass-text">Great job! Technique executed correctly.</p>
+                <p className="pass-text">{t('greatJob')}</p>
               </div>
             ) : (
               <div className="correction-container">
@@ -263,8 +276,8 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
         {/* 4. Bottom-Right: YouTube Recommendation Card */}
         <section className="glass-panel feedback-card youtube-card">
           <div className="card-header">
-            <span className="card-label">RECOMMENDED PRACTICE</span>
-            <h3>Practice Recommendation</h3>
+            <span className="card-label">{t('recommendedPractice')}</span>
+            <h3>{t('practiceRecommendation')}</h3>
           </div>
           <div className="youtube-card-body">
             <div className="youtube-icon-wrap">
@@ -272,14 +285,14 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
               </svg>
             </div>
-            <p className="youtube-desc">Watch tutorials for this technique on YouTube to reinforce proper biomechanics and positioning.</p>
+            <p className="youtube-desc">{t('youtubeDesc')}</p>
             <a
               href={practiceUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-youtube"
             >
-              Watch Tutorials on YouTube
+              {t('watchYoutube')}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
@@ -292,7 +305,7 @@ export default function FeedbackView({ user, result, tecnica, onReset }) {
 
       <div className="feedback-actions">
         <button className="btn-primary reset-btn" onClick={onReset}>
-          Analyze Another Technique
+          {t('analyzeAnotherTechnique')}
         </button>
       </div>
     </div>

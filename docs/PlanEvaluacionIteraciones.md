@@ -1627,6 +1627,66 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `frontend/src/App.jsx`:
     - Navegación, selector de idioma en header, integración de `LibraryView` y propagación de `idioma` en solicitudes de análisis.
 
+---
+
+### 🔹 Iteración 3W: Cierre de UX, i18n Total y Fix de Video
+
+- **Estado:** COMPLETADA ✅ (EN PRODUCCIÓN)
+- **Fecha:** 2026-11-02
+- **Tag Previo:** `iter-3w-antes` (commit `69e9a4f`)
+
+- **Diagnóstico de Causa Raíz y Mitigación de Falsos Positivos (Larman):**
+  1. **Traducción Total (Cero Hardcoding):**
+     - Detección: Componentes clave (`FeedbackView.jsx`, `StudentProgress.jsx`, `VideoUpload.jsx`, `ProfesorTecnicas.jsx`) mantenían textos en inglés y español aún con la sesión configurada en portugués.
+     - Solución: Auditoría y reemplazo del 100% de cadenas fijas por `t('clave')` conectadas al diccionario centralizado `frontend/src/i18n/translations.js`.
+     - Cobertura completa y paritaria de todas las claves en Español (`es`), Portugués (`pt`) e Inglés (`en`).
+  2. **Estado Inicial de la Biblioteca:**
+     - Detección: El usuario ingresaba a `LibraryView.jsx` y encontraba una pantalla vacía requiriendo búsqueda manual obligatoria.
+     - Solución: Implementación de `useEffect` en el montaje del componente invocando la búsqueda semántica predeterminada (`guardia`), renderizando de inmediato 12 tarjetas enriquecidas con portadas de manuales y citas oficiales.
+  3. **Fix Definitivo de MIME Type y Reproducción de Video:**
+     - Detección: El error *"No video with supported format and MIME type found"* era ocasionado por la ausencia física del archivo `.mp4` en el directorio efímero `/tmp/corpocmente_videos/`, lo cual hacía que FastAPI respondiera con `404 Not Found` en formato `text/plain` o HTML en lugar del stream de video binario.
+     - Solución:
+       - Seeding automático preventivo en `backend/corpocmente/main.py` de todos los videos de referencia al iniciar la aplicación.
+       - Resolución defensiva y copia automática desde la raíz del repositorio o paths alternativos en `consultar_evaluacion` (`routes.py`) y `listar_evaluaciones_alumno` (`auth_routes.py`).
+       - Configuración explícita de `<source src={videoUrl} type="video/mp4" />` con atributos `controls`, `playsInline` y `preload="metadata"` en `FeedbackView.jsx` y `StudentProgress.jsx`.
+       - Verificación con `curl -I`: `HTTP/1.1 200 OK`, `content-type: video/mp4`, `accept-ranges: bytes`.
+  4. **Historial de Progreso Completo y Seguro:**
+     - Detección: La función PostgreSQL `admin_list_evaluaciones_alumno` contenía un corte arbitrario `LIMIT 50`.
+     - Solución: Modificación de `10_progreso_alumno_con_videos.sql` eliminando el límite artificial para retornar la totalidad de evaluaciones del estudiante.
+     - Renderizado seguro en `StudentProgress.jsx` frente a arrays vacíos o campos opcionales nulos.
+
+- **Pruebas de Fuego Empíricas:**
+  1. **Verificación de Encabezados HTTP (Video de Referencia):**
+     ```http
+     HTTP/1.1 200 OK
+     date: Mon, 02 Nov 2026 04:08:51 GMT
+     server: uvicorn
+     content-type: video/mp4
+     accept-ranges: bytes
+     content-length: 3162562
+     ```
+  2. **Playwright Visual E2E en Navegador (`scripts/verify_ux_i18n_playwright.py`):**
+     - `screenshot_student_progress_pt.png`: Validado en portugués (*Meu Progresso*, *Demonstração do Professor*, *Meu Vídeo*, *de similaridade*).
+     - `screenshot_library_view_pt.png`: 12 tarjetas cargadas automáticamente al montar la vista (*Biblioteca Multimodal de Jiu-Jitsu*, *Consulte manuais oficiais*, *Buscar*).
+     - `screenshot_feedback_view_pt.png`: Interfaz completa de corrección y video en portugués (*Análise Biomecânica Concluída*, *TÉCNICA AVALIADA*, *VÍDEO DE REFERÊNCIA DO INSTRUTOR*, *VÍDEO DO ALUNO*, *Pular para o Erro*, *ANÁLISE TÉCNICA DE IA*, *PRÁTICA RECOMENDADA*, *Analisar Outra Técnica*).
+  3. **Suite Completa de Regresión Pytest:**
+     - **120 passed, 6 skipped** en 12.37s (100% en verde).
+
+- **Entregables:**
+  - `frontend/src/i18n/translations.js`: Diccionario expandido para todos los componentes de la interfaz.
+  - `frontend/src/pages/FeedbackView.jsx`: Componente 100% internacionalizado con tag `<video>` robusto.
+  - `frontend/src/pages/StudentProgress.jsx`: Componente de progreso 100% internacionalizado con soporte de múltiples videos.
+  - `frontend/src/pages/LibraryView.jsx`: Carga inicial automática de tarjetas en montaje.
+  - `frontend/src/pages/VideoUpload.jsx`: Calibración y subida totalmente localizada.
+  - `frontend/src/pages/ProfesorTecnicas.jsx`: Panel de profesor y seguimiento adaptado al idioma.
+  - `frontend/src/App.jsx`: Propagación de prop `idioma` y hook de inspección para pruebas Playwright.
+  - `backend/corpocmente/main.py`: Seeding de videos de referencia al arranque de FastAPI.
+  - `backend/corpocmente/ui/api/routes.py`: Fallback dinámico de archivos de video para visualización de feedback.
+  - `backend/corpocmente/ui/api/auth_routes.py`: Fallback dinámico de archivos de video para historial de progreso.
+  - `infrastructure/initdb/10_progreso_alumno_con_videos.sql`: Función SQL sin límite de evaluaciones.
+  - `scripts/verify_ux_i18n_playwright.py`: Script de validación automatizada en Chromium headless con capturas de pantalla.
+
+
 
 
 

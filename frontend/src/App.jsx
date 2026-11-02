@@ -31,6 +31,15 @@ function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+  useEffect(() => {
+    // Hook de testing visual para automatizaciones Playwright / E2E
+    window.__setAppState = (state, resData, tecData) => {
+      if (state) setAppState(state);
+      if (resData) setResult(resData);
+      if (tecData) setSelectedTecnica(tecData);
+    };
+  }, []);
+
   const handleLanguageChange = async (newLang) => {
     if (!newLang) return;
     const clean = newLang.toLowerCase().trim();
@@ -339,11 +348,11 @@ function App() {
         )}
 
         {(appState === 'PROFESOR_PANEL' || (appState === 'IDLE' && user?.rol === 'profesor')) && (
-          <ProfesorTecnicas user={user} onClose={() => setAppState('ADMIN_PANEL')} />
+          <ProfesorTecnicas user={user} onClose={() => setAppState('ADMIN_PANEL')} idioma={idioma} />
         )}
 
         {appState === 'IDLE' && user && user.rol !== 'profesor' && (
-          <VideoUpload user={user} onUploadStart={handleUploadStart} />
+          <VideoUpload user={user} onUploadStart={handleUploadStart} idioma={idioma} />
         )}
         {appState === 'IDLE' && !user && (
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -368,10 +377,10 @@ function App() {
         )}
 
         {appState === 'FEEDBACK' && (
-          <FeedbackView user={user} result={result} tecnica={selectedTecnica} onReset={handleReset} />
+          <FeedbackView user={user} result={result} tecnica={selectedTecnica} onReset={handleReset} idioma={idioma} />
         )}
         {appState === 'STUDENT_PROGRESS' && user?.rol === 'alumno' && (
-          <StudentProgress user={user} />
+          <StudentProgress user={user} idioma={idioma} />
         )}
       </main>
 

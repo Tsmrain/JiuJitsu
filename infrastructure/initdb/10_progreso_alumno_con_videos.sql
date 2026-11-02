@@ -37,8 +37,7 @@ BEGIN
     LEFT JOIN videos_referencia vr ON vr.id = e.video_referencia_id
     LEFT JOIN usuarios u_prof ON u_prof.id = vr.profesor_id
     WHERE e.alumno_id = p_alumno_id
-    ORDER BY e.fecha_evaluacion DESC
-    LIMIT 50;
+    ORDER BY e.fecha_evaluacion DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

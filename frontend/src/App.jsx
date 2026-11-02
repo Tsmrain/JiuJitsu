@@ -17,6 +17,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [selectedTecnica, setSelectedTecnica] = useState(null);
   const [currentEvaluacionId, setCurrentEvaluacionId] = useState(null);
+  const [libraryInitialQuery, setLibraryInitialQuery] = useState(null);
 
   // Estado de Idioma (i18n)
   const [idioma, setIdioma] = useState(() => {
@@ -33,10 +34,13 @@ function App() {
 
   useEffect(() => {
     // Hook de testing visual para automatizaciones Playwright / E2E
-    window.__setAppState = (state, resData, tecData) => {
+    window.__setAppState = (state, resData, tecData, extra) => {
       if (state) setAppState(state);
       if (resData) setResult(resData);
       if (tecData) setSelectedTecnica(tecData);
+      if (extra && extra.libraryInitialQuery !== undefined) {
+        setLibraryInitialQuery(extra.libraryInitialQuery);
+      }
     };
   }, []);
 
@@ -202,7 +206,15 @@ function App() {
           {user && (
             <button
               className="btn-secondary"
-              onClick={() => setAppState(appState === 'LIBRARY' ? 'IDLE' : 'LIBRARY')}
+              onClick={() => {
+                if (appState === 'LIBRARY') {
+                  setLibraryInitialQuery(null);
+                  setAppState('IDLE');
+                } else {
+                  setLibraryInitialQuery(null);
+                  setAppState('LIBRARY');
+                }
+              }}
               style={{
                 fontSize: '0.8rem',
                 padding: '0.4rem 0.8rem',
@@ -318,7 +330,11 @@ function App() {
           <LibraryView
             user={user}
             idioma={idioma}
-            onClose={() => setAppState(user?.rol === 'profesor' ? 'PROFESOR_PANEL' : 'IDLE')}
+            initialQuery={libraryInitialQuery}
+            onClose={() => {
+              setLibraryInitialQuery(null);
+              setAppState(user?.rol === 'profesor' ? 'PROFESOR_PANEL' : 'IDLE');
+            }}
           />
         )}
 
@@ -380,7 +396,14 @@ function App() {
           <FeedbackView user={user} result={result} tecnica={selectedTecnica} onReset={handleReset} idioma={idioma} />
         )}
         {appState === 'STUDENT_PROGRESS' && user?.rol === 'alumno' && (
-          <StudentProgress user={user} idioma={idioma} />
+          <StudentProgress
+            user={user}
+            idioma={idioma}
+            onViewTheory={(tecnicaNombre) => {
+              setLibraryInitialQuery(tecnicaNombre);
+              setAppState('LIBRARY');
+            }}
+          />
         )}
       </main>
 

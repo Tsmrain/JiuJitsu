@@ -10,15 +10,76 @@ logger = logging.getLogger(__name__)
 class LocalVLMAdapter:
     """
     Adaptador local de VLM usando Qwen3-VL-Instruct vía mlx-vlm.
-    Provee generar_texto_feedback().
+    Provee generar_texto_feedback(), reescribir_query_cognitiva() y verificar_faithfulness().
     """
 
+    _cached_models = {}
+
     def __init__(self, model_name: str = "mlx-community/Qwen3-VL-4B-Instruct-4bit"):
-        from mlx_vlm import load
-        logger.info("Cargando VLM local: %s", model_name)
         self.model_name = model_name
-        self.model, self.processor = load(model_name)
-        logger.info("VLM local listo.")
+        if model_name not in LocalVLMAdapter._cached_models:
+            from mlx_vlm import load
+            logger.info("Cargando VLM local: %s", model_name)
+            m, p = load(model_name)
+            LocalVLMAdapter._cached_models[model_name] = (m, p)
+            logger.info("VLM local listo.")
+        self.model, self.processor = LocalVLMAdapter._cached_models[model_name]
+
+    def reescribir_query_cognitiva(self, query: str) -> str:
+        """
+        Reescribe y expande la consulta del usuario para optimizar la búsqueda semántica en Jiu-Jitsu.
+        Diferencia explícitamente conceptos de defensa/escape vs ataque/sumisión.
+        """
+        if not query or not query.strip():
+            return ""
+
+        prompt = (
+            "Eres un experto en Jiu-Jitsu. Reescribe la siguiente consulta del usuario para que sea óptima para una búsqueda semántica. "
+            "Si el usuario busca 'defensa', expande la consulta incluyendo 'escape', 'survive', 'defend'. "
+            "Si busca 'ataque', expande incluyendo 'submission', 'finish', 'attack'. "
+            "Devuelve SOLO el texto reescrito, sin explicaciones ni comillas.\n\n"
+            f"Consulta: {query.strip()}"
+        )
+
+        try:
+            from mlx_vlm import generate
+            if hasattr(self.processor, "apply_chat_template"):
+                content = [{"type": "text", "text": prompt}]
+                formatted_prompt = self.processor.apply_chat_template(
+                    [{"role": "user", "content": content}],
+                    add_generation_prompt=True,
+                )
+            else:
+                formatted_prompt = prompt
+
+            raw = generate(
+                self.model,
+                self.processor,
+                formatted_prompt,
+                [],
+                max_tokens=60,
+                temperature=0.0,
+                verbose=False,
+            )
+            reescrita = str(raw.text if hasattr(raw, "text") else raw).strip()
+            reescrita = re.sub(r'^(?:Consulta reescrita|Reescritura|Respuesta):\s*', '', reescrita, flags=re.IGNORECASE)
+            reescrita = reescrita.strip('"\' ')
+            if reescrita and len(reescrita) > 3:
+                return reescrita
+        except Exception as e:
+            logger.warning("Fallo en reescritura con VLM: %s. Aplicando fallback determinista.", e)
+
+        return self._reescribir_query_fallback(query)
+
+    @staticmethod
+    def _reescribir_query_fallback(query: str) -> str:
+        q_lower = query.lower()
+        terminos = [query.strip()]
+        if any(w in q_lower for w in ["defensa", "defesa", "defense", "escape", "defender", "zafar", "escapar"]):
+            terminos.append("escape survive defend defense counter")
+        elif any(w in q_lower for w in ["ataque", "attack", "sumision", "submissao", "submission", "finalizar", "finalizacao", "llave", "armbar"]):
+            terminos.append("submission finish attack lock")
+        return " ".join(terminos)
 
     def generar_texto_feedback(
         self,

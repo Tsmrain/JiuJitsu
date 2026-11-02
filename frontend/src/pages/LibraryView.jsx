@@ -3,13 +3,19 @@ import { getTranslation } from '../i18n/translations';
 
 const API_BASE = 'http://localhost:8000';
 
-export default function LibraryView({ user, idioma, onClose }) {
+export default function LibraryView({ user, idioma, onClose, initialQuery }) {
+  const [activeTab, setActiveTab] = useState('search'); // 'search' | 'catalog'
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Estado del Catálogo de Libros PDF
+  const [manuales, setManuales] = useState([]);
+  const [loadingManuales, setLoadingManuales] = useState(false);
+  const [selectedPdf, setSelectedPdf] = useState(null);
 
   const t = (key) => getTranslation(idioma, key);
 
@@ -53,15 +59,54 @@ export default function LibraryView({ user, idioma, onClose }) {
     }
   };
 
+  const fetchManuales = async () => {
+    setLoadingManuales(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/conocimiento/manuales`, {
+        headers: {
+          'Authorization': `Bearer ${user?.token || ''}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setManuales(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Error cargando manuales:', err);
+    } finally {
+      setLoadingManuales(false);
+    }
+  };
+
   useEffect(() => {
-    // Estado inicial: cargar técnicas por defecto para que la biblioteca nunca esté vacía
-    handleSearch(null, 'guardia');
-  }, []);
+    // Si viene una consulta inicial desde el botón de teoría, ejecutarla; si no, 'guardia'
+    const targetQuery = initialQuery && initialQuery.trim() ? initialQuery.trim() : 'guardia';
+    setActiveTab('search');
+    handleSearch(null, targetQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    if (activeTab === 'catalog' && manuales.length === 0) {
+      fetchManuales();
+    }
+  }, [activeTab]);
 
   const getMediaUrl = (relativeUrl) => {
     if (!relativeUrl) return '';
     const fullUrl = relativeUrl.startsWith('http') ? relativeUrl : `${API_BASE}${relativeUrl}`;
     return user?.token ? `${fullUrl}?token=${encodeURIComponent(user.token)}` : fullUrl;
+  };
+
+  const getPdfUrl = (filename) => {
+    const raw = `${API_BASE}/api/v1/conocimiento/manuales/${encodeURIComponent(filename)}`;
+    return user?.token ? `${raw}?token=${encodeURIComponent(user.token)}` : raw;
+  };
+
+  const cleanBookName = (filename) => {
+    return filename
+      .replace(/\.pdf$/i, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   return (
@@ -84,208 +129,432 @@ export default function LibraryView({ user, idioma, onClose }) {
           {t('librarySubtitle')}
         </p>
 
-        {/* Search Input Bar */}
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('searchPlaceholder')}
-            style={{
-              flex: 1,
-              minWidth: '260px',
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: 'white',
-              fontSize: '1rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
+        {/* Selector de Pestañas (Tabs) */}
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.12)', paddingBottom: '0.5rem' }}>
           <button
-            type="submit"
-            disabled={loading || !query.trim()}
-            className="btn-primary"
-            style={{ padding: '0.75rem 1.8rem', fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            type="button"
+            onClick={() => setActiveTab('search')}
+            style={{
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'search' ? '3px solid var(--brand-red)' : '3px solid transparent',
+              color: activeTab === 'search' ? '#ffffff' : 'var(--text-secondary)',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              padding: '0.5rem 1rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease',
+            }}
           >
-            {loading ? (
-              <>
-                <span className="spinner" style={{ width: 14, height: 14, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }}></span>
-                {t('searching')}
-              </>
-            ) : (
-              <>🔍 {t('searchButton')}</>
-            )}
+            <span>🔍</span> {t('semanticSearchTab')}
           </button>
-        </form>
+          <button
+            type="button"
+            onClick={() => setActiveTab('catalog')}
+            style={{
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'catalog' ? '3px solid var(--brand-red)' : '3px solid transparent',
+              color: activeTab === 'catalog' ? '#ffffff' : 'var(--text-secondary)',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              padding: '0.5rem 1rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>📚</span> {t('catalogTab')}
+          </button>
+        </div>
+
+        {/* PESTAÑA 1: BÚSQUEDA SEMÁNTICA */}
+        {activeTab === 'search' && (
+          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              style={{
+                flex: 1,
+                minWidth: '260px',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                fontSize: '1rem',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary"
+              style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', whiteSpace: 'nowrap' }}
+            >
+              {loading ? t('searching') : t('searchButton')}
+            </button>
+          </form>
+        )}
+
+        {/* PESTAÑA 2: CATÁLOGO DE LIBROS */}
+        {activeTab === 'catalog' && (
+          <div style={{ marginTop: '1.2rem' }}>
+            <h3 style={{ margin: '0 0 0.3rem 0', fontSize: '1.1rem', color: '#ffd43b' }}>
+              {t('catalogTitle')}
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+              {t('catalogSubtitle')}
+            </p>
+          </div>
+        )}
 
         {errorMsg && (
-          <div style={{ marginTop: '0.8rem', color: '#ff6b6b', fontSize: '0.85rem' }}>
+          <p style={{ color: '#ff6b6b', marginTop: '0.8rem', fontSize: '0.9rem' }}>
             ⚠️ {errorMsg}
-          </div>
+          </p>
         )}
       </div>
 
-      {/* Resultados */}
-      {hasSearched && (
-        <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>
-            {results.length} {t('resultsFound')}
-          </span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            🌐 Qwen3-VL Dense Retrieval
-          </span>
+      {/* CONTENIDO TAB 1: RESULTADOS DE BÚSQUEDA */}
+      {activeTab === 'search' && (
+        <>
+          {hasSearched && (
+            <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>
+                {results.length} {t('resultsFound')}
+              </span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                🌐 Qwen3-VL Dense Retrieval & Cognitive Rewriting
+              </span>
+            </div>
+          )}
+
+          {results.length > 0 ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+              gap: '1.5rem',
+            }}>
+              {results.map((item, idx) => {
+                const pageImgUrl = getMediaUrl(item.media_url);
+                const scorePct = Math.round((item.score || 0) * 100);
+                return (
+                  <div
+                    key={item.id || idx}
+                    className="glass-panel"
+                    style={{
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      background: 'rgba(20, 24, 30, 0.85)',
+                      transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                    }}
+                  >
+                    <div style={{
+                      padding: '0.75rem 1rem',
+                      background: 'rgba(0, 0, 0, 0.35)',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '0.88rem', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        📚 {item.cita || `${item.fuente_nombre || 'Manual'} (p. ${item.pagina || '?'})`}
+                      </span>
+                      <span style={{
+                        fontSize: '0.75rem',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '4px',
+                        background: scorePct >= 50 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                        color: scorePct >= 50 ? '#4ade80' : 'var(--text-secondary)',
+                        fontWeight: '600',
+                      }}>
+                        {scorePct}% {t('similarityScore')}
+                      </span>
+                    </div>
+
+                    {pageImgUrl ? (
+                      <div
+                        onClick={() => setSelectedImage({ url: pageImgUrl, cita: item.cita || `${item.fuente_nombre} (p. ${item.pagina})` })}
+                        style={{
+                          height: '240px',
+                          background: '#040608',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title={t('viewFullImage')}
+                      >
+                        <img
+                          src={pageImgUrl}
+                          alt={item.cita || 'Página de manual'}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            transition: 'transform 0.2s ease',
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          bottom: 8,
+                          right: 8,
+                          background: 'rgba(0, 0, 0, 0.75)',
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: 4,
+                          fontSize: '0.72rem',
+                          color: '#ddd',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}>
+                          🔍 {t('viewFullImage')}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        height: '140px',
+                        background: '#161b22',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.85rem',
+                      }}>
+                        📄 {item.fuente_referencia || 'Sin fotograma visual'}
+                      </div>
+                    )}
+
+                    <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{
+                        color: '#e6edf3',
+                        fontSize: '0.85rem',
+                        lineHeight: '1.45',
+                        maxHeight: '150px',
+                        overflowY: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        background: 'rgba(0, 0, 0, 0.25)',
+                        padding: '0.65rem 0.8rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                      }}>
+                        {item.contenido_texto}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : hasSearched && !loading ? (
+            <div className="glass-panel" style={{ padding: '3rem 1.5rem', textAlign: 'center', borderRadius: '12px' }}>
+              <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
+                {t('noResults')}
+              </p>
+            </div>
+          ) : null}
+        </>
+      )}
+
+      {/* CONTENIDO TAB 2: CATÁLOGO DE LIBROS PDF */}
+      {activeTab === 'catalog' && (
+        <div>
+          {loadingManuales ? (
+            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', borderRadius: '12px' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>{t('loadingCatalog')}</p>
+            </div>
+          ) : manuales.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', borderRadius: '12px' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>{t('noBooksFound')}</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '1.5rem',
+            }}>
+              {manuales.map((bookFilename, idx) => {
+                const title = cleanBookName(bookFilename);
+                const pdfUrl = getPdfUrl(bookFilename);
+                return (
+                  <div
+                    key={idx}
+                    className="glass-panel"
+                    style={{
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      background: 'rgba(20, 24, 30, 0.85)',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
+                        <div style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '10px',
+                          background: 'rgba(208, 17, 24, 0.2)',
+                          border: '1px solid var(--brand-red)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.6rem',
+                        }}>
+                          📕
+                        </div>
+                        <div>
+                          <span style={{
+                            display: 'inline-block',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            color: '#ffd43b',
+                            fontSize: '0.72rem',
+                            fontWeight: 'bold',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '4px',
+                            marginBottom: '0.2rem',
+                          }}>
+                            {t('officialPdfBadge')}
+                          </span>
+                          <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#ffffff', lineHeight: 1.3 }}>
+                            {title}
+                          </h4>
+                        </div>
+                      </div>
+                      <p style={{ margin: '0 0 1.2rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {bookFilename}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPdf(bookFilename)}
+                        className="btn-primary"
+                        style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                      >
+                        <span>👁️</span> {t('openPdf')}
+                      </button>
+                      <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-secondary"
+                        style={{ padding: '0.65rem 0.9rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                        title={t('openNewTab')}
+                      >
+                        ↗
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Grid de Tarjetas */}
-      {results.length > 0 ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-          gap: '1.5rem',
-        }}>
-          {results.map((item, idx) => {
-            const pageImgUrl = getMediaUrl(item.media_url);
-            const scorePct = Math.round((item.score || 0) * 100);
-            return (
-              <div
-                key={item.id || idx}
-                className="glass-panel"
-                style={{
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  background: 'rgba(20, 24, 30, 0.85)',
-                  transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-                }}
-              >
-                {/* Header de la Tarjeta */}
-                <div style={{
-                  padding: '0.75rem 1rem',
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '0.88rem', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    📚 {item.cita || `${item.fuente_nombre || 'Manual'} (p. ${item.pagina || '?'})`}
-                  </span>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    background: 'rgba(208, 17, 24, 0.25)',
-                    color: '#ff8585',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(208, 17, 24, 0.5)',
-                  }}>
-                    {scorePct}% match
-                  </span>
-                </div>
-
-                {/* Previsualización de Imagen de Página */}
-                {pageImgUrl ? (
-                  <div
-                    onClick={() => setSelectedImage({ url: pageImgUrl, cita: item.cita, texto: item.contenido_texto })}
-                    style={{
-                      height: '240px',
-                      background: '#0d1117',
-                      cursor: 'zoom-in',
-                      overflow: 'hidden',
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    title={t('viewFullImage')}
-                  >
-                    <img
-                      src={pageImgUrl}
-                      alt={item.cita || 'Página de manual'}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        transition: 'transform 0.2s ease',
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 8,
-                      right: 8,
-                      background: 'rgba(0, 0, 0, 0.75)',
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: 4,
-                      fontSize: '0.72rem',
-                      color: '#ddd',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}>
-                      🔍 {t('viewFullImage')}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{
-                    height: '140px',
-                    background: '#161b22',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.85rem',
-                  }}>
-                    📄 {item.fuente_referencia || 'Sin fotograma visual'}
-                  </div>
-                )}
-
-                {/* Texto del libro */}
-                <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{
-                    color: '#e6edf3',
-                    fontSize: '0.85rem',
-                    lineHeight: '1.45',
-                    maxHeight: '150px',
-                    overflowY: 'auto',
-                    whiteSpace: 'pre-wrap',
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    padding: '0.65rem 0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                  }}>
-                    {item.contenido_texto}
-                  </div>
-                </div>
+      {/* Modal Visor de PDF embebido (iframe) */}
+      {selectedPdf && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedPdf(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.88)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.2rem',
+            boxSizing: 'border-box',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel"
+            style={{
+              maxWidth: '1100px',
+              width: '100%',
+              height: '92vh',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#0d1117',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: '0.8rem 1.25rem',
+              background: '#161b22',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            }}>
+              <span style={{ fontWeight: 'bold', color: '#ffd43b', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                📕 {cleanBookName(selectedPdf)}
+              </span>
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                <a
+                  href={getPdfUrl(selectedPdf)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}
+                >
+                  ↗ {t('openNewTab')}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPdf(null)}
+                  className="btn-primary"
+                  style={{ padding: '0.3rem 0.85rem', fontSize: '0.8rem' }}
+                >
+                  ✕ {t('closePdf')}
+                </button>
               </div>
-            );
-          })}
-        </div>
-      ) : hasSearched && !loading ? (
-        <div className="glass-panel" style={{ padding: '3rem 1.5rem', textAlign: 'center', borderRadius: '12px' }}>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
-            {t('noResults')}
-          </p>
-          <span style={{ fontSize: '0.9rem', color: '#8b949e' }}>
-            Prueba buscando con términos en inglés o sinónimos de Jiu-Jitsu (ej: "armbar", "guard pass", "kimura", "choke").
-          </span>
-        </div>
-      ) : !hasSearched && (
-        <div className="glass-panel" style={{ padding: '3.5rem 1.5rem', textAlign: 'center', borderRadius: '12px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.8rem' }}>🥋📚</div>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
-            {t('libraryTitle')}
-          </h3>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '520px', margin: '0 auto', fontSize: '0.92rem' }}>
-            {t('initialSearchHint')}
-          </p>
+            </div>
+
+            {/* Iframe Viewer */}
+            <div style={{ flex: 1, background: '#1e232a', overflow: 'hidden' }}>
+              <iframe
+                src={getPdfUrl(selectedPdf)}
+                title={selectedPdf}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  display: 'block',
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -368,4 +637,3 @@ export default function LibraryView({ user, idioma, onClose }) {
     </div>
   );
 }
-

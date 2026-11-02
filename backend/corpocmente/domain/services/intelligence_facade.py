@@ -73,7 +73,8 @@ class IntelligenceAnalysisFacade:
             ext_res = self.yolo.extraer_secuencia(
                 video_path,
                 persona_idx_inicial=persona_idx,
-                evaluacion_id=str(evaluacion_id) if evaluacion_id else None
+                evaluacion_id=str(evaluacion_id) if evaluacion_id else None,
+                tecnica_id=str(tecnica_id) if tecnica_id else None
             )
             if isinstance(ext_res, dict):
                 secuencia_alumno = ext_res.get("secuencia_kpts", [])

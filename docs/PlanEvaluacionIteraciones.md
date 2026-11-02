@@ -1686,6 +1686,55 @@ Este documento registra oficialmente la planificación, mitigación de riesgos y
   - `infrastructure/initdb/10_progreso_alumno_con_videos.sql`: Función SQL sin límite de evaluaciones.
   - `scripts/verify_ux_i18n_playwright.py`: Script de validación automatizada en Chromium headless con capturas de pantalla.
 
+---
+
+### Iteración 3X: Catálogo de Libros, Botón de Teoría y Búsqueda Cognitiva (Noviembre 2026)
+
+- **Objetivo:** Integrar un catálogo navegable de manuales técnicos en PDF con visor embebido, botón directo de acceso a la teoría biomecánica desde el historial de progreso del alumno, expansión cognitiva de consultas para diferenciar defensas/escapes de ataques/sumisiones, y sentar las bases de MLOps con un bucle cerrado local de Active Learning (Data Flywheel) para fotogramas de baja certidumbre de YOLO.
+- **Metodología:** Craig Larman (Desarrollo Evolutivo e Iterativo, Timebox estricto, Cero Falsos Positivos, Verificación Visual Empírica en Navegador y Tests en Verde).
+- **Tag de Rollback:** `iter-3x-antes`
+- **Diagnóstico y Fases de Solución:**
+  1. **Catálogo de Libros y Visor PDF Embebido (Fase 1):**
+     - Endpoint `GET /api/v1/conocimiento/manuales` para listar de forma autenticada los manuales PDF disponibles en la biblioteca.
+     - Endpoint `GET /api/v1/conocimiento/manuales/{filename}` para servir de forma segura el documento PDF (`application/pdf`, `Content-Disposition: inline`) compatible con autenticación vía header o query parameter `token` para elementos `<iframe />`.
+     - `LibraryView.jsx`: Interfaz organizada con selector de dos pestañas: *"Búsqueda Semántica"* y *"Catálogo de Libros"*. Cada manual en el catálogo se presenta con portada temática, badge oficial y opciones para abrir en visor modal o pestaña independiente.
+  2. **Botón "Teoría de la Técnica" en Historial de Progreso (Fase 2):**
+     - En `StudentProgress.jsx`, cada tarjeta de evaluación histórica incluye un botón directo `"📖 Teoría de la Técnica"` (o `"📖 Teoria da Técnica"` / `"📖 Technique Theory"`).
+     - Al accionarse, redirige de forma fluida a `LibraryView` inyectando el nombre de la técnica como parámetro inicial, autoejecutando de inmediato la búsqueda semántica y mostrando al alumno las citas bibliográficas y páginas del manual asociadas al movimiento.
+  3. **Búsqueda Cognitiva (Query Rewriting para Ataque vs Defensa) (Fase 3):**
+     - Adaptador `LocalVLMAdapter` con método `reescribir_query_cognitiva`: analiza la intención del usuario. Si la consulta involucra defensa o escape, expande términos como `escape`, `survive`, `defend`, `defense`, evitando que las búsquedas de defensa devuelvan manuales de finalizaciones ofensivas.
+     - Fallback determinista de alta velocidad con caché de modelos cargados en memoria MLX (`_cached_models`).
+  4. **MLOps Foundation — Data Flywheel Local (Fase 4):**
+     - En `YOLOPoseAdapter.extraer_secuencia`, se analiza la confianza promedio de las cajas delimitadoras y keypoints por fotograma.
+     - Si la confianza promedio cae en el rango de incertidumbre ($0.0 < conf < 0.65$), el fotograma original se persiste en `backend/storage/uncertainty_frames/{tecnica_id}/frame_{idx}.jpg` (máximo 10 fotogramas por video) y se registra en `backend/storage/uncertainty_frames/log.csv` con timestamp UTC, técnica, índice de frame y nivel de confianza.
+     - Permite a los investigadores y entrenadores auditar los casos límite de oclusión o posturas atípicas para futuros reentrenamientos del modelo YOLO.
+
+- **Pruebas de Fuego Empíricas:**
+  1. **Búsqueda Cognitiva en Terminal:**
+     - Consulta: `"defensa de llave de brazo"`
+     - Query cognitiva generada: `"defensa de llave de brazo escape survive defend jiu-jitsu"`
+     - Resultados: 100% páginas de defensa y escape de Kimura y Armbar (`BJJ-GuiaCompleto.pdf` p. 73, p. 72, p. 71 y `Jiu-Jitsu University.pdf` p. 137).
+  2. **Verificación Visual Playwright E2E (`scripts/verify_iter_3x_playwright.py`):**
+     - `screenshot_catalog_books.png`: Catálogo de libros con portadas, badges oficiales y botones de lectura.
+     - `screenshot_pdf_modal.png`: Visor modal en pantalla completa con `<iframe />` transmitiendo `Jiu-Jitsu University.pdf` con token seguro y controles de navegación.
+     - `screenshot_theory_button.png`: 23 tarjetas de evaluación en el panel del estudiante con el botón *"📖 Teoría de la Técnica"*.
+     - `screenshot_auto_search_theory.png`: Transición a la biblioteca con autocompletado y búsqueda ejecutada de `'Escaping Closed Guard Stand UP'`, desplegando 12 tarjetas de resultados con fotogramas visuales.
+  3. **Suite Completa de Regresión Pytest:**
+     - **131 passed, 6 skipped** en 27.21s (100% verde).
+
+- **Entregables:**
+  - `backend/corpocmente/infrastructure/ai/local_vlm_adapter.py`: Reescritura cognitiva de queries y caché de inferencia VLM.
+  - `backend/corpocmente/ui/api/routes.py`: Endpoints de listado y streaming de manuales PDF y reescritura de queries en búsqueda de biblioteca.
+  - `backend/corpocmente/infrastructure/ai/adapters.py`: Bucle cerrado de Active Learning para fotogramas con baja confianza en YOLO.
+  - `backend/corpocmente/domain/services/intelligence_facade.py`: Propagación de identificador de técnica hacia el extractor cinemático.
+  - `frontend/src/i18n/translations.js`: Claves i18n para pestañas de catálogo, botones de PDF y teoría en ES, PT y EN.
+  - `frontend/src/pages/LibraryView.jsx`: Pestañas de búsqueda y catálogo, tarjetas de libros y modal con visor iframe.
+  - `frontend/src/pages/StudentProgress.jsx`: Botón interactivo "Teoría de la Técnica" por tarjeta.
+  - `frontend/src/App.jsx`: Estado y propagación de consulta inicial entre progreso y biblioteca.
+  - `backend/tests/test_iter_3x_features.py`: Pruebas automatizadas de reescritura semántica, Data Flywheel y endpoints de manuales.
+  - `scripts/verify_iter_3x_playwright.py`: Script automatizado de pruebas E2E con capturas de pantalla para auditoría visual.
+
+
 
 
 

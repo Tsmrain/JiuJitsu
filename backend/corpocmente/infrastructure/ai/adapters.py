@@ -4,6 +4,7 @@ import logging
 import re
 import json
 import mimetypes
+from datetime import datetime, timezone
 from pathlib import Path
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
@@ -107,7 +108,8 @@ class YOLOPoseAdapter:
         video_path: str,
         persona_idx_inicial: Optional[int] = None,
         max_disp_norm: float = 0.25,
-        evaluacion_id: Optional[str] = None
+        evaluacion_id: Optional[str] = None,
+        tecnica_id: Optional[str] = None
     ) -> dict:
         """
         Extrae la secuencia temporal completa de keypoints (133 dims por frame) usando YOLO
@@ -263,8 +265,44 @@ class YOLOPoseAdapter:
             frames_evaluados = 0
             target_idx = persona_idx_inicial if persona_idx_inicial is not None else 0
 
+            # MLOps Foundation: Data Flywheel para Active Learning (Frames con incertidumbre < 0.65)
+            uncertainty_tec = str(tecnica_id or "general").strip() or "general"
+            uncertainty_dir = Path(__file__).resolve().parents[4] / "backend" / "storage" / "uncertainty_frames" / uncertainty_tec
+            uncertainty_base_dir = Path(__file__).resolve().parents[4] / "backend" / "storage" / "uncertainty_frames"
+            try:
+                uncertainty_dir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            log_csv_path = uncertainty_base_dir / "log.csv"
+            uncertainty_saved_count = 0
+
             for f_idx, r in enumerate(results):
                 frames_evaluados += 1
+
+                # Data Flywheel: si la confianza promedio de las cajas es < 0.65, guardar frame (max 10 por video)
+                try:
+                    avg_box_conf = 0.0
+                    if hasattr(r, "boxes") and r.boxes is not None and len(r.boxes) > 0 and hasattr(r.boxes, "conf") and len(r.boxes.conf) > 0:
+                        avg_box_conf = float(r.boxes.conf.mean().cpu().item())
+                    elif r.keypoints is not None and len(r.keypoints.data) > 0:
+                        raw_kpts_conf = r.keypoints.data.cpu().numpy()
+                        mask_k = (raw_kpts_conf[:, :, 2] > 0)
+                        if np.any(mask_k):
+                            avg_box_conf = float(raw_kpts_conf[:, :, 2][mask_k].mean())
+
+                    if 0.0 < avg_box_conf < 0.65 and uncertainty_saved_count < 10:
+                        frame_img = getattr(r, "orig_img", None)
+                        if frame_img is not None:
+                            frame_save_path = uncertainty_dir / f"frame_{f_idx}.jpg"
+                            cv2.imwrite(str(frame_save_path), frame_img)
+                            uncertainty_saved_count += 1
+                            write_header = not log_csv_path.exists()
+                            with open(log_csv_path, "a", encoding="utf-8") as f_csv:
+                                if write_header:
+                                    f_csv.write("timestamp,tecnica_id,frame_idx,confidence,path\n")
+                                f_csv.write(f"{datetime.now(timezone.utc).isoformat()},{uncertainty_tec},{f_idx},{avg_box_conf:.4f},{frame_save_path}\n")
+                except Exception as e_flywheel:
+                    logger.debug("Data flywheel uncertainty frame error: %s", e_flywheel)
                 if r.keypoints is None or len(r.keypoints.data) == 0:
                     secuencia_kpts.append([0.0] * 133)
                     continue

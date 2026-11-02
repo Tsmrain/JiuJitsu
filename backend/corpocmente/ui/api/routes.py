@@ -1240,21 +1240,108 @@ async def buscar_en_biblioteca(
     if not query_limpia:
         return {"query": "", "idioma": req.idioma or "es", "total": 0, "resultados": []}
 
-    query_expandida = expandir_query_con_glosario(query_limpia)
+    # Búsqueda Cognitiva: Reescribir query para diferenciar conceptos de ataque vs defensa
+    try:
+        from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
+        vlm = LocalVLMAdapter()
+        query_cognitiva = vlm.reescribir_query_cognitiva(query_limpia)
+    except Exception as e_cog:
+        logger.warning("Fallo en reescritura cognitiva con VLM: %s", e_cog)
+        query_cognitiva = query_limpia
+
+    query_expandida = expandir_query_con_glosario(query_cognitiva or query_limpia)
 
     qwen = QwenEmbeddingAdapter()
-    query_vector = qwen.generar_embedding_texto(query_expandida or query_limpia)
+    query_vector = qwen.generar_embedding_texto(query_expandida or query_cognitiva or query_limpia)
 
     rag = QdrantRAGAdapter()
     resultados = rag.buscar_biblioteca(query_vector, limit=req.limit or 10)
 
     return {
         "query": query_limpia,
+        "query_cognitiva": query_cognitiva,
         "query_expandida": query_expandida,
         "idioma": req.idioma or "es",
         "total": len(resultados),
         "resultados": resultados,
     }
+
+
+@router.get("/conocimiento/manuales", status_code=status.HTTP_200_OK)
+async def listar_manuales_pdf(
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = None
+):
+    """
+    Retorna la lista de manuales en formato PDF disponibles en la biblioteca.
+    Devuelve una lista JSON con los nombres de los PDFs disponibles.
+    Requiere autenticación.
+    """
+    auth_header = authorization or (f"Bearer {token}" if token else None)
+    if not auth_header:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+    require_auth(auth_header)
+    repo_root = Path(__file__).resolve().parents[4]
+    search_dirs = [
+        repo_root,
+        repo_root / "data" / "manuales",
+        repo_root / "backend" / "storage" / "manuales"
+    ]
+    manuales_dict = {}
+    for d in search_dirs:
+        if d.exists() and d.is_dir():
+            for p in d.glob("*.pdf"):
+                if p.is_file() and p.stat().st_size > 1000 and not p.name.startswith("."):
+                    if p.name not in manuales_dict:
+                        manuales_dict[p.name] = p
+
+    nombres_prioritarios = [
+        "Jiu-Jitsu University.pdf",
+        "BJJ-GuiaCompleto.pdf",
+        "manual-fundamental-arataba-de-jiu-jitsu.pdf"
+    ]
+    resultado = []
+    for nom in nombres_prioritarios:
+        if nom in manuales_dict:
+            resultado.append(nom)
+    for nom in sorted(manuales_dict.keys()):
+        if nom not in resultado and "matplotlib" not in str(manuales_dict[nom]):
+            resultado.append(nom)
+
+    return resultado
+
+
+@router.get("/conocimiento/manuales/{filename}")
+async def servir_manual_pdf(
+    filename: str,
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = None
+):
+    """
+    Sirve un archivo de manual en PDF para visualización en el visor embebido (iframe) o descarga.
+    """
+    auth_header = authorization or (f"Bearer {token}" if token else None)
+    if not auth_header:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+    require_auth(auth_header)
+
+    safe_name = os.path.basename(filename)
+    repo_root = Path(__file__).resolve().parents[4]
+    candidates = [
+        repo_root / safe_name,
+        repo_root / "data" / "manuales" / safe_name,
+        repo_root / "backend" / "storage" / "manuales" / safe_name,
+    ]
+    encontrado = next((c for c in candidates if c.exists() and c.is_file()), None)
+    if not encontrado:
+        raise HTTPException(status_code=404, detail="Manual PDF no encontrado.")
+
+    return FileResponse(
+        str(encontrado),
+        media_type="application/pdf",
+        filename=safe_name,
+        headers={"Content-Disposition": f"inline; filename=\"{safe_name}\""}
+    )
 
 
 @router.get("/conocimiento/media/paginas/{asset_path:path}")
@@ -1265,11 +1352,9 @@ async def servir_pagina_manual(
 ):
     """Sirve los JPG persistentes de páginas PDF generados por la ingesta multimodal."""
     auth_header = authorization or (f"Bearer {token}" if token else None)
-    if auth_header:
-        try:
-            require_auth(auth_header)
-        except HTTPException:
-            pass
+    if not auth_header:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+    require_auth(auth_header)
     root = PDF_PAGE_IMAGES_DIR.resolve()
     candidate = (root / asset_path).resolve()
     try:

@@ -157,7 +157,7 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
   );
 }
 
-export default function StudentProgress({ user, idioma }) {
+export default function StudentProgress({ user, idioma, onViewTheory }) {
   const [evaluaciones, setEvaluaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -203,16 +203,40 @@ export default function StudentProgress({ user, idioma }) {
 
           return (
             <article key={item.id} className="glass-panel" style={{ padding: '1.25rem', borderRadius: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{item.tecnica_nombre || 'Jiu-Jitsu'}</h3>
                   <small style={{ color: 'var(--text-secondary)' }}>
                     {item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleString(dateLocale) : t('dateUnavailable')}
                   </small>
                 </div>
-                <strong style={{ color: score >= 85 ? '#69db7c' : score >= 70 ? '#ffd43b' : '#ff8787', fontSize: '1.25rem' }}>
-                  {Math.round(score)}% {t('similarity')}
-                </strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => onViewTheory && onViewTheory(item.tecnica_nombre)}
+                    className="btn-secondary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      background: 'rgba(208, 17, 24, 0.15)',
+                      border: '1px solid var(--brand-red)',
+                      color: '#ffffff',
+                      padding: '0.4rem 0.85rem',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s',
+                    }}
+                    title={t('techniqueTheory')}
+                  >
+                    <span>📖</span> {t('techniqueTheory')}
+                  </button>
+                  <strong style={{ color: score >= 85 ? '#69db7c' : score >= 70 ? '#ffd43b' : '#ff8787', fontSize: '1.25rem' }}>
+                    {Math.round(score)}% {t('similarity')}
+                  </strong>
+                </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                 <StudentVideoPlayer

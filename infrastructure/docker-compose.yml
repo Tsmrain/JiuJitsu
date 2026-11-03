@@ -38,7 +38,7 @@ services:
       PGRST_DB_URI: postgres://authenticator:mysecretpassword@postgres:5432/corpocmente
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: anon
-      PGRST_JWT_SECRET: ${POSTGREST_JWT_SECRET:-1c6dce924a090f72a477a85440de79ded07a2695ef85ca3c46330b868c60281d}
+      PGRST_JWT_SECRET: ${POSTGREST_JWT_SECRET}
       PGRST_SERVER_PORT: 3000
     depends_on:
       postgres:

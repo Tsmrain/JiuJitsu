@@ -1,0 +1,308 @@
+[
+  {
+    "fingerprint": "api-audit/bola-evaluaciones/backend/corpocmente/ui/api/routes.py/consultar_evaluacion",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "Broken Object Level Authorization (BOLA) on student evaluations",
+    "cwe": "CWE-639",
+    "owasp_category": "API1:2023",
+    "location": {
+      "file": "backend/corpocmente/ui/api/routes.py",
+      "line": 524
+    },
+    "trace": [],
+    "evidence": [],
+    "counterevidence": "Audited lines 523-528 in routes.py; verified that require_auth(authorization) validates JWT and explicitly verifies caller.get('role') != 'admin' and str(caller.get('uid')) != str(eval_data['alumno_id']) to raise HTTP 403 Forbidden on any mismatched student ID.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Mandatory ownership check verifies caller uid matches evaluation alumno_id or caller has admin role before returning record data",
+      "location": {
+        "file": "backend/corpocmente/ui/api/routes.py",
+        "line": 524
+      }
+    }
+  },
+  {
+    "fingerprint": "api-audit/cors-wildcard/backend/corpocmente/main.py/cors_kwargs",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "Permissive CORS wildcard Access-Control-Allow-Origin: *",
+    "cwe": "CWE-942",
+    "owasp_category": "API2:2023",
+    "location": {
+      "file": "backend/corpocmente/main.py",
+      "line": 58
+    },
+    "trace": [],
+    "evidence": [],
+    "counterevidence": "Tested with curl -i -H 'Origin: https://malicious-site.com' against the live tunnel URL /health; verified that no Access-Control-Allow-Origin header is emitted for unauthorized third-party origins.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "FastAPI CORSMiddleware parses strict allowed_origins from settings.ALLOWED_ORIGINS and refuses to reflect arbitrary Origin headers",
+      "location": {
+        "file": "backend/corpocmente/main.py",
+        "line": 58
+      }
+    }
+  },
+  {
+    "fingerprint": "api-audit/rate-limit-ip-spoofing/backend/corpocmente/main.py/AuthRateLimitMiddleware",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "Rate limiter uses request.client.host ignoring reverse proxy forwarded headers",
+    "cwe": "CWE-770",
+    "owasp_category": "API4:2023",
+    "location": {
+      "file": "backend/corpocmente/main.py",
+      "line": 33
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "backend/corpocmente/main.py",
+        "line": 31,
+        "description": "Incoming HTTP request to /auth/login passes through AuthRateLimitMiddleware dispatch method"
+      },
+      {
+        "kind": "propagation",
+        "file": "backend/corpocmente/main.py",
+        "line": 33,
+        "description": "Client IP extracted solely via request.client.host without inspecting X-Forwarded-For or CF-Connecting-IP"
+      },
+      {
+        "kind": "sink",
+        "file": "backend/corpocmente/main.py",
+        "line": 35,
+        "description": "Rate limit window tracking bucket groups all reverse-proxied connections under 127.0.0.1"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "backend/corpocmente/main.py",
+        "line": 33,
+        "description": "client_ip = request.client.host if request.client else 'unknown'"
+      }
+    ],
+    "counterevidence": "Sent 35 rapid requests through Cloudflare tunnel. While rate limiting correctly triggered at request 31 with HTTP 429, all external clients are bucketed under the same proxy loopback IP 127.0.0.1.",
+    "confidence": "high",
+    "reproduced": true,
+    "severity": {
+      "likelihood": {
+        "score": "medium",
+        "reason": "When hosted behind Vite proxy and Cloudflare Tunnel, all user traffic shares the loopback IP 127.0.0.1, causing legitimate users to be throttled when an attacker floods login."
+      },
+      "impact": {
+        "score": "medium",
+        "reason": "Denial of service for legitimate users sharing the proxy bucket, and lack of rate limiting on compute-heavy video evaluation endpoints."
+      },
+      "overall": "medium"
+    },
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "Application deployed behind reverse proxy (Vite or Cloudflare Tunnel) without header-based IP extraction."
+      }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/ssrf-unvalidated-url/backend/corpocmente/ui/api/routes.py/resolver_ruta_imagen_local",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "Unvalidated remote image URL in multimodal search allows potential SSRF",
+    "cwe": "CWE-918",
+    "owasp_category": "API7:2023",
+    "location": {
+      "file": "backend/corpocmente/ui/api/routes.py",
+      "line": 1273
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "backend/corpocmente/ui/api/routes.py",
+        "line": 1288,
+        "description": "Authenticated user invokes POST /conocimiento/biblioteca/buscar with imagen_url payload parameter"
+      },
+      {
+        "kind": "propagation",
+        "file": "backend/corpocmente/ui/api/routes.py",
+        "line": 1329,
+        "description": "Payload imagen_url passed into resolver_ruta_imagen_local helper"
+      },
+      {
+        "kind": "sink",
+        "file": "backend/corpocmente/ui/api/routes.py",
+        "line": 1273,
+        "description": "requests.get(url_clean, timeout=5) fetches remote URL without filtering loopback or RFC1918 private subnets"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "backend/corpocmente/ui/api/routes.py",
+        "line": 1273,
+        "description": "resp = requests.get(url_clean, timeout=5)"
+      }
+    ],
+    "counterevidence": "Code review of routes.py lines 1270-1275 reveals no IP blocklist (127.0.0.1, 169.254.169.254, 10.0.0.0/8, 192.168.0.0/16) prior to outbound HTTP request.",
+    "confidence": "medium",
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "Requires authenticated account with active subscription to invoke /conocimiento/biblioteca/buscar endpoint."
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Server can be coerced into issuing internal GET requests to local services (e.g. Qdrant port 6333 or internal cloud metadata services)."
+      },
+      "overall": "medium"
+    },
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Caller must possess valid JWT token with active subscription state."
+      }
+    ]
+  },
+  {
+    "fingerprint": "cloud-audit/docs-exposure/backend/corpocmente/main.py/swagger_docs",
+    "verdict": "rejected",
+    "skill": "cloud-audit",
+    "title": "Accidental public exposure of FastAPI interactive documentation (/docs, /redoc, /openapi.json)",
+    "cwe": "CWE-200",
+    "owasp_category": "A01:2025",
+    "location": {
+      "file": "frontend/vite.config.js",
+      "line": 10
+    },
+    "trace": [],
+    "evidence": [],
+    "counterevidence": "Queried live Cloudflare URL at /openapi.json, /docs, and /redoc. All returned the Vite frontend SPA index.html, not backend API documentation schemas. Queried /api/openapi.json and received 404 Not Found.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Vite reverse proxy restricts exterior routing strictly to /api, /static, and /health; Swagger /docs and OpenAPI schemas remain inaccessible to the public tunnel",
+      "location": {
+        "file": "frontend/vite.config.js",
+        "line": 10
+      }
+    }
+  },
+  {
+    "fingerprint": "cloud-audit/permissive-allowed-hosts/frontend/vite.config.js/allowedHosts",
+    "verdict": "confirmed",
+    "skill": "cloud-audit",
+    "title": "Permissive wildcard allowedHosts in Vite development proxy",
+    "cwe": "CWE-184",
+    "owasp_category": "A05:2025",
+    "location": {
+      "file": "frontend/vite.config.js",
+      "line": 7
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "frontend/vite.config.js",
+        "line": 5,
+        "description": "Vite dev server initialized with server configuration options"
+      },
+      {
+        "kind": "propagation",
+        "file": "frontend/vite.config.js",
+        "line": 7,
+        "description": "allowedHosts set to boolean true instead of an explicit whitelist of authorized domains"
+      },
+      {
+        "kind": "sink",
+        "file": "frontend/vite.config.js",
+        "line": 7,
+        "description": "Vite accepts arbitrary Host header values, increasing exposure to DNS rebinding or Host Header injection in edge proxy environments"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "frontend/vite.config.js",
+        "line": 7,
+        "description": "allowedHosts: true"
+      }
+    ],
+    "counterevidence": "Inspected frontend/vite.config.js. Vite 5.4+ permits specifying an array of permitted domains such as ['.trycloudflare.com', 'localhost', '127.0.0.1'] rather than wildcard boolean true.",
+    "confidence": "high",
+    "reproduced": true,
+    "disposition": "Fixed",
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "Exploitation requires attacker to manipulate DNS resolution or direct proxy connections to the local Vite process."
+      },
+      "impact": {
+        "score": "medium",
+        "reason": "Host header injection or DNS rebinding against local development server."
+      },
+      "overall": "low"
+    },
+    "conditions": [
+      {
+        "kind": "system_configuration",
+        "description": "Vite server running with allowedHosts: true in networked or tunnel-exposed environment."
+      }
+    ]
+  },
+  {
+    "fingerprint": "secrets-audit/hardcoded-secret/infrastructure/docker-compose.yml/PGRST_JWT_SECRET",
+    "verdict": "confirmed",
+    "skill": "secrets-audit",
+    "title": "Hardcoded default fallback secret matches production PostgREST JWT secret",
+    "cwe": "CWE-798",
+    "owasp_category": "A04:2025",
+    "location": {
+      "file": "infrastructure/docker-compose.yml",
+      "line": 41
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "infrastructure/docker-compose.yml",
+        "line": 41,
+        "description": "Docker compose file declares environment variable fallback for PostgREST JWT authentication"
+      },
+      {
+        "kind": "propagation",
+        "file": "infrastructure/docker-compose.yml",
+        "line": 41,
+        "description": "Default fallback contains explicit 64-char hex secret 1c6dce924a090f72a477a85440de79ded07a2695ef85ca3c46330b868c60281d"
+      },
+      {
+        "kind": "sink",
+        "file": "infrastructure/docker-compose.yml",
+        "line": 41,
+        "description": "The exact same secret key is used in backend/.env for POSTGREST_JWT_SECRET and JWT_SECRET_KEY, enabling any repository reader to forge valid JWT tokens"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "infrastructure/docker-compose.yml",
+        "line": 41,
+        "description": "PGRST_JWT_SECRET: ${POSTGREST_JWT_SECRET:-1c6dce924a090f72a477a85440de79ded07a2695ef85ca3c46330b868c60281d}"
+      }
+    ],
+    "counterevidence": "Compared line 41 of infrastructure/docker-compose.yml with backend/.env; verified identical 256-bit hexadecimal string used for active production authentication.",
+    "confidence": "high",
+    "reproduced": true,
+    "disposition": "Fixed",
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "infrastructure/docker-compose.yml is tracked in Git; any collaborator or public viewer of the repository has immediate access to the production JWT signing key."
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Allows an attacker to forge JWT tokens with role: 'admin' and bypass PostgREST authentication entirely."
+      },
+      "overall": "high"
+    },
+    "conditions": [
+      {
+        "kind": "environmental_dependency",
+        "description": "PostgREST and backend use the secret committed in infrastructure/docker-compose.yml."
+      }
+    ]
+  }
+]

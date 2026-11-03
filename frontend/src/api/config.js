@@ -1,12 +1,7 @@
-// Configuración dinámica de API para acceso local y remoto (Mobile / Wi-Fi)
-export const getApiBase = () => {
-  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-    const protocol = window.location.protocol || 'http:';
-    const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:8000`;
-  }
-  return '';
-};
+// Configuración unificada de API mediante Reverse Proxy de Vite
+// Al usar rutas relativas (''), todas las peticiones (/api, /static) son proxeadas por Vite
+// hacia FastAPI (localhost:8000), garantizando compatibilidad idéntica en localhost,
+// red local (LAN) y túneles públicos (Cloudflare Tunnel) sin problemas de CORS ni puertos adicionales.
+export const getApiBase = () => '';
 
 export const API_BASE = getApiBase();
-

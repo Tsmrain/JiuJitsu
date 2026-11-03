@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { getTranslation } from '../i18n/translations';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../api/config';
 
 function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresArticulaciones, t }) {
   const [showFrameModal, setShowFrameModal] = useState(false);
@@ -210,9 +210,26 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{item.tecnica_nombre || 'Jiu-Jitsu'}</h3>
-                  <small style={{ color: 'var(--text-secondary)' }}>
-                    {item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleString(dateLocale) : t('dateUnavailable')}
-                  </small>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+                    <small style={{ color: 'var(--text-secondary)' }}>
+                      {item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleString(dateLocale) : t('dateUnavailable')}
+                    </small>
+                    {item.sucursal_nombre && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.2rem',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)'
+                      }}>
+                        📍 {item.sucursal_nombre}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', width: 'auto' }}>
                   <button

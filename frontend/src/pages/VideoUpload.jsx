@@ -3,6 +3,7 @@ import './VideoUpload.css';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
 import { getTranslation } from '../i18n/translations';
+import { API_BASE } from '../api/config';
 
 export default function VideoUpload({ user, onUploadStart, idioma }) {
   const [profesores, setProfesores] = useState([]);
@@ -17,12 +18,20 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
 
   const t = (key) => getTranslation(idioma, key);
 
+  const isAlumno = user?.rol === 'alumno';
+  const isExpired = isAlumno && (
+    user?.estado_suscripcion === 'expirado' ||
+    (user?.fecha_expiracion && new Date(user.fecha_expiracion) <= new Date())
+  );
+  const isPassActive = !isAlumno || (user?.estado_suscripcion === 'activo' && !isExpired);
+  const isPending = isAlumno && !isPassActive && !isExpired;
+
   // 1. Load academy instructors
   const fetchProfesores = async () => {
     setLoadingProfesores(true);
     try {
       const sucursalQuery = user?.sucursal_id ? `?sucursal_id=${user.sucursal_id}` : '';
-      const res = await fetch(`http://localhost:8000/api/v1/profesores${sucursalQuery}`);
+      const res = await fetch(`${API_BASE}/api/v1/profesores${sucursalQuery}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.length > 0) {
@@ -30,7 +39,7 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
           setSelectedProfesor(data[0]);
         } else {
           // Fallback to all instructors if none registered for this branch
-          const resAll = await fetch(`http://localhost:8000/api/v1/profesores`);
+          const resAll = await fetch(`${API_BASE}/api/v1/profesores`);
           if (resAll.ok) {
             const dataAll = await resAll.json();
             setProfesores(dataAll);
@@ -48,7 +57,7 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
   const fetchTecnicasDelProfesor = async (profesorId) => {
     setLoadingTecnicas(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${profesorId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/tecnicas?profesor_id=${profesorId}`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       if (res.ok) {
@@ -143,7 +152,7 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
       // 1. Validar video con filtro anti-spam (YOLO + Clasificador ViCoS)
       const spamForm = new FormData();
       spamForm.append("video", selectedFile);
-      const spamRes = await fetch("http://localhost:8000/api/v1/evaluaciones/validar-spam", {
+      const spamRes = await fetch(`${API_BASE}/api/v1/evaluaciones/validar-spam`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${user?.token}` },
         body: spamForm,
@@ -167,7 +176,7 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
       const formData = new FormData();
       formData.append("video", selectedFile);
 
-      const res = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
+      const res = await fetch(`${API_BASE}/api/v1/evaluaciones/primer-frame`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${user?.token}` },
         body: formData,
@@ -218,7 +227,7 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
 
     try {
       // 1. Confirm person selection in backend session
-      const res = await fetch(`http://localhost:8000/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
+      const res = await fetch(`${API_BASE}/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${user?.token}`,
@@ -258,11 +267,75 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
         <p>{t('uploadSubtitle')}</p>
       </div>
 
-      {/* Step 1: Select Instructor */}
-      <div className="tecnica-selector-card glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1rem', borderRadius: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          {t('selectInstructorStep')}
-        </label>
+      {/* Control de Suscripción (Pase de Tatami) */}
+      {isAlumno && isPassActive && (
+        <div className="glass-panel" style={{
+          background: 'rgba(34, 197, 94, 0.12)',
+          border: '1px solid #22c55e',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '10px',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          fontSize: '0.88rem'
+        }}>
+          <span style={{ color: '#4ade80', fontWeight: 'bold' }}>
+            🥋 {t('passStatus')}: {t('activeStatus')}
+          </span>
+          {user?.fecha_expiracion && (
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.82rem' }}>
+              📅 {t('passActiveUntil')} {new Date(user.fecha_expiracion).toLocaleDateString(idioma === 'pt' ? 'pt-BR' : (idioma === 'en' ? 'en-US' : 'es-ES'), { day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+          )}
+        </div>
+      )}
+
+      {isAlumno && !isPassActive && (
+        <div className="subscription-wall-banner" style={{
+          background: 'linear-gradient(135deg, rgba(208, 17, 24, 0.25) 0%, rgba(20, 20, 20, 0.95) 100%)',
+          border: '2px solid var(--brand-red)',
+          borderRadius: '14px',
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          textAlign: 'center',
+          boxShadow: '0 0 25px rgba(208, 17, 24, 0.45)'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🥋🔒</div>
+          <h3 style={{ color: 'var(--brand-red)', margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 'bold' }}>
+            {t('passStatus')}: {isExpired ? t('expiredStatus') : t('pendingStatus')}
+          </h3>
+          <p style={{ color: 'white', fontSize: '0.95rem', lineHeight: '1.5', maxWidth: '620px', margin: '0 auto 1.25rem auto' }}>
+            {isExpired ? t('subscriptionExpiredWarning') : t('subscriptionPendingWarning')}
+          </p>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(255, 255, 255, 0.08)',
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            color: 'rgba(255,255,255,0.85)'
+          }}>
+            📍 {user?.sucursal_nombre || 'Tu Academia'}
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid: Step 1 & 2 Config on Left, Step 3 Video Upload on Right */}
+      <div className="upload-main-layout">
+        <div className="upload-config-column">
+          {/* Step 1: Select Instructor */}
+          <div className="step-card glass-panel">
+            <div className="step-header">
+              <span className="step-badge">1</span>
+              <label className="step-title">
+                {t('selectInstructorStep')}
+              </label>
+            </div>
 
         {loadingProfesores ? (
           <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t('loadingInstructors')}</p>
@@ -368,10 +441,13 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
       </div>
 
       {/* Step 2: Select Technique */}
-      <div className="tecnica-selector-card glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', borderRadius: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.5rem' }}>
-          {t('selectTechniqueStep')}
-        </label>
+      <div className="step-card glass-panel">
+        <div className="step-header">
+          <span className="step-badge">2</span>
+          <label className="step-title">
+            {t('selectTechniqueStep')}
+          </label>
+        </div>
 
         {loadingTecnicas ? <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>{t('loadingTechniques')}</p> : (
           <>
@@ -431,15 +507,61 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
           </>
         )}
       </div>
+    </div>
 
-      {/* Step 3: Video Upload & Interactive Calibration */}
-      {spamError && (
-        <div style={{ background: 'rgba(208, 17, 24, 0.2)', border: '1px solid var(--brand-red)', padding: '0.85rem 1.25rem', borderRadius: '10px', color: '#ff8787', fontSize: '0.9rem', marginBottom: '1rem', textAlign: 'center' }}>
-          ⚠️ {spamError}
+    {/* Right Column: Step 3 Upload & Interactive Calibration */}
+    <div className="upload-action-column">
+      <div className="step-card glass-panel" style={{ minHeight: '100%', justifyContent: 'flex-start' }}>
+        <div className="step-header">
+          <span className="step-badge">3</span>
+          <label className="step-title">
+            {t('uploadVideoStep')}
+          </label>
         </div>
-      )}
 
-      {!file ? (
+        {spamError && (
+          <div style={{ background: 'rgba(208, 17, 24, 0.2)', border: '1px solid var(--brand-red)', padding: '0.85rem 1.25rem', borderRadius: '10px', color: '#ff8787', fontSize: '0.9rem', marginBottom: '0.5rem', textAlign: 'center' }}>
+            ⚠️ {spamError}
+          </div>
+        )}
+
+      {!isPassActive ? (
+        <div className="glass-panel" style={{
+          padding: '2.5rem 1.5rem',
+          borderRadius: '12px',
+          textAlign: 'center',
+          border: '1px dashed rgba(208, 17, 24, 0.5)',
+          background: 'rgba(208, 17, 24, 0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <div style={{ fontSize: '2.5rem', opacity: 0.8 }}>🔒</div>
+          <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>
+            {t('uploadTitle')}
+          </h4>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '480px' }}>
+            {isExpired ? t('subscriptionExpiredWarning') : t('subscriptionPendingWarning')}
+          </p>
+          <button
+            type="button"
+            disabled
+            className="btn-primary"
+            style={{
+              minHeight: '44px',
+              padding: '0.75rem 1.75rem',
+              fontSize: '0.95rem',
+              opacity: 0.6,
+              cursor: 'not-allowed',
+              background: 'rgba(208, 17, 24, 0.3)',
+              border: '1px solid var(--brand-red)'
+            }}
+          >
+            🔒 {t('passStatus')}: {isExpired ? t('expiredStatus') : t('pendingStatus')}
+          </button>
+        </div>
+      ) : !file ? (
         <div
           className={`drop-zone glass-panel ${dragActive ? 'active' : ''}`}
           onDragEnter={handleDrag}
@@ -629,6 +751,9 @@ export default function VideoUpload({ user, onUploadStart, idioma }) {
           ) : null}
         </div>
       )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

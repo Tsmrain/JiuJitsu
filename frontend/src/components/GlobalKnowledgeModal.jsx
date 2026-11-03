@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { API_BASE as BASE_URL } from '../api/config';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = `${BASE_URL}/api/v1`;
 
 export default function GlobalKnowledgeModal({ user, onClose }) {
   const [file, setFile] = useState(null);

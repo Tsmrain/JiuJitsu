@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { getTranslation } from '../i18n/translations';
+import { API_BASE } from '../api/config';
 
 // Función para extraer Latitud, Longitud, Nombre y Código de Plus Code desde cualquier URL de Google Maps o texto
 function parseGoogleMapsUrl(input) {
@@ -69,6 +70,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
   // -- BRANCH STATES --
   const [sucursales, setSucursales] = useState([]);
   const [editingId, setEditingId] = useState(null); // null = Create Mode, UUID = Edit Mode
+  const [errorSucursales, setErrorSucursales] = useState(null);
   
   // -- USER STATES --
   const [usuarios, setUsuarios] = useState([]);
@@ -132,16 +134,27 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
 
   // 1. Cargar datos del backend
   const fetchSucursales = async () => {
+    setErrorSucursales(null);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/sucursales");
-      if (res.ok) setSucursales(await res.json());
-    } catch (e) { console.error("Error loading branches:", e); }
+      const res = await fetch(`${API_BASE}/api/v1/sucursales`);
+      if (res.ok) {
+        setSucursales(await res.json());
+      } else {
+        const errorMsg = "Error de conexión con el servidor. Revisa tu red.";
+        setErrorSucursales(errorMsg);
+        console.error("Failed to load branches:", res.status, res.statusText);
+      }
+    } catch (e) {
+      console.error("Error loading branches:", e);
+      const errorMsg = "Error de conexión con el servidor. Revisa tu red.";
+      setErrorSucursales(errorMsg);
+    }
   };
 
   const fetchUsuarios = async () => {
     setLoadingUsuarios(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/usuarios", {
+      const res = await fetch(`${API_BASE}/api/v1/auth/usuarios`, {
         headers: { "Authorization": `Bearer ${user.token}` }
       });
       if (res.ok) setUsuarios(await res.json());
@@ -247,7 +260,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
     
     try {
       // 1. Intentar analizar con el backend scraper / geocoder
-      const res = await fetch("http://localhost:8000/api/v1/sucursales/parse-gmaps-link", {
+      const res = await fetch(`${API_BASE}/api/v1/sucursales/parse-gmaps-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: val.trim() })
@@ -323,8 +336,8 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
     setLoading(true);
     const payload = { nombre, pais, ciudad, direccion, latitud, longitud };
     const url = editingId 
-      ? `http://localhost:8000/api/v1/sucursales/${editingId}`
-      : "http://localhost:8000/api/v1/sucursales";
+      ? `${API_BASE}/api/v1/sucursales/${editingId}`
+      : `${API_BASE}/api/v1/sucursales`;
     const method = editingId ? "PUT" : "POST";
 
     try {
@@ -357,7 +370,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
     if (!confirm(`${t('deleteConfirm')} "${sucursalNombre}"?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/sucursales/${sucursalId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/sucursales/${sucursalId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${user.token}` }
       });
@@ -377,7 +390,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
 
   const handleImpersonate = async (targetUserId) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/auth/impersonate/${targetUserId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/auth/impersonate/${targetUserId}`, {
         method: 'POST',
         headers: { "Authorization": `Bearer ${user.token}` }
       });
@@ -553,6 +566,22 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>
           {user?.rol === 'admin' ? `${t('registeredBranches')} (${sucursales.length})` : `${t('exploreOurBranches')} (${sucursales.length})`}
         </h3>
+
+        {errorSucursales && (
+          <div style={{
+            background: 'rgba(208, 17, 24, 0.2)',
+            border: '1px solid var(--brand-red)',
+            color: '#ff8787',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '0.9rem'
+          }}>
+            ⚠️ {errorSucursales}
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
           {sucursales.map((s) => (
             <div 

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 import shutil
+import logging
 from typing import List, Optional, Union, Dict, Any
 from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException, status, Header
@@ -13,6 +14,8 @@ import jwt as pyjwt
 
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
 from corpocmente.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Autenticación y Sucursales"])
 
@@ -39,6 +42,46 @@ class LoginResponse(BaseModel):
     sucursal_id: Optional[UUID] = None
     sucursal_nombre: str
     idioma_preferido: Optional[str] = "es"
+    estado_suscripcion: Optional[str] = None
+    fecha_expiracion: Optional[str] = None
+
+class AlumnoPendienteResponse(BaseModel):
+    id: UUID
+    nombre_completo: str
+    username: str
+    email: str
+    sucursal_id: Optional[UUID] = None
+    sucursal_nombre: str
+    avatar_url: Optional[str] = None
+    fecha_registro: Optional[datetime] = None
+    estado_suscripcion: str
+    fecha_expiracion: Optional[datetime] = None
+
+class ActivarPaseRequest(BaseModel):
+    dias: Optional[int] = 30
+    notas: Optional[str] = None
+
+class ActivarPaseResponse(BaseModel):
+    success: bool
+    alumno_id: UUID
+    nombre_completo: Optional[str] = None
+    estado_suscripcion: str
+    fecha_expiracion: Optional[datetime] = None
+    profesor_id: UUID
+
+class CambiarSucursalRequest(BaseModel):
+    nueva_sucursal_id: UUID
+    notas: Optional[str] = None
+
+class CambiarSucursalResponse(BaseModel):
+    success: bool
+    user_id: UUID
+    nombre_completo: str
+    username: str
+    sucursal_anterior_id: Optional[UUID] = None
+    sucursal_nueva_id: UUID
+    sucursal_nueva_nombre: str
+    mensaje: str
 
 class SucursalCreate(BaseModel):
     nombre: str
@@ -191,6 +234,90 @@ def require_auth(authorization: Optional[str]) -> dict:
     return _decode_jwt(authorization)
 
 
+def check_student_subscription(user_id: Union[str, UUID]) -> dict:
+    """
+    Verifica si un usuario (especialmente alumno) cuenta con suscripción activa ('Pase de Tatami').
+    - Administradores y profesores siempre están activos.
+    - Alumnos deben tener estado_suscripcion == 'activo' y fecha_expiracion > NOW().
+    """
+    db = get_db()
+    try:
+        profile_list = db.rpc("get_user_profile", {"user_id": str(user_id)})
+        profile = profile_list[0] if profile_list else None
+    except Exception:
+        profile = None
+
+    if not profile:
+        try:
+            users = db.get("usuarios", {"id": f"eq.{user_id}"})
+            profile = users[0] if users else None
+        except Exception:
+            profile = None
+
+    if not profile:
+        return {"estado_suscripcion": "inactivo", "activo": False}
+
+    rol = profile.get("rol", "alumno")
+    if rol in ("admin", "profesor"):
+        return {"estado_suscripcion": "activo", "activo": True, "rol": rol}
+
+    estado = profile.get("estado_suscripcion", "pendiente")
+    expiracion = profile.get("fecha_expiracion")
+
+    if estado != "activo":
+        return {
+            "estado_suscripcion": estado or "pendiente",
+            "activo": False,
+            "fecha_expiracion": expiracion,
+            "rol": rol
+        }
+
+    if expiracion:
+        try:
+            if isinstance(expiracion, str):
+                exp_dt = datetime.fromisoformat(expiracion.replace("Z", "+00:00"))
+            else:
+                exp_dt = expiracion
+            if exp_dt.tzinfo is None:
+                exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > exp_dt:
+                return {
+                    "estado_suscripcion": "expirado",
+                    "activo": False,
+                    "fecha_expiracion": expiracion,
+                    "rol": rol
+                }
+        except Exception as ex:
+            pass
+
+    return {
+        "estado_suscripcion": "activo",
+        "activo": True,
+        "fecha_expiracion": expiracion,
+        "rol": rol
+    }
+
+
+def require_active_subscription(authorization: Optional[str] = Header(None)) -> dict:
+    """
+    Candado de Seguridad (Iteración 4A):
+    Verifica autenticación y que los alumnos tengan su Pase de Tatami activo.
+    Lanza 403 Forbidden si la suscripción del alumno está pendiente o expirada.
+    """
+    caller = require_auth(authorization)
+    role = caller.get("role")
+    if role in ("admin", "profesor"):
+        return caller
+
+    sub_info = check_student_subscription(caller.get("uid"))
+    if not sub_info.get("activo"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Suscripción inactiva. Solicita tu Pase de Tatami al profesor."
+        )
+    return caller
+
+
 def _sign_token(payload: dict) -> str:
     """
     Firma un payload con HS256 y fecha de expiración.
@@ -257,6 +384,11 @@ async def login(req: LoginRequest):
 
     idioma_actual = get_user_idioma(legacy_payload["uid"])
 
+    raw_sub = profile.get("estado_suscripcion") if profile else None
+    if not raw_sub:
+        raw_sub = "activo" if legacy_payload.get("role") in ("admin", "profesor") else "pendiente"
+    raw_exp = str(profile.get("fecha_expiracion")) if (profile and profile.get("fecha_expiracion")) else None
+
     if not profile:
         return LoginResponse(
             token=signed_token,
@@ -268,7 +400,9 @@ async def login(req: LoginRequest):
             avatar_url=None,
             sucursal_id=UUID(legacy_payload["sucursal_id"]) if legacy_payload.get("sucursal_id") else None,
             sucursal_nombre="Sucursal Principal",
-            idioma_preferido=idioma_actual
+            idioma_preferido=idioma_actual,
+            estado_suscripcion=raw_sub,
+            fecha_expiracion=raw_exp
         )
 
     sucursal_nombre = "Sucursal Eliminada"
@@ -290,7 +424,9 @@ async def login(req: LoginRequest):
         avatar_url=profile.get("avatar_url"),
         sucursal_id=UUID(profile["sucursal_id"]) if profile.get("sucursal_id") else None,
         sucursal_nombre=sucursal_nombre,
-        idioma_preferido=idioma_actual
+        idioma_preferido=idioma_actual,
+        estado_suscripcion=raw_sub,
+        fecha_expiracion=raw_exp
     )
 
 
@@ -373,7 +509,10 @@ async def signup(req: SignupRequest):
         rol=created_user["rol"],
         avatar_url=created_user.get("avatar_url"),
         sucursal_id=UUID(created_user["sucursal_id"]),
-        sucursal_nombre=sucursal["nombre"]
+        sucursal_nombre=sucursal["nombre"],
+        idioma_preferido="es",
+        estado_suscripcion=created_user.get("estado_suscripcion", "pendiente" if created_user["rol"] == "alumno" else "activo"),
+        fecha_expiracion=str(created_user.get("fecha_expiracion")) if created_user.get("fecha_expiracion") else None
     )
 
 @router.get("/auth/usuarios", response_model=List[LoginResponse], status_code=status.HTTP_200_OK)
@@ -397,7 +536,10 @@ async def listar_usuarios(authorization: Optional[str] = Header(None)):
             rol=u["rol"],
             avatar_url=u.get("avatar_url"),
             sucursal_id=UUID(u["sucursal_id"]) if u.get("sucursal_id") else None,
-            sucursal_nombre=u.get("sucursal_nombre") or "Sucursal Eliminada"
+            sucursal_nombre=u.get("sucursal_nombre") or "Sucursal Eliminada",
+            idioma_preferido=get_user_idioma(u["id"]),
+            estado_suscripcion=u.get("estado_suscripcion") or ("activo" if u.get("rol") in ("admin", "profesor") else "pendiente"),
+            fecha_expiracion=str(u.get("fecha_expiracion")) if u.get("fecha_expiracion") else None
         ))
     return resultado
 
@@ -408,6 +550,7 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
     - Admin puede actualizar a cualquier usuario.
     - Usuario normal solo puede actualizarse a sí mismo.
     Usa RPC SECURITY DEFINER: password se hashea en la BD.
+    Bajo ninguna circunstancia altera estado_suscripcion ni fecha_expiracion.
     """
     caller = require_auth(authorization)
 
@@ -443,6 +586,11 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
         "sucursal_id": str(updated["sucursal_id"]) if updated.get("sucursal_id") else ""
     })
 
+    sub_status = updated.get("estado_suscripcion")
+    if not sub_status:
+        sub_status = "activo" if updated.get("rol") in ("admin", "profesor") else "pendiente"
+    exp_status = str(updated.get("fecha_expiracion")) if updated.get("fecha_expiracion") else None
+
     return LoginResponse(
         token=signed_token,
         user_id=UUID(updated["id"]),
@@ -453,7 +601,9 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
         avatar_url=updated.get("avatar_url"),
         sucursal_id=UUID(updated["sucursal_id"]) if updated.get("sucursal_id") else None,
         sucursal_nombre=updated.get("sucursal_nombre") or "Sucursal Eliminada",
-        idioma_preferido=idioma_actual
+        idioma_preferido=idioma_actual,
+        estado_suscripcion=sub_status,
+        fecha_expiracion=exp_status
     )
 
 @router.put("/auth/usuarios/{user_id}/idioma", response_model=Dict[str, Any], status_code=status.HTTP_200_OK)
@@ -485,6 +635,42 @@ async def actualizar_idioma_usuario(
     res = set_user_idioma(user_id, clean_lang)
     return {"user_id": str(user_id), "idioma_preferido": res}
 
+@router.put("/auth/usuarios/{user_id}/cambiar-sucursal", response_model=CambiarSucursalResponse, status_code=status.HTTP_200_OK)
+async def cambiar_sucursal_usuario(
+    user_id: UUID,
+    req: CambiarSucursalRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Permite a un Administrador o Profesor reasignar la sucursal activa de un alumno.
+    Integridad Referencial: Las evaluaciones previas conservan la sucursal donde se realizaron.
+    """
+    caller = require_staff(authorization)
+    db = get_db()
+    try:
+        res = db.rpc("admin_cambiar_sucursal_usuario", {
+            "p_user_id": str(user_id),
+            "p_nueva_sucursal_id": str(req.nueva_sucursal_id)
+        })
+    except Exception as e:
+        logger.error(f"Error cambiando sucursal: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not res:
+        raise HTTPException(status_code=404, detail="Usuario o sucursal no encontrados.")
+
+    data = res[0]
+    return CambiarSucursalResponse(
+        success=True,
+        user_id=UUID(data["id"]),
+        nombre_completo=data["nombre_completo"],
+        username=data["username"],
+        sucursal_anterior_id=UUID(data["sucursal_anterior_id"]) if data.get("sucursal_anterior_id") else None,
+        sucursal_nueva_id=UUID(data["sucursal_nueva_id"]),
+        sucursal_nueva_nombre=data["sucursal_nueva_nombre"],
+        mensaje="Sucursal actualizada exitosamente. Historial de evaluaciones previas preservado intacto."
+    )
+
 @router.get("/auth/me", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def get_mi_perfil(authorization: Optional[str] = Header(None)):
     """Retorna el perfil completo del usuario autenticado actual, incluyendo su idioma_preferido."""
@@ -499,6 +685,11 @@ async def get_mi_perfil(authorization: Optional[str] = Header(None)):
 
     idioma = get_user_idioma(uid)
 
+    raw_sub = profile.get("estado_suscripcion") if profile else None
+    if not raw_sub:
+        raw_sub = "activo" if caller.get("role") in ("admin", "profesor") else "pendiente"
+    raw_exp = str(profile.get("fecha_expiracion")) if (profile and profile.get("fecha_expiracion")) else None
+
     if not profile:
         return LoginResponse(
             token="",
@@ -510,7 +701,9 @@ async def get_mi_perfil(authorization: Optional[str] = Header(None)):
             avatar_url=None,
             sucursal_id=UUID(caller["sucursal_id"]) if caller.get("sucursal_id") else None,
             sucursal_nombre="Sucursal Principal",
-            idioma_preferido=idioma
+            idioma_preferido=idioma,
+            estado_suscripcion=raw_sub,
+            fecha_expiracion=raw_exp
         )
 
     sucursal_nombre = "Sucursal Eliminada"
@@ -532,7 +725,9 @@ async def get_mi_perfil(authorization: Optional[str] = Header(None)):
         avatar_url=profile.get("avatar_url"),
         sucursal_id=UUID(profile["sucursal_id"]) if profile.get("sucursal_id") else None,
         sucursal_nombre=sucursal_nombre,
-        idioma_preferido=idioma
+        idioma_preferido=idioma,
+        estado_suscripcion=raw_sub,
+        fecha_expiracion=raw_exp
     )
 
 @router.post("/auth/impersonate/{user_id}", response_model=LoginResponse, status_code=status.HTTP_200_OK)
@@ -554,6 +749,8 @@ async def impersonate_user(user_id: UUID, authorization: Optional[str] = Header(
         "sucursal_id": str(user["sucursal_id"]) if user.get("sucursal_id") else ""
     })
     idioma = get_user_idioma(user["id"])
+    raw_sub = user.get("estado_suscripcion") or ("activo" if user.get("rol") in ("admin", "profesor") else "pendiente")
+    raw_exp = str(user.get("fecha_expiracion")) if user.get("fecha_expiracion") else None
 
     return LoginResponse(
         token=signed_token,
@@ -565,7 +762,9 @@ async def impersonate_user(user_id: UUID, authorization: Optional[str] = Header(
         avatar_url=user.get("avatar_url"),
         sucursal_id=UUID(user["sucursal_id"]) if user.get("sucursal_id") else None,
         sucursal_nombre=user.get("sucursal_nombre") or "Sucursal Eliminada",
-        idioma_preferido=idioma
+        idioma_preferido=idioma,
+        estado_suscripcion=raw_sub,
+        fecha_expiracion=raw_exp
     )
 
 @router.get("/sucursales", response_model=List[SucursalResponse], status_code=status.HTTP_200_OK)
@@ -651,6 +850,98 @@ async def listar_alumnos(
             sucursal_nombre=a.get("sucursal_nombre") or "Sucursal Eliminada"
         ))
     return resultado
+
+
+@router.get("/auth/alumnos/pendientes", response_model=List[AlumnoPendienteResponse], status_code=status.HTTP_200_OK)
+async def listar_alumnos_pendientes(
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Devuelve la lista de alumnos con estado_suscripcion = 'pendiente' o expirados
+    que pertenezcan a la misma sucursal del profesor (o todas si es admin).
+    """
+    caller = require_staff(authorization)
+    db = get_db()
+    profesor_id = caller.get("uid")
+
+    try:
+        pendientes = db.rpc("get_alumnos_pendientes", {"p_profesor_id": str(profesor_id)})
+    except Exception as e:
+        logger.warning(f"Error calling get_alumnos_pendientes: {e}")
+        caller_role = caller.get("role")
+        caller_sucursal = caller.get("sucursal_id")
+        params = {"rol": "eq.alumno", "estado_suscripcion": "neq.activo"}
+        if caller_role != "admin" and caller_sucursal:
+            params["sucursal_id"] = f"eq.{caller_sucursal}"
+        try:
+            pendientes = db.get("usuarios", params)
+        except Exception:
+            pendientes = []
+
+    resultado = []
+    for p in pendientes:
+        resultado.append(AlumnoPendienteResponse(
+            id=UUID(p["id"]),
+            nombre_completo=p.get("nombre_completo", ""),
+            username=p.get("username", ""),
+            email=p.get("email", ""),
+            sucursal_id=UUID(p["sucursal_id"]) if p.get("sucursal_id") else None,
+            sucursal_nombre=p.get("sucursal_nombre") or "Sucursal Principal",
+            avatar_url=p.get("avatar_url"),
+            fecha_registro=p.get("fecha_registro"),
+            estado_suscripcion=p.get("estado_suscripcion", "pendiente"),
+            fecha_expiracion=p.get("fecha_expiracion")
+        ))
+    return resultado
+
+
+@router.post("/auth/alumnos/{alumno_id}/activar", response_model=ActivarPaseResponse, status_code=status.HTTP_200_OK)
+@router.post("/alumnos/{alumno_id}/activar", response_model=ActivarPaseResponse, status_code=status.HTTP_200_OK)
+async def activar_pase_tatami(
+    alumno_id: UUID,
+    req: Optional[ActivarPaseRequest] = None,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Activa el 'Pase de Tatami' por 30 días para un alumno tras verificación de pago en tatami.
+    Solo accesible por profesores de la misma sucursal o administradores.
+    """
+    caller = require_staff(authorization)
+    db = get_db()
+    profesor_id = caller.get("uid")
+    dias = req.dias if req and req.dias else 30
+
+    try:
+        res = db.rpc("activar_pase_alumno", {
+            "p_alumno_id": str(alumno_id),
+            "p_profesor_id": str(profesor_id),
+            "p_dias": dias
+        })
+        if isinstance(res, str):
+            res = json.loads(res)
+        logger.info(f"[AUDITORIA] Pase de Tatami activado para alumno {alumno_id} por {caller.get('email')} ({profesor_id}) por {dias} días.")
+        return ActivarPaseResponse(
+            success=True,
+            alumno_id=alumno_id,
+            nombre_completo=res.get("nombre_completo"),
+            estado_suscripcion=res.get("estado_suscripcion", "activo"),
+            fecha_expiracion=res.get("fecha_expiracion"),
+            profesor_id=UUID(profesor_id)
+        )
+    except Exception as e:
+        logger.error(f"Error activando pase de alumno: {e}")
+        err_msg = str(e)
+        if "El profesor solo puede activar alumnos de su propia sucursal" in err_msg:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only activate students from your own branch/academy."
+            )
+        if "Alumno no encontrado" in err_msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not activate pass: {e}"
+        )
 
 @router.get("/auth/alumnos/{alumno_id}/evaluaciones", status_code=status.HTTP_200_OK)
 async def listar_evaluaciones_alumno(
@@ -831,10 +1122,12 @@ async def eliminar_sucursal(sucursal_id: UUID, authorization: Optional[str] = He
     return None
 
 @router.post("/sucursales/parse-gmaps-link", response_model=ParseGmapsResponse, status_code=status.HTTP_200_OK)
-async def parse_gmaps_link(req: ParseGmapsRequest):
+async def parse_gmaps_link(req: ParseGmapsRequest, authorization: Optional[str] = Header(None)):
     """
     Servicio backend de scraping y geocodificación para enlaces de Google Maps.
+    Requiere autenticación de staff (Admin o Profesor) para mitigar riesgos de SSRF.
     """
+    require_staff(authorization)
     url_input = req.url.strip()
 
     try:

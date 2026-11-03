@@ -24,7 +24,7 @@ from urllib.parse import quote, quote_plus
 from corpocmente.application.use_cases.ingest_knowledge_use_case import IngestKnowledgeUseCase
 from corpocmente.application.dtos.knowledge_dtos import IngestionRequest
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
-from corpocmente.ui.api.auth_routes import require_auth, require_admin
+from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_active_subscription
 from corpocmente.config import settings
 from corpocmente.domain.services.session_manager import (
     SessionStateManager, SessionError, SessionConflictError,
@@ -308,7 +308,7 @@ async def analizar_video(
     idioma: Optional[str] = Form(None),
     authorization: Optional[str] = Header(None)
 ):
-    caller = require_auth(authorization)
+    caller = require_active_subscription(authorization)
 
     # Autorización: solo el propio alumno o un admin pueden crear evaluaciones
     if caller.get("role") != "admin" and str(caller.get("uid")) != str(alumno_id):
@@ -405,7 +405,8 @@ async def analizar_video(
             "p_alumno_id": str(alumno_id),
             "p_tecnica_id": str(tecnica_id),
             "p_video_referencia_id": str(video_ref_id) if video_ref_id else None,
-            "p_url_video_alumno": video_path
+            "p_url_video_alumno": video_path,
+            "p_sucursal_id": caller.get("sucursal_id") or None
         })
     except Exception as e:
         if session_id:
@@ -631,9 +632,9 @@ async def consultar_evaluacion(
 async def validar_spam(video: UploadFile = File(...), authorization: Optional[str] = Header(None)):
     """
     Endpoint HTTP aislado para validar tempranamente si un video es de Jiu-Jitsu (SPAM filter).
-    Requiere cualquier usuario autenticado.
+    Requiere cualquier usuario autenticado con Pase de Tatami activo.
     """
-    require_auth(authorization)
+    require_active_subscription(authorization)
 
     if not video.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
         raise HTTPException(
@@ -1291,7 +1292,7 @@ async def buscar_en_biblioteca(
     """
     Búsqueda semántica multimodal en la biblioteca de manuales de Jiu-Jitsu.
     Soporta búsqueda por texto y búsqueda visual multimodal si se provee imagen_url.
-    Cualquier usuario autenticado puede buscar.
+    Cualquier usuario autenticado con suscripción activa puede buscar.
     """
     require_auth(authorization)
     from corpocmente.infrastructure.ai.qwen_adapter import QwenEmbeddingAdapter

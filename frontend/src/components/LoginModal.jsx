@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { getTranslation } from '../i18n/translations';
+import { API_BASE } from '../api/config';
 
 export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idioma = 'es' }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
   const t = (key) => getTranslation(idioma, key);
 
-  // Login form state
-  const [loginUserOrEmail, setLoginUserOrEmail] = useState('admin');
-  const [loginPassword, setLoginPassword] = useState('admin123');
+  // Login form state (sin credenciales hardcodeadas por seguridad)
+  const [loginUserOrEmail, setLoginUserOrEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Signup form state
   const [signupNombre, setSignupNombre] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [signupRol, setSignupRol] = useState('alumno');
   const [signupSucursalId, setSignupSucursalId] = useState('');
 
@@ -23,7 +26,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
   useEffect(() => {
     if (isOpen) {
       // Load branches for signup form
-      fetch("http://localhost:8000/api/v1/sucursales")
+      fetch(`${API_BASE}/api/v1/sucursales`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -43,7 +46,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
     setErrorMsg('');
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,7 +91,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/auth/signup", {
+      const response = await fetch(`${API_BASE}/api/v1/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -186,9 +189,12 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
                 {t('usernameOrEmail')}
               </label>
               <input 
-                type="text" required value={loginUserOrEmail} onChange={e => setLoginUserOrEmail(e.target.value)}
+                type="text" required 
+                data-testid="login-username-input"
+                value={loginUserOrEmail} 
+                onChange={e => setLoginUserOrEmail(e.target.value)}
                 placeholder="admin or student@email.com"
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
               />
             </div>
 
@@ -196,11 +202,51 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
                 {t('password')}
               </label>
-              <input 
-                type="password" required value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
-                placeholder="••••••••"
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                <input 
+                  type={showLoginPassword ? "text" : "password"} 
+                  required 
+                  data-testid="login-password-input"
+                  value={loginPassword} 
+                  onChange={e => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ width: '100%', padding: '0.75rem 2.8rem 0.75rem 0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                />
+                <button
+                  type="button"
+                  data-testid="toggle-login-password-btn"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  title={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  style={{
+                    position: 'absolute',
+                    right: '0.3rem',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0.4rem',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'rgba(255,255,255,0.7)',
+                    outline: 'none'
+                  }}
+                >
+                  {showLoginPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <button 
@@ -243,11 +289,51 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
                 {t('password')}
               </label>
-              <input 
-                type="password" required value={signupPassword} onChange={e => setSignupPassword(e.target.value)}
-                placeholder="••••••••"
-                style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                <input 
+                  type={showSignupPassword ? "text" : "password"} 
+                  required 
+                  data-testid="signup-password-input"
+                  value={signupPassword} 
+                  onChange={e => setSignupPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ width: '100%', padding: '0.65rem 2.8rem 0.65rem 0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                />
+                <button
+                  type="button"
+                  data-testid="toggle-signup-password-btn"
+                  onClick={() => setShowSignupPassword(!showSignupPassword)}
+                  aria-label={showSignupPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  title={showSignupPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  style={{
+                    position: 'absolute',
+                    right: '0.3rem',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0.4rem',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'rgba(255,255,255,0.7)',
+                    outline: 'none'
+                  }}
+                >
+                  {showSignupPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>

@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE as BASE_URL } from './config';
+const API_BASE = `${BASE_URL}/api/v1`;
 
 export async function incluirEstadoPatrones(tecnicas, token) {
   return Promise.all(tecnicas.map(async (tecnica) => {

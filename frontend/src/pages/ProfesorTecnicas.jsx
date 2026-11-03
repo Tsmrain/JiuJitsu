@@ -6,6 +6,7 @@ import GlobalKnowledgeModal from '../components/GlobalKnowledgeModal';
 import SelectorPersonaVideo from '../components/SelectorPersonaVideo';
 import { incluirEstadoPatrones } from '../api/tecnicas';
 import { getTranslation } from '../i18n/translations';
+import { API_BASE } from '../api/config';
 
 const OPACIONES_CINTURON = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
 
@@ -26,11 +27,15 @@ const getBeltLabel = (nivel) => BELT_LABELS[nivel] || `${nivel} Belt`;
 
 export default function ProfesorTecnicas({ user, onClose, idioma }) {
   const t = (key) => getTranslation(idioma, key);
-  const [activeTab, setActiveTab] = useState('alumnos'); // 'alumnos' (default) | 'tecnicas'
+  const [activeTab, setActiveTab] = useState('alumnos'); // 'alumnos' (default) | 'pases' | 'tecnicas'
   const [tecnicas, setTecnicas] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
+  const [pendientes, setPendientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingAlumnos, setLoadingAlumnos] = useState(false);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
+  const [activandoId, setActivandoId] = useState(null);
+  const [activacionSuccess, setActivacionSuccess] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showGlobalKnowledge, setShowGlobalKnowledge] = useState(false);
@@ -55,7 +60,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
 
   const fetchTecnicas = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/tecnicas?profesor_id=${user?.user_id}`, {
+      const res = await fetch(`${API_BASE}/api/v1/tecnicas?profesor_id=${user?.user_id}`, {
         headers: { "Authorization": `Bearer ${user?.token}` }
       });
       if (res.ok) {
@@ -76,7 +81,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       const sucursalQuery = user?.rol === 'profesor' && user?.sucursal_id
         ? `?p_sucursal_id=${user.sucursal_id}`
         : '';
-      const res = await fetch(`http://localhost:8000/api/v1/auth/alumnos${sucursalQuery}`, {
+      const res = await fetch(`${API_BASE}/api/v1/auth/alumnos${sucursalQuery}`, {
         headers: { "Authorization": `Bearer ${user.token}` }
       });
       if (res.ok) {
@@ -90,9 +95,56 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
     }
   };
 
+  const fetchPendientes = async () => {
+    setLoadingPendientes(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/alumnos/pendientes`, {
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendientes(data);
+      }
+    } catch (e) {
+      console.error("Error loading pending students:", e);
+    } finally {
+      setLoadingPendientes(false);
+    }
+  };
+
+  const handleActivarPase = async (alumnoId, alumnoNombre) => {
+    setActivandoId(alumnoId);
+    setActivacionSuccess(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/alumnos/${alumnoId}/activar`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${user.token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ dias: 30 })
+      });
+      if (res.ok) {
+        const msg = `${t('passActivatedSuccess')} (${alumnoNombre || 'Alumno'})`;
+        setActivacionSuccess(msg);
+        alert(msg);
+        await fetchPendientes();
+        await fetchAlumnos();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || "Error activando pase.");
+      }
+    } catch (e) {
+      console.error("Error activando pase:", e);
+      alert("Error de conexión al activar pase.");
+    } finally {
+      setActivandoId(null);
+    }
+  };
+
   const fetchEvaluacionesAlumno = async (alumnoId) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/auth/alumnos/${alumnoId}/evaluaciones`, {
+      const res = await fetch(`${API_BASE}/api/v1/auth/alumnos/${alumnoId}/evaluaciones`, {
         headers: { "Authorization": `Bearer ${user.token}` }
       });
       if (res.ok) {
@@ -108,6 +160,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
     const load = async () => {
       await fetchTecnicas();
       await fetchAlumnos();
+      await fetchPendientes();
     };
     load();
   }, [user?.user_id]);
@@ -173,7 +226,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         // Nueva técnica: primero procesar el video y obtener el primer frame
         const frameData = new FormData();
         frameData.append("video", selectedFile);
-        const frameRes = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
+        const frameRes = await fetch(`${API_BASE}/api/v1/evaluaciones/primer-frame`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${user.token}` },
           body: frameData
@@ -200,7 +253,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         if (selectedFile) {
           const frameData = new FormData();
           frameData.append("video", selectedFile);
-          const frameRes = await fetch("http://localhost:8000/api/v1/evaluaciones/primer-frame", {
+          const frameRes = await fetch(`${API_BASE}/api/v1/evaluaciones/primer-frame`, {
             method: "POST",
             headers: { "Authorization": `Bearer ${user.token}` },
             body: frameData
@@ -224,7 +277,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           setShowModal(false);
         } else {
           // Solo actualizar datos de texto de la técnica existente
-          const res = await fetch(`http://localhost:8000/api/v1/tecnicas/${editingId}`, {
+          const res = await fetch(`${API_BASE}/api/v1/tecnicas/${editingId}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -265,7 +318,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
 
       // 1. Si es nueva técnica, crear la entidad en la base de datos ahora
       if (!targetTecnicaId && pendingTecnica) {
-        const createRes = await fetch("http://localhost:8000/api/v1/tecnicas", {
+        const createRes = await fetch(`${API_BASE}/api/v1/tecnicas`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -282,7 +335,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         createdTecnicaId = savedTecnica.id;
       } else if (targetTecnicaId && pendingTecnica) {
         // Si estamos editando, actualizar campos
-        await fetch(`http://localhost:8000/api/v1/tecnicas/${targetTecnicaId}`, {
+        await fetch(`${API_BASE}/api/v1/tecnicas/${targetTecnicaId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -293,7 +346,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       }
 
       // 2. Confirmar persona seleccionada en la sesión
-      const selectionRes = await fetch(`http://localhost:8000/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
+      const selectionRes = await fetch(`${API_BASE}/api/v1/evaluaciones/${sessionData.session_id}/seleccionar-persona`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ persona_idx: selectedIdx }),
@@ -307,7 +360,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       const patronForm = new FormData();
       patronForm.append('session_id', sessionData.session_id);
       patronForm.append('persona_idx', String(selectedIdx));
-      const patronRes = await fetch(`http://localhost:8000/api/v1/tecnicas/${targetTecnicaId}/patron`, {
+      const patronRes = await fetch(`${API_BASE}/api/v1/tecnicas/${targetTecnicaId}/patron`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
         body: patronForm,
@@ -324,7 +377,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       // Si falló el registro del patrón para una técnica recién creada, eliminarla como rollback
       if (createdTecnicaId) {
         try {
-          await fetch(`http://localhost:8000/api/v1/tecnicas/${createdTecnicaId}`, {
+          await fetch(`${API_BASE}/api/v1/tecnicas/${createdTecnicaId}`, {
             method: 'DELETE',
             headers: { "Authorization": `Bearer ${user.token}` }
           });
@@ -339,7 +392,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this technique?')) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/tecnicas/${id}`, {
+      const res = await fetch(`${API_BASE}/api/v1/tecnicas/${id}`, {
         method: 'DELETE',
         headers: { "Authorization": `Bearer ${user.token}` }
       });
@@ -373,17 +426,31 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <button
           onClick={() => setActiveTab('alumnos')}
           style={{
             flex: 1, padding: '0.85rem', background: 'none', border: 'none',
             borderBottom: activeTab === 'alumnos' ? '3px solid var(--brand-red)' : '3px solid transparent',
             color: activeTab === 'alumnos' ? 'white' : 'var(--text-secondary)',
-            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            minHeight: '44px'
           }}
         >
           {t('studentsTab')} ({alumnos.length})
+        </button>
+        <button
+          data-testid="tab-pases-pendientes"
+          onClick={() => { setActiveTab('pases'); fetchPendientes(); }}
+          style={{
+            flex: 1, padding: '0.85rem', background: 'none', border: 'none',
+            borderBottom: activeTab === 'pases' ? '3px solid var(--brand-red)' : '3px solid transparent',
+            color: activeTab === 'pases' ? 'white' : 'var(--text-secondary)',
+            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            minHeight: '44px'
+          }}
+        >
+          🥋 {t('pendingPassesTab')} ({pendientes.length})
         </button>
         <button
           onClick={() => setActiveTab('tecnicas')}
@@ -391,7 +458,8 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
             flex: 1, padding: '0.85rem', background: 'none', border: 'none',
             borderBottom: activeTab === 'tecnicas' ? '3px solid var(--brand-red)' : '3px solid transparent',
             color: activeTab === 'tecnicas' ? 'white' : 'var(--text-secondary)',
-            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+            fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            minHeight: '44px'
           }}
         >
           {t('techniquesTab')} ({tecnicas.length})
@@ -468,15 +536,29 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                               }}
                             >
                               <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                                   <strong style={{ fontSize: '0.95rem', color: 'white' }}>{evalItem.tecnica_nombre}</strong>
-                                  <span style={{
-                                    fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px',
-                                    background: `${getScoreColor(similitud)}22`, color: getScoreColor(similitud),
-                                    border: `1px solid ${getScoreColor(similitud)}`
-                                  }}>
-                                    {estadoLabel}
-                                  </span>
+                                  <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                    {evalItem.sucursal_nombre && (
+                                      <span style={{
+                                        fontSize: '0.7rem',
+                                        padding: '0.15rem 0.45rem',
+                                        borderRadius: '4px',
+                                        background: 'rgba(255,255,255,0.08)',
+                                        color: 'rgba(255,255,255,0.7)',
+                                        border: '1px solid rgba(255,255,255,0.15)'
+                                      }}>
+                                        📍 {evalItem.sucursal_nombre}
+                                      </span>
+                                    )}
+                                    <span style={{
+                                      fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px',
+                                      background: `${getScoreColor(similitud)}22`, color: getScoreColor(similitud),
+                                      border: `1px solid ${getScoreColor(similitud)}`
+                                    }}>
+                                      {estadoLabel}
+                                    </span>
+                                  </div>
                                 </div>
 
                                 <div style={{ marginBottom: '0.75rem' }}>
@@ -517,7 +599,147 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         </div>
       )}
 
-      {/* TAB 2: MY TECHNIQUES & VIDEOS */}
+      {/* TAB 2: PASES DE TATAMI PENDIENTES */}
+      {activeTab === 'pases' && (
+        <div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🥋 {t('pendingPassesHeading')}
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+              {t('pendingPassesDesc')}
+            </p>
+          </div>
+
+          {activacionSuccess && (
+            <div style={{
+              background: 'rgba(34, 197, 94, 0.15)',
+              border: '1px solid #22c55e',
+              color: '#4ade80',
+              padding: '0.85rem 1.25rem',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              {activacionSuccess}
+            </div>
+          )}
+
+          {loadingPendientes ? (
+            <p>{t('loadingStudents')}</p>
+          ) : pendientes.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', borderRadius: '12px', color: 'var(--text-secondary)' }}>
+              <p style={{ margin: 0, fontSize: '1.1rem' }}>🎉 {t('noPendingPasses')}</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
+              {pendientes.map(alumno => (
+                <div
+                  key={alumno.id}
+                  className="glass-panel"
+                  style={{
+                    padding: '1.25rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '50%',
+                        background: 'var(--brand-red)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '1.2rem',
+                        color: 'white',
+                        flexShrink: 0
+                      }}>
+                        {alumno.avatar_url ? (
+                          <img src={alumno.avatar_url} alt={alumno.nombre_completo} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          (alumno.nombre_completo ? alumno.nombre_completo[0].toUpperCase() : 'A')
+                        )}
+                      </div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'white', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                          {alumno.nombre_completo}
+                        </h4>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          @{alumno.username} • {alumno.sucursal_nombre}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.4rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{t('studentStatus')}:</span>
+                        <span style={{
+                          fontWeight: 'bold',
+                          color: alumno.estado_suscripcion === 'activo' ? '#4ade80' : (alumno.estado_suscripcion === 'expirado' ? '#ff6b6b' : '#ffd43b')
+                        }}>
+                          {alumno.estado_suscripcion === 'activo' ? t('activeStatus') : (alumno.estado_suscripcion === 'expirado' ? t('expiredStatus') : t('pendingStatus'))}
+                        </span>
+                      </div>
+                      {alumno.fecha_registro && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>{t('registrationDate')}:</span>
+                          <span>{new Date(alumno.fecha_registro).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    data-testid="btn-activar-pase"
+                    type="button"
+                    className="btn-primary"
+                    disabled={activandoId === alumno.id}
+                    onClick={() => handleActivarPase(alumno.id, alumno.nombre_completo)}
+                    style={{
+                      width: '100%',
+                      minHeight: '44px',
+                      padding: '0.75rem 1rem',
+                      fontSize: '0.95rem',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      cursor: activandoId === alumno.id ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      background: '#22c55e',
+                      borderColor: '#22c55e',
+                      color: 'white',
+                      boxShadow: '0 0 15px rgba(34, 197, 94, 0.4)'
+                    }}
+                  >
+                    {activandoId === alumno.id ? '⏳ Activando...' : t('activatePass30Days')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: MY TECHNIQUES & VIDEOS */}
       {activeTab === 'tecnicas' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

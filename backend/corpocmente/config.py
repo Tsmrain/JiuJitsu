@@ -21,7 +21,8 @@ def storage_root() -> Path:
 class Settings(BaseSettings):
     # App Settings
     APP_NAME: str = "Corpo e Mente Biomechanics AI"
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "production"
+    DEBUG: bool = False
     
     # Qdrant DB
     QDRANT_HOST: str = "localhost"

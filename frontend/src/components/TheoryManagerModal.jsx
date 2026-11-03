@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE } from '../api/config';
 
 /**
  * Modal to manage RAG theory for a technique.
@@ -20,7 +21,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
     setError('');
     try {
       const res = await fetch(
-        `http://localhost:8000/api/v1/conocimiento/teoria/${tecnica.id}?solo_mios=true`,
+        `${API_BASE}/api/v1/conocimiento/teoria/${tecnica.id}?solo_mios=true`,
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       if (!res.ok) {
@@ -46,7 +47,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
     setError('');
     try {
       const res = await fetch(
-        `http://localhost:8000/api/v1/conocimiento/teoria/${tecnica.id}`,
+        `${API_BASE}/api/v1/conocimiento/teoria/${tecnica.id}`,
         {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${user.token}` }

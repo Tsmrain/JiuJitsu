@@ -10,6 +10,7 @@ import ProgressRing from './components/ProgressRing'
 import LoginModal from './components/LoginModal'
 import UserProfileModal from './components/UserProfileModal'
 import { getTranslation } from './i18n/translations'
+import { API_BASE } from './api/config'
 
 function App() {
   const [appState, setAppState] = useState('ADMIN_PANEL'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL, PROFESOR_PANEL, STUDENT_PROGRESS, LIBRARY
@@ -34,6 +35,13 @@ function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const isAlumno = user?.rol === 'alumno';
+  const isExpired = isAlumno && (
+    user?.estado_suscripcion === 'expirado' ||
+    (user?.fecha_expiracion && new Date(user.fecha_expiracion) <= new Date())
+  );
+  const isPassActive = !isAlumno || (user?.estado_suscripcion === 'activo' && !isExpired);
+
   useEffect(() => {
     // Hook de testing visual para automatizaciones Playwright / E2E
     window.__setAppState = (state, resData, tecData, extra) => {
@@ -57,7 +65,7 @@ function App() {
 
     if (user?.user_id && user?.token) {
       try {
-        await fetch(`http://localhost:8000/api/v1/auth/usuarios/${user.user_id}/idioma`, {
+        await fetch(`${API_BASE}/api/v1/auth/usuarios/${user.user_id}/idioma`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -112,7 +120,7 @@ function App() {
     formData.append("alumno_id", user.user_id);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/evaluaciones/analizar", {
+      const response = await fetch(`${API_BASE}/api/v1/evaluaciones/analizar`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${user.token}` },
         body: formData,
@@ -144,7 +152,7 @@ function App() {
     if (appState === 'PROCESSING' && currentEvaluacionId) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`http://localhost:8000/api/v1/evaluaciones/${currentEvaluacionId}`, {
+          const res = await fetch(`${API_BASE}/api/v1/evaluaciones/${currentEvaluacionId}`, {
             headers: { "Authorization": `Bearer ${user.token}` }
           });
           if (res.ok) {
@@ -240,9 +248,16 @@ function App() {
             <button 
               className="btn-secondary"
               onClick={() => setAppState('IDLE')}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: 'var(--brand-red)', color: 'white' }}
+              style={{
+                fontSize: '0.8rem',
+                padding: '0.4rem 0.8rem',
+                borderColor: !isPassActive ? 'rgba(208, 17, 24, 0.6)' : 'var(--brand-red)',
+                color: 'white',
+                opacity: !isPassActive ? 0.85 : 1
+              }}
+              title={!isPassActive ? t('subscriptionPendingWarning') : ''}
             >
-              {t('analyzeVideo')}
+              {!isPassActive ? `🔒 ${t('analyzeVideo')}` : t('analyzeVideo')}
             </button>
           )}
 
@@ -301,9 +316,21 @@ function App() {
 
           <div style={{ textAlign: 'right' }}>
             {user ? (
-              <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                {user.nombre_completo}
-              </span>
+              <>
+                <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                  {user.nombre_completo}
+                </span>
+                {isAlumno && (
+                  <span style={{
+                    display: 'block',
+                    fontSize: '0.72rem',
+                    fontWeight: 'bold',
+                    color: isPassActive ? '#4ade80' : '#ff8787'
+                  }}>
+                    {isPassActive ? `🥋 ${t('activeStatus')}` : `🔒 ${t('pendingStatus')}`}
+                  </span>
+                )}
+              </>
             ) : (
               <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold' }}>
                 {t('guest')}
@@ -312,6 +339,7 @@ function App() {
           </div>
 
           <div 
+            data-testid="user-avatar-btn"
             onClick={() => user ? setIsProfileOpen(true) : setIsLoginOpen(true)}
             title={user ? t('myProfile') : t('signIn')}
             style={{
@@ -334,6 +362,7 @@ function App() {
         {/* Mobile Navigation Controls */}
         <div className="nav-mobile-right">
           <div 
+            data-testid="user-avatar-btn-mobile"
             onClick={() => user ? setIsProfileOpen(true) : setIsLoginOpen(true)}
             title={user ? t('myProfile') : t('signIn')}
             style={{
@@ -382,8 +411,13 @@ function App() {
                 </div>
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{user ? user.nombre_completo : t('guest')}</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    {user ? user.rol.toUpperCase() : (idioma === 'pt' ? 'Visitante' : idioma === 'en' ? 'Visitor' : 'Invitado')}
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>{user ? user.rol.toUpperCase() : (idioma === 'pt' ? 'Visitante' : idioma === 'en' ? 'Visitor' : 'Invitado')}</span>
+                    {isAlumno && (
+                      <span style={{ color: isPassActive ? '#4ade80' : '#ff8787', fontWeight: 'bold' }}>
+                        • {isPassActive ? t('activeStatus') : t('pendingStatus')}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -422,9 +456,12 @@ function App() {
                   type="button"
                   className="btn-secondary drawer-nav-btn"
                   onClick={() => { setAppState('IDLE'); setIsMobileMenuOpen(false); }}
-                  style={{ borderColor: appState === 'IDLE' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
+                  style={{
+                    borderColor: appState === 'IDLE' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)',
+                    opacity: !isPassActive ? 0.85 : 1
+                  }}
                 >
-                  📹 {t('analyzeVideo')}
+                  {!isPassActive ? `🔒 📹 ${t('analyzeVideo')}` : `📹 ${t('analyzeVideo')}`}
                 </button>
               )}
 
@@ -439,7 +476,7 @@ function App() {
                 </button>
               )}
 
-              {user?.rol === 'admin' && (
+              {user?.rol === 'admin' ? (
                 <button 
                   type="button"
                   className="btn-secondary drawer-nav-btn"
@@ -447,6 +484,15 @@ function App() {
                   style={{ borderColor: appState === 'ADMIN_PANEL' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
                 >
                   ⚙️ {t('adminPanel')}
+                </button>
+              ) : (
+                <button 
+                  type="button"
+                  className="btn-secondary drawer-nav-btn"
+                  onClick={() => { setAppState('ADMIN_PANEL'); setIsMobileMenuOpen(false); }}
+                  style={{ borderColor: appState === 'ADMIN_PANEL' ? 'var(--brand-red)' : 'rgba(255,255,255,0.15)' }}
+                >
+                  📍 {t('ourBranches')}
                 </button>
               )}
 
@@ -508,7 +554,7 @@ function App() {
         </div>
       )}
 
-      <main style={{flex: 1, display: 'flex', alignItems: ['ADMIN_PANEL', 'PROFESOR_PANEL', 'STUDENT_PROGRESS', 'LIBRARY'].includes(appState) ? 'stretch' : 'center', justifyContent: 'center', width: '100%'}}>
+      <main style={{flex: 1, display: 'flex', alignItems: 'stretch', justifyContent: 'center', width: '100%'}}>
         {appState === 'LIBRARY' && (
           <LibraryView
             user={user}
@@ -606,6 +652,8 @@ function App() {
           handleLanguageChange(lang);
           if (userData.rol === 'profesor') {
             setAppState('PROFESOR_PANEL');
+          } else if (userData.rol === 'alumno') {
+            setAppState('IDLE');
           }
         }} 
       />
@@ -619,7 +667,12 @@ function App() {
           onLanguageChange={handleLanguageChange}
           onClose={() => setIsProfileOpen(false)} 
           onUpdateSuccess={(userData) => {
-            setUser(userData);
+            setUser(prev => ({
+              ...prev,
+              ...userData,
+              estado_suscripcion: userData?.estado_suscripcion || prev?.estado_suscripcion || 'pendiente',
+              fecha_expiracion: userData?.fecha_expiracion !== undefined ? userData.fecha_expiracion : prev?.fecha_expiracion
+            }));
             if (userData?.idioma_preferido) {
               handleLanguageChange(userData.idioma_preferido);
             }

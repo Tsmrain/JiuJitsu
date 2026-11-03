@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getTranslation } from '../i18n/translations';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../api/config';
 
 export default function LibraryView({ user, idioma, onClose, initialQuery, initialImageUrl }) {
   const [activeTab, setActiveTab] = useState('search'); // 'search' | 'catalog'
@@ -495,7 +495,11 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                         className="btn-primary"
                         style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                       >
-                        <span>👁️</span> {t('openPdf')}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>{t('openPdf')}</span>
                       </button>
                       <a
                         href={pdfUrl}

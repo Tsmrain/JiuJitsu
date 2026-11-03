@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './FeedbackView.css';
 import { getTranslation } from '../i18n/translations';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../api/config';
 
 export default function FeedbackView({ user, result, tecnica, onReset, idioma }) {
   const [videoError, setVideoError] = useState(false);

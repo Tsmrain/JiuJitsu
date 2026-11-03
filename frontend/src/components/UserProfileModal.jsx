@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { getTranslation } from '../i18n/translations';
+import { API_BASE } from '../api/config';
 
 export default function UserProfileModal({ isOpen, user, onClose, onUpdateSuccess, onLogout, idioma, onLanguageChange }) {
   const [nombre, setNombre] = useState(user?.nombre_completo || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [selectedIdioma, setSelectedIdioma] = useState(user?.idioma_preferido || idioma || 'es');
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
         payload.password = password;
       }
 
-      const res = await fetch(`http://localhost:8000/api/v1/auth/usuarios/${user.user_id}`, {
+      const res = await fetch(`${API_BASE}/api/v1/auth/usuarios/${user.user_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -151,11 +153,49 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
 
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>{t('newPassword')}</label>
-            <input 
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder={t('passwordPlaceholder')}
-              style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                value={password} 
+                onChange={e => setPassword(e.target.value)}
+                placeholder={t('passwordPlaceholder')}
+                style={{ width: '100%', padding: '0.65rem 2.8rem 0.65rem 0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+              />
+              <button
+                type="button"
+                data-testid="toggle-profile-password-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                style={{
+                  position: 'absolute',
+                  right: '0.3rem',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.4rem',
+                  minWidth: '44px',
+                  minHeight: '44px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.7)',
+                  outline: 'none'
+                }}
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.75rem', marginTop: '0.5rem', minHeight: '44px' }}>

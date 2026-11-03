@@ -23,7 +23,7 @@ blue "▸ Verificando integridad de mlx-embeddings..."
 "$ROOT/scripts/reapply_mlx_patch.sh" || die "mlx-embeddings perdió el patch. Corre ./scripts/reapply_mlx_patch.sh manualmente."
 
 blue "▸ Levantando Docker..."
-docker compose -f infrastructure/docker-compose.yml up -d
+docker compose --env-file backend/.env -f infrastructure/docker-compose.yml up -d
 
 blue "▸ Esperando Postgres healthy..."
 status="starting"

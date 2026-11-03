@@ -28,7 +28,7 @@ pkill -f "vite --host" 2>/dev/null || true
 green "  Frontend detenido"
 
 blue "▸ Deteniendo contenedores..."
-docker compose -f infrastructure/docker-compose.yml down
+docker compose --env-file backend/.env -f infrastructure/docker-compose.yml down
 green "  Contenedores detenidos"
 echo
 green "✅ Sistema detenido."

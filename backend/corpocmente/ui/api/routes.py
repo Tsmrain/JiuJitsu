@@ -549,12 +549,10 @@ async def consultar_evaluacion(
         except Exception:
             pass
 
-    if not nombres_articulaciones_criticas and articulaciones_criticas:
-        from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
-        nombres_articulaciones_criticas = [
-            COCO_JOINT_NAMES_EN[idx] if 0 <= idx < len(COCO_JOINT_NAMES_EN) else f"Joint {idx}"
-            for idx in articulaciones_criticas
-        ]
+    caller_idioma = caller.get("idioma") or get_user_idioma(caller.get("uid")) or "es"
+    from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
+    joints_source = nombres_articulaciones_criticas or articulaciones_criticas or []
+    nombres_articulaciones_criticas = obtener_nombres_articulaciones(joints_source, idioma=caller_idioma)
 
     if timestamp_error_segundos is None:
         timestamp_error_segundos = 0.0
@@ -1364,7 +1362,7 @@ async def listar_manuales_pdf(
 ):
     """
     Retorna la lista de manuales en formato PDF disponibles en la biblioteca.
-    Devuelve una lista JSON con los nombres de los PDFs disponibles.
+    Devuelve una lista JSON con los nombres de los PDFs disponibles en backend/storage/manuales.
     Requiere autenticación.
     """
     auth_header = authorization or (f"Bearer {token}" if token else None)
@@ -1373,8 +1371,6 @@ async def listar_manuales_pdf(
     require_auth(auth_header)
     repo_root = Path(__file__).resolve().parents[4]
     search_dirs = [
-        repo_root,
-        repo_root / "data" / "manuales",
         repo_root / "backend" / "storage" / "manuales"
     ]
     manuales_dict = {}
@@ -1385,19 +1381,7 @@ async def listar_manuales_pdf(
                     if p.name not in manuales_dict:
                         manuales_dict[p.name] = p
 
-    nombres_prioritarios = [
-        "Jiu-Jitsu University.pdf",
-        "BJJ-GuiaCompleto.pdf",
-        "manual-fundamental-arataba-de-jiu-jitsu.pdf"
-    ]
-    resultado = []
-    for nom in nombres_prioritarios:
-        if nom in manuales_dict:
-            resultado.append(nom)
-    for nom in sorted(manuales_dict.keys()):
-        if nom not in resultado and "matplotlib" not in str(manuales_dict[nom]):
-            resultado.append(nom)
-
+    resultado = [nom for nom in sorted(manuales_dict.keys()) if "matplotlib" not in str(manuales_dict[nom])]
     return resultado
 
 
@@ -1418,8 +1402,6 @@ async def servir_manual_pdf(
     safe_name = os.path.basename(filename)
     repo_root = Path(__file__).resolve().parents[4]
     candidates = [
-        repo_root / safe_name,
-        repo_root / "data" / "manuales" / safe_name,
         repo_root / "backend" / "storage" / "manuales" / safe_name,
     ]
     encontrado = next((c for c in candidates if c.exists() and c.is_file()), None)

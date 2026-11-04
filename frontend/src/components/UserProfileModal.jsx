@@ -206,6 +206,7 @@ export default function UserProfileModal({ isOpen, user, onClose, onUpdateSucces
         <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '1.5rem 0' }} />
 
         <button 
+          data-testid="logout-btn"
           onClick={onLogout} 
           className="btn-secondary" 
           style={{ width: '100%', padding: '0.75rem', color: '#ff6b6b', borderColor: '#ff6b6b', minHeight: '44px' }}

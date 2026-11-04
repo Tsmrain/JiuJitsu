@@ -5,7 +5,7 @@ import logging
 from typing import List, Optional, Union, Dict, Any
 from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException, status, Header
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 import urllib.request
 import urllib.parse
 import json
@@ -30,6 +30,14 @@ class SignupRequest(BaseModel):
     password: str
     rol: str = "alumno" # Solo 'alumno' o 'profesor'
     sucursal_id: Optional[UUID] = None
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v = v.strip()
+        if not re.match(r"^[a-zA-Z0-9_]+$", v):
+            raise ValueError("El nombre de usuario solo puede contener letras, números y guiones bajos (sin espacios ni caracteres especiales)")
+        return v
 
 class LoginResponse(BaseModel):
     token: str
@@ -675,6 +683,12 @@ async def cambiar_sucursal_usuario(
 async def get_mi_perfil(authorization: Optional[str] = Header(None)):
     """Retorna el perfil completo del usuario autenticado actual, incluyendo su idioma_preferido."""
     caller = require_auth(authorization)
+    raw_token = ""
+    if authorization and authorization.startswith("Bearer "):
+        raw_token = authorization.split("Bearer ", 1)[1].strip()
+    elif authorization:
+        raw_token = authorization.strip()
+
     uid = caller.get("uid")
     db = get_db()
     try:
@@ -692,7 +706,7 @@ async def get_mi_perfil(authorization: Optional[str] = Header(None)):
 
     if not profile:
         return LoginResponse(
-            token="",
+            token=raw_token,
             user_id=UUID(uid),
             nombre_completo=caller.get("email", "").split("@")[0].replace(".", " ").title(),
             username=caller.get("email", "").split("@")[0],
@@ -716,7 +730,7 @@ async def get_mi_perfil(authorization: Optional[str] = Header(None)):
             pass
 
     return LoginResponse(
-        token="",
+        token=raw_token,
         user_id=UUID(profile["id"]),
         nombre_completo=profile["nombre_completo"],
         username=profile["username"],
@@ -1010,12 +1024,10 @@ async def listar_evaluaciones_alumno(
         else:
             evaluacion["timestamp_error_segundos"] = evaluacion.get("timestamp_error_segundos", 0.0)
 
-        if not evaluacion["nombres_articulaciones_criticas"] and evaluacion["articulaciones_criticas"]:
-            from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
-            evaluacion["nombres_articulaciones_criticas"] = [
-                COCO_JOINT_NAMES_EN[idx] if 0 <= idx < len(COCO_JOINT_NAMES_EN) else f"Joint {idx}"
-                for idx in evaluacion["articulaciones_criticas"]
-            ]
+        user_idioma = get_user_idioma(alumno_id)
+        from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
+        joints_source = evaluacion["nombres_articulaciones_criticas"] or evaluacion["articulaciones_criticas"] or []
+        evaluacion["nombres_articulaciones_criticas"] = obtener_nombres_articulaciones(joints_source, idioma=user_idioma)
 
         critico_frame = f"/tmp/corpocmente_frames/critico_{eval_id_str}.jpg"
         if os.path.exists(critico_frame):

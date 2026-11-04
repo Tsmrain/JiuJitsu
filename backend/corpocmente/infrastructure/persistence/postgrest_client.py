@@ -3,7 +3,7 @@ import requests
 
 class PostgrestClient:
     def __init__(self, base_url: str = None):
-        self.base_url = base_url or os.getenv("POSTGREST_URL", "http://localhost:3001")
+        self.base_url = base_url or os.getenv("POSTGREST_URL", "http://localhost:3000")
 
     def get(self, table: str, params: dict = None, token: str = None):
         headers = {}

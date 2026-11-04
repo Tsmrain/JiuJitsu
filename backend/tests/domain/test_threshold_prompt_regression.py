@@ -176,7 +176,15 @@ class TestNombresArticulacionesCriticas:
         mock_qdrant.buscar_maxima_diferencia.return_value = vec_result
 
         facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
-        resultado = facade.ejecutar_analisis_completo("/tmp/nonexistent.mp4", uuid4(), "Mount Escape")
-        assert resultado.articulaciones_criticas == [7, 13]
-        assert resultado.nombres_articulaciones_criticas == ["Left Elbow", "Left Knee"]
+        resultado_en = facade.ejecutar_analisis_completo("/tmp/nonexistent.mp4", uuid4(), "Mount Escape", idioma="en")
+        assert resultado_en.articulaciones_criticas == [7, 13]
+        assert resultado_en.nombres_articulaciones_criticas == ["Left Elbow", "Left Knee"]
+
+        resultado_es = facade.ejecutar_analisis_completo("/tmp/nonexistent.mp4", uuid4(), "Mount Escape", idioma="es")
+        assert resultado_es.articulaciones_criticas == [7, 13]
+        assert resultado_es.nombres_articulaciones_criticas == ["Codo izquierdo", "Rodilla izquierda"]
+
+        resultado_pt = facade.ejecutar_analisis_completo("/tmp/nonexistent.mp4", uuid4(), "Mount Escape", idioma="pt")
+        assert resultado_pt.articulaciones_criticas == [7, 13]
+        assert resultado_pt.nombres_articulaciones_criticas == ["Cotovelo Esquerdo", "Joelho Esquerdo"]
 

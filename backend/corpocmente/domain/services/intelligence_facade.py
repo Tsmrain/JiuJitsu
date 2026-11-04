@@ -99,11 +99,24 @@ class IntelligenceAnalysisFacade:
             similitud = dtw_res["score_similitud"]
             frame_alumno_critico = dtw_res["frame_alumno_critico"]
             arts_criticas = dtw_res.get("articulaciones_criticas", [])
-            from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
-            discrepancias_detectadas = [
-                f"Biomechanical deviation at {COCO_JOINT_NAMES_EN[idx] if idx < len(COCO_JOINT_NAMES_EN) else f'Joint #{idx}'}: misalignment vs. the instructor's pattern."
-                for idx in arts_criticas
-            ]
+            from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
+            nombres_arts = obtener_nombres_articulaciones(arts_criticas, idioma=idioma)
+            lang_clean = (idioma or "es").lower().strip()
+            if lang_clean in ("pt", "portuguese", "português", "portugues"):
+                discrepancias_detectadas = [
+                    f"Desvio biomecânico em {art}: desalinhamento em relação ao padrão do instrutor."
+                    for art in nombres_arts
+                ]
+            elif lang_clean in ("en", "english"):
+                discrepancias_detectadas = [
+                    f"Biomechanical deviation at {art}: misalignment vs. the instructor's pattern."
+                    for art in nombres_arts
+                ]
+            else:
+                discrepancias_detectadas = [
+                    f"Desviación biomecánica en {art}: desalineación respecto al patrón del instructor."
+                    for art in nombres_arts
+                ]
             dtw_distance = dtw_res.get("dtw_distance")
             dtw_normalizado = dtw_res.get("dtw_normalizado")
             kpts_critico = secuencia_alumno[frame_alumno_critico] if frame_alumno_critico < len(secuencia_alumno) else None
@@ -145,6 +158,7 @@ class IntelligenceAnalysisFacade:
                     clean_output_path=out_clean_path,
                     tecnica_nombre=tecnica_nombre,
                     persona_idx=persona_idx,
+                    idioma=idioma,
                 )
                 if os.path.isfile(out_clean_path):
                     frame_limpio = out_clean_path
@@ -326,13 +340,8 @@ class IntelligenceAnalysisFacade:
             except Exception as e_fps:
                 logger.warning("No se pudo calcular FPS para timestamp_error_segundos: %s", e_fps)
 
-        from corpocmente.infrastructure.ai.adapters import COCO_JOINT_NAMES_EN
-        nombres_articulaciones_criticas = []
-        for idx in (arts_criticas or []):
-            if 0 <= idx < len(COCO_JOINT_NAMES_EN):
-                nombres_articulaciones_criticas.append(COCO_JOINT_NAMES_EN[idx])
-            else:
-                nombres_articulaciones_criticas.append(f"Joint {idx}")
+        from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
+        nombres_articulaciones_criticas = obtener_nombres_articulaciones(arts_criticas or [], idioma=idioma)
 
         return AnalisisResultDTO(
             similitud=similitud,

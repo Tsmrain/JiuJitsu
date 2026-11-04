@@ -30,6 +30,8 @@ COCO_JOINT_NAMES = [
     "Tobillo derecho",
 ]
 
+COCO_JOINT_NAMES_ES = COCO_JOINT_NAMES
+
 COCO_JOINT_NAMES_EN = [
     "Nose",
     "Left Eye",
@@ -49,6 +51,75 @@ COCO_JOINT_NAMES_EN = [
     "Left Ankle",
     "Right Ankle",
 ]
+
+COCO_JOINT_NAMES_PT = [
+    "Nariz",
+    "Olho Esquerdo",
+    "Olho Direito",
+    "Orelha Esquerda",
+    "Orelha Direita",
+    "Ombro Esquerdo",
+    "Ombro Direito",
+    "Cotovelo Esquerdo",
+    "Cotovelo Direito",
+    "Pulso Esquerdo",
+    "Pulso Direito",
+    "Quadril Esquerdo",
+    "Quadril Direito",
+    "Joelho Esquerdo",
+    "Joelho Direito",
+    "Tornozelo Esquerdo",
+    "Tornozelo Direito",
+]
+
+
+def obtener_nombres_articulaciones(indices_o_nombres: list, idioma: str = "es") -> list:
+    """
+    Traduce una lista de índices COCO (0..16) o nombres de articulaciones en cualquier idioma
+    hacia el idioma solicitado ('es', 'pt', 'en').
+    """
+    if not indices_o_nombres:
+        return []
+
+    lang = (idioma or "es").lower().strip()
+    if lang in ("pt", "portuguese", "português", "portugues"):
+        target_list = COCO_JOINT_NAMES_PT
+        joint_prefix = "Articulação"
+    elif lang in ("en", "english"):
+        target_list = COCO_JOINT_NAMES_EN
+        joint_prefix = "Joint"
+    else:
+        target_list = COCO_JOINT_NAMES_ES
+        joint_prefix = "Articulación"
+
+    # Mapeo inverso de nombres normalizados a índice COCO
+    name_to_idx = {}
+    for i, n in enumerate(COCO_JOINT_NAMES_EN):
+        name_to_idx[n.lower()] = i
+    for i, n in enumerate(COCO_JOINT_NAMES_ES):
+        name_to_idx[n.lower()] = i
+    for i, n in enumerate(COCO_JOINT_NAMES_PT):
+        name_to_idx[n.lower()] = i
+
+    result = []
+    for item in indices_o_nombres:
+        idx = None
+        if isinstance(item, int):
+            idx = item
+        elif isinstance(item, str):
+            clean = item.strip().lower()
+            if clean in name_to_idx:
+                idx = name_to_idx[clean]
+            elif clean.isdigit():
+                idx = int(clean)
+            else:
+                result.append(item)
+                continue
+        if idx is not None and 0 <= idx < len(target_list):
+            result.append(target_list[idx])
+        elif idx is not None:
+            result.append(f"{joint_prefix} #{idx}")
+    return result
 
 def log_ram_usage(tag: str) -> None:
     import psutil
@@ -461,6 +532,7 @@ class YOLOPoseAdapter:
         clean_output_path: Optional[str] = None,
         tecnica_nombre: str = "",
         persona_idx: Optional[int] = None,
+        idioma: str = "es",
     ) -> str:
         """
         Extrae el fotograma exacto con mayor diferencia biomecánica del video del alumno
@@ -574,8 +646,9 @@ class YOLOPoseAdapter:
                 cv2.circle(frame, (px, py), 12, (0, 50, 255), -1, lineType=cv2.LINE_AA)
                 cv2.circle(frame, (px, py), 4, (255, 255, 255), -1, lineType=cv2.LINE_AA)
 
-                # Etiqueta con el nombre de la articulación
-                nombre_art = COCO_JOINT_NAMES_EN[art_idx] if art_idx < len(COCO_JOINT_NAMES_EN) else f"Joint {art_idx}"
+                # Etiqueta con el nombre traducido de la articulación
+                nombres_trad = obtener_nombres_articulaciones([art_idx], idioma=idioma)
+                nombre_art = nombres_trad[0] if nombres_trad else f"Joint {art_idx}"
                 label = f"{nombre_art} [ERROR]"
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 scale = 0.55

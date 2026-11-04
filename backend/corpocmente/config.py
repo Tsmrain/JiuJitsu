@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     # JWT para autenticación de usuarios
     JWT_SECRET_KEY: str = "dev_jwt_secret_change_in_prod_min_32_chars_long"
     JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRATION_HOURS: int = 24
+    JWT_EXPIRATION_HOURS: int = 168
     
     model_config = SettingsConfigDict(
         env_file=[

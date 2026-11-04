@@ -29,7 +29,14 @@ function App() {
   const t = (key) => getTranslation(idioma, key);
 
   // Estado de Autenticación
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('auth_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
   const [originalAdminUser, setOriginalAdminUser] = useState(null); // Para despersonalización
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -43,6 +50,32 @@ function App() {
   const isPassActive = !isAlumno || (user?.estado_suscripcion === 'activo' && !isExpired);
 
   useEffect(() => {
+    // Restaurar y validar sesión activa desde localStorage
+    const savedToken = localStorage.getItem('auth_token');
+    if (savedToken) {
+      fetch(`${API_BASE}/api/v1/auth/me`, {
+        headers: { 'Authorization': `Bearer ${savedToken}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Token expirado o no autorizado');
+        return res.json();
+      })
+      .then(userData => {
+        const fullUser = { ...userData, token: savedToken };
+        setUser(fullUser);
+        localStorage.setItem('auth_user', JSON.stringify(fullUser));
+        if (userData?.idioma_preferido) {
+          handleLanguageChange(userData.idioma_preferido);
+        }
+      })
+      .catch(err => {
+        console.warn('Sesión no restaurada:', err);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        setUser(null);
+      });
+    }
+
     // Hook de testing visual para automatizaciones Playwright / E2E
     window.__setAppState = (state, resData, tecData, extra) => {
       if (state) setAppState(state);
@@ -647,6 +680,10 @@ function App() {
         idioma={idioma}
         onClose={() => setIsLoginOpen(false)} 
         onLoginSuccess={(userData) => {
+          if (userData?.token) {
+            localStorage.setItem('auth_token', userData.token);
+            localStorage.setItem('auth_user', JSON.stringify(userData));
+          }
           setUser(userData);
           const lang = userData?.idioma_preferido || idioma || localStorage.getItem('app_idioma') || 'es';
           handleLanguageChange(lang);
@@ -654,6 +691,8 @@ function App() {
             setAppState('PROFESOR_PANEL');
           } else if (userData.rol === 'alumno') {
             setAppState('IDLE');
+          } else if (userData.rol === 'admin') {
+            setAppState('ADMIN_PANEL');
           }
         }} 
       />
@@ -667,17 +706,28 @@ function App() {
           onLanguageChange={handleLanguageChange}
           onClose={() => setIsProfileOpen(false)} 
           onUpdateSuccess={(userData) => {
-            setUser(prev => ({
-              ...prev,
-              ...userData,
-              estado_suscripcion: userData?.estado_suscripcion || prev?.estado_suscripcion || 'pendiente',
-              fecha_expiracion: userData?.fecha_expiracion !== undefined ? userData.fecha_expiracion : prev?.fecha_expiracion
-            }));
+            setUser(prev => {
+              const updated = {
+                ...prev,
+                ...userData,
+                estado_suscripcion: userData?.estado_suscripcion || prev?.estado_suscripcion || 'pendiente',
+                fecha_expiracion: userData?.fecha_expiracion !== undefined ? userData.fecha_expiracion : prev?.fecha_expiracion
+              };
+              localStorage.setItem('auth_user', JSON.stringify(updated));
+              return updated;
+            });
             if (userData?.idioma_preferido) {
               handleLanguageChange(userData.idioma_preferido);
             }
           }}
-          onLogout={() => { setUser(null); setOriginalAdminUser(null); setIsProfileOpen(false); setAppState('IDLE'); }}
+          onLogout={() => {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+            setUser(null);
+            setOriginalAdminUser(null);
+            setIsProfileOpen(false);
+            setAppState('ADMIN_PANEL');
+          }}
         />
       )}
     </div>

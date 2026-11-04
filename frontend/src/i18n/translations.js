@@ -158,6 +158,7 @@ export const translations = {
     adminRoleReserved: "El rol de Administrador es exclusivo y reservado.",
     incorrectCredentials: "Credenciales incorrectas.",
     errorRegistering: "Error al registrar la cuenta.",
+    usernameFormatError: "El nombre de usuario solo puede contener letras, números y guiones bajos (sin espacios).",
 
     // Admin Sucursales (Academy Management)
     globalAcademyManagement: "Gestión Global de Sedes",
@@ -404,6 +405,7 @@ export const translations = {
     adminRoleReserved: "A função de Administrador é exclusiva e reservada.",
     incorrectCredentials: "Credenciais incorretas.",
     errorRegistering: "Erro ao registrar conta.",
+    usernameFormatError: "O nome de usuário só pode conter letras, números e sublinhados (sem espaços).",
 
     // Admin Sucursales (Academy Management)
     globalAcademyManagement: "Gestão Global de Unidades",
@@ -650,6 +652,7 @@ export const translations = {
     adminRoleReserved: "The Administrator role is exclusive and reserved.",
     incorrectCredentials: "Incorrect credentials.",
     errorRegistering: "Error registering account.",
+    usernameFormatError: "Username can only contain letters, numbers, and underscores (no spaces).",
 
     // Admin Sucursales (Academy Management)
     globalAcademyManagement: "Global Academy Management",

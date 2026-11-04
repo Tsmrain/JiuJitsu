@@ -23,6 +23,8 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const isInvalidUsernameFormat = signupUsername.length > 0 && !/^[a-zA-Z0-9_]+$/.test(signupUsername);
+
   useEffect(() => {
     if (isOpen) {
       // Load branches for signup form
@@ -83,6 +85,12 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+
+    if (isInvalidUsernameFormat) {
+      setErrorMsg(t('usernameFormatError'));
+      setLoading(false);
+      return;
+    }
 
     if (signupRol === 'admin') {
       setErrorMsg(t('adminRoleReserved'));
@@ -148,6 +156,8 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
         {/* Tabs header */}
         <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
           <button
+            type="button"
+            data-testid="tab-login-btn"
             onClick={() => { setTab('login'); setErrorMsg(''); }}
             style={{
               flex: 1, padding: '0.75rem', background: 'none', border: 'none',
@@ -159,6 +169,8 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
             {t('loginTab')}
           </button>
           <button
+            type="button"
+            data-testid="tab-signup-btn"
             onClick={() => { setTab('signup'); setErrorMsg(''); }}
             style={{
               flex: 1, padding: '0.75rem', background: 'none', border: 'none',
@@ -250,7 +262,9 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
             </div>
 
             <button 
-              type="submit" disabled={loading}
+              type="submit" 
+              disabled={loading}
+              data-testid="login-submit-btn"
               className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {loading ? t('signingIn') : t('signIn')}
@@ -278,10 +292,28 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
                   {t('usernameField')}
                 </label>
                 <input 
-                  type="text" required value={signupUsername} onChange={e => setSignupUsername(e.target.value)}
+                  type="text" 
+                  required 
+                  pattern="[a-zA-Z0-9_]+"
+                  data-testid="signup-username-input"
+                  value={signupUsername} 
+                  onChange={e => setSignupUsername(e.target.value)}
                   placeholder="lucas_jiujitsu"
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.65rem', 
+                    borderRadius: '8px', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: isInvalidUsernameFormat ? '1px solid #ff6b6b' : '1px solid rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    boxSizing: 'border-box'
+                  }}
                 />
+                {isInvalidUsernameFormat && (
+                  <span data-testid="username-error-msg" style={{ display: 'block', fontSize: '0.75rem', color: '#ff6b6b', marginTop: '0.25rem' }}>
+                    {t('usernameFormatError')}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -377,8 +409,21 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
             </div>
 
             <button 
-              type="submit" disabled={loading}
-              className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              type="submit" 
+              disabled={loading || isInvalidUsernameFormat}
+              data-testid="signup-submit-btn"
+              className="btn btn-primary" 
+              style={{ 
+                marginTop: '0.5rem', 
+                width: '100%', 
+                padding: '0.85rem', 
+                minHeight: '44px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                opacity: (loading || isInvalidUsernameFormat) ? 0.6 : 1,
+                cursor: (loading || isInvalidUsernameFormat) ? 'not-allowed' : 'pointer'
+              }}
             >
               {loading ? t('creatingAccount') : t('signupTab')}
             </button>

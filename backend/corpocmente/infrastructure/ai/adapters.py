@@ -151,6 +151,91 @@ class YOLOPoseAdapter:
     def __init__(self, colab_url: str = None):
         self.colab_url = colab_url if colab_url is not None else os.getenv("COLAB_TUNNEL_URL", "").strip()
         self._model_cache = None
+        self._depth_model_cache = None
+
+    @staticmethod
+    def _calcular_iou(box_a: list, box_b: list) -> float:
+        """Calcula Intersection over Union (IoU) entre dos cajas [x1, y1, x2, y2]."""
+        xA = max(box_a[0], box_b[0])
+        yA = max(box_a[1], box_b[1])
+        xB = min(box_a[2], box_b[2])
+        yB = min(box_a[3], box_b[3])
+        inter_area = max(0.0, xB - xA) * max(0.0, yB - yA)
+        box_a_area = max(0.0, box_a[2] - box_a[0]) * max(0.0, box_a[3] - box_a[1])
+        box_b_area = max(0.0, box_b[2] - box_b[0]) * max(0.0, box_b[3] - box_b[1])
+        union_area = box_a_area + box_b_area - inter_area
+        if union_area <= 0:
+            return 0.0
+        return float(inter_area / union_area)
+
+    def _resolver_oclusion_por_profundidad(
+        self,
+        caja_a: list,
+        caja_b: list,
+        depth_map
+    ) -> dict:
+        """
+        Desambigua oclusiones entre dos cajas superpuestas usando el mapa métrico de profundidad.
+        Determina qué atleta está en primer plano (menor profundidad métrica) y cuál está en segundo plano.
+        """
+        import numpy as np
+
+        iou = self._calcular_iou(caja_a, caja_b)
+        if depth_map is None:
+            return {
+                "atleta_frontal": "a",
+                "profundidad_a": 1.5,
+                "profundidad_b": 1.5,
+                "delta_z": 0.0,
+                "iou": round(iou, 3),
+            }
+
+        H, W = depth_map.shape[:2]
+        x1_a, y1_a = int(max(0, min(W - 1, caja_a[0]))), int(max(0, min(H - 1, caja_a[1])))
+        x2_a, y2_a = int(max(0, min(W, caja_a[2]))), int(max(0, min(H, caja_a[3])))
+        x1_b, y1_b = int(max(0, min(W - 1, caja_b[0]))), int(max(0, min(H - 1, caja_b[1])))
+        x2_b, y2_b = int(max(0, min(W, caja_b[2]))), int(max(0, min(H, caja_b[3])))
+
+        crop_a = depth_map[y1_a:max(y1_a + 1, y2_a), x1_a:max(x1_a + 1, x2_a)]
+        crop_b = depth_map[y1_b:max(y1_b + 1, y2_b), x1_b:max(x1_b + 1, x2_b)]
+
+        valid_a = crop_a[crop_a > 0] if crop_a.size > 0 else np.array([])
+        valid_b = crop_b[crop_b > 0] if crop_b.size > 0 else np.array([])
+
+        depth_a = float(np.median(valid_a)) if len(valid_a) > 0 else 1.5
+        depth_b = float(np.median(valid_b)) if len(valid_b) > 0 else 1.5
+
+        frontal = "a" if depth_a <= depth_b else "b"
+
+        return {
+            "atleta_frontal": frontal,
+            "profundidad_a": round(depth_a, 3),
+            "profundidad_b": round(depth_b, 3),
+            "delta_z": round(abs(depth_a - depth_b), 3),
+            "iou": round(iou, 3),
+        }
+
+    def _get_depth_model(self):
+        if not hasattr(self, "_depth_model_cache") or self._depth_model_cache is None:
+            os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/ultralytics")
+            import torch
+            from ultralytics import YOLO
+            _orig = torch.load
+            def _safe_load(*a, **kw):
+                kw["weights_only"] = False
+                return _orig(*a, **kw)
+            torch.load = _safe_load
+            candidates = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__))))), "yolo26n-depth.pt"),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__))))), "storage/models/yolo26n-depth.pt"),
+                "storage/models/yolo26n-depth.pt",
+                "yolo26n-depth.pt",
+            ]
+            weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-depth.pt")
+            self._depth_model_cache = YOLO(weights)
+        return self._depth_model_cache
 
     def _get_model(self):
         if not hasattr(self, "_model_cache") or self._model_cache is None:
@@ -180,7 +265,8 @@ class YOLOPoseAdapter:
         persona_idx_inicial: Optional[int] = None,
         max_disp_norm: float = 0.25,
         evaluacion_id: Optional[str] = None,
-        tecnica_id: Optional[str] = None
+        tecnica_id: Optional[str] = None,
+        use_depth: bool = False,
     ) -> dict:
         """
         Extrae la secuencia temporal completa de keypoints (133 dims por frame) usando YOLO
@@ -332,6 +418,8 @@ class YOLOPoseAdapter:
 
             secuencia_kpts = []
             personas_rastreadas = {}
+            personas_depth = {}
+            oclusiones_detectadas = 0
             frames_con_persona = 0
             frames_evaluados = 0
             target_idx = persona_idx_inicial if persona_idx_inicial is not None else 0
@@ -409,11 +497,58 @@ class YOLOPoseAdapter:
                         if sin_reflejos:
                             candidatos = sin_reflejos
 
+                # Detección y desambiguación de oclusiones por profundidad métrica (> 40% IoU)
+                cand_depths = {}
+                if use_depth and len(candidatos) > 1:
+                    def _extraer_caja_c(cand):
+                        m = (cand[:, 2] > 0.3) & (cand[:, 0] > 0)
+                        pt = cand[m, :2]
+                        if len(pt) >= 2:
+                            return [float(pt[:, 0].min()), float(pt[:, 1].min()), float(pt[:, 0].max()), float(pt[:, 1].max())]
+                        return [0.0, 0.0, 0.0, 0.0]
+
+                    cajas_cand = [_extraer_caja_c(c) for c in candidatos]
+                    hay_superposicion = False
+                    for i in range(len(cajas_cand)):
+                        for j in range(i + 1, len(cajas_cand)):
+                            if self._calcular_iou(cajas_cand[i], cajas_cand[j]) > 0.40:
+                                hay_superposicion = True
+                                break
+                        if hay_superposicion:
+                            break
+
+                    if hay_superposicion:
+                        oclusiones_detectadas += 1
+                        frame_img = getattr(r, "orig_img", None)
+                        if frame_img is not None:
+                            try:
+                                depth_model = self._get_depth_model()
+                                depth_res = depth_model.predict(source=frame_img, verbose=False, device=_device)
+                                if depth_res and hasattr(depth_res[0], "depth") and depth_res[0].depth is not None:
+                                    depth_map = depth_res[0].depth.data.cpu().numpy().squeeze()
+                                    H_d, W_d = depth_map.shape[:2]
+                                    for c_idx, box_c in enumerate(cajas_cand):
+                                        x1, y1 = int(max(0, min(W_d - 1, box_c[0]))), int(max(0, min(H_d - 1, box_c[1])))
+                                        x2, y2 = int(max(0, min(W_d, box_c[2]))), int(max(0, min(H_d, box_c[3])))
+                                        crop = depth_map[y1:max(y1 + 1, y2), x1:max(x1 + 1, x2)]
+                                        valid = crop[crop > 0] if crop.size > 0 else np.array([])
+                                        cand_depths[c_idx] = float(np.median(valid)) if len(valid) > 0 else 1.5
+
+                                    for i in range(len(cajas_cand)):
+                                        for j in range(i + 1, len(cajas_cand)):
+                                            if self._calcular_iou(cajas_cand[i], cajas_cand[j]) > 0.40:
+                                                oc_res = self._resolver_oclusion_por_profundidad(cajas_cand[i], cajas_cand[j], depth_map)
+                                                logger.debug("Oclusión resuelta f=%d (c%d vs c%d): %s", f_idx, i, j, oc_res)
+                            except Exception as e_dm:
+                                logger.debug("Error procesando profundidad en frame %d: %s", f_idx, e_dm)
+
                 assigned_trackers = set()
                 if not personas_rastreadas:
                     candidatos.sort(key=lambda p: float(p[p[:, 2] > 0.3, 1].mean()), reverse=True)
                     for c_idx, c in enumerate(candidatos):
                         personas_rastreadas[c_idx] = c
+                        if c_idx in cand_depths:
+                            personas_depth[c_idx] = cand_depths[c_idx]
                     assigned_trackers.update(personas_rastreadas.keys())
                 else:
                     cost_matrix = {}
@@ -428,6 +563,12 @@ class YOLOPoseAdapter:
                                 c1 = c[c[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
                                 c0 = t_pose[t_pose[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
                                 cost = float(np.linalg.norm(c1 - c0))
+
+                            # Penalización métrica de profundidad si hay oclusión y datos z
+                            if use_depth and t_idx in personas_depth and c_idx in cand_depths:
+                                delta_z = abs(cand_depths[c_idx] - personas_depth[t_idx])
+                                cost += 0.3 * (delta_z / 2.0)
+
                             cost_matrix[(t_idx, c_idx)] = cost
 
                     sorted_pairs = sorted(cost_matrix.items(), key=lambda item: item[1])
@@ -440,6 +581,8 @@ class YOLOPoseAdapter:
                             assigned_trackers.add(t_idx)
                             assigned_cands.add(c_idx)
                             new_poses[t_idx] = candidatos[c_idx]
+                            if c_idx in cand_depths:
+                                personas_depth[t_idx] = cand_depths[c_idx]
 
                     for t_idx, c_pose in new_poses.items():
                         personas_rastreadas[t_idx] = c_pose
@@ -462,7 +605,8 @@ class YOLOPoseAdapter:
                 "frame_idxs": list(range(len(secuencia_kpts))),
                 "total_frames": frames_evaluados,
                 "frames_con_persona": frames_con_persona,
-                "cobertura": round(cobertura, 4)
+                "cobertura": round(cobertura, 4),
+                "oclusiones_detectadas": oclusiones_detectadas
             }
         except Exception as e_local:
             logger.debug(f"YOLO local fallo ({e_local}). Fallback determinista.")

@@ -1,12 +1,18 @@
-# Datos locales (NUNCA commitear)
+# Datos locales y binarios (NUNCA commitear)
 /data/
-data/manuales/
 !backend/data/
 !backend/data/golden_test.jsonl
-storage/
+/storage/
 backend/storage/
-ProyectoGrado/pg_data/
-ProyectoGrado/qdrant_storage/
+venv_mlx/
+runs/
+*.mov
+*.mp4
+*.pt
+*.pdf
+*.zip
+client_secret_*.json
+client_secret*.json
 
 # Secretos
 .env
@@ -49,7 +55,6 @@ dist-ssr/
 project_context.md
 contexto_proyecto.md
 Codigo.py
-Contexto.py
 *.pdf
 *.mp4
 *.mov

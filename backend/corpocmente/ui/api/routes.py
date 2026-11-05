@@ -70,7 +70,16 @@ def get_yolo_pose_model():
             kwargs["weights_only"] = False
             return _orig_torch_load(*args, **kwargs)
         torch.load = _safe_torch_load
-        _yolo_pose_model = YOLO("yolo26n-pose.pt")
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parents[4]
+        candidates = [
+            str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
+            str(repo_root / "backend" / "yolo26n-pose.pt"),
+            "storage/models/yolo26n-pose.pt",
+            "yolo26n-pose.pt",
+        ]
+        weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-pose.pt")
+        _yolo_pose_model = YOLO(weights)
     return _yolo_pose_model
 
 router = APIRouter(prefix="/api/v1", tags=["Evaluaciones", "Conocimiento"])

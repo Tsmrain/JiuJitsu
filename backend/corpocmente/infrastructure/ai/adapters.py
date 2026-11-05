@@ -226,11 +226,10 @@ class YOLOPoseAdapter:
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
+            repo_root = Path(__file__).resolve().parents[4]
             candidates = [
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__))))), "yolo26n-depth.pt"),
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__))))), "storage/models/yolo26n-depth.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n-depth.pt"),
+                str(repo_root / "backend" / "yolo26n-depth.pt"),
                 "storage/models/yolo26n-depth.pt",
                 "yolo26n-depth.pt",
             ]
@@ -248,11 +247,10 @@ class YOLOPoseAdapter:
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
+            repo_root = Path(__file__).resolve().parents[4]
             candidates = [
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__))))), "yolo26n-seg.pt"),
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__))))), "storage/models/yolo26n-seg.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n-seg.pt"),
+                str(repo_root / "backend" / "yolo26n-seg.pt"),
                 "storage/models/yolo26n-seg.pt",
                 "yolo26n-seg.pt",
             ]
@@ -269,12 +267,11 @@ class YOLOPoseAdapter:
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
+            repo_root = Path(__file__).resolve().parents[4]
             candidates = [
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__))))), "storage/models/yolo26s_bjj_pose/weights/best.pt"),
-                "storage/models/yolo26s_bjj_pose/weights/best.pt",
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__))))), "yolo26n-pose.pt"),
+                str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
+                str(repo_root / "backend" / "yolo26n-pose.pt"),
                 "storage/models/yolo26n-pose.pt",
                 "yolo26n-pose.pt",
             ]
@@ -428,9 +425,12 @@ class YOLOPoseAdapter:
                 return _orig(*args, **kwargs)
             torch.load = _safe_load
 
+            repo_root = Path(__file__).resolve().parents[4]
             _candidates = [
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "yolo26n-pose.pt"),
-                os.path.join("storage", "models", "yolo26n-pose.pt"),
+                str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
+                str(repo_root / "backend" / "yolo26n-pose.pt"),
+                "storage/models/yolo26n-pose.pt",
                 "yolo26n-pose.pt",
                 "yolo11n-pose.pt",
             ]
@@ -805,9 +805,12 @@ class YOLOPoseAdapter:
             # Fallback excepcional solo si keypoints133 no fue provisto
             try:
                 from ultralytics import YOLO
+                repo_root = Path(__file__).resolve().parents[4]
                 _candidates = [
-                    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "yolo26n-pose.pt"),
-                    os.path.join("storage", "models", "yolo26n-pose.pt"),
+                    str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
+                    str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
+                    str(repo_root / "backend" / "yolo26n-pose.pt"),
+                    "storage/models/yolo26n-pose.pt",
                     "yolo26n-pose.pt",
                 ]
                 _weights = next((c for c in _candidates if os.path.exists(c)), "yolo26n-pose.pt")

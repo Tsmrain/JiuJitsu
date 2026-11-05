@@ -334,10 +334,10 @@ def main():
         model_path = args.master_model if args.master_model.is_absolute() else base_dir / args.master_model
     else:
         candidatos_modelo = [
-            base_dir / "backend" / "yolo26x-pose.pt",
-            base_dir / "yolo26x-pose.pt",
             base_dir / "storage" / "models" / "yolo26x-pose.pt",
             base_dir / "backend" / "storage" / "models" / "yolo26x-pose.pt",
+            base_dir / "backend" / "yolo26x-pose.pt",
+            base_dir / "yolo26x-pose.pt",
         ]
         model_path = next((c for c in candidatos_modelo if c.exists()), base_dir / "yolo26x-pose.pt")
 

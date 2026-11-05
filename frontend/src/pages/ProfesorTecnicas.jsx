@@ -794,6 +794,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                   </div>
                   <div className="tecnica-actions">
                     <button
+                      data-testid="open-theory-modal-btn"
                       className="btn-icon theory-btn"
                       onClick={() => setTheoryModalTecnica(tech)}
                     >
@@ -984,6 +985,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           isOpen={true}
           user={user}
           tecnica={theoryModalTecnica}
+          idioma={idioma}
           onClose={() => setTheoryModalTecnica(null)}
         />
       )}

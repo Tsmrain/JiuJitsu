@@ -104,7 +104,7 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
             if video_path:
                 tiene_video = True
                 filename = os.path.basename(video_path)
-                video_url = f"http://localhost:8000/static/videos/{filename}"
+                video_url = f"/static/videos/{filename}"
 
         resultados.append(TecnicaResponse(
             id=UUID(t["id"]),

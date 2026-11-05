@@ -152,6 +152,7 @@ class YOLOPoseAdapter:
         self.colab_url = colab_url if colab_url is not None else os.getenv("COLAB_TUNNEL_URL", "").strip()
         self._model_cache = None
         self._depth_model_cache = None
+        self._seg_model_cache = None
 
     @staticmethod
     def _calcular_iou(box_a: list, box_b: list) -> float:
@@ -237,6 +238,28 @@ class YOLOPoseAdapter:
             self._depth_model_cache = YOLO(weights)
         return self._depth_model_cache
 
+    def _get_seg_model(self):
+        if not hasattr(self, "_seg_model_cache") or self._seg_model_cache is None:
+            os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/ultralytics")
+            import torch
+            from ultralytics import YOLO
+            _orig = torch.load
+            def _safe_load(*a, **kw):
+                kw["weights_only"] = False
+                return _orig(*a, **kw)
+            torch.load = _safe_load
+            candidates = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__))))), "yolo26n-seg.pt"),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__))))), "storage/models/yolo26n-seg.pt"),
+                "storage/models/yolo26n-seg.pt",
+                "yolo26n-seg.pt",
+            ]
+            weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-seg.pt")
+            self._seg_model_cache = YOLO(weights)
+        return self._seg_model_cache
+
     def _get_model(self):
         if not hasattr(self, "_model_cache") or self._model_cache is None:
             import torch
@@ -267,6 +290,7 @@ class YOLOPoseAdapter:
         evaluacion_id: Optional[str] = None,
         tecnica_id: Optional[str] = None,
         use_depth: bool = False,
+        use_segmentation: Optional[bool] = None,
     ) -> dict:
         """
         Extrae la secuencia temporal completa de keypoints (133 dims por frame) usando YOLO
@@ -416,6 +440,13 @@ class YOLOPoseAdapter:
             log_ram_usage("post_yolo_load")
             results = model.predict(source=video_path, stream=True, verbose=False, conf=0.10, device=_device)
 
+            if use_segmentation is None:
+                try:
+                    from corpocmente.config import settings
+                    use_segmentation = getattr(settings, "USE_SEGMENTATION", False)
+                except Exception:
+                    use_segmentation = os.getenv("USE_SEGMENTATION", "false").lower() == "true"
+
             secuencia_kpts = []
             personas_rastreadas = {}
             personas_depth = {}
@@ -471,6 +502,37 @@ class YOLOPoseAdapter:
                     p for p in raw
                     if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 4
                 ]
+
+                # Refinamiento opcional con YOLO Segmentation en oclusiones severas
+                if use_segmentation and len(candidatos) < 2 and getattr(r, "orig_img", None) is not None:
+                    try:
+                        seg_model = self._get_seg_model()
+                        seg_res = seg_model.predict(source=r.orig_img, verbose=False, conf=0.15, classes=[0], device=_device)
+                        if seg_res and len(seg_res[0].boxes) >= 2:
+                            extra_cands = []
+                            boxes = seg_res[0].boxes.xyxy.cpu().numpy()
+                            im_h, im_w = r.orig_img.shape[:2]
+                            for b in boxes:
+                                x1, y1, x2, y2 = b
+                                pad_x = (x2 - x1) * 0.10
+                                pad_y = (y2 - y1) * 0.10
+                                cx1, cy1 = int(max(0, x1 - pad_x)), int(max(0, y1 - pad_y))
+                                cx2, cy2 = int(min(im_w, x2 + pad_x)), int(min(im_h, y2 + pad_y))
+                                crop = r.orig_img[cy1:cy2, cx1:cx2]
+                                if crop.size > 0 and crop.shape[0] >= 20 and crop.shape[1] >= 20:
+                                    p_res = model.predict(source=crop, verbose=False, conf=0.10, device=_device)
+                                    if p_res and p_res[0].keypoints is not None and len(p_res[0].keypoints.data) > 0:
+                                        for pk in p_res[0].keypoints.data.cpu().numpy():
+                                            gk = pk.copy()
+                                            gk[:, 0] += cx1
+                                            gk[:, 1] += cy1
+                                            if (gk[:, 2] > 0.3).sum() >= 4:
+                                                extra_cands.append(gk)
+                            if len(extra_cands) >= 2:
+                                candidatos = extra_cands
+                    except Exception as e_seg:
+                        logger.debug("Error en segmentación multi-etapa: %s", e_seg)
+
                 if not candidatos:
                     secuencia_kpts.append([0.0] * 133)
                     continue

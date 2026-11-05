@@ -5,6 +5,17 @@ import { getTranslation } from '../i18n/translations';
 
 import { API_BASE } from '../api/config';
 
+export const resolveVideoUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  let url = String(rawUrl).trim();
+  if (url.includes('localhost:8000/static/')) {
+    url = url.replace(/^https?:\/\/localhost:8000/, '');
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (!url.startsWith('/')) url = '/' + url;
+  return `${API_BASE}${url}`;
+};
+
 export default function FeedbackView({ user, result, tecnica, onReset, idioma }) {
   const [videoError, setVideoError] = useState(false);
   const [videoAlumnoError, setVideoAlumnoError] = useState(false);
@@ -18,14 +29,10 @@ export default function FeedbackView({ user, result, tecnica, onReset, idioma })
   const similitud = typeof result.similitud === 'number' ? result.similitud : 0;
   const isPassing = similitud >= 85;
 
-  const videoUrl = result.video_referencia_url
-    ? `${API_BASE}${result.video_referencia_url}`
-    : null;
-  const videoAlumnoUrl = result.url_video_alumno
-    ? (result.url_video_alumno.startsWith('http') ? result.url_video_alumno : `${API_BASE}${result.url_video_alumno}`)
-    : null;
+  const videoUrl = resolveVideoUrl(result.video_referencia_url);
+  const videoAlumnoUrl = resolveVideoUrl(result.url_video_alumno || result.video_alumno_url);
   const frameErrorUrl = result.frame_error_url
-    ? `${API_BASE}${result.frame_error_url}`
+    ? (result.frame_error_url.startsWith('http') ? result.frame_error_url : `${API_BASE}${result.frame_error_url.startsWith('/') ? '' : '/'}${result.frame_error_url}`)
     : null;
 
   const timestampError = typeof result.timestamp_error_segundos === 'number'

@@ -4,8 +4,20 @@ import { getTranslation } from '../i18n/translations';
 
 import { API_BASE } from '../api/config';
 
+export const resolveVideoUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  let url = String(rawUrl).trim();
+  if (url.includes('localhost:8000/static/')) {
+    url = url.replace(/^https?:\/\/localhost:8000/, '');
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (!url.startsWith('/')) url = '/' + url;
+  return `${API_BASE}${url}`;
+};
+
 function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresArticulaciones, t }) {
   const [showFrameModal, setShowFrameModal] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef(null);
   const ts = typeof timestampError === 'number' ? timestampError : Number(timestampError || 0);
   const articulaciones = Array.isArray(nombresArticulaciones) ? nombresArticulaciones : [];
@@ -15,7 +27,7 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
       <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
         {t('myVideo')}
       </h4>
-      {videoSrc ? (
+      {videoSrc && !videoError ? (
         <>
           <video
             ref={videoRef}
@@ -23,6 +35,7 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
             playsInline
             preload="metadata"
             key={videoSrc}
+            onError={() => setVideoError(true)}
             style={{ width: '100%', height: 'auto', minHeight: 200, maxHeight: 280, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
           >
             <source src={videoSrc} type="video/mp4" />
@@ -155,7 +168,37 @@ function StudentVideoPlayer({ videoSrc, timestampError, frameErrorUrl, nombresAr
           )}
         </>
       ) : (
-        <p>{t('studentVideoUnavailable')}</p>
+        <div style={{ padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 8, textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+          ⚠️ {t('studentVideoUnavailable')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoachVideoPlayer({ videoSrc, coachNombre, t }) {
+  const [videoError, setVideoError] = useState(false);
+  return (
+    <div>
+      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+        {t('coachDemonstration')} · {coachNombre}
+      </h4>
+      {videoSrc && !videoError ? (
+        <video
+          controls
+          playsInline
+          preload="metadata"
+          key={videoSrc}
+          onError={() => setVideoError(true)}
+          style={{ width: '100%', height: 'auto', minHeight: 200, maxHeight: 280, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
+        >
+          <source src={videoSrc} type="video/mp4" />
+          {t('videoNotSupported')}
+        </video>
+      ) : (
+        <div style={{ padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 8, textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+          ⚠️ {t('referenceVideoUnavailable')}
+        </div>
       )}
     </div>
   );
@@ -198,8 +241,8 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
       <div style={{ display: 'grid', gap: '1.25rem' }}>
         {evaluaciones.map((item) => {
           const score = Number(item.porcentaje_similitud || 0);
-          const videoAlumno = item.url_video_alumno ? `${API_BASE}${item.url_video_alumno}` : null;
-          const videoProfesor = item.video_referencia_url ? `${API_BASE}${item.video_referencia_url}` : null;
+          const videoAlumno = resolveVideoUrl(item.url_video_alumno || item.video_alumno_url);
+          const videoProfesor = resolveVideoUrl(item.video_referencia_url);
           const rawCoach = item.video_referencia_profesor_nombre || t('coach');
           const coachNombre = lang === 'en'
             ? rawCoach.replace(/Mestre|Profesor/gi, 'Coach')
@@ -269,25 +312,11 @@ export default function StudentProgress({ user, idioma, onViewTheory }) {
                   nombresArticulaciones={item.nombres_articulaciones_criticas}
                   t={t}
                 />
-                <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-                    {t('coachDemonstration')} · {coachNombre}
-                  </h4>
-                  {videoProfesor ? (
-                    <video
-                      controls
-                      playsInline
-                      preload="metadata"
-                      key={videoProfesor}
-                      style={{ width: '100%', height: 'auto', minHeight: 200, maxHeight: 280, objectFit: 'contain', background: '#08090b', borderRadius: 8 }}
-                    >
-                      <source src={videoProfesor} type="video/mp4" />
-                      {t('videoNotSupported')}
-                    </video>
-                  ) : (
-                    <p>{t('referenceVideoUnavailable')}</p>
-                  )}
-                </div>
+                <CoachVideoPlayer
+                  videoSrc={videoProfesor}
+                  coachNombre={coachNombre}
+                  t={t}
+                />
               </div>
               <div style={{ marginTop: '1rem', lineHeight: 1.5, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.75rem' }}>
                 {item.feedback_summary && (

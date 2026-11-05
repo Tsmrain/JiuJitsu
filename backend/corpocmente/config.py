@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     USE_LOCAL_QWEN: bool = True
     LOCAL_QWEN_MODEL: str = "mlx-community/Qwen3-VL-Embedding-2B-8bit"
     
+    # Visión por Computadora: YOLO Segmentation multi-etapa (Opcional, default False)
+    USE_SEGMENTATION: bool = False
+    
     # PostgreSQL / PostgREST
     POSTGREST_URL: str = "http://localhost:3000"
     POSTGREST_JWT_SECRET: str = ""

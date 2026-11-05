@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { API_BASE } from '../api/config';
+import { getTranslation } from '../i18n/translations';
 
 /**
- * Modal to manage RAG theory for a technique.
- * Allows instructor to view and purge all uploaded chunks for this technique.
+ * Modal to manage and display theory for a technique.
+ * Shows instructor specific instructions (mensaje_profesor) and indexed RAG chunks.
  */
-export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
+export default function TheoryManagerModal({ isOpen, user, tecnica, idioma, onClose }) {
   const [chunks, setChunks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+
+  const currentLang = idioma || user?.idioma_preferido || 'es';
+  const t = (key) => getTranslation(currentLang, key);
 
   useEffect(() => {
     if (!isOpen || !tecnica) return;
@@ -25,7 +29,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       if (!res.ok) {
-        setError('Could not load theory.');
+        setError(t('couldNotLoadTheory') || 'No se pudo cargar la teoría.');
         setLoading(false);
         return;
       }
@@ -33,14 +37,15 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
       setChunks(data.chunks || []);
     } catch (e) {
       console.error(e);
-      setError('Connection error with server.');
+      setError(t('connectionError') || 'Error de conexión con el servidor.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm(`Delete ALL theory chunks you uploaded for "${tecnica.nombre}"? This action cannot be undone.`)) {
+    const confirmMsg = t('confirmDeleteAllTheory') || `¿Eliminar todos los extractos de teoría para "${tecnica.nombre}"?`;
+    if (!confirm(confirmMsg)) {
       return;
     }
     setDeleting(true);
@@ -55,16 +60,14 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
       );
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.detail || 'Error deleting theory.');
+        setError(errData.detail || 'Error eliminando teoría.');
         setDeleting(false);
         return;
       }
-      const data = await res.json();
-      alert(`Deleted: ${data.chunks_eliminados_postgres} from Postgres and ${data.chunks_eliminados_qdrant} from Qdrant.`);
       setChunks([]);
     } catch (e) {
       console.error(e);
-      setError('Connection error while deleting.');
+      setError(t('connectionError') || 'Error de conexión al eliminar.');
     } finally {
       setDeleting(false);
     }
@@ -75,7 +78,8 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
   const formatFecha = (iso) => {
     if (!iso) return '—';
     try {
-      return new Date(iso).toLocaleString('en-US', {
+      const dateLocale = currentLang === 'pt' ? 'pt-BR' : currentLang === 'en' ? 'en-US' : 'es-ES';
+      return new Date(iso).toLocaleString(dateLocale, {
         day: '2-digit', month: 'short', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
       });
@@ -84,28 +88,50 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
     }
   };
 
+  const hasInstructorMessage = Boolean(tecnica.mensaje_profesor && tecnica.mensaje_profesor.trim());
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div
         className="modal-content glass-panel"
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: '680px', maxHeight: '85vh', overflowY: 'auto' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, color: 'var(--brand-red)' }}>
-            RAG Theory — {tecnica.nombre}
+          <h3 data-testid="theory-modal-title" style={{ margin: 0, color: 'var(--brand-red)', fontSize: '1.25rem' }}>
+            {t('techniqueTheory')} — {tecnica.nombre}
           </h3>
           <button
+            data-testid="close-theory-modal-btn"
             onClick={onClose}
             style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.25rem', cursor: 'pointer' }}
+            aria-label={t('close')}
           >
             ✕
           </button>
         </div>
 
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
-          These are the theory excerpts you uploaded. The AI Coach references them to provide technical feedback to students.
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1.25rem 0' }}>
+          {t('theoryModalSubtitle')}
         </p>
+
+        {/* 1. Sección Destacada: Instrucciones del Instructor (si existen) */}
+        {hasInstructorMessage && (
+          <div data-testid="instructor-instructions-box" style={{
+            background: 'rgba(208, 17, 24, 0.12)',
+            border: '1px solid var(--brand-red)',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.25rem'
+          }}>
+            <h4 style={{ margin: '0 0 0.4rem 0', color: 'var(--brand-red)', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>🥋</span> {t('instructorInstructions')}
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', color: '#f8fafc', whiteSpace: 'pre-wrap' }}>
+              {tecnica.mensaje_profesor}
+            </p>
+          </div>
+        )}
 
         {error && (
           <div style={{
@@ -121,8 +147,9 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
           </div>
         )}
 
+        {/* 2. Sección Chunks RAG */}
         {loading ? (
-          <p>Loading theory...</p>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('loading') || 'Cargando teoría...'}</p>
         ) : chunks.length === 0 ? (
           <div style={{
             background: 'rgba(255,255,255,0.03)',
@@ -132,15 +159,15 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
             color: 'var(--text-secondary)',
             fontSize: '0.9rem'
           }}>
-            You haven't uploaded theory for this technique yet.<br />
+            {t('noTheoryUploaded')}<br />
             <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-              Edit the technique to attach and index theory material.
+              {t('editTechniqueToAttach')}
             </span>
           </div>
         ) : (
           <>
             <div style={{ marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {chunks.length} {chunks.length === 1 ? 'excerpt' : 'excerpts'} total
+              {chunks.length} {t('totalExcerpts')}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
@@ -171,6 +198,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
             </div>
 
             <button
+              type="button"
               onClick={handleDeleteAll}
               disabled={deleting}
               style={{
@@ -185,7 +213,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, onClose }) {
                 fontSize: '0.9rem'
               }}
             >
-              {deleting ? 'Deleting...' : '🗑 Delete all my theory for this technique'}
+              {deleting ? (t('deleting') || 'Eliminando...') : `🗑 ${t('deleteAllMyTheory')}`}
             </button>
           </>
         )}

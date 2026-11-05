@@ -13,7 +13,18 @@ import { getTranslation } from './i18n/translations'
 import { API_BASE } from './api/config'
 
 function App() {
-  const [appState, setAppState] = useState('ADMIN_PANEL'); // IDLE, UPLOADING, PROCESSING, FEEDBACK, ADMIN_PANEL, PROFESOR_PANEL, STUDENT_PROGRESS, LIBRARY
+  const [appState, setAppState] = useState(() => {
+    try {
+      const savedUserStr = localStorage.getItem('auth_user');
+      if (savedUserStr) {
+        const u = JSON.parse(savedUserStr);
+        if (u?.rol === 'profesor') return 'PROFESOR_PANEL';
+        if (u?.rol === 'alumno') return 'IDLE';
+        if (u?.rol === 'admin') return 'ADMIN_PANEL';
+      }
+    } catch {}
+    return 'ADMIN_PANEL';
+  });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [selectedTecnica, setSelectedTecnica] = useState(null);
@@ -21,9 +32,24 @@ function App() {
   const [libraryInitialQuery, setLibraryInitialQuery] = useState(null);
   const [libraryInitialImage, setLibraryInitialImage] = useState(null);
 
-  // Estado de Idioma (i18n)
+  // Estado de Idioma (i18n): user.idioma_preferido > localStorage.app_idioma > 'es' (Nunca defaulting a 'en')
   const [idioma, setIdioma] = useState(() => {
-    return localStorage.getItem('app_idioma') || 'es';
+    try {
+      const savedUserStr = localStorage.getItem('auth_user');
+      if (savedUserStr) {
+        const parsed = JSON.parse(savedUserStr);
+        if (parsed?.idioma_preferido && typeof parsed.idioma_preferido === 'string' && parsed.idioma_preferido.trim()) {
+          return parsed.idioma_preferido.toLowerCase().trim();
+        }
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    const local = localStorage.getItem('app_idioma');
+    if (local && typeof local === 'string' && local.trim()) {
+      return local.toLowerCase().trim();
+    }
+    return 'es';
   });
 
   const t = (key) => getTranslation(idioma, key);
@@ -67,6 +93,13 @@ function App() {
         if (userData?.idioma_preferido) {
           handleLanguageChange(userData.idioma_preferido);
         }
+        if (userData?.rol === 'profesor') {
+          setAppState('PROFESOR_PANEL');
+        } else if (userData?.rol === 'alumno') {
+          setAppState('IDLE');
+        } else if (userData?.rol === 'admin') {
+          setAppState('ADMIN_PANEL');
+        }
       })
       .catch(err => {
         console.warn('Sesión no restaurada:', err);
@@ -97,6 +130,13 @@ function App() {
     localStorage.setItem('app_idioma', clean);
 
     if (user?.user_id && user?.token) {
+      setUser(prev => {
+        if (!prev) return prev;
+        const updated = { ...prev, idioma_preferido: clean };
+        localStorage.setItem('auth_user', JSON.stringify(updated));
+        return updated;
+      });
+
       try {
         await fetch(`${API_BASE}/api/v1/auth/usuarios/${user.user_id}/idioma`, {
           method: 'PUT',

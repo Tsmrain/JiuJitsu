@@ -24,7 +24,7 @@ from urllib.parse import quote, quote_plus
 from corpocmente.application.use_cases.ingest_knowledge_use_case import IngestKnowledgeUseCase
 from corpocmente.application.dtos.knowledge_dtos import IngestionRequest
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
-from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_active_subscription
+from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_active_subscription, get_user_idioma
 from corpocmente.config import settings
 from corpocmente.domain.services.session_manager import (
     SessionStateManager, SessionError, SessionConflictError,
@@ -531,6 +531,13 @@ async def consultar_evaluacion(
     meta_candidate = os.path.join(FRAMES_DIR, f"meta_{evaluacion_id}.json")
     timestamp_error_segundos = eval_data.get("timestamp_error_segundos")
     raw_video_alumno = eval_data.get("url_video_alumno") or ""
+    if not raw_video_alumno:
+        try:
+            row = db.get("evaluaciones_alumnos", {"id": f"eq.{evaluacion_id}", "select": "url_video_alumno"})
+            if row and len(row) > 0:
+                raw_video_alumno = row[0].get("url_video_alumno") or ""
+        except Exception:
+            pass
     articulaciones_criticas = eval_data.get("articulaciones_criticas") or []
     nombres_articulaciones_criticas = eval_data.get("nombres_articulaciones_criticas") or []
 

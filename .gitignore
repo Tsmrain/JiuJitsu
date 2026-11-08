@@ -60,3 +60,5 @@ Codigo.py
 *.mov
 *.zip
 salida de entrenamiento.txt
+*.backup-*
+uncertainty_frames/

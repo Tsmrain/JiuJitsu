@@ -39,7 +39,7 @@ EXCLUDED_DIRS = {
     "bin", "out", "__MACOSX",
     ".terraform", ".serverless",
     # Carpetas de datos, modelos, temporales y assets pesados
-    "data", "storage", "runs", "venv_mlx", "documentos_word",
+    "data", "storage", "runs", "venv_mlx", "documentos_word", "datasets", "dataset",
 }
 
 EXCLUDED_DIR_SUFFIXES = (".dist-info", ".egg-info", ".egg", ".framework")

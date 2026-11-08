@@ -643,7 +643,6 @@ class YOLOPoseAdapter:
 
                 assigned_trackers = set()
                 if not personas_rastreadas:
-                    candidatos.sort(key=lambda p: float(p[p[:, 2] > 0.3, 1].mean()), reverse=True)
                     for c_idx, c in enumerate(candidatos):
                         personas_rastreadas[c_idx] = c
                         if c_idx in cand_depths:

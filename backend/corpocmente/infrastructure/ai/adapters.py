@@ -154,6 +154,28 @@ class YOLOPoseAdapter:
         self._depth_model_cache = None
         self._seg_model_cache = None
 
+        # Determinismo estricto para inferencia y seguimiento reproducible
+        try:
+            import torch
+            torch.use_deterministic_algorithms(True, warn_only=True)
+            if hasattr(torch.backends, "mps") and hasattr(torch.backends.mps, "deterministic"):
+                torch.backends.mps.deterministic = True
+        except Exception as e_det:
+            logger.debug(f"Aviso configurando determinismo en PyTorch/MPS: {e_det}")
+
+    @staticmethod
+    def _extraer_caja_c(cand) -> list:
+        """Extrae la caja delimitadora [x1, y1, x2, y2] con padding a partir de keypoints válidos."""
+        m = (cand[:, 2] > 0.3) & (cand[:, 0] > 0)
+        pt = cand[m, :2]
+        if len(pt) >= 2:
+            min_x, min_y = float(pt[:, 0].min()), float(pt[:, 1].min())
+            max_x, max_y = float(pt[:, 0].max()), float(pt[:, 1].max())
+            pad_x = max(15.0, (max_x - min_x) * 0.12)
+            pad_y = max(15.0, (max_y - min_y) * 0.12)
+            return [min_x - pad_x, min_y - pad_y, max_x + pad_x, max_y + pad_y]
+        return [0.0, 0.0, 0.0, 0.0]
+
     @staticmethod
     def _calcular_iou(box_a: list, box_b: list) -> float:
         """Calcula Intersection over Union (IoU) entre dos cajas [x1, y1, x2, y2]."""
@@ -490,7 +512,8 @@ class YOLOPoseAdapter:
             oclusiones_detectadas = 0
             frames_con_persona = 0
             frames_evaluados = 0
-            target_idx = persona_idx_inicial if persona_idx_inicial is not None else 0
+            target_idx = int(persona_idx_inicial) if persona_idx_inicial is not None else 0
+            frozen_target_idx = target_idx  # Congelar identidad seleccionada en primer frame (UI)
 
             # MLOps Foundation: Data Flywheel para Active Learning (Frames con incertidumbre < 0.65)
             uncertainty_tec = str(tecnica_id or "general").strip() or "general"
@@ -599,14 +622,7 @@ class YOLOPoseAdapter:
                 # Detección y desambiguación de oclusiones por profundidad métrica (> 40% IoU)
                 cand_depths = {}
                 if use_depth and len(candidatos) > 1:
-                    def _extraer_caja_c(cand):
-                        m = (cand[:, 2] > 0.3) & (cand[:, 0] > 0)
-                        pt = cand[m, :2]
-                        if len(pt) >= 2:
-                            return [float(pt[:, 0].min()), float(pt[:, 1].min()), float(pt[:, 0].max()), float(pt[:, 1].max())]
-                        return [0.0, 0.0, 0.0, 0.0]
-
-                    cajas_cand = [_extraer_caja_c(c) for c in candidatos]
+                    cajas_cand = [self._extraer_caja_c(c) for c in candidatos]
                     hay_superposicion = False
                     for i in range(len(cajas_cand)):
                         for j in range(i + 1, len(cajas_cand)):
@@ -651,31 +667,28 @@ class YOLOPoseAdapter:
                 else:
                     cost_matrix = {}
                     for t_idx, t_pose in personas_rastreadas.items():
+                        box_t = self._extraer_caja_c(t_pose)
                         for c_idx, c in enumerate(candidatos):
-                            mask = (c[:, 2] > 0.3) & (t_pose[:, 2] > 0.3) & (c[:, 0] > 0) & (t_pose[:, 0] > 0)
-                            if np.count_nonzero(mask) >= 5:
-                                dx = (c[mask, 0] - t_pose[mask, 0]) / w
-                                dy = (c[mask, 1] - t_pose[mask, 1]) / h
-                                cost = float(np.mean(np.sqrt(dx**2 + dy**2)))
-                            else:
-                                c1 = c[c[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
-                                c0 = t_pose[t_pose[:, 0] > 0, :2].mean(axis=0) / np.array([w, h])
-                                cost = float(np.linalg.norm(c1 - c0))
+                            box_c = self._extraer_caja_c(c)
+                            iou = self._calcular_iou(box_t, box_c)
+                            cost = 1.0 - iou
 
                             # Penalización métrica de profundidad si hay oclusión y datos z
                             if use_depth and t_idx in personas_depth and c_idx in cand_depths:
                                 delta_z = abs(cand_depths[c_idx] - personas_depth[t_idx])
-                                cost += 0.3 * (delta_z / 2.0)
+                                cost += 0.2 * (delta_z / 2.0)
 
                             cost_matrix[(t_idx, c_idx)] = cost
 
+                    # Asignación estricta (Greedy match con menor costo / mayor IoU)
                     sorted_pairs = sorted(cost_matrix.items(), key=lambda item: item[1])
                     assigned_cands = set()
                     new_poses = {}
                     for (t_idx, c_idx), cost in sorted_pairs:
                         if t_idx in assigned_trackers or c_idx in assigned_cands:
                             continue
-                        if cost <= max_disp_norm:
+                        # Umbral de asignación estricto: IoU >= 0.20 (cost <= 0.80)
+                        if cost <= 0.80:
                             assigned_trackers.add(t_idx)
                             assigned_cands.add(c_idx)
                             new_poses[t_idx] = candidatos[c_idx]
@@ -685,15 +698,16 @@ class YOLOPoseAdapter:
                     for t_idx, c_pose in new_poses.items():
                         personas_rastreadas[t_idx] = c_pose
 
-                t_key = min(target_idx, len(personas_rastreadas) - 1)
-                if t_key in assigned_trackers:
-                    persona_actual = personas_rastreadas[t_key]
+                # Asignación estricta de la persona seleccionada (frozen_target_idx)
+                if frozen_target_idx in assigned_trackers:
+                    persona_actual = personas_rastreadas[frozen_target_idx]
                     frames_con_persona += 1
                     kpts = persona_actual.flatten().tolist()
                     if len(kpts) < 133:
                         kpts.extend([0.0] * (133 - len(kpts)))
                     secuencia_kpts.append(kpts[:133])
                 else:
+                    # Oclusión severa o atleta fuera de cuadro: no saltar al oponente
                     secuencia_kpts.append([0.0] * 133)
 
             total = max(1, frames_evaluados)
@@ -873,20 +887,22 @@ class YOLOPoseAdapter:
             if p1 in pts and p2 in pts:
                 pt1 = (pts[p1][0], pts[p1][1])
                 pt2 = (pts[p2][0], pts[p2][1])
-                if pt1 != (0, 0) and pt2 != (0, 0):
+                conf1 = pts[p1][2]
+                conf2 = pts[p2][2]
+                if pt1 != (0, 0) and pt2 != (0, 0) and conf1 > 0.30 and conf2 > 0.30:
                     cv2.line(frame, pt1, pt2, (0, 230, 115), 3, lineType=cv2.LINE_AA)
 
         # 4. Dibujar puntos articulares estándar
         for i, (px, py, conf) in pts.items():
-            if (px, py) != (0, 0):
+            if (px, py) != (0, 0) and conf > 0.30:
                 cv2.circle(frame, (px, py), 5, (255, 190, 0), -1, lineType=cv2.LINE_AA)
                 cv2.circle(frame, (px, py), 6, (0, 0, 0), 1, lineType=cv2.LINE_AA)
 
         # 5. Resaltar articulaciones críticas con círculos rojos y etiquetas
         for art_idx in articulaciones_criticas:
             if art_idx in pts:
-                px, py, _ = pts[art_idx]
-                if (px, py) == (0, 0):
+                px, py, conf = pts[art_idx]
+                if (px, py) == (0, 0) or conf <= 0.30:
                     continue
 
                 # Halo exterior y círculo interior rojo

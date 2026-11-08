@@ -50,13 +50,18 @@ AS $$
 DECLARE
     v_sucursal_id UUID := p_sucursal_id;
 BEGIN
-    -- Si no se suministra explícitamente, congelar la sucursal actual del alumno
+    -- Si la sucursal suministrada no existe en sucursales (stale token), anular para resolver de BD
+    IF v_sucursal_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM sucursales s WHERE s.id = v_sucursal_id) THEN
+        v_sucursal_id := NULL;
+    END IF;
+
+    -- Si no se suministra explícitamente o era inválida, congelar la sucursal actual del alumno
     IF v_sucursal_id IS NULL THEN
         SELECT u.sucursal_id INTO v_sucursal_id FROM usuarios u WHERE u.id = p_alumno_id;
     END IF;
 
-    -- Si el alumno no tenía sucursal, asignar Casa Matriz por defecto
-    IF v_sucursal_id IS NULL THEN
+    -- Si la sucursal del alumno tampoco existe o era NULL, asignar Casa Matriz por defecto
+    IF v_sucursal_id IS NULL OR NOT EXISTS (SELECT 1 FROM sucursales s WHERE s.id = v_sucursal_id) THEN
         v_sucursal_id := 'b3000000-0000-0000-0000-000000000003'::UUID;
     END IF;
 

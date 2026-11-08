@@ -77,3 +77,4 @@ def test_entrenar_y_actualizar_modelo_autonomo_lanza_popen_desacoplado(tmp_path)
         assert "autonomous_flywheel.py" in cmd_list[1]
         assert tecnica_id == cmd_list[3]
         assert kwargs.get("start_new_session") is True
+

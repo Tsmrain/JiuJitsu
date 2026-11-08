@@ -420,6 +420,12 @@ async def analizar_video(
     except Exception as e:
         if session_id:
             SessionStateManager.finalizar_operacion(session_id, exito=False, error=str(e), eliminar_video=False)
+        err_msg = str(e)
+        if "409" in err_msg or "Conflict" in err_msg or "foreign key" in err_msg.lower() or "sucursales" in err_msg.lower() or "fk_" in err_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La sucursal del usuario ya no existe en el sistema. Por favor, cierre sesión y vuelva a ingresar para actualizar sus datos."
+            )
         raise HTTPException(status_code=500, detail=f"Error creando evaluación: {e}")
 
     # 4. Iniciar análisis en segundo plano

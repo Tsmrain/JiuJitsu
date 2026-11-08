@@ -210,3 +210,40 @@ def test_tracking_desplazamiento_y_oclusion_parcial():
         assert sec[4][0] < 500  # Confirma que jamás saltó a 800
         # Frame 5: p0 en x~220
         assert 210 < sec[5][0] < 230
+
+
+def test_analizar_video_error_409_sucursal_stale_retorna_400_amigable():
+    """Si PostgREST arroja un 409 por sucursal desactualizada en el token, retorna HTTP 400 descriptivo."""
+    alumno_uid = str(uuid4())
+    token = make_token(role="alumno", uid=alumno_uid)
+    tecnica_id = str(uuid4())
+
+    with patch("corpocmente.ui.api.routes.get_db") as mock_db_getter, \
+         patch("corpocmente.infrastructure.persistence.qdrant_adapter.QdrantVectorAdapter") as mock_qdrant_cls, \
+         patch("corpocmente.ui.api.auth_routes.check_student_subscription", return_value={"activo": True}):
+        
+        mock_db = MagicMock()
+        mock_qdrant = MagicMock()
+        mock_db_getter.return_value = mock_db
+        mock_qdrant_cls.return_value = mock_qdrant
+
+        mock_qdrant._get_patron_activo_db.return_value = str(uuid4())
+        mock_db.get.return_value = []
+        # Simular error 409 Conflict de PostgREST por sucursal eliminada / FK
+        mock_db.rpc.side_effect = Exception("409 Client Error: Conflict for url: http://localhost:3000/rpc/create_evaluacion - foreign key violation fk_evaluaciones_sucursal")
+
+        res = client.post(
+            "/api/v1/evaluaciones/analizar",
+            headers={"Authorization": f"Bearer {token}"},
+            data={
+                "tecnica_id": tecnica_id,
+                "tecnica_nombre": "Armbar",
+                "alumno_id": alumno_uid,
+                "persona_idx": 0
+            },
+            files={"video": ("test.mp4", b"dummy video content", "video/mp4")}
+        )
+
+        assert res.status_code == 400
+        assert "La sucursal del usuario ya no existe en el sistema" in res.json()["detail"]
+

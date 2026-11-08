@@ -269,6 +269,8 @@ class YOLOPoseAdapter:
             torch.load = _safe_load
             repo_root = Path(__file__).resolve().parents[4]
             candidates = [
+                str(repo_root / "yolo26n_americana.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
                 str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
                 str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
                 str(repo_root / "backend" / "yolo26n-pose.pt"),
@@ -427,6 +429,8 @@ class YOLOPoseAdapter:
 
             repo_root = Path(__file__).resolve().parents[4]
             _candidates = [
+                str(repo_root / "yolo26n_americana.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
                 str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
                 str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
                 str(repo_root / "backend" / "yolo26n-pose.pt"),
@@ -807,6 +811,8 @@ class YOLOPoseAdapter:
                 from ultralytics import YOLO
                 repo_root = Path(__file__).resolve().parents[4]
                 _candidates = [
+                    str(repo_root / "yolo26n_americana.pt"),
+                    str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
                     str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
                     str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
                     str(repo_root / "backend" / "yolo26n-pose.pt"),

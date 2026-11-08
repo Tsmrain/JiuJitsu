@@ -10,23 +10,25 @@ import { API_BASE } from '../api/config';
 
 const OPACIONES_CINTURON = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
 
-const BELT_LABELS = {
-  'Blanco': 'White Belt',
-  'Azul': 'Blue Belt',
-  'Morado': 'Purple Belt',
-  'Marrón': 'Brown Belt',
-  'Negro': 'Black Belt',
-  'White': 'White Belt',
-  'Blue': 'Blue Belt',
-  'Purple': 'Purple Belt',
-  'Brown': 'Brown Belt',
-  'Black': 'Black Belt',
+const BELT_KEYS = {
+  'Blanco': 'whiteBelt',
+  'Azul': 'blueBelt',
+  'Morado': 'purpleBelt',
+  'Marrón': 'brownBelt',
+  'Negro': 'blackBelt',
+  'White': 'whiteBelt',
+  'Blue': 'blueBelt',
+  'Purple': 'purpleBelt',
+  'Brown': 'brownBelt',
+  'Black': 'blackBelt',
 };
-
-const getBeltLabel = (nivel) => BELT_LABELS[nivel] || `${nivel} Belt`;
 
 export default function ProfesorTecnicas({ user, onClose, idioma }) {
   const t = (key) => getTranslation(idioma, key);
+  const getBeltLabel = (nivel) => {
+    const key = BELT_KEYS[nivel];
+    return key ? t(key) : nivel;
+  };
   const [activeTab, setActiveTab] = useState('alumnos'); // 'alumnos' (default) | 'pases' | 'tecnicas'
   const [tecnicas, setTecnicas] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
@@ -125,18 +127,18 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         body: JSON.stringify({ dias: 30 })
       });
       if (res.ok) {
-        const msg = `${t('passActivatedSuccess')} (${alumnoNombre || 'Alumno'})`;
+        const msg = `${t('passActivatedSuccess')} (${alumnoNombre || t('studentLabel') || 'Alumno'})`;
         setActivacionSuccess(msg);
         alert(msg);
         await fetchPendientes();
         await fetchAlumnos();
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.detail || "Error activando pase.");
+        alert(errData.detail || t('errorActivatingPass') || "Error activando pase.");
       }
     } catch (e) {
       console.error("Error activando pase:", e);
-      alert("Error de conexión al activar pase.");
+      alert(t('connectionError') || "Error de conexión al activar pase.");
     } finally {
       setActivandoId(null);
     }
@@ -201,7 +203,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('video/')) {
-        alert("Please select a valid video file.");
+        alert(t('invalidVideoFile') || "Por favor selecciona un archivo de video válido.");
         return;
       }
       setSelectedFile(file);
@@ -212,11 +214,11 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedFile && !previewUrl) {
-      alert('You must upload the reference video for this technique.');
+      alert(t('mustUploadReferenceVideo') || 'Debes subir el video de referencia para esta técnica.');
       return;
     }
     if (!formData.mensaje_profesor.trim()) {
-      alert('Write a message explaining the technique to your students.');
+      alert(t('writeInstructorMessageAlert') || 'Escribe un mensaje explicando la técnica a tus alumnos.');
       return;
     }
     setSaving(true);
@@ -233,7 +235,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         });
         if (!frameRes.ok) {
           const err = await frameRes.json().catch(() => ({}));
-          throw new Error(err.detail || "Error processing video. Could not extract initial frame.");
+          throw new Error(err.detail || t('errorExtractingInitialFrame') || "Error procesando el video. No se pudo extraer el fotograma inicial.");
         }
         const frame = await frameRes.json();
         setPersonaSelection({
@@ -260,7 +262,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           });
           if (!frameRes.ok) {
             const err = await frameRes.json().catch(() => ({}));
-            throw new Error(err.detail || "Error processing video.");
+            throw new Error(err.detail || t('errorProcessingVideo') || "Error procesando el video.");
           }
           const frame = await frameRes.json();
           setPersonaSelection({
@@ -291,16 +293,16 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           });
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || "Error updating technique.");
+            throw new Error(err.detail || t('errorUpdatingTechnique') || "Error actualizando técnica.");
           }
-          alert("Technique updated successfully.");
+          alert(t('techniqueUpdatedSuccess') || "Técnica actualizada exitosamente.");
           setShowModal(false);
           fetchTecnicas();
         }
       }
     } catch (err) {
       console.error(err);
-      alert(err.message || "Connection error saving technique.");
+      alert(err.message || t('connectionError') || "Error de conexión al guardar la técnica.");
     } finally {
       setSaving(false);
     }
@@ -328,7 +330,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         });
         if (!createRes.ok) {
           const err = await createRes.json().catch(() => ({}));
-          throw new Error(err.detail || "Error creating technique in database.");
+          throw new Error(err.detail || t('errorCreatingTechnique') || "Error creando técnica en la base de datos.");
         }
         const savedTecnica = await createRes.json();
         targetTecnicaId = savedTecnica.id;
@@ -353,7 +355,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       });
       if (!selectionRes.ok) {
         const err = await selectionRes.json().catch(() => ({}));
-        throw new Error(err.detail || 'Could not confirm selected person.');
+        throw new Error(err.detail || t('couldNotConfirmPerson') || 'No se pudo confirmar la persona seleccionada.');
       }
 
       // 3. Registrar el patrón biomecánico
@@ -367,10 +369,10 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       });
       if (!patronRes.ok) {
         const err = await patronRes.json().catch(() => ({}));
-        throw new Error(err.detail || 'Could not register biomechanical pattern.');
+        throw new Error(err.detail || t('couldNotRegisterPattern') || 'No se pudo registrar el patrón biomecánico.');
       }
       const patron = await patronRes.json();
-      alert(`Biomechanical pattern active: ${patron.total_frames} frames.`);
+      alert(`✅ ${t('activeBiomechanicalPattern')}: ${patron.total_frames} ${t('frames')}.`);
       setPersonaSelection(null);
       fetchTecnicas();
     } catch (err) {
@@ -383,14 +385,14 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           });
         } catch (_) {}
       }
-      setPersonaSelectionError(err.message || 'Error registering pattern.');
+      setPersonaSelectionError(err.message || t('errorRegisteringPattern') || 'Error registrando el patrón.');
     } finally {
       setConfirmingPersona(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this technique?')) return;
+    if (!confirm(t('confirmDeleteTechnique') || '¿Estás seguro de que deseas eliminar esta técnica?')) return;
     try {
       const res = await fetch(`${API_BASE}/api/v1/tecnicas/${id}`, {
         method: 'DELETE',
@@ -522,9 +524,10 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
                         {evaluacionesReales.map((evalItem, idx) => {
                           const similitud = parseFloat(evalItem.porcentaje_similitud) || 0;
-                          const estadoLabel = similitud >= 85 ? 'Excellent' : (similitud >= 70 ? 'Good' : 'Needs Work');
+                          const estadoLabel = similitud >= 85 ? t('excellent') : (similitud >= 70 ? t('good') : t('needsWork'));
+                          const fechaLocale = idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en-US' : 'es-ES';
                           const fecha = evalItem.fecha_evaluacion
-                            ? new Date(evalItem.fecha_evaluacion).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+                            ? new Date(evalItem.fecha_evaluacion).toLocaleDateString(fechaLocale, { day: '2-digit', month: 'short', year: 'numeric' })
                             : t('dateUnavailable');
 
                           return (
@@ -730,7 +733,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                       boxShadow: '0 0 15px rgba(34, 197, 94, 0.4)'
                     }}
                   >
-                    {activandoId === alumno.id ? '⏳ Activando...' : t('activatePass30Days')}
+                    {activandoId === alumno.id ? `⏳ ${t('activating') || 'Activando...'}` : t('activatePass30Days')}
                   </button>
                 </div>
               ))}
@@ -853,12 +856,12 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content glass-panel" style={{ maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3>{editingId ? t('editBranch') : t('newTechnique')}</h3>
+            <h3>{editingId ? t('editTechnique') : t('newTechnique')}</h3>
             
             <form onSubmit={handleSave}>
               <div className="form-group">
                 <label>{t('techniqueName')}</label>
-                <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} placeholder="e.g. Armbar from Guard" />
+                <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} placeholder={t('techniqueNamePlaceholder') || "Ej: Armbar desde la Guardia"} />
               </div>
 
               <div className="form-group">
@@ -879,7 +882,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                   name="mensaje_profesor"
                   value={formData.mensaje_profesor}
                   onChange={handleChange}
-                  placeholder="Explain in your own words how to execute this technique."
+                  placeholder={t('instructorMessagePlaceholder') || "Explica con tus propias palabras cómo ejecutar esta técnica."}
                   rows={5}
                   required
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', resize: 'vertical' }}
@@ -901,7 +904,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                   style={{ width: '100%', padding: '0.6rem' }} 
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {selectedFile ? ` Video: ${selectedFile.name}` : (editingId && previewUrl ? "Replace Video" : "Upload Video")}
+                  {selectedFile ? ` 📹 ${selectedFile.name}` : (editingId && previewUrl ? t('replaceVideo') : t('uploadVideo'))}
                 </button>
               </div>
 
@@ -989,7 +992,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           onClose={() => setTheoryModalTecnica(null)}
         />
       )}
-      {showGlobalKnowledge && <GlobalKnowledgeModal user={user} onClose={() => setShowGlobalKnowledge(false)} />}
+      {showGlobalKnowledge && <GlobalKnowledgeModal user={user} idioma={idioma} onClose={() => setShowGlobalKnowledge(false)} />}
 
       {selectedAlumnoDetail && (
         <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setSelectedAlumnoDetail(null)}>
@@ -997,13 +1000,13 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--brand-red)', letterSpacing: '1px' }}>
-                  EVALUATION DETAILS
+                  {t('evaluationDetails')}
                 </span>
                 <h3 style={{ margin: '0.25rem 0 0 0', fontSize: '1.25rem', color: 'white' }}>
                   {selectedAlumnoDetail.evalItem.tecnica_nombre}
                 </h3>
                 <small style={{ color: 'var(--text-secondary)' }}>
-                  Student: {selectedAlumnoDetail.alumno.nombre_completo}
+                  {t('studentLabel') || 'Alumno'}: {selectedAlumnoDetail.alumno.nombre_completo}
                 </small>
               </div>
               <button
@@ -1023,7 +1026,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                 color: getScoreColor(selectedAlumnoDetail.evalItem.porcentaje_similitud),
                 border: `1px solid ${getScoreColor(selectedAlumnoDetail.evalItem.porcentaje_similitud)}`
               }}>
-                {selectedAlumnoDetail.evalItem.porcentaje_similitud >= 85 ? 'Excellent' : selectedAlumnoDetail.evalItem.porcentaje_similitud >= 70 ? 'Good' : 'Needs Work'} ({Math.round(selectedAlumnoDetail.evalItem.porcentaje_similitud)}%)
+                {selectedAlumnoDetail.evalItem.porcentaje_similitud >= 85 ? t('excellent') : selectedAlumnoDetail.evalItem.porcentaje_similitud >= 70 ? t('good') : t('needsWork')} ({Math.round(selectedAlumnoDetail.evalItem.porcentaje_similitud)}%)
               </div>
               {selectedAlumnoDetail.evalItem.practice_url && (
                 <a
@@ -1032,7 +1035,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                   rel="noopener noreferrer"
                   style={{ color: '#ef4444', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                 >
-                  YouTube Practice Tutorials ↗
+                  {t('youtubeTutorials')} ↗
                 </a>
               )}
             </div>
@@ -1040,7 +1043,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
             {selectedAlumnoDetail.evalItem.feedback_summary && (
               <div style={{ marginBottom: '1rem' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
-                  SUMMARY
+                  {t('summary')}
                 </span>
                 <strong style={{ color: 'white', fontSize: '1.05rem' }}>
                   {selectedAlumnoDetail.evalItem.feedback_summary}
@@ -1050,18 +1053,18 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
 
             <div>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
-                FULL TECHNICAL FEEDBACK (MARKDOWN)
+                {t('fullTechnicalFeedback')}
               </span>
               <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', color: '#d1d5db', lineHeight: 1.6 }}>
                 <ReactMarkdown>
-                  {selectedAlumnoDetail.evalItem.feedback_gemini_es || selectedAlumnoDetail.evalItem.feedback_gemini_pt || 'No detailed feedback available.'}
+                  {selectedAlumnoDetail.evalItem.feedback_gemini_es || selectedAlumnoDetail.evalItem.feedback_gemini_pt || t('noDetailedFeedback')}
                 </ReactMarkdown>
               </div>
             </div>
 
             <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
               <button type="button" className="btn-secondary" onClick={() => setSelectedAlumnoDetail(null)}>
-                Close
+                {t('close')}
               </button>
             </div>
           </div>

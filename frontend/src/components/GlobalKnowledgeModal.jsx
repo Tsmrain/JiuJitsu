@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { API_BASE as BASE_URL } from '../api/config';
+import { getTranslation } from '../i18n/translations';
 
 const API_BASE = `${BASE_URL}/api/v1`;
 
-export default function GlobalKnowledgeModal({ user, onClose }) {
+export default function GlobalKnowledgeModal({ user, idioma, onClose }) {
+  const currentLang = idioma || user?.idioma_preferido || 'es';
+  const t = (key) => getTranslation(currentLang, key);
+
   const [file, setFile] = useState(null);
   const [sourceName, setSourceName] = useState('');
   const [sources, setSources] = useState([]);
@@ -19,10 +23,10 @@ export default function GlobalKnowledgeModal({ user, onClose }) {
       const response = await fetch(`${API_BASE}/conocimiento/fuentes/globales`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
-      if (response.status === 404) throw new Error('Local API does not recognize this function. Restart backend and try again.');
+      if (response.status === 404) throw new Error(t('apiNotRecognized'));
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-        throw new Error(result.detail || 'Could not load sources.');
+        throw new Error(result.detail || t('couldNotLoadSources'));
       }
       setSources(await response.json());
     } catch (error) {
@@ -54,10 +58,10 @@ export default function GlobalKnowledgeModal({ user, onClose }) {
           if (uploadEvent.lengthComputable) {
             const uploadProgress = Math.round((uploadEvent.loaded / uploadEvent.total) * 10);
             setProgress(uploadProgress);
-            setMessage(`Uploading file: ${Math.round((uploadEvent.loaded / uploadEvent.total) * 100)}%`);
+            setMessage(`${t('uploadingFile')}: ${Math.round((uploadEvent.loaded / uploadEvent.total) * 100)}%`);
           }
         };
-        xhr.onerror = () => reject(new Error('Could not connect to backend.'));
+        xhr.onerror = () => reject(new Error(t('connectionError')));
         xhr.onload = () => {
           let body = {};
           try { body = JSON.parse(xhr.responseText || '{}'); } catch { /* non-JSON response */ }
@@ -67,15 +71,15 @@ export default function GlobalKnowledgeModal({ user, onClose }) {
       });
       if (!response.ok) {
         const detail = response.status === 404
-          ? 'Local API route not found. Restart backend and try again.'
-          : (result.detail || 'Could not save source.');
+          ? t('apiRouteNotFound')
+          : (result.detail || t('couldNotSaveSource'));
         throw new Error(detail);
       }
       if (result.status === 'procesando' && result.job_id) {
         setFile(null);
         setSourceName('');
         setProgress(10);
-        setMessage('File received. Preparing processing...');
+        setMessage(t('fileReceivedProcessing'));
         let job;
         do {
           await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -83,18 +87,18 @@ export default function GlobalKnowledgeModal({ user, onClose }) {
             headers: { Authorization: `Bearer ${user.token}` },
           });
           job = await statusResponse.json().catch(() => ({}));
-          if (!statusResponse.ok) throw new Error(job.detail || 'Lost connection to upload status.');
+          if (!statusResponse.ok) throw new Error(job.detail || t('lostUploadConnection'));
           if (job.estado === 'procesando') {
             setProgress(Math.max(10, job.avance || 10));
-            setMessage(`${job.etapa || 'Indexing manual'}${job.paginas_procesadas ? ` · ${job.paginas_procesadas} of ${job.total_paginas} pages` : ''}`);
+            setMessage(`${job.etapa || t('indexingManual')}${job.paginas_procesadas ? ` · ${job.paginas_procesadas} / ${job.total_paginas} ${t('pagesOf')}` : ''}`);
           }
         } while (job.estado === 'procesando');
-        if (job.estado !== 'completado') throw new Error(job.error || 'Could not index manual.');
+        if (job.estado !== 'completado') throw new Error(job.error || t('couldNotIndexManual'));
         result = job;
       }
       setProgress(100);
       const visualCount = result.paginas_imagen_indexadas || result.imagenes_indexadas || 0;
-      setMessage(`Manual indexed: ${result.chunks_procesados} chunks${visualCount ? ` and ${visualCount} visual elements` : ''}.`);
+      setMessage(`${t('manualIndexedSuccess')}: ${result.chunks_procesados} ${t('chunksCount')}${visualCount ? ` ${t('and')} ${visualCount} ${t('visualElements')}` : ''}.`);
       setFile(null);
       setSourceName('');
       await loadSources();
@@ -116,34 +120,34 @@ export default function GlobalKnowledgeModal({ user, onClose }) {
   return (
     <div className="modal-overlay" role="presentation" onClick={onClose}>
       <section className="modal-content glass-panel" role="dialog" aria-modal="true" aria-labelledby="global-knowledge-title" onClick={(event) => event.stopPropagation()} style={{ width: 'min(720px, 96vw)', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h2 id="global-knowledge-title" style={{ color: 'var(--brand-red)', marginTop: 0 }}>Global Knowledge Sources</h2>
+        <h2 id="global-knowledge-title" style={{ color: 'var(--brand-red)', marginTop: 0 }}>{t('globalKnowledgeTitle')}</h2>
         <form onSubmit={handleUpload} style={{ display: 'grid', gap: '.75rem', padding: '1rem', borderRadius: 10, background: 'rgba(255,255,255,.04)' }}>
-          <label htmlFor="global-source-name">Source Name</label>
-          <input id="global-source-name" value={sourceName} onChange={(event) => setSourceName(event.target.value)} placeholder="e.g. Jiu-Jitsu University Fundamentals Manual" />
-          <label htmlFor="global-source-file">Manual, text or image file</label>
+          <label htmlFor="global-source-name">{t('sourceName')}</label>
+          <input id="global-source-name" value={sourceName} onChange={(event) => setSourceName(event.target.value)} placeholder={t('sourcePlaceholder')} />
+          <label htmlFor="global-source-file">{t('fileUploadLabel')}</label>
           <input id="global-source-file" type="file" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/*" onChange={(event) => setFile(event.target.files?.[0] || null)} required />
-          <button className="btn-primary" type="submit" disabled={!file || saving}>{saving ? 'Saving...' : 'Save Global Source'}</button>
+          <button className="btn-primary" type="submit" disabled={!file || saving}>{saving ? (t('saving') || 'Guardando...') : t('saveSourceBtn')}</button>
         </form>
         {saving && progress !== null && (
           <div aria-live="polite" style={{ display: 'grid', gap: '.35rem' }}>
-            <progress aria-label="Manual upload and indexing progress" max="100" value={progress} style={{ width: '100%', height: 14, accentColor: 'var(--brand-red)' }} />
+            <progress aria-label={t('uploadIndexingProgress')} max="100" value={progress} style={{ width: '100%', height: 14, accentColor: 'var(--brand-red)' }} />
             <small>{progress}%</small>
           </div>
         )}
         {message && <p role="status" style={{ color: hasError ? '#ff8787' : '#69db7c' }}>{message}</p>}
-        <h3>Added Sources</h3>
-        {loading ? <p>Loading...</p> : groupedSources.length === 0 ? <p>No global sources added yet.</p> : (
+        <h3>{t('addedSources')}</h3>
+        {loading ? <p>{t('loading') || 'Cargando...'}</p> : groupedSources.length === 0 ? <p>{t('noSources')}</p> : (
           <ul style={{ paddingLeft: '1.2rem' }}>
             {groupedSources.map((source) => (
               <li key={source.fuente_url || source.id} style={{ marginBottom: '.75rem' }}>
-                <strong>{source.fuente_nombre || 'Unnamed source'}</strong>
-                <span style={{ color: 'var(--text-secondary)' }}> · {source.chunks} chunks</span>
+                <strong>{source.fuente_nombre || t('unnamedSource')}</strong>
+                <span style={{ color: 'var(--text-secondary)' }}> · {source.chunks} {t('chunksCount')}</span>
               </li>
             ))}
           </ul>
         )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-          <button type="button" className="btn-secondary" onClick={onClose}>Close</button>
+          <button type="button" className="btn-secondary" onClick={onClose}>{t('close')}</button>
         </div>
       </section>
     </div>

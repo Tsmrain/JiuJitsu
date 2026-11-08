@@ -60,7 +60,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, idioma, onCl
       );
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.detail || 'Error eliminando teoría.');
+        setError(errData.detail || t('errorDeletingTheory') || 'Error eliminando teoría.');
         setDeleting(false);
         return;
       }
@@ -157,12 +157,10 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, idioma, onCl
             borderRadius: '8px',
             textAlign: 'center',
             color: 'var(--text-secondary)',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            lineHeight: '1.5'
           }}>
-            {t('noTheoryUploaded')}<br />
-            <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-              {t('editTechniqueToAttach')}
-            </span>
+            {t('noTheoryUploaded')}
           </div>
         ) : (
           <>

@@ -237,6 +237,60 @@ def auto_ingerir_referencia_background(tecnica_id: UUID, video_path: str):
     auto_ingerir_video_rag_background(tecnica_id=tecnica_id, video_path=video_path)
 
 
+def entrenar_y_actualizar_modelo_autonomo(video_path: str, tecnica_id: str | UUID) -> Optional[int]:
+    """
+    Dispara el ciclo de Aprendizaje Continuo Autónomo (Autonomous MLOps Flywheel)
+    en un proceso de sistema operativo completamente separado (subprocess.Popen con start_new_session=True)
+    para no bloquear el hilo ni el event loop de FastAPI.
+    """
+    import subprocess
+    import sys
+
+    try:
+        v_path = Path(str(video_path))
+        if not v_path.exists():
+            logger.warning("Autonomous Flywheel omitido: el archivo %s no existe.", v_path)
+            return None
+
+        # Evitar disparar entrenamientos pesados sobre payloads sintéticos de 5 bytes en pytest
+        if v_path.stat().st_size < 10_000 and os.getenv("FORCE_AUTONOMOUS_FLYWHEEL_IN_TESTS") != "1":
+            logger.info("Autonomous Flywheel omitido para archivo sintético de prueba (%d bytes).", v_path.stat().st_size)
+            return None
+
+        repo_root = Path(__file__).resolve().parents[4]
+        script_path = repo_root / "backend" / "scripts" / "autonomous_flywheel.py"
+        if not script_path.exists():
+            logger.warning("No se encontró el script autonomous_flywheel.py en %s", script_path)
+            return None
+
+        # Copiar el video a un directorio persistente antes de que cualquier limpieza temporal actúe
+        autonomous_videos_dir = repo_root / "data" / "autonomous" / "videos"
+        autonomous_videos_dir.mkdir(parents=True, exist_ok=True)
+        safe_video_path = autonomous_videos_dir / f"{tecnica_id}_{v_path.name}"
+        if v_path.resolve() != safe_video_path.resolve():
+            shutil.copy2(v_path, safe_video_path)
+
+        log_path = repo_root / "data" / "autonomous" / "autonomous_subprocess.log"
+        log_file = open(log_path, "a", encoding="utf-8")
+
+        proc = subprocess.Popen(
+            [sys.executable, str(script_path), str(safe_video_path), str(tecnica_id)],
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            cwd=str(repo_root),
+            start_new_session=True,
+        )
+        logger.info(
+            "🚀 Autonomous MLOps Flywheel lanzado en subproceso independiente (PID=%d) para técnica %s",
+            proc.pid,
+            tecnica_id,
+        )
+        return proc.pid
+    except Exception as exc:
+        logger.warning("No se pudo iniciar el subproceso de Autonomous Flywheel: %s", exc)
+        return None
+
+
 @router.post("/{tecnica_id}/video", status_code=status.HTTP_200_OK, deprecated=True)
 async def subir_video_referencia(
     tecnica_id: UUID,
@@ -294,10 +348,11 @@ async def subir_video_referencia(
 
     video_id = result[0]["video_id"] if isinstance(result, list) else result["video_id"]
 
-    # Iniciar auto-ingesta de poses del profesor en segundo plano para Qdrant
+    # Iniciar auto-ingesta de poses del profesor en segundo plano para Qdrant y aprendizaje continuo autónomo
     background_tasks.add_task(auto_ingerir_referencia_background, tecnica_id, file_path)
+    background_tasks.add_task(entrenar_y_actualizar_modelo_autonomo, file_path, str(tecnica_id))
 
-    return {"status": "ok", "message": "Video de referencia actualizado.", "video_id": video_id}
+    return {"status": "ok", "message": "Técnica guardada. El sistema está aprendiendo la nueva técnica en segundo plano.", "video_id": video_id}
 
 
 @router.get("/{tecnica_id}/patron", status_code=status.HTTP_200_OK)
@@ -544,6 +599,9 @@ async def registrar_patron_tecnica(
             caller.get("sucursal_id"),
         )
 
+    # Disparar Aprendizaje Continuo Autónomo (Autonomous MLOps Flywheel) en proceso separado
+    background_tasks.add_task(entrenar_y_actualizar_modelo_autonomo, video_path, str(tecnica_id))
+
     return {
         "status": "ok",
         "tecnica_id": str(tecnica_id),
@@ -552,7 +610,8 @@ async def registrar_patron_tecnica(
         "total_frames": total_frames,
         "cobertura": cobertura,
         "video_referencia_guardado": video_ref_saved,
-        "mensaje": "Patrón biomecánico registrado y activado exitosamente."
+        "autonomous_learning_triggered": True,
+        "mensaje": "Técnica guardada. El sistema está aprendiendo la nueva técnica en segundo plano."
     }
 
 

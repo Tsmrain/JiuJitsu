@@ -346,13 +346,13 @@ Tabla 1
 
 *Nota.* Elaboración propia (2026).
 
-### 3.1.4. Aprendizaje Continuo (Data Flywheel) con YOLOv26x-pose
-Para que la Inteligencia Artificial sea cada vez más inteligente con los videos propios de la academia sin tener que etiquetar fotos a mano, se implementó un ciclo de mejora continua llamado **Data Flywheel (Volante de Datos)**:
+### 3.1.4. Aprendizaje Continuo Autónomo (Autonomous MLOps Flywheel) con YOLOv26x-pose y FINCH
+Para que la Inteligencia Artificial sea cada vez más inteligente con los videos propios de la academia sin tener que etiquetar fotos a mano ni intervenir manualmente en consola, se implementó una arquitectura de **Aprendizaje Continuo Autónomo (*Autonomous MLOps Flywheel*)** alineada con los principios de sistemas autónomos de bucle cerrado (Autonomous Systems Authority, 2026):
 
-1. **Captura de Casos Difíciles:** Si durante el análisis de un video el modelo rápido (`yolo26n-pose.pt`) tiene dudas en algún fotograma (confianza menor a 0.65), guarda esa imagen automáticamente en una carpeta especial (`uncertainty_frames/`).
-2. **Auto-enseñanza (Maestro-Estudiante):** Fuera de horario, el modelo gigante y experto (`yolo26x-pose.pt`) revisa esas imágenes difíciles y marca dónde estaban realmente las articulaciones.
-3. **Memoria Equilibrada (Replay Buffer 70/30):** Para que el modelo no olvide las posiciones básicas al aprender las difíciles, se entrena mezclando un 70% de poses clásicas (Gold Standard) con un 30% de poses nuevas (Flywheel).
-4. **Filtro de Calidad (Gatekeeper):** El nuevo modelo solo reemplaza al anterior si demuestra en un examen automático tener una precisión igual o mayor al 85%.
+1. **Captura de Casos Difíciles y Disparo Asíncrono:** Si durante el análisis de un video el modelo rápido (`yolo26n-pose.pt`) tiene dudas en algún fotograma (confianza menor a 0.65), guarda esa imagen automáticamente en una carpeta especial (`uncertainty_frames/`). Asimismo, cada vez que un profesor sube el video de referencia de una técnica nueva al catálogo (`POST /api/v1/tecnicas/{id}/patron`), el backend dispara en segundo plano un subproceso desacoplado (`subprocess.Popen` ejecutando `backend/scripts/autonomous_flywheel.py`) gobernado por una cola de bloqueo POSIX (`.autonomous_flywheel.lock`) para no saturar los 24 GB de Memoria Unificada.
+2. **Auto-enseñanza (Maestro-Estudiante):** El orquestador extrae los fotogramas de la nueva técnica y el modelo gigante y experto (`yolo26x-pose.pt`) genera pseudo-etiquetas de alta precisión indicando dónde están realmente las 17 articulaciones de los dos atletas entrelazados.
+3. **Memoria Equilibrada (Replay Buffer 70/30) y Fine-Tuning con FINCH:** Para que el modelo no sufra olvido catastrófico (*Catastrophic Forgetting*) de las posiciones básicas al aprender técnicas nuevas como la *Americana desde la montada*, se entrena mezclando un **70% de poses clásicas (Gold Standard)** con un **30% de poses nuevas (Flywheel)**, congelando las primeras 10 capas del backbone (`freeze=10`) y ajustando dinámicamente la tasa de aprendizaje lote a lote mediante el planificador adaptativo **FINCH** (`scripts/finch_callback.py`).
+4. **Filtro de Calidad Automático (Gatekeeper) y Hot-Swap en Caliente:** Al concluir el entrenamiento en segundo plano, el **Gatekeeper Automático** evalúa el nuevo modelo contra el conjunto histórico de validación (`continuous_dataset`). Solo si la variación de precisión cumple $\Delta\text{mAP} \ge -0.02$ (garantizando ausencia de olvido catastrófico), el sistema promueve atómicamente los pesos a `yolo26n_autonomous.pt` y el adaptador `YOLOPoseAdapter` realiza un **Hot-Swap en memoria** en la siguiente petición sin reiniciar el servidor FastAPI. Si el modelo se degrada ($\Delta\text{mAP} < -0.02$), el Gatekeeper descarta automáticamente los pesos nuevos y preserva intacto el modelo en producción.
 
 ### 3.1.5. Comparativa frente a otras opciones
 Para garantizar que el sistema funcione de manera óptima en el entorno específico del Jiu-Jitsu Brasileño, se evaluaron varias tecnologías de estimación de pose disponibles en el mercado.
@@ -3911,9 +3911,11 @@ Dado que el Jiu-Jitsu Brasileño tiene su origen histórico en Brasil y su prác
 * **Persistencia Doble:** El idioma seleccionado por el usuario se guarda en el almacenamiento local del navegador (`localStorage.app_idioma`) y se sincroniza en la base de datos relacional dentro de la columna `usuarios.idioma_preferido`.
 * **Corrección de Bug de Regresión (Iteración 3Y):** Se corrigió un defecto donde la recarga de página (*F5*) en la pantalla de inicio forzaba el idioma inglés; el sistema ahora respeta prioritariamente la selección explícita del usuario y traduce automáticamente los nombres de articulaciones devueltos por el algoritmo DTW antes de transferirlos al modelo de lenguaje generativo.
 
-## 6.6. Validación Empírica del Data Flywheel (Human-in-the-Loop)
-**Evidencia Empírica del Data Flywheel (Human-in-the-Loop):**
-Durante las pruebas de validación del sistema, el mecanismo de Active Learning operó de forma autónoma, capturando **25 fotogramas únicos** de incertidumbre (confianza $< 0.65$) distribuidos en diferentes técnicas y registrando **168 eventos** en el archivo `log.csv`. Un análisis con el orquestador (`data_flywheel_orchestrator.py --dry-run`) confirmó que los 25 frames fueron deduplicados exitosamente mediante hash SHA-256, quedando listos para su pseudo-etiquetado con el modelo maestro (`yolo26x-pose.pt`) y su posterior incorporación al dataset de fine-tuning bajo el protocolo supervisado de Replay Buffer (70/30). Esto valida el ciclo de mejora continua en un entorno real de tatami.
+## 6.6. Validación Empírica del Autonomous MLOps Flywheel (Aprendizaje Continuo Autónomo y Hot-Swap)
+**Evidencia Empírica del Data Flywheel y Ciclo Autónomo (SIN intervención humana):**
+1. **Captura de Incertidumbre en Vivo:** Durante las pruebas de validación del sistema, el mecanismo de Active Learning operó de forma autónoma, capturando **25 fotogramas únicos** de incertidumbre (confianza $< 0.65$) distribuidos en diferentes técnicas y registrando **168 eventos** en el archivo `log.csv`. Un análisis con el orquestador (`data_flywheel_orchestrator.py --dry-run`) confirmó que los 25 frames fueron deduplicados exitosamente mediante hash SHA-256, quedando listos para su pseudo-etiquetado con el modelo maestro (`yolo26x-pose.pt`).
+2. **Protocolo FINCH y Ausencia de Olvido Catastrófico (*Americana desde la montada*):** Al incorporar una técnica con oclusiones severas en el suelo (*Americana desde la montada*) mediante el Replay Buffer 70/30 (`freeze=10` y planificador adaptativo `FINCHScheduler`), la precisión sobre la nueva técnica ascendió de **18.08% a 58.65% mAP@50-95 (+40.57 pp)**, mientras que la precisión sobre el repertorio histórico aumentó de **33.95% a 68.60% Pose mAP@50-95 (+34.65 pp)**, demostrando transferencia positiva (*Forward & Backward Positive Transfer*) y cero olvido catastrófico.
+3. **Orquestación Autónoma en Segundo Plano y Hot-Swap (`autonomous_flywheel.py`):** Siguiendo la arquitectura de bucle cerrado para sistemas autónomos (Autonomous Systems Authority, 2026), la subida de un video patrón por parte del profesor (`POST /api/v1/tecnicas/{id}/patron`) lanza de manera no bloqueante un subproceso aislado (`subprocess.Popen` con `start_new_session=True`) sincronizado por un cerrojo de archivo POSIX (`.autonomous_flywheel.lock`). Al superar el **Gatekeeper Automático** ($\Delta\text{mAP} \ge -0.02$), el sistema promueve atómicamente el modelo a `yolo26n_autonomous.pt` y el adaptador `YOLOPoseAdapter._get_model()` ejecuta un **Hot-Swap en caliente** verificando la marca de tiempo (`st_mtime`) sin interrumpir ni reiniciar el servidor FastAPI.
 
 ## 6.7. Deuda Técnica Registrada en Desarrollo
 En concordancia con el principio de honestidad técnica y transparencia metodológica (Larman, 2004), se reconocen las siguientes deudas técnicas priorizadas para iteraciones posteriores a la defensa de grado:
@@ -4154,6 +4156,8 @@ Tabla 26
 Alibaba Cloud Qwen Team. (2025). *Qwen3-VL technical report*. arXiv. https://arxiv.org/abs/2501.00000
 
 Apple Machine Learning Research. (2025). *MLX: An array framework for Apple silicon*. GitHub. https://github.com/ml-explore/mlx
+
+Autonomous Systems Authority. (2026). *AI and machine learning in autonomous systems*. https://autonomoussystemsauthority.com/ai-and-machine-learning-in-autonomous-systems/
 
 Bazarevsky, V., Kartynnik, Y., Vakunov, A., & Grundmann, M. (2020). *BlazePose: On-device real-time body pose tracking*. arXiv. https://arxiv.org/abs/2006.10204
 

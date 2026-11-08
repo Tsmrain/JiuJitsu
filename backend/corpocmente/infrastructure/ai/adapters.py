@@ -259,7 +259,39 @@ class YOLOPoseAdapter:
         return self._seg_model_cache
 
     def _get_model(self):
-        if not hasattr(self, "_model_cache") or self._model_cache is None:
+        repo_root = Path(__file__).resolve().parents[4]
+        autonomous_path = repo_root / "yolo26n_autonomous.pt"
+        if not autonomous_path.exists():
+            autonomous_path = repo_root / "storage" / "models" / "yolo26n_autonomous.pt"
+
+        # 1. Hot-Swap: Si hay un modelo autónomo validado por el Gatekeeper, cargarlo en memoria sin reiniciar
+        if autonomous_path.exists():
+            current_mtime = autonomous_path.stat().st_mtime
+            if (
+                not hasattr(self, "_model_cache")
+                or self._model_cache is None
+                or getattr(self._model_cache, "path", "") != str(autonomous_path)
+                or getattr(self, "_model_mtime", None) != current_mtime
+            ):
+                import torch
+                from ultralytics import YOLO
+                _orig = torch.load
+                def _safe_load(*a, **kw):
+                    kw["weights_only"] = False
+                    return _orig(*a, **kw)
+                torch.load = _safe_load
+                self._model_cache = YOLO(str(autonomous_path))
+                self._model_cache.path = str(autonomous_path)
+                self._model_mtime = current_mtime
+                logger.info(f"🔥 Hot-Swap: Cargando modelo autónomo {autonomous_path.name}")
+            return self._model_cache
+
+        # 2. Fallback al modelo en producción / original
+        if (
+            not hasattr(self, "_model_cache")
+            or self._model_cache is None
+            or "yolo26n_autonomous.pt" in str(getattr(self._model_cache, "path", ""))
+        ):
             import torch
             from ultralytics import YOLO
             _orig = torch.load
@@ -267,7 +299,6 @@ class YOLOPoseAdapter:
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
-            repo_root = Path(__file__).resolve().parents[4]
             candidates = [
                 str(repo_root / "yolo26n_americana.pt"),
                 str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
@@ -279,6 +310,7 @@ class YOLOPoseAdapter:
             ]
             weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-pose.pt")
             self._model_cache = YOLO(weights)
+            self._model_cache.path = str(weights)
         return self._model_cache
 
     def extraer_secuencia(
@@ -429,6 +461,8 @@ class YOLOPoseAdapter:
 
             repo_root = Path(__file__).resolve().parents[4]
             _candidates = [
+                str(repo_root / "yolo26n_autonomous.pt"),
+                str(repo_root / "storage" / "models" / "yolo26n_autonomous.pt"),
                 str(repo_root / "yolo26n_americana.pt"),
                 str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
                 str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
@@ -438,9 +472,8 @@ class YOLOPoseAdapter:
                 "yolo26n-pose.pt",
                 "yolo11n-pose.pt",
             ]
-            _weights = next((c for c in _candidates if os.path.exists(c)), "yolo26n-pose.pt")
             log_ram_usage("pre_yolo_load")
-            model = YOLO(_weights)
+            model = self._get_model()
             log_ram_usage("post_yolo_load")
             results = model.predict(source=video_path, stream=True, verbose=False, conf=0.10, device=_device)
 
@@ -811,6 +844,8 @@ class YOLOPoseAdapter:
                 from ultralytics import YOLO
                 repo_root = Path(__file__).resolve().parents[4]
                 _candidates = [
+                    str(repo_root / "yolo26n_autonomous.pt"),
+                    str(repo_root / "storage" / "models" / "yolo26n_autonomous.pt"),
                     str(repo_root / "yolo26n_americana.pt"),
                     str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
                     str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
@@ -819,8 +854,7 @@ class YOLOPoseAdapter:
                     "storage/models/yolo26n-pose.pt",
                     "yolo26n-pose.pt",
                 ]
-                _weights = next((c for c in _candidates if os.path.exists(c)), "yolo26n-pose.pt")
-                model = YOLO(_weights)
+                model = self._get_model()
                 results = model.predict(source=frame, conf=0.15, verbose=False)
                 if results and results[0].keypoints is not None and len(results[0].keypoints.data) > 0:
                     raw = results[0].keypoints.data.cpu().numpy()

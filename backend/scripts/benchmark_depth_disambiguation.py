@@ -18,37 +18,39 @@ def main():
     print("PRUEBA DE FUEGO: BENCHMARK DESAMBIGUACIÓN POR PROFUNDIDAD (YOLO26)")
     print("=" * 70)
 
-    video_origen = Path("2026-10-31 17-15-58.mov")
-    if not video_origen.exists():
-        video_origen = Path("../2026-10-31 17-15-58.mov")
-    if not video_origen.exists():
-        print(f"ERROR: Video no encontrado en {video_origen}")
-        sys.exit(1)
-
-    # Crear clip de prueba de 300 frames para benchmark riguroso y rápido
     benchmark_dir = Path("backend/storage/benchmark")
     benchmark_dir.mkdir(parents=True, exist_ok=True)
     clip_path = benchmark_dir / "benchmark_clip_300f.mp4"
 
-    cap = cv2.VideoCapture(str(video_origen))
-    fps = cap.get(cv2.CAP_PROP_FPS) or 60.0
-    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 1920)
-    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1080)
+    if not clip_path.exists():
+        video_origen = Path("2026-10-31 17-15-58.mov")
+        if not video_origen.exists():
+            video_origen = Path("../2026-10-31 17-15-58.mov")
+        if not video_origen.exists():
+            print(f"ERROR: Video no encontrado en {video_origen}")
+            sys.exit(1)
 
-    max_frames = 300
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(str(clip_path), fourcc, fps, (w, h))
+        cap = cv2.VideoCapture(str(video_origen))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 60.0
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 1920)
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1080)
 
-    frames_written = 0
-    while cap.isOpened() and frames_written < max_frames:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        out.write(frame)
-        frames_written += 1
-    cap.release()
-    out.release()
-    print(f"✅ Clip de prueba generado: {clip_path} ({frames_written} frames a {fps:.1f} fps, {w}x{h})")
+        max_frames = 300
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(str(clip_path), fourcc, fps, (w, h))
+
+        frames_written = 0
+        while cap.isOpened() and frames_written < max_frames:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            out.write(frame)
+            frames_written += 1
+        cap.release()
+        out.release()
+        print(f"✅ Clip de prueba generado: {clip_path} ({frames_written} frames a {fps:.1f} fps, {w}x{h})")
+    else:
+        print(f"✅ Usando clip de prueba existente: {clip_path}")
 
     adapter = YOLOPoseAdapter()
 

@@ -217,10 +217,6 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       alert(t('mustUploadReferenceVideo') || 'Debes subir el video de referencia para esta técnica.');
       return;
     }
-    if (!formData.mensaje_profesor.trim()) {
-      alert(t('writeInstructorMessageAlert') || 'Escribe un mensaje explicando la técnica a tus alumnos.');
-      return;
-    }
     setSaving(true);
 
     try {
@@ -243,7 +239,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           pendingTecnica: {
             nombre: formData.nombre,
             nivel_cinturon: formData.nivel_cinturon,
-            mensaje_profesor: formData.mensaje_profesor.trim(),
+            mensaje_profesor: (formData.mensaje_profesor || "").trim(),
           },
           sessionData: frame,
           selectedIdx: frame.personas?.length === 1 ? frame.personas[0].idx : null,
@@ -270,7 +266,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
             pendingTecnica: {
               nombre: formData.nombre,
               nivel_cinturon: formData.nivel_cinturon,
-              mensaje_profesor: formData.mensaje_profesor.trim(),
+              mensaje_profesor: (formData.mensaje_profesor || "").trim(),
             },
             sessionData: frame,
             selectedIdx: frame.personas?.length === 1 ? frame.personas[0].idx : null,
@@ -288,7 +284,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
             body: JSON.stringify({
               nombre: formData.nombre,
               nivel_cinturon: formData.nivel_cinturon,
-              mensaje_profesor: formData.mensaje_profesor.trim(),
+              mensaje_profesor: (formData.mensaje_profesor || "").trim(),
             })
           });
           if (!res.ok) {
@@ -884,7 +880,6 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                   onChange={handleChange}
                   placeholder={t('instructorMessagePlaceholder') || "Explica con tus propias palabras cómo ejecutar esta técnica."}
                   rows={5}
-                  required
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', resize: 'vertical' }}
                 />
               </div>

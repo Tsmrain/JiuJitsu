@@ -44,7 +44,12 @@ class TestUmbralAceptableEscala:
         mock_gemini.generar_texto_feedback.return_value = "Feedback correctivo real."
 
         facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
-        resultado = facade.ejecutar_analisis_completo("/tmp/video.mp4", uuid4(), "Armbar")
+        resultado = facade.ejecutar_analisis_completo(
+            "/tmp/video.mp4",
+            uuid4(),
+            "Armbar",
+            mensaje_profesor="Ajustar cadera y mantener presión",
+        )
 
         # VLM DEBE haber sido llamado
         mock_gemini.generar_texto_feedback.assert_called_once()
@@ -71,7 +76,12 @@ class TestUmbralAceptableEscala:
         )
 
         facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
-        resultado = facade.ejecutar_analisis_completo("/tmp/video.mp4", uuid4(), "Armbar")
+        resultado = facade.ejecutar_analisis_completo(
+            "/tmp/video.mp4",
+            uuid4(),
+            "Armbar",
+            mensaje_profesor="Ajustar cadera y mantener presión",
+        )
 
         mock_gemini.generar_texto_feedback.assert_not_called()
         assert any(w in resultado.feedback.lower() for w in ["excelente", "correctamente", "excellent", "correctly"])

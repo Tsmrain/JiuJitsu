@@ -18,6 +18,8 @@ from corpocmente.application.services.multimodal_rag_service import (
 
 logger = logging.getLogger(__name__)
 
+UMBRAL_RELEVANCIA_RAG = 0.65
+
 class IntelligenceAnalysisFacade:
     def __init__(self, 
                  yolo_adapter: YOLOPoseAdapter, 
@@ -219,6 +221,8 @@ class IntelligenceAnalysisFacade:
         else:
             contexto_profundo = ""
             evidencias_rag = []
+            tiene_contexto_rag = False
+
             if self.qwen:
                 try:
                     evidencias_candidatas = obtener_evidencias_rag_multimodal(
@@ -231,66 +235,137 @@ class IntelligenceAnalysisFacade:
                         video_referencia_path=video_referencia_path,
                         limit=5,
                     )
-                    # Reranking multilingüe con Cross-Encoder real Qwen3-VL (Iteración 3R)
-                    partes_q = [tecnica_nombre]
-                    if discrepancias_detectadas:
-                        partes_q.append(", ".join(discrepancias_detectadas))
-                    if mensaje_profesor:
-                        partes_q.append(mensaje_profesor[:120])
-                    query_rerank = ". ".join(partes_q).strip()
-                    evidencias_rag = rerank_evidencias_multilingue(
-                        query_texto=query_rerank,
-                        evidencias=evidencias_candidatas,
-                        qwen_adapter=self.qwen,
-                        top_k=5,
-                        instruction="Given a jiu-jitsu technique question, retrieve the manual passage that answers it.",
-                    )
-                    evidencias_rag = incluir_mensaje_profesor(
-                        evidencias_rag, self.qdrant, tecnica_id, limit=5
-                    )
-                    contexto_profundo = formatear_evidencias_texto(evidencias_rag)
-                    if contexto_profundo:
-                        contexto_profundo = (
-                            "\n\n[Evidence retrieved from manuals and instructor reference videos]:\n"
-                            + contexto_profundo
+                    # Filtrar únicamente evidencias de manuales (no mensajes de profesor) para evaluar la relevancia RAG
+                    manuales_candidatos = [
+                        e for e in evidencias_candidatas
+                        if e.get("fuente_tipo") != "instructor_message" and e.get("tipo") != "instructor_message"
+                    ]
+
+                    if manuales_candidatos:
+                        # Reranking multilingüe con Cross-Encoder real Qwen3-VL (Iteración 3R)
+                        partes_q = [tecnica_nombre]
+                        if discrepancias_detectadas:
+                            partes_q.append(", ".join(discrepancias_detectadas))
+                        query_rerank = ". ".join(partes_q).strip()
+                        evidencias_reranked = rerank_evidencias_multilingue(
+                            query_texto=query_rerank,
+                            evidencias=manuales_candidatos,
+                            qwen_adapter=self.qwen,
+                            top_k=5,
+                            instruction="Given a jiu-jitsu technique question, retrieve the manual passage that answers it.",
                         )
+                        if evidencias_reranked:
+                            mejor_manual = evidencias_reranked[0]
+                            score_relevancia = float(
+                                mejor_manual.get("rerank_score")
+                                if mejor_manual.get("rerank_score") is not None
+                                else mejor_manual.get("score", 0.0)
+                            )
+                            if score_relevancia >= UMBRAL_RELEVANCIA_RAG:
+                                tiene_contexto_rag = True
+                                evidencias_rag = evidencias_reranked
+                                contexto_profundo = formatear_evidencias_texto(evidencias_rag)
+                                if contexto_profundo:
+                                    contexto_profundo = (
+                                        "\n\n[Evidence retrieved from manuals and instructor reference videos]:\n"
+                                        + contexto_profundo
+                                    )
+                                logger.info(
+                                    "Prioridad 1 activa: RAG manual válido para '%s' (score=%.4f >= %.2f)",
+                                    tecnica_nombre,
+                                    score_relevancia,
+                                    UMBRAL_RELEVANCIA_RAG,
+                                )
+                            else:
+                                logger.info(
+                                    "RAG manual por debajo del umbral para '%s' (score=%.4f < %.2f). RAG descartado.",
+                                    tecnica_nombre,
+                                    score_relevancia,
+                                    UMBRAL_RELEVANCIA_RAG,
+                                )
                 except Exception as e_rag:
                     logger.warning("Fallo en recuperación RAG multimodal o reranking (no bloqueante): %s", e_rag)
 
             from corpocmente.domain.strategies.prompt_strategies import obtener_estrategia_prompt
             strategy = obtener_estrategia_prompt(idioma)
-            prompt = strategy.construir_prompt_evaluacion(
-                tecnica_nombre,
-                discrepancias_detectadas,
-                mensaje_profesor=mensaje_profesor
-            )
-            if contexto_profundo:
-                prompt += contexto_profundo
 
-            res_gemini = self.gemini.generar_texto_feedback(
-                prompt,
-                frame_resaltado,
-                evidencias_visuales=evidencias_rag,
-                idioma=idioma,
-            )
+            if tiene_contexto_rag:
+                # Prioridad 1: Manual RAG de alta relevancia (ignora mensaje del profesor)
+                prompt = strategy.construir_prompt_evaluacion(
+                    tecnica_nombre,
+                    discrepancias_detectadas,
+                    mensaje_profesor="",
+                    tiene_contexto_rag=True,
+                )
+                if contexto_profundo:
+                    prompt += contexto_profundo
 
-            if isinstance(res_gemini, dict):
-                feedback_summary = res_gemini.get("summary", "Technique error")
-                feedback_correction = res_gemini.get("correction", "")
-                feedback_texto = feedback_correction
+                res_gemini = self.gemini.generar_texto_feedback(
+                    prompt,
+                    frame_resaltado,
+                    evidencias_visuales=evidencias_rag,
+                    idioma=idioma,
+                )
+
+                if isinstance(res_gemini, dict):
+                    feedback_summary = res_gemini.get("summary", "Technique error")
+                    feedback_correction = res_gemini.get("correction", "")
+                    feedback_texto = feedback_correction
+                else:
+                    feedback_texto = str(res_gemini)
+                    partes = feedback_texto.split(".")
+                    feedback_summary = partes[0].strip() if partes else "Technique error"
+                    feedback_correction = feedback_texto
+
+            elif mensaje_profesor and mensaje_profesor.strip():
+                # Prioridad 2: No hay manual útil pero sí mensaje del profesor
+                prompt = strategy.construir_prompt_evaluacion(
+                    tecnica_nombre,
+                    discrepancias_detectadas,
+                    mensaje_profesor=mensaje_profesor.strip(),
+                    tiene_contexto_rag=False,
+                )
+
+                res_gemini = self.gemini.generar_texto_feedback(
+                    prompt,
+                    frame_resaltado,
+                    evidencias_visuales=[],
+                    idioma=idioma,
+                )
+
+                if isinstance(res_gemini, dict):
+                    feedback_summary = res_gemini.get("summary", "Technique error")
+                    feedback_correction = res_gemini.get("correction", "")
+                    feedback_texto = feedback_correction
+                else:
+                    feedback_texto = str(res_gemini)
+                    partes = feedback_texto.split(".")
+                    feedback_summary = partes[0].strip() if partes else "Technique error"
+                    feedback_correction = feedback_texto
+
             else:
-                feedback_texto = str(res_gemini)
-                partes = feedback_texto.split(".")
-                feedback_summary = partes[0].strip() if partes else "Technique error"
-                feedback_correction = feedback_texto
+                # Prioridad 3: Fallback Seguro (ni manuales útiles ni mensaje del instructor)
+                # NO invocamos al VLM para prevenir alucinaciones
+                fallback_data = strategy.obtener_mensaje_sin_contexto()
+                feedback_summary = fallback_data.get("summary", "Información insuficiente")
+                feedback_correction = fallback_data.get(
+                    "correction",
+                    "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
+                )
+                feedback_texto = feedback_correction
+                logger.info(
+                    "Prioridad 3 activa (Fallback seguro): Sin manuales ni mensaje del profesor para '%s'. VLM omitido.",
+                    tecnica_nombre,
+                )
 
             # Mecanismo de Grounding (Anti-Alucinaciones con LLM-as-a-Judge)
-            if hasattr(self.gemini, "evaluar_fidelidad_grounding") and (contexto_profundo or mensaje_profesor):
+            # Solo aplica si se consultó al VLM (Prioridad 1 o 2)
+            if (tiene_contexto_rag or (mensaje_profesor and mensaje_profesor.strip())) and hasattr(self.gemini, "evaluar_fidelidad_grounding"):
                 try:
                     eval_grounding = self.gemini.evaluar_fidelidad_grounding(
                         respuesta={"summary": feedback_summary, "correction": feedback_correction},
-                        contexto=contexto_profundo,
-                        mensaje_profesor=mensaje_profesor,
+                        contexto=contexto_profundo if tiene_contexto_rag else "",
+                        mensaje_profesor="" if tiene_contexto_rag else mensaje_profesor,
                     )
                     if (
                         isinstance(eval_grounding, dict)
@@ -305,25 +380,12 @@ class IntelligenceAnalysisFacade:
                                 faith_score,
                                 unsupported,
                             )
-                            lang_clean = (idioma or "es").lower().strip()
-                            if lang_clean in ("pt", "portuguese", "português", "portugues"):
-                                feedback_summary = "Contexto insuficiente"
-                                feedback_correction = (
-                                    "Não há informações suficientes nos manuais para gerar uma correção detalhada. "
-                                    "Consulte seu instrutor."
-                                )
-                            elif lang_clean in ("en", "english"):
-                                feedback_summary = "Insufficient context"
-                                feedback_correction = (
-                                    "There is not enough information in the manuals to generate a detailed correction. "
-                                    "Please consult with your instructor."
-                                )
-                            else:
-                                feedback_summary = "Insuficiente contexto"
-                                feedback_correction = (
-                                    "No hay suficiente información en los manuales para generar una corrección detallada. "
-                                    "Consulta con tu instructor."
-                                )
+                            fallback_data = strategy.obtener_mensaje_sin_contexto()
+                            feedback_summary = fallback_data.get("summary", "Información insuficiente")
+                            feedback_correction = fallback_data.get(
+                                "correction",
+                                "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
+                            )
                             feedback_texto = feedback_correction
                 except Exception as e_judge:
                     logger.warning("Fallo en evaluación de fidelidad grounding (no bloqueante): %s", e_judge)

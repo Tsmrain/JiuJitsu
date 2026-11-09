@@ -38,7 +38,12 @@ def test_ejecutar_analisis_completo_flujo_exitoso():
     facade = IntelligenceAnalysisFacade(mock_yolo, mock_qdrant, mock_gemini)
     
     # Act
-    resultado = facade.ejecutar_analisis_completo("/tmp/video.mp4", tecnica_id, "Armbar")
+    resultado = facade.ejecutar_analisis_completo(
+        "/tmp/video.mp4",
+        tecnica_id,
+        "Armbar",
+        mensaje_profesor="Mantener cadera baja y agarre firme"
+    )
     
     # Assert
     assert resultado.similitud == 0.80
@@ -220,6 +225,7 @@ def test_facade_separa_frame_limpio_para_rag_y_frame_resaltado_para_gemini(tmp_p
             video_path=str(tmp_path / "video.mp4"),
             tecnica_id=tecnica_id,
             tecnica_nombre="Armbar",
+            mensaje_profesor="Cerrar el codo firmemente contra el cuerpo",
         )
 
     # Qwen generar_embedding debe haber sido llamado con el frame limpio (clean_*.jpg), no con el anotado (critico_*.jpg)
@@ -271,6 +277,9 @@ def test_facade_no_rompe_si_ambos_embeddings_fallan(tmp_path):
             tecnica_nombre="Triángulo",
         )
 
-    # Qdrant RAG no debe llamarse porque no hay vectores válidos
+    # Qdrant RAG no debe llamarse porque no hay vectores válidos.
+    # Al no haber RAG ni mensaje del profesor, entra el fallback seguro (Prioridad 3)
+    # y el VLM NO se invoca para evitar alucinaciones.
     mock_qdrant.recuperar_evidencias_rag_multimodal.assert_not_called()
-    assert res.feedback == "Feedback sin RAG."
+    mock_gemini.generar_texto_feedback.assert_not_called()
+    assert "No hay información suficiente en los manuales" in res.feedback

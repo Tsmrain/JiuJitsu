@@ -107,18 +107,35 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
 
   const getMediaUrl = (relativeUrl) => {
     if (!relativeUrl) return '';
-    const fullUrl = relativeUrl.startsWith('http') ? relativeUrl : `${API_BASE}${relativeUrl}`;
-    return user?.token ? `${fullUrl}?token=${encodeURIComponent(user.token)}` : fullUrl;
+    const [baseWithoutHash, hash] = relativeUrl.split('#');
+    const fullUrl = baseWithoutHash.startsWith('http') ? baseWithoutHash : `${API_BASE}${baseWithoutHash}`;
+    const separator = fullUrl.includes('?') ? '&' : '?';
+    const withToken = user?.token ? `${fullUrl}${separator}token=${encodeURIComponent(user.token)}` : fullUrl;
+    return hash ? `${withToken}#${hash}` : withToken;
   };
 
-  const getPdfUrl = (filename) => {
-    const raw = `${API_BASE}/api/v1/conocimiento/manuales/${encodeURIComponent(filename)}`;
-    return user?.token ? `${raw}?token=${encodeURIComponent(user.token)}` : raw;
+  const getPdfUrl = (itemOrFilename) => {
+    if (!itemOrFilename) return '';
+    let raw;
+    if (typeof itemOrFilename === 'object' && itemOrFilename.url) {
+      raw = itemOrFilename.url.startsWith('http') ? itemOrFilename.url : `${API_BASE}${itemOrFilename.url}`;
+    } else {
+      const filename = typeof itemOrFilename === 'object' ? (itemOrFilename.filename || itemOrFilename.fuente_nombre) : itemOrFilename;
+      raw = `${API_BASE}/api/v1/conocimiento/manuales/${encodeURIComponent(filename)}`;
+    }
+    const [baseWithoutHash, hash] = raw.split('#');
+    const separator = baseWithoutHash.includes('?') ? '&' : '?';
+    const withToken = user?.token ? `${baseWithoutHash}${separator}token=${encodeURIComponent(user.token)}` : baseWithoutHash;
+    return hash ? `${withToken}#${hash}` : withToken;
   };
 
-  const cleanBookName = (filename) => {
-    return filename
-      .replace(/\.pdf$/i, '')
+  const cleanBookName = (itemOrFilename) => {
+    if (!itemOrFilename) return 'Documento';
+    if (typeof itemOrFilename === 'object') {
+      return itemOrFilename.nombre || itemOrFilename.fuente_nombre || itemOrFilename.filename || 'Documento';
+    }
+    return String(itemOrFilename)
+      .replace(/\.(pdf|docx|txt|jpg|jpeg|png|webp)$/i, '')
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
@@ -290,6 +307,16 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
               {results.map((item, idx) => {
                 const pageImgUrl = getMediaUrl(item.media_url);
                 const scorePct = Math.round((item.score || 0) * 100);
+                const detectedPage = item.pagina || (item.contenido_texto?.match(/\[P[aá]gina\s+(\d+)\]/i)?.[1] ?? null);
+                const rawSourceUrl = item.fuente_url || '';
+                const sourceUrlLower = rawSourceUrl.toLowerCase();
+                const isSourcePdf = sourceUrlLower.includes('.pdf') || item.fuente_tipo === 'manual_pdf';
+                const isSourceTxt = sourceUrlLower.includes('.txt') || item.fuente_tipo === 'texto';
+                const isSourceDocx = sourceUrlLower.includes('.docx') || item.fuente_tipo === 'docx';
+                const pdfSourceUrl = isSourcePdf && rawSourceUrl
+                  ? (detectedPage && !rawSourceUrl.includes('#') ? `${rawSourceUrl}#page=${detectedPage}` : rawSourceUrl)
+                  : rawSourceUrl;
+
                 return (
                   <div
                     key={item.id || idx}
@@ -313,7 +340,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                       alignItems: 'center',
                     }}>
                       <span style={{ fontWeight: 'bold', fontSize: '0.88rem', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        📚 {item.cita || `${item.fuente_nombre || 'Manual'} (p. ${item.pagina || '?'})`}
+                        📚 {item.cita || `${item.fuente_nombre || 'Manual'}${detectedPage ? ` (p. ${detectedPage})` : ''}`}
                       </span>
                       <span style={{
                         fontSize: '0.75rem',
@@ -328,60 +355,162 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                     </div>
 
                     {pageImgUrl ? (
+                      pageImgUrl.toLowerCase().includes('.pdf') ? (
+                        <div
+                          onClick={() => setSelectedPdf({
+                            nombre: item.cita || item.fuente_nombre || 'Manual PDF',
+                            url: item.media_url,
+                            filename: item.fuente_nombre,
+                          })}
+                          style={{
+                            height: '130px',
+                            background: 'linear-gradient(135deg, rgba(208, 17, 24, 0.14), rgba(13, 17, 23, 0.95))',
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.45rem',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                          title={t('openPdf')}
+                        >
+                          <span style={{ fontSize: '2rem' }}>📖</span>
+                          <span style={{ fontSize: '0.86rem', color: '#ffd43b', fontWeight: 'bold' }}>
+                            {detectedPage ? `${t('openPdf')} (p. ${detectedPage})` : t('openPdf')}
+                          </span>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => setSelectedImage({ url: pageImgUrl, cita: item.cita || `${item.fuente_nombre}${detectedPage ? ` (p. ${detectedPage})` : ''}` })}
+                          style={{
+                            height: '240px',
+                            background: '#040608',
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          title={t('viewFullImage')}
+                        >
+                          <img
+                            src={pageImgUrl}
+                            alt={item.cita || 'Página de manual'}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              transition: 'transform 0.2s ease',
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                          <div style={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            background: 'rgba(0, 0, 0, 0.75)',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: 4,
+                            fontSize: '0.72rem',
+                            color: '#ddd',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}>
+                            🔍 {t('viewFullImage')}
+                          </div>
+                        </div>
+                      )
+                    ) : rawSourceUrl && isSourcePdf ? (
                       <div
-                        onClick={() => setSelectedImage({ url: pageImgUrl, cita: item.cita || `${item.fuente_nombre} (p. ${item.pagina})` })}
+                        onClick={() => setSelectedPdf({
+                          nombre: item.cita || item.fuente_nombre || 'Manual PDF',
+                          url: pdfSourceUrl,
+                          filename: item.fuente_nombre,
+                        })}
                         style={{
-                          height: '240px',
-                          background: '#040608',
-                          overflow: 'hidden',
+                          height: '115px',
+                          background: 'linear-gradient(135deg, rgba(208, 17, 24, 0.14), rgba(13, 17, 23, 0.95))',
                           cursor: 'pointer',
-                          position: 'relative',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          gap: '0.35rem',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                         }}
-                        title={t('viewFullImage')}
+                        title={t('openPdf')}
                       >
-                        <img
-                          src={pageImgUrl}
-                          alt={item.cita || 'Página de manual'}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'contain',
-                            transition: 'transform 0.2s ease',
-                          }}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: 8,
-                          right: 8,
-                          background: 'rgba(0, 0, 0, 0.75)',
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: 4,
-                          fontSize: '0.72rem',
-                          color: '#ddd',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}>
-                          🔍 {t('viewFullImage')}
-                        </div>
+                        <span style={{ fontSize: '1.75rem' }}>📕</span>
+                        <span style={{ fontSize: '0.84rem', color: '#ffd43b', fontWeight: 'bold' }}>
+                          {detectedPage ? `${t('openPdf')} (p. ${detectedPage})` : t('openPdf')}
+                        </span>
                       </div>
+                    ) : rawSourceUrl && isSourceTxt ? (
+                      <div
+                        onClick={() => setSelectedPdf({
+                          nombre: item.cita || item.fuente_nombre || 'Documento TXT',
+                          url: rawSourceUrl,
+                          filename: item.fuente_nombre,
+                        })}
+                        style={{
+                          height: '110px',
+                          background: '#161b22',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.35rem',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                        }}
+                        title={t('previewFile') || 'Previsualizar'}
+                      >
+                        <span style={{ fontSize: '1.6rem' }}>📄</span>
+                        <span style={{ fontSize: '0.82rem', color: '#ffd43b', fontWeight: 'bold' }}>
+                          👁️ {t('previewFile') || 'Previsualizar'}
+                        </span>
+                      </div>
+                    ) : rawSourceUrl && isSourceDocx ? (
+                      <a
+                        href={getMediaUrl(rawSourceUrl)}
+                        download
+                        style={{
+                          height: '110px',
+                          background: '#161b22',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.35rem',
+                          textDecoration: 'none',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                        }}
+                      >
+                        <span style={{ fontSize: '1.6rem' }}>📘</span>
+                        <span style={{ fontSize: '0.82rem', color: '#ffd43b', fontWeight: 'bold' }}>
+                          ⬇️ {t('downloadFile') || 'Descargar'} DOCX
+                        </span>
+                      </a>
                     ) : (
                       <div style={{
-                        height: '140px',
+                        height: '110px',
                         background: '#161b22',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'var(--text-secondary)',
                         fontSize: '0.85rem',
+                        padding: '0 1rem',
+                        textAlign: 'center',
                       }}>
-                        📄 {item.fuente_referencia || 'Sin fotograma visual'}
+                        📄 {item.fuente_referencia || 'Fragmento textual de manual'}
                       </div>
                     )}
 
@@ -432,9 +561,37 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
               gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
               gap: '1.25rem',
             }}>
-              {manuales.map((bookFilename, idx) => {
-                const title = cleanBookName(bookFilename);
-                const pdfUrl = getPdfUrl(bookFilename);
+              {manuales.map((bookItem, idx) => {
+                const isObject = typeof bookItem === 'object' && bookItem !== null;
+                const title = isObject
+                  ? (bookItem.fuente_nombre || bookItem.filename || 'Documento')
+                  : cleanBookName(bookItem);
+                const filename = isObject
+                  ? (bookItem.filename || bookItem.fuente_nombre || '')
+                  : bookItem;
+                const formato = isObject
+                  ? (bookItem.formato || (bookItem.fuente_url?.toLowerCase().includes('.pdf') ? 'pdf' : 'otro'))
+                  : (String(bookItem).toLowerCase().endsWith('.pdf') ? 'pdf' : 'otro');
+                const directUrl = isObject && bookItem.fuente_url
+                  ? getMediaUrl(bookItem.fuente_url)
+                  : getPdfUrl(filename);
+                const totalChunks = isObject ? bookItem.total_chunks : null;
+
+                const isPdf = formato === 'pdf';
+                const isImg = formato === 'imagen';
+                const isTxt = formato === 'txt';
+
+                const icon = isPdf ? '📕' : (isImg ? '🖼️' : (formato === 'docx' ? '📘' : '📄'));
+                const badgeText = isPdf
+                  ? (t('officialPdfBadge') || 'Manual Oficial PDF')
+                  : isImg
+                    ? (t('imageKnowledgeBadge') || 'Imagen / Diagrama')
+                    : isTxt
+                      ? (t('textKnowledgeBadge') || 'Documento TXT')
+                      : formato === 'docx'
+                        ? (t('docxKnowledgeBadge') || 'Documento Word (DOCX)')
+                        : 'Manual de Conocimiento';
+
                 return (
                   <div
                     key={idx}
@@ -462,10 +619,11 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '1.6rem',
+                          flexShrink: 0,
                         }}>
-                          📕
+                          {icon}
                         </div>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <span style={{
                             display: 'inline-block',
                             background: 'rgba(255, 255, 255, 0.1)',
@@ -476,33 +634,63 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                             borderRadius: '4px',
                             marginBottom: '0.2rem',
                           }}>
-                            {t('officialPdfBadge')}
+                            {badgeText}
                           </span>
-                          <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#ffffff', lineHeight: 1.3 }}>
+                          <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#ffffff', lineHeight: 1.3, wordBreak: 'break-word' }}>
                             {title}
                           </h4>
                         </div>
                       </div>
-                      <p style={{ margin: '0 0 1.2rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        {bookFilename}
+                      <p style={{ margin: '0 0 1.2rem 0', fontSize: '0.82rem', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
+                        {totalChunks ? `${totalChunks} ${t('indexedChunks') || 'fragmentos indexados'}` : filename}
                       </p>
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPdf(bookFilename)}
-                        className="btn-primary"
-                        style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span>{t('openPdf')}</span>
-                      </button>
+                      {isPdf ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPdf({ nombre: title, url: isObject ? (bookItem.fuente_url || '') : '', filename })}
+                          className="btn-primary"
+                          style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                          <span>{t('openPdf')}</span>
+                        </button>
+                      ) : isImg ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedImage({ url: directUrl, cita: title })}
+                          className="btn-primary"
+                          style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                        >
+                          <span>🔍 {t('viewFullImage') || 'Ver Imagen'}</span>
+                        </button>
+                      ) : isTxt ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPdf({ nombre: title, url: isObject ? (bookItem.fuente_url || '') : '', filename })}
+                          className="btn-primary"
+                          style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                        >
+                          <span>👁️ {t('previewFile') || 'Previsualizar'}</span>
+                        </button>
+                      ) : (
+                        <a
+                          href={directUrl}
+                          download={filename}
+                          className="btn-primary"
+                          style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', textDecoration: 'none' }}
+                        >
+                          <span>⬇️ {t('downloadFile') || 'Descargar'}</span>
+                        </a>
+                      )}
+
                       <a
-                        href={pdfUrl}
+                        href={directUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-secondary"
@@ -587,7 +775,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
             <div className="pdf-iframe-holder">
               <iframe
                 src={getPdfUrl(selectedPdf)}
-                title={selectedPdf}
+                title={cleanBookName(selectedPdf)}
                 style={{
                   width: '100%',
                   height: '100%',

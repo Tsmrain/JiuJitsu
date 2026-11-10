@@ -143,13 +143,13 @@ class QdrantRAGAdapter:
 
     def buscar_biblioteca(self, query_embedding: list, limit: int = 10) -> list:
         """
-        Búsqueda semántica en la colección RAG filtrando exclusivamente por manuales PDF.
+        Búsqueda semántica en la colección RAG filtrando por cualquier fuente global (PDF, TXT, DOCX, imágenes).
         Retorna lista de diccionarios con contenido_texto, media_url, pagina, fuente_nombre, cita y score.
         """
         if len(query_embedding) != EXPECTED_RAG_DIM:
             raise ValueError(f"Embedding de consulta inválido: se esperaban {EXPECTED_RAG_DIM} dimensiones.")
         filtro = Filter(must=[
-            FieldCondition(key="fuente_tipo", match=MatchValue(value="manual_pdf")),
+            FieldCondition(key="alcance", match=MatchValue(value="global")),
         ])
         resultados = self.client.search(
             collection_name=self.collection_name,
@@ -163,15 +163,22 @@ class QdrantRAGAdapter:
             pagina = payload.get("pagina")
             fuente_nom = payload.get("fuente_nombre") or "Manual"
             cita = f"{fuente_nom}, p. {pagina}" if pagina else fuente_nom
+            contenido = payload.get("contenido_texto", "")
+            texto_asoc = payload.get("texto_asociado", "")
+            if texto_asoc and texto_asoc not in contenido:
+                contenido = f"{contenido}\n{texto_asoc}".strip() if contenido else texto_asoc
+
             items.append({
                 "id": str(r.id),
                 "score": float(r.score),
-                "contenido_texto": payload.get("contenido_texto", ""),
+                "contenido_texto": contenido,
                 "media_url": payload.get("media_url"),
                 "media_path": payload.get("media_path"),
                 "pagina": pagina,
                 "fuente_nombre": fuente_nom,
                 "fuente_referencia": payload.get("fuente_referencia"),
+                "fuente_tipo": payload.get("fuente_tipo"),
+                "fuente_url": payload.get("fuente_url"),
                 "cita": cita,
             })
         return items

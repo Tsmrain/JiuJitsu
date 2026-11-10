@@ -96,6 +96,25 @@ class IngestKnowledgeUseCase:
                             "p_alcance": alcance,
                         })
                     except Exception as e:
+                        # Fallback resiliente ante bases de datos antiguas con restricción CHECK estrecha
+                        if fuente_tipo not in ("manual", "video", "articulo"):
+                            try:
+                                self.db.rpc("admin_save_teoria_chunk", {
+                                    "p_tecnica_id": tecnica_id,
+                                    "p_profesor_id": profesor_id,
+                                    "p_sucursal_id": sucursal_id,
+                                    "p_chunk_index": i,
+                                    "p_contenido_texto": chunk,
+                                    "p_qdrant_point_id": pid,
+                                    "p_fuente_tipo": "manual",
+                                    "p_fuente_nombre": fuente_nombre,
+                                    "p_fuente_referencia": fuente_referencia,
+                                    "p_fuente_url": fuente_url,
+                                    "p_alcance": alcance,
+                                })
+                                continue
+                            except Exception:
+                                pass
                         logger.warning(f"No se pudo registrar chunk {i} en Postgres: {e}")
                     finally:
                         if progress_callback:

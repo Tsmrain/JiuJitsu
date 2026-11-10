@@ -207,3 +207,97 @@ def test_biblioteca_buscar_multimodal_con_imagen(mock_qwen_img, mock_qwen_txt, m
     mock_rag_search_multi.assert_called_once()
 
 
+def test_qdrant_rag_adapter_buscar_biblioteca_filtra_por_alcance_global():
+    """Verifica que buscar_biblioteca filtre por alcance='global' y no restrinja a fuente_tipo='manual_pdf'."""
+    from corpocmente.infrastructure.persistence.qdrant_rag_adapter import QdrantRAGAdapter
+    from qdrant_client.models import Filter, FieldCondition, MatchValue
+
+    adapter = object.__new__(QdrantRAGAdapter)
+    adapter.collection_name = "rag_knowledge"
+    mock_client = MagicMock()
+
+    mock_hit_txt = MagicMock()
+    mock_hit_txt.id = "pt-txt"
+    mock_hit_txt.score = 0.88
+    mock_hit_txt.payload = {
+        "contenido_texto": "Principios de guardia cerrada.",
+        "texto_asociado": "Detalle extra.",
+        "fuente_nombre": "Apuntes TXT",
+        "fuente_tipo": "texto",
+        "fuente_url": "/api/v1/conocimiento/archivos/apuntes.txt",
+        "alcance": "global",
+    }
+    mock_client.search.return_value = [mock_hit_txt]
+    adapter.client = mock_client
+
+    resultados = adapter.buscar_biblioteca([0.1] * 2048, limit=5)
+
+    assert len(resultados) == 1
+    assert resultados[0]["fuente_nombre"] == "Apuntes TXT"
+    assert resultados[0]["fuente_tipo"] == "texto"
+    assert "Detalle extra." in resultados[0]["contenido_texto"]
+
+    call_kwargs = mock_client.search.call_args.kwargs
+    query_filter = call_kwargs["query_filter"]
+    assert isinstance(query_filter, Filter)
+    assert len(query_filter.must) == 1
+    assert query_filter.must[0].key == "alcance"
+    assert query_filter.must[0].match.value == "global"
+
+
+@patch("corpocmente.infrastructure.persistence.postgrest_client.PostgrestClient.rpc")
+def test_listar_manuales_consulta_postgres_y_devuelve_todos_los_formatos(mock_rpc):
+    """El catálogo debe consultar teoria_referencia en PostgreSQL y retornar PDF, TXT y DOCX."""
+    mock_rpc.return_value = [
+        {
+            "fuente_nombre": "BJJ",
+            "fuente_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/bjj_manual.pdf",
+            "fuente_tipo": "manual",
+        },
+        {
+            "fuente_nombre": "BJJ",
+            "fuente_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/bjj_manual.pdf",
+            "fuente_tipo": "manual",
+        },
+        {
+            "fuente_nombre": "Notas de Clase",
+            "fuente_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/notas.txt",
+            "fuente_tipo": "texto",
+        },
+        {
+            "fuente_nombre": "Manual Word",
+            "fuente_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/manual.docx",
+            "fuente_tipo": "docx",
+        },
+    ]
+
+    headers = _auth_headers()
+    response = client.get("/api/v1/conocimiento/manuales", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+
+    nombres = {item["fuente_nombre"]: item for item in data}
+    assert "BJJ" in nombres
+    assert nombres["BJJ"]["formato"] == "pdf"
+    assert nombres["BJJ"]["total_chunks"] == 2
+    assert "Notas de Clase" in nombres
+    assert nombres["Notas de Clase"]["formato"] == "txt"
+    assert "Manual Word" in nombres
+    assert nombres["Manual Word"]["formato"] == "docx"
+
+
+def test_descargar_archivo_conocimiento_con_query_token(monkeypatch, tmp_path):
+    from corpocmente.ui.api import routes as knowledge_routes
+    monkeypatch.setattr(knowledge_routes, "MANUALES_DIR", tmp_path)
+    txt_file = tmp_path / "manual_prueba.txt"
+    txt_file.write_text("Contenido de prueba para TXT.", encoding="utf-8")
+
+    user_id = str(uuid4())
+    token = _sign_token({"uid": user_id, "role": "alumno", "email": "a@test.com", "sucursal_id": str(uuid4())})
+    response = client.get(f"/api/v1/conocimiento/archivos/manual_prueba.txt?token={token}")
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert "Contenido de prueba" in response.text
+
+
+

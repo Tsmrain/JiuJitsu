@@ -1090,11 +1090,22 @@ async def ingerir_archivo_teoria(
                 finally:
                     archivos.clear()
 
+    if extension == ".pdf":
+        fuente_tipo_real = "manual_pdf"
+    elif extension == ".txt":
+        fuente_tipo_real = "texto"
+    elif extension == ".docx":
+        fuente_tipo_real = "docx"
+    elif extension in IMAGE_MIME_TYPES:
+        fuente_tipo_real = "imagen"
+    else:
+        fuente_tipo_real = "manual"
+
     datos_ingesta = {
         "tecnica_id": str(tecnica_id) if tecnica_id else None,
         "profesor_id": caller.get("uid"),
         "sucursal_id": caller.get("sucursal_id"),
-        "fuente_tipo": "manual",
+        "fuente_tipo": fuente_tipo_real,
         "fuente_nombre": nombre_fuente,
         "fuente_url": fuente_url,
         "alcance": alcance,
@@ -1210,22 +1221,49 @@ async def estado_procesamiento_fuente(job_id: str, authorization: Optional[str] 
 async def descargar_archivo_conocimiento(
     nombre_archivo: str,
     authorization: Optional[str] = Header(None),
+    token: Optional[str] = None,
 ):
-    require_auth(authorization)
+    auth_header = authorization or (f"Bearer {token}" if token else None)
+    if not auth_header:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+    require_auth(auth_header)
     nombre_seguro = os.path.basename(nombre_archivo)
     ruta = MANUALES_DIR / nombre_seguro
     if ruta.parent != MANUALES_DIR or not ruta.is_file():
         raise HTTPException(status_code=404, detail="Archivo de conocimiento no encontrado.")
-    return FileResponse(ruta, filename=nombre_seguro)
+
+    ext = ruta.suffix.lower()
+    if ext == ".pdf":
+        media_type = "application/pdf"
+    elif ext == ".txt":
+        media_type = "text/plain; charset=utf-8"
+    elif ext == ".docx":
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif ext in IMAGE_MIME_TYPES:
+        media_type = IMAGE_MIME_TYPES[ext]
+    else:
+        media_type = "application/octet-stream"
+
+    disposition = "inline" if (ext == ".pdf" or ext == ".txt" or ext in IMAGE_MIME_TYPES) else "attachment"
+    return FileResponse(
+        str(ruta),
+        media_type=media_type,
+        filename=nombre_seguro,
+        headers={"Content-Disposition": f'{disposition}; filename="{nombre_seguro}"'},
+    )
 
 
 @router.get("/conocimiento/media/imagenes/{asset_path:path}")
 async def servir_imagen_conocimiento(
     asset_path: str,
     authorization: Optional[str] = Header(None),
+    token: Optional[str] = None,
 ):
     """Sirve una imagen de conocimiento solo si permanece dentro del almacenamiento de manuales."""
-    require_auth(authorization)
+    auth_header = authorization or (f"Bearer {token}" if token else None)
+    if not auth_header:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
+    require_auth(auth_header)
     root = MANUALES_DIR.resolve()
     candidate = (root / asset_path).resolve()
     try:
@@ -1383,28 +1421,117 @@ async def listar_manuales_pdf(
     token: Optional[str] = None
 ):
     """
-    Retorna la lista de manuales en formato PDF disponibles en la biblioteca.
-    Devuelve una lista JSON con los nombres de los PDFs disponibles en backend/storage/manuales.
+    Retorna la lista real de fuentes globales disponibles en la biblioteca (PDF, TXT, DOCX, imágenes),
+    consultando directamente PostgreSQL (teoria_referencia con alcance='global') y verificando archivos físicos locales.
     Requiere autenticación.
     """
     auth_header = authorization or (f"Bearer {token}" if token else None)
     if not auth_header:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
     require_auth(auth_header)
+
+    from urllib.parse import urlparse
+    from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
+
+    fuentes_agrupadas = {}
+
+    # 1. Fuente de verdad: PostgreSQL (teoria_referencia WHERE alcance='global')
+    try:
+        db = PostgrestClient()
+        rows = db.rpc("admin_list_fuentes_globales", {}) or []
+        for row in rows:
+            fuente_nom = (row.get("fuente_nombre") or "").strip()
+            fuente_url = (row.get("fuente_url") or "").strip()
+            fuente_tipo = (row.get("fuente_tipo") or "manual").strip()
+
+            if not fuente_nom and not fuente_url:
+                continue
+
+            key = (fuente_nom, fuente_url, fuente_tipo)
+            if key not in fuentes_agrupadas:
+                parsed_path = urlparse(fuente_url).path if fuente_url else ""
+                filename = os.path.basename(parsed_path) if parsed_path else fuente_nom
+                ext = os.path.splitext(filename)[1].lower()
+                if ext == ".pdf" or fuente_tipo == "manual_pdf":
+                    formato = "pdf"
+                elif ext == ".txt" or fuente_tipo == "texto":
+                    formato = "txt"
+                elif ext == ".docx" or fuente_tipo == "docx":
+                    formato = "docx"
+                elif ext in IMAGE_MIME_TYPES or fuente_tipo == "imagen":
+                    formato = "imagen"
+                else:
+                    formato = "otro"
+
+                url_relativa = (
+                    f"/api/v1/conocimiento/archivos/{quote(filename)}"
+                    if (parsed_path.startswith("/api/v1/conocimiento/archivos/") or (MANUALES_DIR / filename).is_file())
+                    else (f"/api/v1/conocimiento/manuales/{quote(filename)}" if filename else "")
+                )
+
+                fuentes_agrupadas[key] = {
+                    "fuente_nombre": fuente_nom or filename,
+                    "fuente_url": url_relativa or fuente_url,
+                    "fuente_tipo": fuente_tipo,
+                    "filename": filename,
+                    "formato": formato,
+                    "total_chunks": 0,
+                }
+            fuentes_agrupadas[key]["total_chunks"] += 1
+    except Exception as e_db:
+        logger.warning("No se pudo consultar teoria_referencia en PostgreSQL para el catálogo: %s", e_db)
+
+    # 2. Complemento resiliente con archivos físicos no registrados aún en Postgres
     repo_root = Path(__file__).resolve().parents[4]
     search_dirs = [
-        repo_root / "backend" / "storage" / "manuales"
+        MANUALES_DIR,
+        repo_root / "backend" / "storage" / "manuales",
     ]
-    manuales_dict = {}
+    filenames_en_db = {v["filename"] for v in fuentes_agrupadas.values() if v.get("filename")}
+    valid_exts = {".pdf", ".txt", ".docx", *IMAGE_MIME_TYPES.keys()}
+
     for d in search_dirs:
         if d.exists() and d.is_dir():
-            for p in d.glob("*.pdf"):
-                if p.is_file() and p.stat().st_size > 1000 and not p.name.startswith("."):
-                    if p.name not in manuales_dict:
-                        manuales_dict[p.name] = p
+            for p in d.iterdir():
+                if (
+                    p.is_file()
+                    and p.suffix.lower() in valid_exts
+                    and p.stat().st_size > 1000
+                    and not p.name.startswith(".")
+                    and "matplotlib" not in str(p)
+                    and p.name not in filenames_en_db
+                ):
+                    ext = p.suffix.lower()
+                    if ext == ".pdf":
+                        fmt, ft = "pdf", "manual_pdf"
+                    elif ext == ".txt":
+                        fmt, ft = "txt", "texto"
+                    elif ext == ".docx":
+                        fmt, ft = "docx", "docx"
+                    else:
+                        fmt, ft = "imagen", "imagen"
 
-    resultado = [nom for nom in sorted(manuales_dict.keys()) if "matplotlib" not in str(manuales_dict[nom])]
-    return resultado
+                    url_rel = (
+                        f"/api/v1/conocimiento/archivos/{quote(p.name)}"
+                        if d == MANUALES_DIR
+                        else f"/api/v1/conocimiento/manuales/{quote(p.name)}"
+                    )
+                    key = (p.name, url_rel, ft)
+                    if key not in fuentes_agrupadas:
+                        fuentes_agrupadas[key] = {
+                            "fuente_nombre": p.name,
+                            "fuente_url": url_rel,
+                            "fuente_tipo": ft,
+                            "filename": p.name,
+                            "formato": fmt,
+                            "total_chunks": 0,
+                        }
+                        filenames_en_db.add(p.name)
+
+    return sorted(
+        fuentes_agrupadas.values(),
+        key=lambda item: (item.get("fuente_nombre") or "").lower(),
+    )
 
 
 @router.get("/conocimiento/manuales/{filename}")
@@ -1414,7 +1541,7 @@ async def servir_manual_pdf(
     token: Optional[str] = None
 ):
     """
-    Sirve un archivo de manual en PDF para visualización en el visor embebido (iframe) o descarga.
+    Sirve un archivo de manual (PDF, TXT, DOCX o imagen) para visualización en el visor o descarga.
     """
     auth_header = authorization or (f"Bearer {token}" if token else None)
     if not auth_header:
@@ -1424,17 +1551,31 @@ async def servir_manual_pdf(
     safe_name = os.path.basename(filename)
     repo_root = Path(__file__).resolve().parents[4]
     candidates = [
+        MANUALES_DIR / safe_name,
         repo_root / "backend" / "storage" / "manuales" / safe_name,
     ]
     encontrado = next((c for c in candidates if c.exists() and c.is_file()), None)
     if not encontrado:
-        raise HTTPException(status_code=404, detail="Manual PDF no encontrado.")
+        raise HTTPException(status_code=404, detail="Manual no encontrado.")
 
+    ext = encontrado.suffix.lower()
+    if ext == ".pdf":
+        media_type = "application/pdf"
+    elif ext == ".txt":
+        media_type = "text/plain; charset=utf-8"
+    elif ext == ".docx":
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif ext in IMAGE_MIME_TYPES:
+        media_type = IMAGE_MIME_TYPES[ext]
+    else:
+        media_type = "application/octet-stream"
+
+    disposition = "inline" if (ext == ".pdf" or ext == ".txt" or ext in IMAGE_MIME_TYPES) else "attachment"
     return FileResponse(
         str(encontrado),
-        media_type="application/pdf",
+        media_type=media_type,
         filename=safe_name,
-        headers={"Content-Disposition": f"inline; filename=\"{safe_name}\""}
+        headers={"Content-Disposition": f'{disposition}; filename="{safe_name}"'}
     )
 
 

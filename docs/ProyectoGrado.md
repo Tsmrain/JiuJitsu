@@ -1083,14 +1083,14 @@ classDiagram
 
 # Capítulo V: Análisis y Diseño Orientado a Objetos
 
-El presente capítulo desarrolla la fase de análisis y diseño orientado a objetos del Sistema de Análisis Biomecánico de Jiu-Jitsu Brasileño para la academia "Corpo e Mente", aplicando los patrones y principios de diseño promovidos por Craig Larman en el Proceso Unificado Ágil (*Applying UML and Patterns*).
+El presente capítulo desarrolla el análisis y el diseño orientado a objetos del Sistema de Análisis Biomecánico de Jiu-Jitsu Brasileño para la academia "Corpo e Mente", aplicando rigurosamente los principios de Craig Larman (2004, *Applying UML and Patterns*) mediante la separación estricta entre el **Nivel de Análisis (Esencial)** y el **Nivel de Diseño (Concreto)**, junto con la aplicación del patrón arquitectónico **Entity-Control-Boundary (ECB)**.
 
-Para cada caso de uso identificado en la matriz de trazabilidad del Capítulo IV, se construyen cinco artefactos de ingeniería:
-1. **Caso de Uso Detallado (Nivel de Análisis / Esencial):** Especificación textual estructurada según la metodología de Craig Larman (2004, Cap. 6), orientada a capturar la intención del actor y la respuesta observable del sistema bajo el vocabulario del dominio de Jiu-Jitsu Brasileño, abstrayéndose de clases o motores tecnológicos concretos.
-2. **Diagrama de Caso de Uso:** Representación visual de los límites del sistema, actores y relaciones.
-3. **Diagrama de Clases de Diseño (Participantes):** Modelado estructural de las clases involucradas organizadas según la distribución de responsabilidades de **Frontera, Control y Entidad**, especificando sus atributos y métodos esenciales.
-4. **Diagrama de Secuencia del Caso de Uso:** Modelado dinámico de la interacción temporal y la distribución de responsabilidades entre la capa de Frontera/Interfaz (*Boundary*), la capa de Control/Servicios (*Control*) y la capa de Dominio/Entidades (*Entity*).
-5. **Diagrama de Paquetes:** Distribución modular y segregación de dependencias entre las capas arquitectónicas del sistema (Presentación, Aplicación, Dominio e Infraestructura/Persistencia).
+Para cada caso de uso identificado en la matriz de trazabilidad del Capítulo IV, se construyen cinco artefactos complementarios y trazables entre sí:
+1. **Caso de Uso Detallado (Nivel de Análisis — Esencial):** Especificación textual libre de interfaz de usuario (*UI-free*) y de detalles de implementación, expresada íntegramente en el vocabulario del negocio del Jiu-Jitsu Brasileño para describir *qué* hace el sistema en respuesta a las intenciones de los actores.
+2. **Diagrama de Caso de Uso (Nivel de Análisis):** Delimitación de la frontera conceptual del sistema, los roles de negocio (`Alumno`, `Profesor`, `Administrador`), los objetivos de valor y los sistemas de apoyo conceptuales, sin acoplarse a motores tecnológicos específicos.
+3. **Diagrama de Clases de Diseño (Participantes — Nivel de Diseño):** Modelado estructural concreto que especifica *cómo* se materializan las responsabilidades mediante clases reales de software, adaptadores técnicos, atributos tipados y firmas de métodos.
+4. **Diagrama de Secuencia de Análisis (Nivel de Análisis — Patrón ECB):** Modelado dinámico de colaboraciones entre objetos conceptuales clasificados bajo los tres estereotipos de análisis **Entity-Control-Boundary (ECB)**: objetos de frontera (`boundary`) a la izquierda para la interacción con el actor, objetos de control (`control`) en el centro para coordinar la lógica del caso de uso y objetos de entidad (`entity`) a la derecha como custodios del estado y las reglas de negocio, prescindiendo de motores de bases de datos o protocolos técnicos.
+5. **Diagrama de Paquetes (Nivel de Diseño):** Organización modular en capas (`Presentacion`, `Aplicacion`, `Dominio`, `Infraestructura`) regida por el **Principio de Inversión de Dependencias (DIP)**, donde las capas externas dependen de las abstracciones de las capas internas y el núcleo de `Dominio` permanece libre de dependencias hacia `Infraestructura`.
 
 ---
 
@@ -1102,32 +1102,32 @@ Para cada caso de uso identificado en la matriz de trazabilidad del Capítulo IV
 | :--- | :--- |
 | **Identificador** | **UC-01** |
 | **Nombre** | Iniciar Sesión y Registro de Usuarios |
-| **Actores** | **Principal:** Alumno, Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Identidad y Sesión (gestión de identidad criptográfica). |
-| **Descripción** | Permite a un practicante, instructor o administrador acceder a la plataforma identificándose de forma segura, o bien registrar una nueva cuenta asociada a una sucursal de la academia. |
-| **Precondiciones** | El solicitante desea acceder o crear una cuenta, y dispone de conexión con el sistema. |
-| **Postcondiciones** | 1. Se establece una sesión autenticada asociada al rol del usuario.<br>2. La interfaz de acceso se reemplaza por el panel de trabajo propio del rol.<br>3. Las cuentas nuevas de alumno se inician en estado "pendiente" (sujetas al Pase de Tatami). |
+| **Actores** | **Principal:** Alumno, Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Identidad y Acceso. |
+| **Descripción** | Permite a un practicante, instructor o administrador acreditarse ante el sistema para acceder a las funciones propias de su rol, o bien dar de alta una nueva cuenta vinculada a una sede de la academia. |
+| **Precondiciones** | El solicitante desea acreditarse o dar de alta una cuenta vinculada a una sede de la academia. |
+| **Postcondiciones** | 1. Se constituye una sesión de trabajo activa asociada al rol y a la sede del usuario.<br>2. El usuario queda habilitado para operar las responsabilidades propias de su rol.<br>3. Toda cuenta nueva de alumno se inicia con su Pase de Tatami en estado pendiente de habilitación. |
 
-#### Secuencia Normal (Inicio de Sesión)
+#### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Usuario solicita acceder al sistema. | Sistema presenta la pantalla de identificación. |
-| 2 | Usuario aporta sus credenciales de acceso. | Sistema verifica la identidad del solicitante y determina su rol y sucursal. |
-| 3 | | Sistema establece una sesión activa y presenta el panel correspondiente: de práctica (alumno), de instrucción (profesor) o de administración global. |
+| 1 | El Usuario solicita identificarse ante el sistema aportando su identificador personal y su clave secreta. | El Sistema comprueba que el solicitante no haya excedido el umbral de intentos fallidos permitidos. |
+| 2 | | El Sistema verifica la correspondencia de las credenciales con el registro del usuario y determina su rol, su sede adscrita y la vigencia de su membresía. |
+| 3 | | El Sistema constituye una sesión de trabajo activa y habilita al usuario el entorno correspondiente a su rol: práctica para el alumno, instrucción para el profesor o gestión global para el administrador. |
 
 #### Secuencias Alternativas
-* **2a. Registro de nuevo usuario:**
-  * 2a.1. El solicitante pide crear una cuenta.
-  * 2a.2. El sistema solicita: datos de perfil, rol deseado (alumno o profesor) y sucursal de adscripción.
-  * 2a.3. El solicitante proporciona los datos.
-  * 2a.4. El sistema valida que el identificador elegido no esté en uso y cumpla el formato establecido.
-  * 2a.5. El sistema crea la cuenta con estado inicial correspondiente a su rol y establece la sesión.
-* **2b. Credenciales inválidas:**
-  * Sistema informa el rechazo sin especificar si el error corresponde al identificador o a la contraseña (previene enumeración de cuentas).
-* **2c. Intentos reiterados fallidos:**
-  * Sistema bloquea temporalmente al solicitante por política de seguridad.
+* **1a. Registro de un nuevo practicante o instructor:**
+  * 1a.1. El solicitante indica su intención de abrir una nueva cuenta en la academia.
+  * 1a.2. El Sistema solicita los datos personales, el rol requerido (alumno o profesor) y la sede de adscripción.
+  * 1a.3. El solicitante aporta la información requerida.
+  * 1a.4. El Sistema comprueba que el identificador elegido sea único y cumpla las reglas de formato del dominio.
+  * 1a.5. El Sistema registra la cuenta con el estado inicial de membresía correspondiente a su rol y constituye la sesión activa.
+* **1b. Umbral de intentos fallidos superado:**
+  * El Sistema suspende temporalmente las solicitudes de identificación del solicitante por política de protección de cuentas.
+* **2a. Credenciales incorrectas:**
+  * El Sistema rechaza la solicitud mediante un aviso unificado sin revelar si la discrepancia corresponde al identificador o a la clave secreta, evitando la enumeración de cuentas.
 
 #### Excepciones
-* **E1. Servicio de identidad indisponible:** El sistema informa que la autenticación está temporalmente fuera de servicio.
+* **E1. Servicio de identidad no disponible:** El Sistema informa que la acreditación se encuentra temporalmente fuera de servicio y conserva intacto el estado previo.
 ---
 
 ### 5.1.2 Diagrama de Caso de Uso UC-01
@@ -1136,7 +1136,6 @@ Para cada caso de uso identificado en la matriz de trazabilidad del Capítulo IV
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1150,22 +1149,20 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
-
 
 actor "Alumno" as AL
 actor "Profesor" as PR
 actor "Administrador" as AD
+actor "Servicio de Identidad\ny Acceso" as SIA
 
-rectangle "Sistema Corpo e Mente - Autenticación" {
-    usecase "UC-01: Iniciar Sesión" as UC01
-    usecase "Registrar Nueva Cuenta" as UC01_Reg
-    usecase "Validar Credenciales y Hash" as UC01_Val
-    usecase "Emitir Token JWT (24h)" as UC01_JWT
-    usecase "Verificar Límite de Intentos (Rate Limit)" as UC01_Rate
+rectangle "Sistema Corpo e Mente - Identificación y Acceso" {
+    usecase "UC-01: Iniciar Sesión y\nRegistro de Usuarios" as UC01
+    usecase "Registrar Nueva Cuenta\nde Practicante o Instructor" as UC01_Reg
+    usecase "Verificar Credenciales\nde Identificación" as UC01_Val
+    usecase "Constituir Sesión\nde Trabajo Activa" as UC01_Ses
+    usecase "Controlar Umbral de\nIntentos Fallidos" as UC01_Lim
 }
 
 AL --> UC01
@@ -1176,18 +1173,21 @@ AL --> UC01_Reg
 PR --> UC01_Reg
 
 UC01 ..> UC01_Val : <<include>>
-UC01 ..> UC01_JWT : <<include>>
-UC01 ..> UC01_Rate : <<include>>
-UC01_Reg ..> UC01_JWT : <<include>>
+UC01 ..> UC01_Ses : <<include>>
+UC01 ..> UC01_Lim : <<include>>
+UC01_Reg ..> UC01_Ses : <<include>>
+
+UC01_Val --> SIA
+UC01_Ses --> SIA
 @enduml
 ```
 ---
 
 ### 5.1.3 Diagrama de Clases de Diseño (Participantes) UC-01
-El siguiente diagrama detalla las clases participantes estructuradas bajo la distribución de responsabilidades de Frontera (Boundary), Control y Entidad (Entity):
-* **Frontera (Boundary):** Componentes visuales de React (`LoginView`, `SignupView`) y el router de FastAPI (`AuthRoutes`).
-* **Control:** Servicios que gobiernan la autenticación y la sesión (`AuthService`, `SessionManager`, `RateLimiter`).
-* **Entidad (Entity):** Modelos de datos del dominio (`Usuario`, `Sucursal`, `TokenJWT`).
+El siguiente diagrama de nivel de diseño concreta los participantes conceptuales del análisis ECB en clases de implementación reales:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeAcceso` se materializa en los componentes de presentación (`LoginView`, `SignupView`) y en el controlador de rutas (`AuthRoutes`).
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeAcceso` se implementa mediante los servicios de aplicación y seguridad (`AuthService`, `SessionManager`, `RateLimiter`).
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `Sucursal` y `SesiónDeUsuario` se implementan en las clases de dominio y transferencia (`Usuario`, `Sucursal`, `TokenJWT`).
 
 ```mermaid
 classDiagram
@@ -1262,8 +1262,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-01: Iniciar Sesión y Registro de Usuarios
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1277,50 +1277,36 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Usuario" as U
+boundary "PantallaDeAcceso" as B1
+control "CoordinadorDeAcceso" as C1
+entity "Usuario" as E1
+entity "Sucursal" as E2
+entity "SesiónDeUsuario" as E3
 
-actor "Practicante" as Actor
-boundary "LoginView" as View
-boundary "AuthRoutes" as API
-control "RateLimiter" as Rate
-control "AuthService" as Svc
-control "SessionManager" as Session
-entity "Usuario" as Ent
-database "PostgreSQL" as DB
-
-Actor -> View : Ingresar username y password
-View -> API : POST /api/v1/auth/login [username, password]
-API -> Rate : verificarLimiteIP(ip_cliente)
-Rate --> API : Límite de intentos correcto
-
-API -> Svc : autenticarUsuario(username, password)
-Svc -> Ent : buscarPorUsername(username)
-Ent -> DB : SELECT * FROM usuarios WHERE username = :user
-DB --> Ent : Registro con hash, rol y sucursal
-Ent --> Svc : Instancia de Usuario
-
-Svc -> Svc : verificarPassword(password, hash_bcrypt)
-
-alt Credenciales Válidas
-    Svc -> Session : crearTokenJWT(usuario)
-    Session --> Svc : Token firmado con HS256 (uid, rol, sucursal)
-    Svc --> API : Token y datos de perfil
-    API --> View : HTTP 200 OK [token, user_info]
-    View --> Actor : Acceso concedido al panel principal
-else Credenciales Inválidas
-    Svc --> API : Error de autenticación
-    API --> View : HTTP 401 Unauthorized ("Credenciales incorrectas")
-    View --> Actor : Alerta de error en pantalla
-end
+U -> B1 : solicitarAcceso(identificador, clave)
+B1 -> C1 : autenticarUsuario(identificador, clave)
+C1 -> C1 : verificarIntentosPermitidos(solicitante)
+C1 -> E1 : buscarPorIdentificador(identificador)
+E1 --> C1 : datosDeUsuario
+C1 -> E1 : validarCredenciales(clave)
+E1 --> C1 : credencialesVálidas
+C1 -> E2 : obtenerSedeAdscrita(usuario)
+E2 --> C1 : datosDeSucursal
+C1 -> E3 : iniciarSesión(usuario, rol, sucursal)
+E3 --> C1 : sesiónActiva
+C1 --> B1 : accesoAutorizado(sesiónActiva, perfil)
+B1 --> U : presentarEntornoDeTrabajo(rol, sucursal)
 @enduml
 ```
 ---
 
 ### 5.1.5 Diagrama de Paquetes UC-01
+El diagrama de paquetes refleja el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las abstracciones de las capas internas (`Aplicacion` y `Dominio`), mientras que el núcleo de `Dominio` no depende de ninguna capa técnica externa.
+
 ```mermaid
 graph TD
     subgraph Presentacion ["📦 Capa de Presentación (Frontend)"]
@@ -1328,27 +1314,27 @@ graph TD
         UI_State["AuthContext.jsx"]
     end
 
-    subgraph Aplicacion ["📦 Capa de Aplicación (Backend API & Control)"]
+    subgraph Aplicacion ["📦 Capa de Aplicación (Casos de Uso y Control)"]
         API_Auth["auth_routes.py"]
         Ctrl_Auth["AuthService"]
         Ctrl_Session["session_manager.py"]
         Ctrl_Security["rate_limiter.py"]
     end
 
-    subgraph Dominio ["📦 Capa de Dominio (Entidades & Reglas)"]
+    subgraph Dominio ["📦 Capa de Dominio (Entidades y Reglas)"]
         Ent_User["Usuario / Roles"]
         Ent_Sucursal["Sucursal"]
     end
 
-    subgraph Infraestructura ["📦 Capa de Infraestructura (Persistencia)"]
+    subgraph Infraestructura ["📦 Capa de Infraestructura (Persistencia y Criptografía)"]
         Infra_DB["PostgreSQL / PostgREST"]
         Infra_Crypto["bcrypt / PyJWT"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
@@ -1361,35 +1347,32 @@ graph TD
 | :--- | :--- |
 | **Identificador** | **UC-02** |
 | **Nombre** | Analizar Técnica y Generar Feedback Biomecánico |
-| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (percepción de la postura), Servicio de Evaluación Cinemática (comparación del movimiento), Base de Conocimiento Técnica (bibliografía y directrices del instructor), Servicio de Redacción Pedagógica (generación del consejo). |
-| **Descripción** | El alumno solicita evaluar su ejecución de una técnica; el sistema reconoce su postura corporal, la contrasta con la referencia del profesor, identifica el instante y las zonas del cuerpo con mayor desviación y, si corresponde, entrega una explicación pedagógica fundamentada en el material técnico del instructor. |
-| **Precondiciones** | 1. El alumno mantiene una sesión activa con su acceso al análisis habilitado.<br>2. Existe una referencia registrada por un profesor para la técnica solicitada. |
-| **Postcondiciones** | 1. La evaluación queda registrada en el historial del alumno con su grado de similitud.<br>2. El alumno conoce el instante exacto del error, las zonas corporales afectadas y, cuando aplica, una corrección pedagógica en su idioma. |
+| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (percepción de la postura), Base de Conocimiento Técnica (bibliografía y directrices del instructor), Servicio de Redacción Pedagógica (generación del consejo). |
+| **Descripción** | El alumno solicita evaluar su ejecución de una técnica de Jiu-Jitsu; el sistema reconoce su postura corporal a lo largo del movimiento, la compara contra el patrón de referencia del profesor, determina el instante y las articulaciones con mayor desviación y, cuando existen discrepancias relevantes, elabora una corrección pedagógica fundamentada en el conocimiento técnico. |
+| **Precondiciones** | 1. El alumno cuenta con una sesión activa y su Pase de Tatami vigente.<br>2. Existe un patrón de referencia registrado por el profesor para la técnica seleccionada. |
+| **Postcondiciones** | 1. La evaluación queda registrada en el historial del alumno con su porcentaje de similitud.<br>2. El alumno recibe el diagnóstico con el instante exacto de mayor desviación, las articulaciones comprometidas y, cuando corresponde, la corrección pedagógica en su idioma. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Alumno selecciona al profesor de su academia y la técnica a evaluar. | Sistema presenta las técnicas con referencia activa del profesor seleccionado. |
-| 2 | Alumno aporta un video de su ejecución. | Sistema verifica que el material sea elegible (corresponde a práctica de Jiu-Jitsu y es de tamaño manejable). |
-| 3 | | Sistema localiza al practicante dentro del video y, cuando hay más de una persona, solicita al alumno confirmar cuál es él. |
-| 4 | Alumno confirma su identidad en el video. | Sistema admite la solicitud e informa al alumno que la evaluación fue recibida. |
-| 5 | | Sistema reconoce la postura corporal del alumno a lo largo de la ejecución. |
-| 6 | | Sistema contrasta la ejecución del alumno contra la referencia del profesor y obtiene un grado de similitud. |
-| 7 | | Sistema identifica el instante del video y las zonas del cuerpo con mayor desviación respecto al patrón. |
-| 8 | | Si la desviación es significativa, el sistema reúne la explicación técnica del instructor y las referencias bibliográficas pertinentes para fundamentar la corrección. |
-| 9 | | Sistema presenta al alumno un informe con: grado de similitud, instante exacto del error, zonas del cuerpo afectadas y, cuando aplica, explicación pedagógica en su idioma. |
-| 10 | Alumno revisa el informe y navega al instante del error. | Sistema resalta visualmente la zona del cuerpo comprometida y ofrece referencias de práctica complementaria. |
+| 1 | El Alumno solicita evaluar su ejecución seleccionando al profesor de su academia, la técnica practicada y aportando el video de su movimiento. | El Sistema comprueba la vigencia del Pase de Tatami del alumno y verifica que el material aportado corresponda a una práctica válida de Jiu-Jitsu. |
+| 2 | | El Sistema identifica a los practicantes presentes en el inicio del video y solicita al alumno confirmar cuál de ellos es él. |
+| 3 | El Alumno confirma su identidad dentro de la escena. | El Sistema registra la evaluación en curso y extrae la secuencia de posturas corporales del alumno durante toda la ejecución. |
+| 4 | | El Sistema obtiene el patrón de referencia del profesor para la técnica e inicia la comparación cinemática entre ambas posturas. |
+| 5 | | El Sistema calcula el grado de similitud global e identifica el fotograma crítico junto con las articulaciones que presentan mayor desviación postural. |
+| 6 | | Cuando existen discrepancias significativas, el Sistema consulta la biblioteca técnica y las directrices del instructor asociadas a la técnica y a las articulaciones comprometidas. |
+| 7 | | El Sistema elabora una recomendación pedagógica en el idioma del alumno y verifica su fidelidad frente al material técnico consultado. |
+| 8 | | El Sistema actualiza la evaluación con el resultado definitivo y presenta al alumno el reporte completo con el grado de similitud, el fotograma crítico y la corrección pedagógica. |
 
 #### Secuencias Alternativas
-* **2a. Material no elegible** (no corresponde a práctica de Jiu-Jitsu, formato no soportado o excede tamaño aceptable): El sistema rechaza la solicitud e invita al alumno a intentarlo nuevamente con un video adecuado.
-* **2b. Acceso al análisis no habilitado:** El sistema informa que debe gestionar la habilitación de su acceso (Pase de Tatami) con su instructor.
-* **3a. Solo una persona reconocida en el video:** El sistema presume la identidad y solicita al alumno una confirmación simple de un solo toque.
-* **7a. Ejecución correcta** (grado de similitud por encima del umbral aceptable): El sistema felicita al alumno y le indica que dominó la técnica, sin recurrir al componente de redacción pedagógica.
-* **9a. Fundamento teórico insuficiente:** Si el sistema no encuentra material técnico suficiente para sustentar una corrección, entrega únicamente el reporte biomecánico (zonas del cuerpo y segundo del error) y evita ofrecer una explicación no respaldada.
+* **1a. Material no elegible** (no corresponde a una práctica de Jiu-Jitsu o excede los límites admitidos): El Sistema rechaza la solicitud e indica al alumno que debe aportar una grabación válida de la técnica.
+* **1b. Pase de Tatami vencido o pendiente:** El Sistema informa al alumno que debe solicitar la renovación de su membresía ante su instructor antes de realizar nuevas evaluaciones.
+* **5a. Ejecución satisfactoria** (grado de similitud igual o superior al umbral de dominio): El Sistema emite un reconocimiento de ejecución correcta sin requerir corrección correctiva extensa.
+* **6a. Ausencia de fundamento documental:** Si no existen pasajes bibliográficos ni directrices del instructor aplicables a la técnica, el Sistema entrega el diagnóstico postural cuantitativo e informa que no cuenta con material teórico suficiente para redactar un consejo adicional.
 
 #### Excepciones
-* **E1. Análisis no concluido en tiempo razonable:** El sistema informa al alumno que la evaluación continúa procesándose y que podrá consultar el resultado posteriormente desde su historial.
-* **E2. No existe referencia activa para la técnica:** El sistema informa que la evaluación no puede realizarse por falta de patrón del profesor.
+* **E1. Procesamiento prolongado:** El Sistema informa al alumno que la evaluación continúa en curso y que el dictamen estará disponible en su historial de progreso al concluir.
+* **E2. Técnica sin patrón de referencia vigente:** El Sistema impide iniciar la comparación e informa que el instructor aún no ha registrado el patrón oficial para dicha técnica.
 ---
 
 ### 5.2.2 Diagrama de Caso de Uso UC-02
@@ -1398,7 +1381,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1412,45 +1394,45 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
-
 actor "Alumno" as AL
-actor "YOLOv26 Pose y Depth" as YOLO
-actor "Qdrant Vector DB" as QDRANT
-actor "Qwen3-VL MLX" as QWEN
+actor "Servicio de Visión\npor Computadora" as SVC
+actor "Base de Conocimiento\nTécnica" as BCT
+actor "Servicio de Redacción\nPedagógica" as SRP
 
-rectangle "Sistema Corpo e Mente - Análisis Biomecánico" {
-    usecase "UC-02: Analizar Técnica y Generar Feedback" as UC02
-    usecase "Validar Video (Filtro Anti-SPAM)" as UC02_Spam
-    usecase "Extraer Esqueleto 3D (x, y, z)" as UC02_Pose
-    usecase "Calcular Similitud DTW (0-100%)" as UC02_DTW
-    usecase "Recuperar Teoría en Dos Etapas (RAG)" as UC02_RAG
-    usecase "Generar Corrección con VLM Local" as UC02_VLM
-    usecase "Auditar Fidelidad (Juez de IA)" as UC02_Judge
+rectangle "Sistema Corpo e Mente - Evaluación Biomecánica" {
+    usecase "UC-02: Analizar Técnica y\nGenerar Feedback Biomecánico" as UC02
+    usecase "Verificar Elegibilidad\nde la Ejecución" as UC02_Elig
+    usecase "Reconocer Postura Corporal\ndel Practicante" as UC02_Post
+    usecase "Comparar Posturas contra\nPatrón del Profesor" as UC02_Comp
+    usecase "Consultar Conocimiento\nTécnico de Referencia" as UC02_Con
+    usecase "Elaborar Corrección\nPedagógica" as UC02_Corr
+    usecase "Auditar Fidelidad\nPedagógica del Consejo" as UC02_Aud
 }
 
 AL --> UC02
-UC02 ..> UC02_Spam : <<include>>
-UC02 ..> UC02_Pose : <<include>>
-UC02 ..> UC02_DTW : <<include>>
-UC02 ..> UC02_RAG : <<extend>>
-(Similitud < 85%)
-UC02 ..> UC02_VLM : <<extend>>
-(Similitud < 85%)
-UC02_VLM ..> UC02_Judge : <<include>>
+UC02 ..> UC02_Elig : <<include>>
+UC02 ..> UC02_Post : <<include>>
+UC02 ..> UC02_Comp : <<include>>
+UC02 ..> UC02_Con : <<extend>>\n(Desviación Significativa)
+UC02 ..> UC02_Corr : <<extend>>\n(Desviación Significativa)
+UC02_Corr ..> UC02_Aud : <<include>>
 
-UC02_Pose --> YOLO
-UC02_RAG --> QDRANT
-UC02_VLM --> QWEN
+UC02_Post --> SVC
+UC02_Con --> BCT
+UC02_Corr --> SRP
 @enduml
 ```
 ---
 
 ### 5.2.3 Diagrama de Clases de Diseño (Participantes) UC-02
+El diagrama de clases de nivel de diseño materializa los estereotipos ECB del análisis en componentes técnicos concretos:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeEvaluación` se implementa mediante `VideoUploadView`, `FeedbackView` y el controlador `EvaluacionesRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeEvaluación` se descompone en `EvaluacionService`, apoyado en los servicios y adaptadores `YOLOPoseAdapter`, `DTWService`, `RAGRetriever` y `LocalVLMAdapter`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Evaluación`, `PatrónDeReferencia` y `BibliotecaTécnica` se representan en las clases de dominio `Evaluacion`, `PatronReferencia` y `TeoriaRAG`.
+
 ```mermaid
 classDiagram
     %% Boundary
@@ -1543,8 +1525,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-02: Analizar Técnica
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1558,67 +1540,36 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Alumno" as AL
+boundary "PantallaDeEvaluación" as B1
+control "CoordinadorDeEvaluación" as C1
+entity "Evaluación" as E1
+entity "PatrónDeReferencia" as E2
+entity "BibliotecaTécnica" as E3
 
-actor "Alumno" as Alumno
-boundary "VideoUploadView" as ViewUpload
-boundary "EvaluacionesRoutes" as API
-control "EvaluacionService" as Svc
-control "YOLOPoseAdapter" as YOLO
-control "DTWService" as DTW
-control "RAGRetriever" as RAG
-control "LocalVLMAdapter" as VLM
-entity "Evaluacion" as Ent
-database "PostgreSQL / Qdrant" as DB
-boundary "FeedbackView" as ViewFeedback
-
-Alumno -> ViewUpload : Selecciona Técnica, Profesor y Video.mp4
-ViewUpload -> API : POST /api/v1/evaluaciones/analizar
-API -> Svc : procesarVideo(video, tecnica_id, prof_id, alumno_id)
-
-Svc -> Svc : validarPaseTatamiActivo(alumno_id)
-Svc -> Svc : filtrarContenidoAntiSpam(video)
-
-Svc -> YOLO : extraerSecuencia3D(video_temp_path)
-YOLO --> Svc : Keypoints y profundidad normalizados (x, y, z)
-
-Svc -> DB : obtenerPatronReferencia(tecnica_id, prof_id)
-DB --> Svc : Secuencia canónica del profesor
-
-Svc -> DTW : alinearSecuencias(seq_alumno, seq_profesor)
-DTW --> Svc : Similitud = 74.5%, FrameCrítico = 142
-
-alt Similitud < 85% (Requiere Corrección Pedagógica)
-    Svc -> RAG : recuperarTeoriaDosEtapas(Frame 142, tecnica_id)
-    RAG -> DB : Búsqueda Qdrant (Embedding + Reranker)
-    DB --> RAG : Top 3 páginas de manuales técnicos
-    RAG --> Svc : Fragmentos teóricos seleccionados
-    
-    Svc -> VLM : generarConsejo(Frame 142, teoría, mensaje_profesor)
-    VLM --> Svc : Texto explicativo estructurado en ES/PT
-    Svc -> VLM : auditarFidelidad(texto, teoría)
-    VLM --> Svc : Fidelidad Score = 0.94 (Aprobado)
-else Similitud >= 85%
-    Svc -> Svc : generarMensajeFelicitacion()
-end
-
-Svc -> Ent : crearEvaluacion(datos, sucursal_congelada)
-Ent -> DB : INSERT INTO evaluaciones_alumnos (...)
-DB --> Ent : Confirmación UUID
-
-Svc --> API : ResultadoWorkerDTO
-API --> ViewFeedback : Carga FeedbackView con datos
-ViewFeedback --> Alumno : Despliega video interactivo, articulaciones y corrección
-    Note over API, ViewFeedback: timestamp_error_segundos se sirve vía archivo JSON auxiliar en /tmp/corpocmente_frames/meta_{id}.json
+AL -> B1 : solicitarEvaluación(profesor, técnica, video)
+B1 -> C1 : crearEvaluación(alumno, profesor, técnica, video)
+C1 -> E1 : crear(alumno, profesor, técnica)
+E1 --> C1 : evaluaciónRegistrada
+C1 -> E2 : obtenerPatrónDeReferencia(técnica, profesor)
+E2 --> C1 : secuenciaDeReferencia
+C1 -> C1 : compararPosturas(videoAlumno, secuenciaDeReferencia)
+C1 -> E3 : buscarConocimientoTécnico(técnica, discrepancias)
+E3 --> C1 : fragmentosDeConocimiento
+C1 -> C1 : generarFeedbackPedagógico(discrepancias, conocimiento)
+C1 -> E1 : actualizarResultado(similitud, feedback)
+C1 --> B1 : evaluaciónCompletada
+B1 --> AL : mostrarReporte(similitud, feedback, fotogramaCrítico)
 @enduml
 ```
 ---
 
 ### 5.2.5 Diagrama de Paquetes UC-02
+Las dependencias entre paquetes respetan el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen hacia adentro de `Aplicacion` y `Dominio`.
+
 ```mermaid
 graph TD
     subgraph Presentacion ["📦 Presentación (Frontend)"]
@@ -1627,20 +1578,20 @@ graph TD
         P_Player["VideoPlayerOverlay.jsx"]
     end
 
-    subgraph Aplicacion ["📦 Aplicación (Backend API & Orquestación)"]
+    subgraph Aplicacion ["📦 Aplicación (Orquestación de Casos de Uso)"]
         A_Routes["evaluaciones_routes.py"]
         A_Facade["intelligence_facade.py"]
         A_EvalSvc["EvaluacionService"]
     end
 
-    subgraph Dominio ["📦 Dominio (Algoritmos Biomecánicos & Reglas)"]
+    subgraph Dominio ["📦 Dominio (Algoritmos Biomecánicos y Entidades)"]
         D_DTW["dtw_service.py"]
         D_Norm["pose_normalizer.py"]
         D_EntEval["Evaluacion"]
         D_EntPatron["PatronReferencia"]
     end
 
-    subgraph Infraestructura ["📦 Infraestructura (IA Local & Datos)"]
+    subgraph Infraestructura ["📦 Infraestructura (IA Local y Persistencia)"]
         I_YOLO["yolo_adapters.py (Ultralytics)"]
         I_VLM["local_vlm_adapter.py (MLX)"]
         I_RAG["rag_reranker.py"]
@@ -1649,9 +1600,9 @@ graph TD
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
@@ -1664,27 +1615,27 @@ graph TD
 | :--- | :--- |
 | **Identificador** | **UC-03** |
 | **Nombre** | Gestionar Técnicas y Videos de Referencia |
-| **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (extracción del patrón), Repositorio de Referencias. |
-| **Descripción** | El instructor mantiene el catálogo de técnicas de la academia y registra, para cada una, su propia ejecución como patrón de referencia. |
-| **Precondiciones** | El usuario mantiene una sesión activa en calidad de profesor o administrador. |
-| **Postcondiciones** | 1. La técnica queda disponible en el catálogo global.<br>2. Su patrón de referencia queda registrado y utilizable en futuras evaluaciones de alumnos. |
+| **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (reconocimiento de la secuencia postural). |
+| **Descripción** | El instructor administra el catálogo técnico de la academia y registra su propia ejecución ejemplar como patrón biomecánico oficial de referencia para cada técnica. |
+| **Precondiciones** | El usuario cuenta con una sesión activa con facultades de instrucción o administración. |
+| **Postcondiciones** | 1. La técnica queda disponible en el catálogo oficial de la academia.<br>2. Su patrón postural de referencia queda asociado al profesor y habilitado para evaluar a los alumnos. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Profesor solicita incorporar una nueva técnica al catálogo. | Sistema presenta el formulario de alta (nombre, cinturón de referencia, indicaciones del instructor). |
-| 2 | Profesor completa los datos y aporta un video de su ejecución como referencia. | Sistema admite la solicitud y analiza el material. |
-| 3 | | Sistema identifica al instructor dentro del video y le solicita confirmar cuál de las personas presentes es él. |
-| 4 | Profesor confirma su identidad en el video. | Sistema registra la técnica y deja su patrón de referencia disponible para las evaluaciones de alumnos. |
-| 5 | Profesor puede modificar o retirar una técnica existente. | Sistema actualiza el catálogo y, si se retira, la técnica deja de ser evaluable por alumnos. |
+| 1 | El Profesor solicita incorporar una nueva técnica al catálogo de la academia aportando su nombre, el grado de cinturón requerido, las indicaciones opcionales y la demostración en video. | El Sistema verifica la validez del material aportado e identifica a las personas presentes en el inicio de la demostración. |
+| 2 | | El Sistema solicita al profesor confirmar cuál de las siluetas reconocidas corresponde al instructor que ejecuta la técnica. |
+| 3 | El Profesor confirma su identidad dentro de la demostración. | El Sistema da de alta la técnica en el catálogo y extrae la secuencia postural completa del instructor a lo largo del movimiento. |
+| 4 | | El Sistema cataloga la secuencia postural como patrón oficial de referencia del profesor y confirma que la técnica se encuentra lista para evaluar ejecuciones de alumnos. |
+| 5 | El Profesor puede actualizar los datos descriptivos o dar de baja una técnica existente. | El Sistema actualiza el catálogo oficial y, en caso de baja, retira la disponibilidad de la técnica para nuevas evaluaciones. |
 
 #### Secuencias Alternativas
-* **2a. Video con cobertura insuficiente del instructor:** El sistema rechaza el registro e indica que debe volver a grabar el material con el practicante plenamente visible.
-* **4a. Edición sin cambio de referencia:** Si el profesor modifica solo los datos descriptivos (nombre, cinturón, mensaje), el sistema conserva el patrón ya registrado.
-* **4b. Reemplazo de referencia:** Si el profesor aporta un nuevo video para una técnica existente, el sistema reemplaza el patrón previo y lo hace vigente para futuras evaluaciones.
+* **1a. Demostración con visibilidad insuficiente del instructor:** El Sistema rechaza el registro e informa al profesor que debe aportar una grabación donde la ejecución completa sea claramente distinguible.
+* **5a. Modificación descriptiva sin cambio de demostración:** Si el profesor actualiza únicamente el nombre, el grado de cinturón o las indicaciones pedagógicas, el Sistema conserva intacto el patrón de referencia vigente.
+* **5b. Sustitución de la demostración de referencia:** Si el profesor aporta una nueva grabación para una técnica existente, el Sistema reemplaza el patrón postural anterior por la nueva secuencia confirmada.
 
 #### Excepciones
-* **E1. Dos técnicas con el mismo nombre:** El sistema alerta al profesor y solicita confirmación explícita antes de proceder.
+* **E1. Nombre de técnica duplicado en el catálogo:** El Sistema advierte la coincidencia y solicita confirmación antes de actualizar o crear el registro.
 ---
 
 ### 5.3.2 Diagrama de Caso de Uso UC-03
@@ -1693,7 +1644,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1707,34 +1657,36 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
-
 actor "Profesor" as PR
 actor "Administrador" as AD
-actor "YOLOv26 Pose" as YOLO
+actor "Servicio de Visión\npor Computadora" as SVC
 
 rectangle "Sistema Corpo e Mente - Catálogo y Referencias" {
-    usecase "UC-03: Gestionar Técnicas del Catálogo" as UC03
-    usecase "Subir Video de Referencia (Patrón de Oro)" as UC03_Vid
-    usecase "Extraer Esqueleto Canónico 3D" as UC03_Yolo
-    usecase "Indexar Secuencia en Base de Datos" as UC03_Idx
+    usecase "UC-03: Gestionar Técnicas y\nVideos de Referencia" as UC03
+    usecase "Registrar Demostración\nde Referencia del Instructor" as UC03_Vid
+    usecase "Reconocer Secuencia Postural\ndel Instructor" as UC03_Post
+    usecase "Catalogar Patrón\nBiomecánico Oficial" as UC03_Cat
 }
 
 PR --> UC03
 AD --> UC03
 PR --> UC03_Vid
-UC03_Vid ..> UC03_Yolo : <<include>>
-UC03_Yolo ..> UC03_Idx : <<include>>
-UC03_Yolo --> YOLO
+UC03_Vid ..> UC03_Post : <<include>>
+UC03_Post ..> UC03_Cat : <<include>>
+UC03_Post --> SVC
 @enduml
 ```
 ---
 
 ### 5.3.3 Diagrama de Clases de Diseño (Participantes) UC-03
+Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeCatálogoTécnico` se implementa en `ProfesorTecnicasView` y `TecnicasRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeTécnicas` se materializa en `TecnicasService` y el adaptador `YOLOPoseAdapter`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Técnica` y `PatrónDeReferencia` corresponden a las clases `Tecnica` y `PatronReferencia`.
+
 ```mermaid
 classDiagram
     class ProfesorTecnicasView {
@@ -1788,8 +1740,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-03: Gestionar Técnicas y Referencias
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1803,100 +1755,87 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Profesor" as PR
+boundary "PantallaDeCatálogoTécnico" as B1
+control "CoordinadorDeTécnicas" as C1
+entity "Técnica" as E1
+entity "PatrónDeReferencia" as E2
 
-actor "Profesor" as Prof
-boundary "ProfesorTecnicasView" as View
-boundary "TecnicasRoutes" as API
-control "TecnicasService" as Svc
-control "YOLOPoseAdapter" as YOLO
-entity "Tecnica" as EntTec
-entity "PatronReferencia" as EntPat
-database "PostgreSQL / Qdrant" as DB
-
-Prof -> View : Ingresa nombre, cinturón y sube VideoReferencia.mp4
-View -> API : POST /api/v1/tecnicas (Multipart Form)
-API -> Svc : procesarPatronOro(nombre, cinturon, video, prof_id)
-
-Svc -> EntTec : crear(nombre, cinturon)
-EntTec -> DB : INSERT INTO tecnicas (...)
-DB --> EntTec : tecnica_id
-
-Svc -> YOLO : extraerSecuencia3D(video_temp_path)
-YOLO --> Svc : Esqueleto 3D normalizado a lo largo del video
-
-Svc -> EntPat : crearPatron(tecnica_id, prof_id, keypoints)
-EntPat -> DB : INSERT INTO patrones_referencia y Qdrant vectores
-DB --> Svc : Indexación exitosa
-
-Svc --> API : TecnicaCreadaDTO
-API --> View : HTTP 201 Created
-View --> Prof : Mensaje: "Técnica y Patrón de Oro guardados con éxito"
+PR -> B1 : solicitarRegistroDeTécnica(nombre, cinturón, indicaciones, videoDemostración)
+B1 -> C1 : registrarTécnicaConReferencia(profesor, datosTécnica, videoDemostración)
+C1 -> E1 : crear(nombre, cinturón, indicaciones)
+E1 --> C1 : técnicaRegistrada
+C1 -> C1 : extraerSecuenciaPostural(videoDemostración, instructorConfirmado)
+C1 -> E2 : guardarPatrónOficial(técnicaRegistrada, profesor, secuenciaPostural)
+E2 --> C1 : patrónVigente
+C1 -> E1 : vincularPatrónVigente(patrónVigente)
+C1 --> B1 : registroCompletado(técnicaRegistrada, patrónVigente)
+B1 --> PR : confirmarDisponibilidadDeTécnica(técnicaRegistrada)
 @enduml
 ```
 ---
 
 ### 5.3.5 Diagrama de Paquetes UC-03
+Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las capas internas (`Aplicacion` y `Dominio`).
+
 ```mermaid
 graph TD
-    subgraph Presentacion ["Presentación (React)"]
+    subgraph Presentacion ["📦 Presentación (React)"]
         ProfesorTecnicas["ProfesorTecnicas.jsx"]
     end
-    subgraph Aplicacion ["Aplicación (FastAPI)"]
+    subgraph Aplicacion ["📦 Aplicación (Casos de Uso)"]
         TecnicasRoutes["tecnicas_routes.py"]
         TecnicasService["tecnicas_service.py"]
     end
-    subgraph Dominio ["Dominio"]
+    subgraph Dominio ["📦 Dominio (Entidades)"]
         EntTecnica["Tecnica"]
         EntPatron["PatronReferencia"]
     end
-    subgraph Infraestructura ["Infraestructura"]
+    subgraph Infraestructura ["📦 Infraestructura (Adaptadores y Persistencia)"]
         YOLO["YOLOPoseAdapter"]
         DB_Storage["PostgreSQL / Qdrant"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
 
 ## 5.4. Caso de Uso 4: Gestionar Teoría RAG (UC-04)
 
-### 5.4.1. Caso de Uso 4: Gestionar Teoría RAG y Mensajes del Profesor (UC-04) — Nivel de Análisis
+### 5.4.1. Caso de Uso 4: Gestionar Conocimiento Técnico y Directrices del Profesor (UC-04) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-04** |
-| **Nombre** | Gestionar Teoría RAG y Mensajes del Profesor |
-| **Actores** | **Principal:** Profesor.<br>**Secundario (Sistemas de Apoyo):** Servicio de Vectorización Multimodal, Base de Conocimiento Técnica. |
-| **Descripción** | El instructor enriquece el conocimiento de la plataforma aportando manuales técnicos y redactando sus propias recomendaciones doctrinales para cada técnica. |
-| **Precondiciones** | El profesor mantiene una sesión activa y ha seleccionado una técnica existente del catálogo. |
-| **Postcondiciones** | 1. Los fragmentos del manual quedan disponibles para fundamentar las evaluaciones de los alumnos.<br>2. Las recomendaciones del profesor quedan asociadas a la técnica y prevalecen como directriz prioritaria. |
+| **Nombre** | Gestionar Conocimiento Técnico y Directrices del Profesor |
+| **Actores** | **Principal:** Profesor.<br>**Secundario (Sistemas de Apoyo):** Servicio de Catalogación de Conocimiento, Base de Conocimiento Técnica. |
+| **Descripción** | El instructor nutre el acervo doctrinal de la academia incorporando obras bibliográficas de referencia y registrando directrices pedagógicas propias para orientar la corrección de cada técnica. |
+| **Precondiciones** | El profesor cuenta con una sesión activa y dispone de facultades de instrucción en su sede. |
+| **Postcondiciones** | 1. Los pasajes e ilustraciones de las obras aportadas quedan catalogados en la biblioteca técnica para consulta semántica y fundamentación de evaluaciones.<br>2. Las directrices del instructor quedan vinculadas a la técnica correspondiente. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Profesor solicita enriquecer una técnica con material doctrinal. | Sistema presenta el espacio para redactar su recomendación y para aportar documentos. |
-| 2 | Profesor redacta una recomendación directa para sus alumnos. | Sistema asocia el texto a la técnica y lo establece como directriz pedagógica prioritaria. |
-| 3 | Profesor aporta uno o varios manuales técnicos de referencia. | Sistema recibe el material y procesa su contenido (texto e imágenes). |
-| 4 | | Sistema prepara el material para que las evaluaciones futuras puedan fundamentarse en él. |
-| 5 | Profesor consulta el estado del material aportado. | Sistema presenta los fragmentos indexados y el texto de su recomendación vigente. |
-| 6 | Profesor puede retirar el material que él mismo aportó. | Sistema elimina la referencia de la base de conocimiento sin afectar aportes de otros instructores. |
+| 1 | El Profesor solicita enriquecer el respaldo teórico de la academia o de una técnica específica. | El Sistema habilita el registro de directrices pedagógicas del instructor y la incorporación de obras bibliográficas. |
+| 2 | El Profesor redacta una directriz pedagógica dirigida a sus alumnos para una técnica. | El Sistema asocia la directriz a la técnica seleccionada para emplearla cuando no exista bibliografía específica de mayor relevancia. |
+| 3 | El Profesor aporta un documento o ilustración técnica para la biblioteca global de la academia. | El Sistema recibe el documento, segmenta sus pasajes textuales e ilustraciones y los cataloga en la biblioteca técnica. |
+| 4 | | El Sistema informa al profesor la cantidad de fragmentos catalogados y deja la obra disponible en el catálogo y en el buscador de la biblioteca. |
+| 5 | El Profesor puede consultar o retirar una fuente bibliográfica o directriz previamente registrada. | El Sistema actualiza la biblioteca técnica retirando los fragmentos indicados sin afectar las contribuciones de otros instructores. |
 
 #### Secuencias Alternativas
-* **3a. Documento no procesable** (formato no soportado, sin texto legible): El sistema conserva el archivo, informa el inconveniente y solicita reintentar con otro material.
-* **3b. Manual de gran extensión:** El sistema procesa el material en segundo plano e informa al profesor del avance, permitiéndole continuar con otras tareas.
-* **6a. Retiro de toda la teoría de una técnica:** El profesor puede eliminar la totalidad del material que aportó sobre una técnica sin afectar la referencia biomecánica registrada.
+* **3a. Documento ilegible o sin contenido técnico extraíble:** El Sistema informa la imposibilidad de extraer fragmentos útiles y solicita aportar un documento con texto o ilustraciones legibles.
+* **3b. Obra bibliográfica extensa:** El Sistema procesa la catalogación de forma progresiva e informa el avance porcentual hasta concluir la incorporación completa.
+* **5a. Retiro de directriz del instructor:** Si el profesor deja vacía su directriz en una técnica, el Sistema elimina la indicación previa sin alterar el patrón biomecánico de la técnica.
 
 #### Excepciones
-* **E1. Servicio de vectorización no disponible:** El sistema conserva el archivo para que el profesor pueda reintentar el procesamiento cuando el servicio se restablezca.
+* **E1. Servicio de catalogación temporalmente no disponible:** El Sistema conserva el documento original y notifica al profesor para reintentar su catalogación cuando el servicio se restablezca.
 ---
 
 ### 5.4.2 Diagrama de Caso de Uso UC-04
@@ -1905,7 +1844,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -1919,39 +1857,39 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
-
 actor "Profesor" as PR
-actor "Qwen3-VL Embedding" as QWEN_EMB
-actor "Qdrant DB" as QDRANT
+actor "Servicio de Catalogación\nde Conocimiento" as SCC
+actor "Base de Conocimiento\nTécnica" as BCT
 
-rectangle "Sistema Corpo e Mente - Conocimiento RAG" {
-    usecase "UC-04: Gestionar Teoría y Manuales RAG" as UC04
-    usecase "Escribir Mensaje Directo del Docente" as UC04_Msg
-    usecase "Cargar Manual en PDF" as UC04_PDF
-    usecase "Extracción de Texto y Diagramas" as UC04_Extract
-    usecase "Generar Vectores (2048 dimensiones)" as UC04_Emb
-    usecase "Indexar en Colección rag_knowledge" as UC04_Store
+rectangle "Sistema Corpo e Mente - Conocimiento Técnico" {
+    usecase "UC-04: Gestionar Conocimiento\nTécnico y Directrices" as UC04
+    usecase "Registrar Directriz Pedagógica\ndel Instructor" as UC04_Msg
+    usecase "Incorporar Obra Bibliográfica\nde Referencia" as UC04_Doc
+    usecase "Extraer Pasajes e\nIlustraciones Técnicas" as UC04_Ext
+    usecase "Catalogar Fragmentos para\nConsulta Semántica" as UC04_Cat
 }
 
 PR --> UC04
 UC04 ..> UC04_Msg : <<include>>
-UC04 ..> UC04_PDF : <<include>>
-UC04_PDF ..> UC04_Extract : <<include>>
-UC04_Extract ..> UC04_Emb : <<include>>
-UC04_Emb ..> UC04_Store : <<include>>
+UC04 ..> UC04_Doc : <<include>>
+UC04_Doc ..> UC04_Ext : <<include>>
+UC04_Ext ..> UC04_Cat : <<include>>
 
-UC04_Emb --> QWEN_EMB
-UC04_Store --> QDRANT
+UC04_Ext --> SCC
+UC04_Cat --> BCT
 @enduml
 ```
 ---
 
 ### 5.4.3 Diagrama de Clases de Diseño (Participantes) UC-04
+Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeConocimientoTécnico` se implementa mediante `TheoryManagerModal`, `GlobalKnowledgeModal` y `ConocimientoRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeConocimiento` se materializa en `KnowledgeController` (`IngestKnowledgeUseCase`) y `QwenEmbeddingAdapter`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Técnica` y `BibliotecaTécnica` corresponden a las entidades `Tecnica` y `TeoriaRAG`.
+
 ```mermaid
 classDiagram
     class TheoryManagerModal {
@@ -1998,8 +1936,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-04: Gestionar Conocimiento Técnico
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2013,65 +1951,53 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Profesor" as PR
+boundary "PantallaDeConocimientoTécnico" as B1
+control "CoordinadorDeConocimiento" as C1
+entity "Técnica" as E1
+entity "BibliotecaTécnica" as E2
 
-actor "Profesor" as Prof
-boundary "TheoryManagerModal" as Modal
-boundary "ConocimientoRoutes" as API
-control "KnowledgeController" as Ctrl
-control "QwenEmbeddingAdapter" as MLX
-entity "TeoriaRAG" as Ent
-database "PostgreSQL / Qdrant" as DB
-
-Prof -> Modal : Escribe mensaje y selecciona ManualBJJ.pdf
-Modal -> API : POST /api/v1/conocimiento/ingestar-manual
-API -> Ctrl : procesarDocumentoPDF(pdf, tecnica_id)
-Ctrl -> Ctrl : extraerPaginasYDiagramas(pdf)
-
-loop Por cada página del manual
-    Ctrl -> MLX : generarEmbeddingMultimodal(texto_pag, imagen_pag)
-    MLX --> Ctrl : Vector numérico de 2048 dimensiones
-    Ctrl -> Ent : instanciar(tecnica_id, texto, pag, vector)
-    Ent -> DB : INSERT INTO Qdrant(rag_knowledge)
-end
-
-Ctrl -> DB : UPDATE tecnicas SET mensaje_profesor = :texto WHERE id = :tecnica_id
-DB --> Ctrl : Confirmación en base de datos
-
-Ctrl --> API : [paginas_procesadas: 48, status: "ok"]
-API --> Modal : HTTP 200 OK
-Modal --> Prof : Notificación: "Teoría indexada y lista para consultas RAG"
+PR -> B1 : aportarMaterialDoctrinal(técnica, directrizInstructor, documentoTécnico)
+B1 -> C1 : actualizarConocimientoTécnico(profesor, técnica, directrizInstructor, documentoTécnico)
+C1 -> E1 : actualizarDirectrizDelInstructor(directrizInstructor)
+E1 --> C1 : directrizVigente
+C1 -> C1 : segmentarContenidoEIlustraciones(documentoTécnico)
+C1 -> E2 : catalogarFragmentos(fuente, fragmentosExtraídos)
+E2 --> C1 : fragmentosCatalogados
+C1 --> B1 : conocimientoActualizado(totalFragmentos, directrizVigente)
+B1 --> PR : confirmarMaterialDisponible(totalFragmentos)
 @enduml
 ```
 ---
 
 ### 5.4.5 Diagrama de Paquetes UC-04
+Las dependencias entre paquetes siguen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
+
 ```mermaid
 graph TD
-    subgraph Presentacion ["Presentación"]
-        Modal["TheoryManagerModal.jsx"]
+    subgraph Presentacion ["📦 Presentación"]
+        Modal["TheoryManagerModal.jsx / GlobalKnowledgeModal.jsx"]
     end
-    subgraph Aplicacion ["Aplicación"]
+    subgraph Aplicacion ["📦 Aplicación"]
         API["conocimiento_routes.py"]
         Controller["KnowledgeController"]
     end
-    subgraph Dominio ["Dominio"]
+    subgraph Dominio ["📦 Dominio"]
         EntTeoria["TeoriaRAG"]
     end
-    subgraph Infraestructura ["Infraestructura"]
+    subgraph Infraestructura ["📦 Infraestructura"]
         Embedding["QwenEmbeddingAdapter (MLX)"]
         Qdrant["Qdrant DB"]
         Postgres["PostgreSQL"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
@@ -2084,26 +2010,26 @@ graph TD
 | :--- | :--- |
 | **Identificador** | **UC-05** |
 | **Nombre** | Ver Progreso de Alumnos |
-| **Actores** | **Principal:** Profesor, Alumno.<br>**Secundario (Sistemas de Apoyo):** Repositorio Histórico de Evaluaciones. |
-| **Descripción** | El profesor supervisa la evolución técnica de sus alumnos a partir del histórico de evaluaciones; el alumno consulta su propio historial. |
-| **Precondiciones** | El usuario mantiene una sesión activa como profesor o alumno. |
-| **Postcondiciones** | El usuario visualiza el historial de evaluaciones filtrado por su ámbito de autorización (sucursal del profesor o cuenta propia del alumno). |
+| **Actores** | **Principal:** Profesor, Alumno.<br>**Secundario (Sistemas de Apoyo):** Ninguno. |
+| **Descripción** | El profesor supervisa la evolución biomecánica de los practicantes adscritos a su sede a partir de su historial cronológico de evaluaciones; el alumno consulta su propia evolución técnica. |
+| **Precondiciones** | El usuario cuenta con una sesión activa bajo el rol de profesor o de alumno. |
+| **Postcondiciones** | El usuario conoce el historial de evaluaciones, el grado de similitud alcanzado en cada intento y las correcciones pedagógicas emitidas dentro de su ámbito de autorización. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Profesor solicita revisar el progreso de sus alumnos. | Sistema presenta la lista de alumnos pertenecientes a su sede. |
-| 2 | Profesor selecciona un alumno. | Sistema presenta el historial cronológico de evaluaciones del alumno con su grado de similitud y resumen de cada corrección. |
-| 3 | Profesor profundiza en una evaluación. | Sistema presenta el detalle de la evaluación: video comparado, zonas del cuerpo afectadas y explicación pedagógica completa. |
-| 4 | Alumno solicita consultar su propio historial. | Sistema presenta sus evaluaciones con la misma estructura que el profesor, sin acceso a otros alumnos. |
+| 1 | El Profesor solicita supervisar el avance técnico de los alumnos de su academia. | El Sistema identifica la sede del profesor y recupera la nómina de alumnos adscritos junto con su historial de evaluaciones. |
+| 2 | | El Sistema consolida los indicadores de evolución de cada practicante y presenta la lista de alumnos con el estado de su Pase de Tatami y el resumen de sus evaluaciones. |
+| 3 | El Profesor selecciona a un alumno y una evaluación específica para examinarla en detalle. | El Sistema presenta la ejecución registrada, el grado de similitud, las articulaciones comprometidas y la corrección pedagógica asociada. |
+| 4 | Cuando quien consulta es un Alumno, solicita revisar su propio avance. | El Sistema presenta exclusivamente el historial personal del alumno con el detalle de cada evaluación realizada. |
 
 #### Secuencias Alternativas
-* **2a. Alumno sin evaluaciones registradas:** El sistema informa que el alumno aún no cuenta con análisis realizados y sugiere invitarlo a subir su primera ejecución.
-* **2b. Sucursal sin alumnos:** El sistema informa que no existen alumnos asignados a la sede del profesor.
-* **3a. Profesor intenta acceder a un alumno de otra sede:** El sistema deniega la consulta e informa que el acceso está restringido a la propia sucursal.
+* **2a. Practicante sin evaluaciones previas:** El Sistema indica que el alumno aún no registra análisis biomecánicos y conserva visible el estado de su membresía.
+* **2b. Sede sin alumnos registrados:** El Sistema informa al profesor que todavía no existen practicantes dados de alta en su sucursal.
+* **3a. Solicitud sobre un alumno de otra sede:** El Sistema impide la consulta por regla de aislamiento entre sucursales de la academia.
 
 #### Excepciones
-* **E1. Historial no disponible:** El sistema informa indisponibilidad temporal del historial.
+* **E1. Información histórica temporalmente inaccesible:** El Sistema informa la indisponibilidad momentánea del registro de progreso.
 ---
 
 ### 5.5.2 Diagrama de Caso de Uso UC-05
@@ -2112,7 +2038,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2126,20 +2051,17 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
-
 
 actor "Profesor" as PR
 actor "Alumno" as AL
 
-rectangle "Sistema Corpo e Mente - Progreso y Evaluaciones" {
-    usecase "UC-05: Ver Progreso de Alumnos" as UC05
-    usecase "Consultar Lista de Alumnos de la Sede" as UC05_List
-    usecase "Ver Línea de Tiempo de Evaluaciones" as UC05_Time
-    usecase "Reproducir Video con Corrección de IA" as UC05_Play
+rectangle "Sistema Corpo e Mente - Seguimiento de Progreso" {
+    usecase "UC-05: Ver Progreso\nde Alumnos" as UC05
+    usecase "Consultar Practicantes\nde la Sede" as UC05_List
+    usecase "Revisar Historial Cronológico\nde Evaluaciones" as UC05_Time
+    usecase "Inspeccionar Ejecución y\nCorrección Pedagógica" as UC05_Play
 }
 
 PR --> UC05
@@ -2154,6 +2076,11 @@ AL --> UC05_Play
 ---
 
 ### 5.5.3 Diagrama de Clases de Diseño (Participantes) UC-05
+Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeProgreso` se implementa en `StudentProgressView` y `ProgressRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeProgreso` se materializa en `ProgressController`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario` y `Evaluación` corresponden a las clases de dominio `Usuario` y `Evaluacion`.
+
 ```mermaid
 classDiagram
     class StudentProgressView {
@@ -2201,8 +2128,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-05: Ver Progreso de Alumnos
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2216,63 +2143,52 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Profesor" as PR
+boundary "PantallaDeProgreso" as B1
+control "CoordinadorDeProgreso" as C1
+entity "Usuario" as E1
+entity "Evaluación" as E2
 
-actor "Profesor" as Prof
-boundary "StudentProgressView" as View
-boundary "ProgressRoutes" as API
-control "ProgressController" as Ctrl
-entity "Usuario" as EntUser
-entity "Evaluacion" as EntEval
-database "PostgreSQL (RLS)" as DB
-
-Prof -> View : Ingresa a "Progreso de Alumnos"
-View -> API : GET /api/v1/profesor/alumnos (Bearer Token)
-API -> Ctrl : listarAlumnosPorSucursal(token.sucursal_id)
-
-Ctrl -> EntUser : consultarPorSucursal(sucursal_id)
-EntUser -> DB : SELECT * FROM usuarios WHERE sucursal_id = :id AND rol = 'alumno'
-DB --> EntUser : Lista de alumnos de la sede
-
-loop Por cada alumno
-    Ctrl -> EntEval : obtenerUltimasEvaluaciones(alumno.id)
-    EntEval -> DB : SELECT * FROM evaluaciones_alumnos WHERE alumno_id = :id ORDER BY fecha DESC
-    DB --> EntEval : Historial con notas y feedbacks
-end
-
-Ctrl --> API : Listado consolidado con estadísticas
-API --> View : HTTP 200 OK + JSON
-View --> Prof : Despliega alumnos, métricas de similitud y estado del Pase de Tatami
+PR -> B1 : solicitarSeguimientoDeSede(sucursal)
+B1 -> C1 : consultarProgresoDeAlumnos(profesor, sucursal)
+C1 -> E1 : obtenerAlumnosDeSucursal(sucursal)
+E1 --> C1 : listaDeAlumnos
+C1 -> E2 : obtenerHistorialDeEvaluaciones(listaDeAlumnos)
+E2 --> C1 : historialPorAlumno
+C1 -> C1 : consolidarEvoluciónTécnica(listaDeAlumnos, historialPorAlumno)
+C1 --> B1 : resumenDeProgreso(alumnos, evolución, estadoMembresía)
+B1 --> PR : mostrarEvoluciónTécnica(alumnos, historialPorAlumno)
 @enduml
 ```
 ---
 
 ### 5.5.5 Diagrama de Paquetes UC-05
+Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
+
 ```mermaid
 graph TD
-    subgraph Presentacion ["Presentación"]
+    subgraph Presentacion ["📦 Presentación"]
         ProgView["StudentProgress.jsx"]
     end
-    subgraph Aplicacion ["Aplicación"]
+    subgraph Aplicacion ["📦 Aplicación"]
         ProgRoutes["progress_routes.py"]
         ProgCtrl["ProgressController"]
     end
-    subgraph Dominio ["Dominio"]
+    subgraph Dominio ["📦 Dominio"]
         EntUsuario["Usuario"]
         EntEvaluacion["Evaluacion"]
     end
-    subgraph Infraestructura ["Infraestructura"]
+    subgraph Infraestructura ["📦 Infraestructura"]
         Postgres["PostgreSQL con RLS"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
@@ -2284,27 +2200,27 @@ graph TD
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-06** |
-| **Nombre** | Activar Pase de Tatami (Control de Suscripciones) |
-| **Actores** | **Principal:** Profesor.<br>**Secundario (Sistemas de Apoyo):** Repositorio de Membresías. |
-| **Descripción** | El instructor habilita el acceso de un alumno a las funciones de análisis durante 30 días, tras verificar el pago de su mensualidad en la recepción de la academia. |
-| **Precondiciones** | 1. El profesor mantiene una sesión activa.<br>2. El alumno pertenece a la misma sucursal del profesor y su acceso se encuentra en estado pendiente o vencido. |
-| **Postcondiciones** | 1. El alumno queda habilitado para subir videos y solicitar análisis durante 30 días.<br>2. El vencimiento de su acceso queda calculado y será advertido cuando corresponda. |
+| **Nombre** | Activar Pase de Tatami (Control de Membresías) |
+| **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Ninguno. |
+| **Descripción** | El instructor o administrador habilita la membresía de tatami de un alumno durante un periodo de treinta días, tras constatar de forma presencial el pago de su mensualidad en la sede de la academia. |
+| **Precondiciones** | 1. El profesor o administrador mantiene una sesión activa.<br>2. El alumno pertenece a la misma sede del profesor (o es gestionado globalmente por un administrador) y su membresía se encuentra pendiente o vencida. |
+| **Postcondiciones** | 1. El Pase de Tatami del alumno queda en estado activo por treinta días.<br>2. La nueva fecha de vencimiento queda registrada y el alumno queda habilitado para solicitar evaluaciones biomecánicas. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Profesor solicita consultar los alumnos pendientes de habilitación en su academia. | Sistema presenta la lista de alumnos cuyo acceso requiere activación o renovación. |
-| 2 | Profesor selecciona a un alumno tras verificar su pago. | Sistema solicita confirmación de la activación. |
-| 3 | Profesor confirma la activación. | Sistema habilita el acceso del alumno por un periodo de 30 días y comunica la fecha de vencimiento. |
-| 4 | Alumno ingresa a la plataforma. | Sistema reconoce su acceso como activo y le permite utilizar las funciones de análisis. |
+| 1 | El Profesor solicita revisar la situación de membresía de los alumnos de su academia. | El Sistema presenta la nómina de practicantes adscritos a la sede indicando cuáles mantienen su Pase de Tatami pendiente o expirado. |
+| 2 | El Profesor selecciona al alumno cuyo pago presencial ha sido verificado y solicita habilitar su Pase de Tatami. | El Sistema comprueba que el profesor y el alumno pertenezcan a la misma sede de la academia. |
+| 3 | | El Sistema habilita la vigencia del Pase de Tatami del alumno por un periodo de treinta días a partir de la fecha actual y registra su fecha de vencimiento. |
+| 4 | | El Sistema informa al profesor la confirmación de la membresía activa y la fecha exacta de expiración otorgada al alumno. |
 
 #### Secuencias Alternativas
-* **2a. Profesor intenta activar un alumno de otra sucursal:** El sistema deniega la operación por política de aislamiento entre sedes.
-* **3a. Alumno con acceso aún vigente:** Si el acceso no ha expirado, la nueva activación extiende el plazo sumando 30 días adicionales al vencimiento actual.
-* **3b. Alumno con acceso vencido:** La activación reinicia el plazo desde la fecha de confirmación.
+* **2a. Alumno adscrito a otra sede:** El Sistema rechaza la operación cuando un profesor intenta habilitar la membresía de un alumno perteneciente a una sucursal distinta.
+* **3a. Renovación anticipada de membresía vigente:** Si el alumno aún cuenta con días activos, el Sistema extiende el vencimiento por treinta días desde la fecha de aprobación.
+* **3b. Expiración automática por cumplimiento del plazo:** Al superarse la fecha de vencimiento sin haberse registrado una nueva habilitación, el Sistema suspende el acceso del alumno a nuevas evaluaciones hasta su próxima renovación.
 
 #### Excepciones
-* **E1. Servicio de membresías no disponible:** El sistema informa indisponibilidad y preserva el estado anterior.
+* **E1. Registro de membresías temporalmente inaccesible:** El Sistema informa la imposibilidad momentánea de actualizar la vigencia y preserva el estado anterior del alumno.
 ---
 
 ### 5.6.2 Diagrama de Caso de Uso UC-06
@@ -2313,7 +2229,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2327,32 +2242,36 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
-
 actor "Profesor" as PR
+actor "Administrador" as AD
 
-rectangle "Sistema Corpo e Mente - Pase de Tatami" {
-    usecase "UC-06: Activar Pase de Tatami (30 Días)" as UC06
-    usecase "Verificar Pago en Recepción (Efectivo/QR)" as UC06_Pay
-    usecase "Calcular Fecha de Expiración (+30 días)" as UC06_Calc
-    usecase "Actualizar Estado a 'activo'" as UC06_Act
-    usecase "Bloqueo Automático al Expirar" as UC06_Block
+rectangle "Sistema Corpo e Mente - Control de Membresías" {
+    usecase "UC-06: Activar Pase\nde Tatami (30 Días)" as UC06
+    usecase "Confirmar Pago Presencial\nen la Academia" as UC06_Pay
+    usecase "Verificar Pertenencia\na la Misma Sede" as UC06_Sede
+    usecase "Habilitar Vigencia por\nTreinta Días" as UC06_Act
+    usecase "Suspender Acceso\nal Vencer el Periodo" as UC06_Block
 }
 
 PR --> UC06
+AD --> UC06
 UC06 ..> UC06_Pay : <<include>>
-UC06 ..> UC06_Calc : <<include>>
+UC06 ..> UC06_Sede : <<include>>
 UC06 ..> UC06_Act : <<include>>
-UC06 ..> UC06_Block : <<include>>
+UC06 ..> UC06_Block : <<extend>>
 @enduml
 ```
 ---
 
 ### 5.6.3 Diagrama de Clases de Diseño (Participantes) UC-06
+Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeMembresías` se implementa en `StudentProgressView` y `AuthRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeMembresías` se materializa en `SubscriptionManager`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario` y `PaseDeTatami` corresponden a la entidad de dominio `Usuario` y sus atributos de suscripción.
+
 ```mermaid
 classDiagram
     class StudentProgressView {
@@ -2390,8 +2309,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-06: Activar Pase de Tatami
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2405,59 +2324,51 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Profesor" as PR
+boundary "PantallaDeMembresías" as B1
+control "CoordinadorDeMembresías" as C1
+entity "Usuario" as E1
+entity "PaseDeTatami" as E2
 
-actor "Profesor" as Prof
-boundary "StudentProgressView" as View
-boundary "AuthRoutes" as API
-control "SubscriptionManager" as Ctrl
-entity "Usuario" as Ent
-database "PostgreSQL" as DB
-
-Prof -> View : Pulsa botón "Aprobar Pase de Tatami" para el alumno
-View -> API : PUT /api/v1/auth/usuarios/{alumno_id}/activar-pase (Token Profesor)
-API -> Ctrl : activarMembresia30Dias(profesor_id, alumno_id)
-
-Ctrl -> Ent : verificarMismaSucursal(profesor_id, alumno_id)
-Ent -> DB : Validar coincidencia de sucursal_id
-DB --> Ctrl : Sucursal coincide (Autorizado)
-
-Ctrl -> Ent : activarPor30Dias()
-Ent -> DB : UPDATE usuarios SET estado_suscripcion = 'activo', fecha_expiracion = NOW() + '30 days' WHERE id = :alumno_id
-DB --> Ent : Filas actualizadas = 1
-
-Ctrl --> API : [nuevo_estado: "activo", fecha_expiracion: "2026-12-05"]
-API --> View : HTTP 200 OK
-View --> Prof : Cambia la insignia del alumno a "Pase Activo (30 días)" (Verde)
+PR -> B1 : solicitarActivaciónDePase(alumno)
+B1 -> C1 : activarPaseDeTatami(profesor, alumno)
+C1 -> E1 : verificarMismaSucursal(profesor, alumno)
+E1 --> C1 : pertenenciaConfirmada
+C1 -> E2 : habilitarPorTreintaDías(alumno, fechaActual)
+E2 --> C1 : vigenciaActualizada
+C1 -> E1 : actualizarEstadoDeMembresía(vigenciaActualizada)
+C1 --> B1 : paseActivado(alumno, fechaVencimiento)
+B1 --> PR : confirmarHabilitaciónDeAcceso(alumno, fechaVencimiento)
 @enduml
 ```
 ---
 
 ### 5.6.5 Diagrama de Paquetes UC-06
+Las dependencias entre paquetes obedecen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
+
 ```mermaid
 graph TD
-    subgraph Presentacion ["Presentación"]
+    subgraph Presentacion ["📦 Presentación"]
         StudentView["StudentProgress.jsx (Badge Pase)"]
     end
-    subgraph Aplicacion ["Aplicación"]
+    subgraph Aplicacion ["📦 Aplicación"]
         AuthAPI["auth_routes.py"]
         SubManager["SubscriptionManager"]
     end
-    subgraph Dominio ["Dominio"]
+    subgraph Dominio ["📦 Dominio"]
         EntUsuario["Usuario (Membresía)"]
     end
-    subgraph Infraestructura ["Infraestructura"]
+    subgraph Infraestructura ["📦 Infraestructura"]
         Postgres["PostgreSQL"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
@@ -2470,26 +2381,25 @@ graph TD
 | :--- | :--- |
 | **Identificador** | **UC-07** |
 | **Nombre** | Gestionar Sucursales y Coordenadas Geográficas |
-| **Actores** | **Principal:** Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Mapas y Localización (identificación geográfica de direcciones). |
-| **Descripción** | El administrador mantiene el catálogo de sedes físicas de la academia, registrando su ubicación sobre un mapa para referencia de alumnos y profesores. |
-| **Precondiciones** | El administrador mantiene una sesión activa con privilegios de gestión global. |
-| **Postcondiciones** | 1. La nueva sede queda disponible para asignación de usuarios.<br>2. Su ubicación (país, ciudad, dirección y coordenadas) queda registrada para visualización cartográfica. |
+| **Actores** | **Principal:** Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Cartografía y Localización (determinación geográfica de direcciones). |
+| **Descripción** | El administrador administra el directorio oficial de sedes físicas de la academia, registrando su localización geográfica exacta para la adscripción de alumnos e instructores. |
+| **Precondiciones** | El administrador mantiene una sesión activa con facultades de administración global. |
+| **Postcondiciones** | 1. La sede queda incorporada al directorio oficial de la academia y disponible para adscribir practicantes e instructores.<br>2. Sus datos administrativos (país, ciudad, dirección) y coordenadas geográficas quedan registrados. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Administrador solicita registrar una nueva sede. | Sistema presenta el formulario de alta con un mapa interactivo. |
-| 2 | Administrador señala la ubicación de la sede sobre el mapa. | Sistema identifica la zona geográfica y propone los datos administrativos (país, ciudad, dirección aproximada). |
-| 3 | Administrador completa o ajusta los datos propuestos y confirma. | Sistema registra la sede y la presenta en el catálogo con su marcador visible. |
-| 4 | Administrador puede editar o retirar una sede existente. | Sistema actualiza el catálogo; si la sede tiene usuarios vinculados, el sistema solicita primero su reasignación. |
+| 1 | El Administrador solicita dar de alta una nueva sede e indica su ubicación geográfica mediante coordenadas de latitud y longitud. | El Sistema consulta la división administrativa correspondiente a las coordenadas indicadas y propone el país, la ciudad y la dirección aproximada. |
+| 2 | El Administrador verifica o ajusta los datos propuestos, asigna el nombre oficial de la sede y confirma su registro. | El Sistema valida la completitud de los datos, incorpora la nueva sucursal al directorio oficial de la academia y confirma su disponibilidad. |
+| 3 | El Administrador puede actualizar los datos de localización o solicitar el retiro de una sede existente. | El Sistema actualiza el directorio de sedes o, si se solicita el retiro, comprueba previamente que no existan practicantes ni instructores vinculados a ella. |
 
 #### Secuencias Alternativas
-* **2a. Administrador aporta un enlace de ubicación en lugar de señalar el mapa:** El sistema extrae las coordenadas y completa automáticamente los datos administrativos.
-* **4a. Sede con usuarios vinculados:** El sistema impide la eliminación y sugiere primero reasignar a los usuarios a otra sede.
-* **4b. Corrección de ubicación:** Si el administrador ajusta la posición del marcador sobre el mapa, el sistema actualiza las coordenadas de la sede sin alterar sus usuarios.
+* **1a. Indicación de ubicación mediante referencia externa:** Si el administrador aporta una referencia geográfica en lugar de coordenadas directas, el Sistema determina la latitud y longitud asociadas y propone los datos administrativos correspondientes.
+* **3a. Sede con usuarios adscritos:** Si el administrador solicita retirar una sucursal que aún cuenta con alumnos o profesores vinculados, el Sistema impide la baja e informa que primero deben ser reasignados a otra sede activa.
+* **3b. Actualización de coordenadas de una sede existente:** El Sistema actualiza la ubicación geográfica de la sucursal conservando intacta la nómina de usuarios adscritos.
 
 #### Excepciones
-* **E1. Servicio de mapas no disponible:** El sistema permite registrar la sede con datos manuales (coordenadas provistas por el administrador).
+* **E1. Servicio de cartografía no disponible:** El Sistema permite completar el registro de la sede ingresando manualmente el país, la ciudad, la dirección y las coordenadas geográficas.
 ---
 
 ### 5.7.2 Diagrama de Caso de Uso UC-07
@@ -2498,7 +2408,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2512,21 +2421,18 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
-
 actor "Administrador" as AD
-actor "OpenStreetMap (Nominatim)" as OSM
+actor "Servicio de Cartografía\ny Localización" as SCL
 
 rectangle "Sistema Corpo e Mente - Gestión de Sedes" {
-    usecase "UC-07: Gestionar Sucursales y Ubicación" as UC07
-    usecase "Seleccionar Ubicación en Mapa (Leaflet)" as UC07_Map
-    usecase "Geocodificación Inversa Automática" as UC07_Geo
-    usecase "Guardar Coordenadas y Dirección" as UC07_Save
-    usecase "Asignar Alumnos y Profesores a la Sede" as UC07_Assign
+    usecase "UC-07: Gestionar Sucursales y\nCoordenadas Geográficas" as UC07
+    usecase "Indicar Ubicación Geográfica\nde la Sede" as UC07_Map
+    usecase "Determinar Datos Administrativos\nde la Zona" as UC07_Geo
+    usecase "Registrar Sede en el\nDirectorio Oficial" as UC07_Save
+    usecase "Reasignar Practicantes\ne Instructores" as UC07_Assign
 }
 
 AD --> UC07
@@ -2535,12 +2441,17 @@ UC07_Map ..> UC07_Geo : <<include>>
 UC07 ..> UC07_Save : <<include>>
 UC07 ..> UC07_Assign : <<extend>>
 
-UC07_Geo --> OSM
+UC07_Geo --> SCL
 @enduml
 ```
 ---
 
 ### 5.7.3 Diagrama de Clases de Diseño (Participantes) UC-07
+Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeGestiónDeSedes` se implementa en `BranchManagerView` y `SucursalesRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeSucursales` se materializa en `BranchController` y el cliente `NominatimClient`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Sucursal` corresponde a la entidad de dominio `Sucursal`.
+
 ```mermaid
 classDiagram
     class BranchManagerView {
@@ -2590,8 +2501,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-07: Gestionar Sucursales
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2605,61 +2516,53 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Administrador" as AD
+boundary "PantallaDeGestiónDeSedes" as B1
+control "CoordinadorDeSucursales" as C1
+entity "Sucursal" as E1
 
-actor "Administrador" as Admin
-boundary "BranchManagerView" as MapView
-boundary "SucursalesRoutes" as API
-control "BranchController" as Ctrl
-control "NominatimClient" as OSM
-entity "Sucursal" as Ent
-database "PostgreSQL" as DB
-
-Admin -> MapView : Hace clic sobre el mapa interactivo en la ubicación del gimnasio
-MapView -> OSM : reverseGeocode(latitud, longitud)
-OSM --> MapView : Retorna [calle, ciudad, pais]
-MapView --> Admin : Muestra formulario con dirección autocompletada
-
-Admin -> MapView : Introduce nombre de sede y pulsa "Guardar Sucursal"
-MapView -> API : POST /api/v1/sucursales [nombre, pais, ciudad, direccion, lat, lng]
-API -> Ctrl : registrarSucursal(datos)
-Ctrl -> Ent : instanciar(datos)
-Ent -> DB : INSERT INTO sucursales (...)
-DB --> Ent : sucursal_id confirmado
-
-Ctrl --> API : SucursalCreadaDTO
-API --> MapView : HTTP 201 Created
-MapView --> Admin : Despliega el marcador oficial en el mapa y añade la sede al catálogo
+AD -> B1 : indicarCoordenadasDeSede(latitud, longitud)
+B1 -> C1 : consultarUbicaciónGeográfica(latitud, longitud)
+C1 -> C1 : determinarDivisiónAdministrativa(latitud, longitud)
+C1 --> B1 : ubicaciónPropuesta(país, ciudad, dirección)
+B1 --> AD : presentarUbicaciónPropuesta(país, ciudad, dirección)
+AD -> B1 : confirmarRegistroDeSede(nombre, país, ciudad, dirección, latitud, longitud)
+B1 -> C1 : registrarNuevaSucursal(nombre, país, ciudad, dirección, latitud, longitud)
+C1 -> E1 : crear(nombre, país, ciudad, dirección, latitud, longitud)
+E1 --> C1 : sucursalRegistrada
+C1 --> B1 : registroDeSedeCompletado(sucursalRegistrada)
+B1 --> AD : mostrarDirectorioActualizado(sucursalRegistrada)
 @enduml
 ```
 ---
 
 ### 5.7.5 Diagrama de Paquetes UC-07
+Las dependencias entre paquetes siguen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
+
 ```mermaid
 graph TD
-    subgraph Presentacion ["Presentación"]
+    subgraph Presentacion ["📦 Presentación"]
         BranchView["BranchManager.jsx (Leaflet)"]
     end
-    subgraph Aplicacion ["Aplicación"]
+    subgraph Aplicacion ["📦 Aplicación"]
         BranchRoutes["sucursales_routes.py"]
         BranchCtrl["BranchController"]
     end
-    subgraph Dominio ["Dominio"]
+    subgraph Dominio ["📦 Dominio"]
         EntSucursal["Sucursal"]
     end
-    subgraph Infraestructura ["Infraestructura"]
+    subgraph Infraestructura ["📦 Infraestructura"]
         OSM_Client["Nominatim OpenStreetMap"]
         Postgres["PostgreSQL"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---
@@ -2672,29 +2575,27 @@ graph TD
 | :--- | :--- |
 | **Identificador** | **UC-08** |
 | **Nombre** | Entrar como Otro Usuario (Impersonificación de Soporte) |
-| **Actores** | **Principal:** Administrador.<br>**Secundario:** Usuario impersonificado (alumno o profesor) como beneficiario de la operación. |
-| **Descripción** | El administrador asume temporalmente la identidad de un usuario reportado por una incidencia técnica, para reproducir el problema desde la perspectiva real del usuario. La operación es acotada en el tiempo y visible en todo momento para quien la ejecuta. |
-| **Precondiciones** | El administrador mantiene una sesión activa con privilegios globales. |
-| **Postcondiciones** | 1. El administrador opera temporalmente como el usuario seleccionado, conservando evidencia de la operación (origen de la sesión temporal).<br>2. Al finalizar, la sesión original del administrador se restituye sin pérdida de estado. |
+| **Actores** | **Principal:** Administrador.<br>**Secundario:** Usuario Asistido (alumno o profesor) como beneficiario de la operación. |
+| **Descripción** | El administrador asume temporalmente la identidad de un usuario afectado por una incidencia operativa con el propósito de reproducir y diagnosticar el problema desde la perspectiva real del usuario. La sesión delegada es acotada y mantiene una advertencia permanente de modo soporte. |
+| **Precondiciones** | El administrador mantiene una sesión activa con facultades de administración global. |
+| **Postcondiciones** | 1. El administrador opera temporalmente bajo la vista y el alcance del usuario asistido, quedando constancia del inicio de la asistencia.<br>2. Al concluir el diagnóstico, el Sistema restituye íntegramente la sesión original del administrador. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Administrador identifica al usuario afectado por una incidencia y solicita asumir su identidad para diagnóstico. | Sistema solicita reconfirmación de la autorización del administrador. |
-| 2 | Administrador reconfirma su autorización. | Sistema registra la operación con sus datos de trazabilidad. |
-| 3 | | Sistema presenta el entorno del usuario seleccionado y advierte de forma persistente y visible que se está operando como ese usuario. |
-| 4 | Administrador reproduce la incidencia desde la vista real del usuario. | Sistema permite las operaciones que correspondan al rol del usuario impersonificado, sin alterar sus datos personales ni su historial. |
-| 5 | Administrador solicita finalizar el modo de soporte. | Sistema cierra la sesión temporal y restituye la sesión original del administrador. |
+| 1 | El Administrador selecciona al usuario que reportó una incidencia y solicita asumir temporalmente su identidad para fines de soporte. | El Sistema verifica la autorización del administrador y comprueba que el usuario objetivo no sea otro administrador. |
+| 2 | El Administrador confirma la apertura de la asistencia. | El Sistema registra la constancia de inicio de soporte indicando el administrador responsable, el usuario asistido y el instante de la operación. |
+| 3 | | El Sistema constituye una sesión temporal de diagnóstico y presenta el entorno propio del usuario asistido junto con un aviso permanente de modo soporte. |
+| 4 | El Administrador reproduce la incidencia dentro del entorno del usuario asistido. | El Sistema permite realizar las consultas propias del rol del usuario asistido preservando la integridad de sus datos personales. |
+| 5 | El Administrador solicita finalizar el modo de soporte. | El Sistema cierra la sesión temporal de diagnóstico y restituye de inmediato el entorno de administración global. |
 
 #### Secuencias Alternativas
-* **2a. Administrador cancela la operación antes de confirmar:** El sistema abandona el flujo sin alterar sesiones ni generar registros de impersonación.
-* **4a. Intento de modificar el perfil del usuario impersonificado:** El sistema restringe las operaciones a la sola lectura y reproducción de la incidencia.
-* **4b. Intento de impersonar a otro administrador:** El sistema bloquea la operación por política de jerarquía entre administradores.
+* **2a. Cancelación previa a la confirmación:** Si el administrador desiste antes de confirmar la operación, el Sistema mantiene sin cambios la sesión actual y no genera constancia de asistencia.
+* **4a. Intento de alterar credenciales o datos sensibles del usuario asistido:** El Sistema restringe las operaciones que comprometan la titularidad de la cuenta asistida.
+* **4b. Intento de asumir la identidad de otro administrador:** El Sistema rechaza la solicitud por regla de jerarquía entre cuentas de administración.
 
 #### Excepciones
-* **E1. Pérdida de la sesión original del administrador durante la impersonación:** El sistema cierra forzosamente el modo de soporte y solicita al administrador autenticarse nuevamente.
-
-> **Nota de trazabilidad técnica** (permanece vigente): la re-autenticación por contraseña y la persistencia formal en la tabla `auditoria_impersonacion` están registradas como deuda técnica para iteración futura; la emisión del token JWT con el claim `impersonator_admin_id` y la activación del banner defensivo sí se encuentran implementadas (ver §6.6 y §8.6).
+* **E1. Expiración de la sesión durante el diagnóstico:** El Sistema finaliza el modo de soporte y solicita al administrador acreditarse nuevamente.
 ---
 
 ### 5.8.2 Diagrama de Caso de Uso UC-08
@@ -2703,7 +2604,6 @@ graph TD
 ```plantuml
 @startuml
 left to right direction
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2717,34 +2617,40 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
-
 actor "Administrador" as AD
+actor "Usuario Asistido" as UA
 
 rectangle "Sistema Corpo e Mente - Soporte Técnico" {
-    usecase "UC-08: Entrar como otro Usuario (Impersonar)" as UC08
-    usecase "Reconfirmar Clave de Administrador" as UC08_Auth
-    usecase "Registrar Traza en Log de Auditoría" as UC08_Audit
-    usecase "Emitir Token JWT con Identidad Asumida" as UC08_JWT
-    usecase "Activar Banner Rojo de Advertencia" as UC08_Banner
-    usecase "Restaurar Sesión Original de Admin" as UC08_Restore
+    usecase "UC-08: Entrar como Otro Usuario\n(Impersonificación de Soporte)" as UC08
+    usecase "Reconfirmar Autorización\ndel Administrador" as UC08_Auth
+    usecase "Registrar Constancia de\nAsistencia Técnica" as UC08_Audit
+    usecase "Establecer Sesión Temporal\nde Diagnóstico" as UC08_Ses
+    usecase "Mantener Aviso Visible\nde Modo Soporte" as UC08_Aviso
+    usecase "Restituir Sesión Original\ndel Administrador" as UC08_Restore
 }
 
 AD --> UC08
+UC08 --> UA
 UC08 ..> UC08_Auth : <<include>>
 UC08 ..> UC08_Audit : <<include>>
-UC08 ..> UC08_JWT : <<include>>
-UC08 ..> UC08_Banner : <<include>>
+UC08 ..> UC08_Ses : <<include>>
+UC08 ..> UC08_Aviso : <<include>>
 AD --> UC08_Restore
 @enduml
 ```
 ---
 
 ### 5.8.3 Diagrama de Clases de Diseño (Participantes) UC-08
+Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeSoporteTécnico` se implementa en `AdminUsersModal`, `ImpersonationBanner` y `AuthRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeSoporte` se materializa en `SessionManager` y `AuditoriaService`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `RegistroDeAuditoría` y `SesiónDeSoporte` corresponden a `Usuario`, `RegistroAuditoria` y el token firmado de sesión delegada.
+
+> **Nota de trazabilidad de diseño:** la re-autenticación por contraseña y la persistencia dedicada en la tabla `auditoria_impersonacion` se registran como deuda técnica para iteración futura (§6.7 y §8.6), mientras que la emisión del token JWT con el claim `impersonator_admin_id` y la activación de `ImpersonationBanner` se encuentran operativas en producción.
+
 ```mermaid
 classDiagram
     class AdminUsersModal {
@@ -2795,8 +2701,8 @@ classDiagram
 
 ```plantuml
 @startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-08: Impersonificación de Soporte
 autonumber
-
 skinparam shadowing false
 skinparam monochrome false
 skinparam defaultFontName Arial
@@ -2810,73 +2716,63 @@ skinparam ControlBorderColor #2F855A
 skinparam ControlBackgroundColor #F0FFF4
 skinparam EntityBorderColor #D69E2E
 skinparam EntityBackgroundColor #FFFFF0
-skinparam DatabaseBorderColor #4A5568
-skinparam DatabaseBackgroundColor #EDF2F7
 skinparam UsecaseBorderColor #2B6CB0
 skinparam UsecaseBackgroundColor #F7FAFC
 
+actor "Administrador" as AD
+boundary "PantallaDeSoporteTécnico" as B1
+control "CoordinadorDeSoporte" as C1
+entity "Usuario" as E1
+entity "RegistroDeAuditoría" as E2
+entity "SesiónDeSoporte" as E3
 
-actor "Administrador" as Admin
-boundary "AdminUsersModal" as Modal
-boundary "AuthRoutes" as API
-control "SessionManager" as Session
-control "AuditoriaService" as Audit
-database "PostgreSQL" as DB
-boundary "ImpersonationBanner" as Banner
-
-Admin -> Modal : Selecciona al Alumno "Juan" y pulsa "Iniciar Sesión como Usuario"
-Modal -> API : POST /api/v1/auth/impersonate/{juan_id} [admin_password]
-API -> Session : validarCredencialesAdmin(admin_id, password)
-Session --> API : Contraseña de Administrador Correcta
-
-API -> Audit : registrarEvento(admin_id, juan_id, "INICIO_IMPERSONACION")
-Audit -> DB : INSERT INTO auditoria_impersonacion (...)
-DB --> Audit : Registro inmutable guardado
-
-API -> Session : crearTokenImpersonacion(admin_id, juan_id)
-Session --> API : Token JWT temporal (sub: juan_id, rol: alumno, impersonator: admin_id)
-
-API --> Modal : HTTP 200 OK + Token Temporal
-Modal -> Banner : Carga la vista del Alumno y activa Banner Rojo
-Banner --> Admin : Muestra pantalla del Alumno con aviso superior de soporte
-
-Note over Admin, Banner : El Administrador navega y diagnostica la falla reportada
-
-Admin -> Banner : Pulsa "Salir de Modo Soporte"
-Banner -> API : POST /api/v1/auth/unimpersonate
-API -> Session : restaurarTokenAdmin(admin_id)
-Session --> API : Token original de Administrador restaurado
-API --> Banner : HTTP 200 OK
-Banner --> Admin : Destruye sesión temporal y regresa al panel de Administrador
+AD -> B1 : solicitarAsumirIdentidad(usuarioObjetivo, autorizaciónAdmin)
+B1 -> C1 : iniciarModoSoporte(administrador, usuarioObjetivo, autorizaciónAdmin)
+C1 -> E1 : verificarJerarquíaYAutorización(administrador, usuarioObjetivo, autorizaciónAdmin)
+E1 --> C1 : operaciónAutorizada
+C1 -> E2 : registrarInicioDeAsistencia(administrador, usuarioObjetivo, fechaHora)
+E2 --> C1 : constanciaRegistrada
+C1 -> E3 : constituirSesiónTemporal(administrador, usuarioObjetivo)
+E3 --> C1 : sesiónTemporalActiva
+C1 --> B1 : entornoDeSoporteHabilitado(sesiónTemporalActiva, avisoVisible)
+B1 --> AD : presentarVistaDelUsuarioConAvisoDeSoporte(usuarioObjetivo)
+AD -> B1 : finalizarModoSoporte()
+B1 -> C1 : restituirSesiónDeAdministrador(sesiónTemporalActiva)
+C1 -> E3 : cerrarSesiónTemporal()
+E3 --> C1 : sesiónOriginalRestituida
+C1 --> B1 : retornoConfirmado(sesiónOriginalRestituida)
+B1 --> AD : presentarEntornoDeAdministración()
 @enduml
 ```
 ---
 
 ### 5.8.5 Diagrama de Paquetes UC-08
+Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
+
 ```mermaid
 graph TD
-    subgraph Presentacion ["Presentación"]
+    subgraph Presentacion ["📦 Presentación"]
         AdminModal["AdminUsersModal.jsx"]
         ImpBanner["ImpersonationBanner.jsx"]
     end
-    subgraph Aplicacion ["Aplicación"]
+    subgraph Aplicacion ["📦 Aplicación"]
         AuthRoutes["auth_routes.py"]
         SessionMgr["SessionManager"]
         AuditSvc["AuditoriaService"]
     end
-    subgraph Dominio ["Dominio"]
+    subgraph Dominio ["📦 Dominio"]
         EntUser["Usuario (Roles & Claims)"]
         EntAudit["RegistroAuditoria"]
     end
-    subgraph Infraestructura ["Infraestructura"]
+    subgraph Infraestructura ["📦 Infraestructura"]
         Postgres["PostgreSQL"]
         Crypto["PyJWT"]
     end
 
     Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
     Aplicacion --> Dominio
-    Aplicacion --> Infraestructura
-    Dominio --> Infraestructura
 ```
 
 ---

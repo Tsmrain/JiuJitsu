@@ -1,0 +1,43 @@
+@startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-10: Impersonificación de Soporte
+autonumber
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Administrador" as AD
+boundary "PantallaDeSoporteTécnico" as B1
+control "CoordinadorDeSoporte" as C1
+entity "Usuario" as E1
+entity "RegistroDeAuditoría" as E2
+entity "SesiónDeSoporte" as E3
+
+AD -> B1 : solicitarAsumirIdentidad(usuarioObjetivo, autorizaciónAdmin)
+B1 -> C1 : iniciarModoSoporte(administrador, usuarioObjetivo, autorizaciónAdmin)
+C1 -> E1 : verificarJerarquíaYAutorización(administrador, usuarioObjetivo, autorizaciónAdmin)
+E1 --> C1 : operaciónAutorizada
+C1 -> E2 : registrarInicioDeAsistencia(administrador, usuarioObjetivo, fechaHora)
+E2 --> C1 : constanciaRegistrada
+C1 -> E3 : constituirSesiónTemporal(administrador, usuarioObjetivo)
+E3 --> C1 : sesiónTemporalActiva
+C1 --> B1 : entornoDeSoporteHabilitado(sesiónTemporalActiva, avisoVisible)
+B1 --> AD : presentarVistaDelUsuarioConAvisoDeSoporte(usuarioObjetivo)
+AD -> B1 : finalizarModoSoporte()
+B1 -> C1 : restituirSesiónDeAdministrador(sesiónTemporalActiva)
+C1 -> E3 : cerrarSesiónTemporal()
+E3 --> C1 : sesiónOriginalRestituida
+C1 --> B1 : retornoConfirmado(sesiónOriginalRestituida)
+B1 --> AD : presentarEntornoDeAdministración()
+@enduml

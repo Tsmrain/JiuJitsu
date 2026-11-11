@@ -1,0 +1,39 @@
+classDiagram
+    class AdminUsersModal {
+        +usuarios: List
+        +handleImpersonar(usuario_id)
+    }
+
+    class ImpersonationBanner {
+        +usuario_nombre: String
+        +handleRestaurarAdmin()
+    }
+
+    class AuthRoutes {
+        +impersonarUsuario(id, admin_pass) Response
+        +salirImpersonacion() Response
+    }
+
+    class SessionManager {
+        +crearTokenImpersonacion(admin, objetivo) String
+        +restaurarTokenAdmin(admin_id) String
+    }
+
+    class AuditoriaService {
+        +registrarEvento(admin_id, target_id, accion) Void
+    }
+
+    class RegistroAuditoria {
+        +id: UUID
+        +admin_id: UUID
+        +usuario_objetivo_id: UUID
+        +fecha: DateTime
+        +ip_origen: String
+        +accion: String
+    }
+
+    AdminUsersModal ..> AuthRoutes : HTTP POST
+    ImpersonationBanner ..> AuthRoutes : HTTP POST
+    AuthRoutes --> SessionManager : genera sesión
+    AuthRoutes --> AuditoriaService : audita
+    AuditoriaService --> RegistroAuditoria : persiste

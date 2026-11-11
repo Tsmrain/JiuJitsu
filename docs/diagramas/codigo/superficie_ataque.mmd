@@ -1,0 +1,31 @@
+graph LR
+    subgraph Exterior ["Red Pública / Internet"]
+        Cliente["Dispositivo Móvil / Navegador"]
+        Atacante["Amenaza Externa / Botnet"]
+    end
+
+    subgraph Perimetro ["Borde Seguro (Edge)"]
+        Tunnel["Cloudflare Tunnel (cloudflared)<br/>Cifrado TLS 1.3 / Anti-DDoS"]
+    end
+
+    subgraph Servidor_Local ["Servidor Local del Tatami (Apple Silicon)"]
+        ViteProxy["Vite Reverse Proxy<br/>Filtro allowedHosts"]
+        FastAPI["FastAPI Backend<br/>RateLimiter / AuthMiddleware"]
+        PostgREST["PostgREST Engine<br/>Validación de Claims JWT"]
+
+        subgraph Almacenamiento ["Capa de Datos Segura"]
+            Postgres["PostgreSQL 16<br/>Políticas RLS / pgcrypto"]
+            Qdrant["Qdrant Vectorial<br/>Filtrado por Tenant"]
+            Filesystem["Sistema de Archivos Local<br/>Videos Temporales en /tmp"]
+        end
+    end
+
+    Cliente -->|HTTPS / WSS| Tunnel
+    Atacante -.->|Intento de Fuerza Bruta / SSRF| Tunnel
+    Tunnel --> ViteProxy
+    ViteProxy --> FastAPI
+    ViteProxy --> PostgREST
+    FastAPI --> Postgres
+    FastAPI --> Qdrant
+    FastAPI --> Filesystem
+    PostgREST --> Postgres

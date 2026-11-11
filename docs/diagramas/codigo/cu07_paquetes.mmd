@@ -1,0 +1,20 @@
+graph TD
+    subgraph Presentacion ["Presentación"]
+        ProgView["StudentProgress.jsx"]
+    end
+    subgraph Aplicacion ["Aplicación"]
+        ProgRoutes["progress_routes.py"]
+        ProgCtrl["ProgressController"]
+    end
+    subgraph Dominio ["Dominio"]
+        EntUsuario["Usuario"]
+        EntEvaluacion["Evaluacion"]
+    end
+    subgraph Infraestructura ["Infraestructura"]
+        Postgres["PostgreSQL con RLS"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

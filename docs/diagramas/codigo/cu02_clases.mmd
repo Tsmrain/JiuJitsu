@@ -1,0 +1,69 @@
+classDiagram
+    class SignupView {
+        +nombre_completo: String
+        +username: String
+        +email: String
+        +password: String
+        +rol: String
+        +sucursal_id: UUID
+        +handleSignupSubmit()
+        +displayValidationError(msg)
+    }
+
+    class AuthRoutes {
+        +signup(user_data: SignupRequest) LoginResponse
+        +listarSucursales() List~SucursalDTO~
+    }
+
+    class SignupRequest {
+        +nombre_completo: String
+        +username: String
+        +email: String
+        +password: String
+        +rol: RolUsuario
+        +sucursal_id: UUID
+        +validarFormatoUsername() Boolean
+    }
+
+    class AuthService {
+        +registrarUsuario(data: SignupRequest) Usuario
+        +verificarUnicidad(username: String, email: String) Boolean
+    }
+
+    class SessionManager {
+        +crearTokenJWT(user: Usuario) String
+    }
+
+    class Usuario {
+        +id: UUID
+        +nombre_completo: String
+        +username: String
+        +email: String
+        +password_hash: String
+        +rol: RolUsuario
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +idioma_preferido: String
+    }
+
+    class Sucursal {
+        +id: UUID
+        +nombre: String
+        +ciudad: String
+        +pais: String
+    }
+
+    class TokenJWT {
+        +access_token: String
+        +token_type: String
+        +expires_in: Integer
+    }
+
+    SignupView ..> AuthRoutes : HTTP POST
+    AuthRoutes ..> SignupRequest : valida esquema
+    AuthRoutes --> AuthService : delega alta
+    AuthService --> Usuario : crea registro
+    AuthService --> Sucursal : verifica existencia
+    AuthService --> SessionManager : solicita token inicial
+    Usuario "1" --> "1" Sucursal : adscrito_a
+    SessionManager ..> TokenJWT : genera

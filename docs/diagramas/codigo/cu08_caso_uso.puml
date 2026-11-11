@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Profesor" as PR
+actor "Administrador" as AD
+
+rectangle "Sistema Corpo e Mente - Control de Membresías" {
+    usecase "UC-08: Activar Pase\nde Tatami (30 Días)" as UC08
+    usecase "Confirmar Pago Presencial\nen la Academia" as UC08_Pay
+    usecase "Verificar Pertenencia\na la Misma Sede" as UC08_Sede
+    usecase "Habilitar Vigencia por\nTreinta Días" as UC08_Act
+    usecase "Suspender Acceso\nal Vencer el Periodo" as UC08_Block
+}
+
+PR --> UC08
+AD --> UC08
+UC08 ..> UC08_Pay : <<include>>
+UC08 ..> UC08_Sede : <<include>>
+UC08 ..> UC08_Act : <<include>>
+UC08 ..> UC08_Block : <<extend>>
+@enduml

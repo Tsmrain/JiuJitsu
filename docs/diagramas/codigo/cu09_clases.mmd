@@ -1,0 +1,38 @@
+classDiagram
+    class BranchManagerView {
+        +mapaLeaflet: MapInstance
+        +latitud: Float
+        +longitud: Float
+        +nombre: String
+        +handleMapClick(lat, lng)
+        +guardarSucursal()
+    }
+
+    class SucursalesRoutes {
+        +listarSucursales() List~SucursalDTO~
+        +crearSucursal(data: SucursalDTO) Response
+    }
+
+    class BranchController {
+        +registrarSucursal(data) Sucursal
+        +obtenerDireccionInversa(lat, lng) DireccionDTO
+    }
+
+    class NominatimClient {
+        +reverseGeocode(lat, lng) JSON
+    }
+
+    class Sucursal {
+        +id: UUID
+        +nombre: String
+        +pais: String
+        +ciudad: String
+        +direccion: String
+        +latitud: Float
+        +longitud: Float
+    }
+
+    BranchManagerView ..> SucursalesRoutes : HTTP POST
+    SucursalesRoutes --> BranchController : delega
+    BranchController --> NominatimClient : consulta geocodificación
+    BranchController --> Sucursal : persiste

@@ -1,0 +1,143 @@
+@startuml Diagrama_Actividad_Sistema_Completo
+title Diagrama de Actividad con Carriles — Flujo Principal de Análisis (UC-03) y Feedback Biomecánico (UC-04)
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam ArrowColor #2B6CB0
+skinparam ActivityBorderColor #2B6CB0
+skinparam ActivityBackgroundColor #F7FAFC
+skinparam ActivityDiamondBorderColor #C53030
+skinparam ActivityDiamondBackgroundColor #FFF5F5
+
+|#E6F3FF|Alumno|
+start
+:Iniciar sesión en la plataforma (UC-01)\n(username o email + contraseña);
+:Seleccionar Instructor de su sucursal;
+:Seleccionar Técnica a evaluar;
+:Grabar y seleccionar video de ejecución (UC-03);
+
+|#FFF3E0|Frontend (React 19 + Vite Proxy)|
+:Validar peso del archivo (<95 MB);
+:Enviar video a POST /evaluaciones/validar-spam;
+
+|#F0FFF4|Backend (FastAPI)|
+:Verificar JWT y Pase de Tatami activo;
+if (¿Suscripción activa?) then (No)
+  :Responder HTTP 403 Forbidden;
+  |#E6F3FF|Alumno|
+  :Ver mensaje de Pase expirado;
+  stop
+else (Sí)
+endif
+
+|#FFEBEE|IA de Visión (YOLO + ViCoS)|
+:Extraer primeras muestras de frames;
+:Clasificador ViCoS MLP (16 posiciones);
+if (¿Es Jiu-Jitsu? ratio >= 0.60) then (No)
+  |#F0FFF4|Backend (FastAPI)|
+  :Rechazar HTTP 422;
+  |#E6F3FF|Alumno|
+  :Ver "Video no es de BJJ";
+  stop
+else (Sí)
+endif
+
+|#F0FFF4|Backend (FastAPI)|
+:Guardar video temporal en /tmp/corpocmente_videos;
+:POST /evaluaciones/primer-frame (extracción inicial);
+
+|#FFEBEE|IA de Visión (YOLO + ViCoS)|
+:YOLO26n-pose sobre frame inicial;
+:Deduplicar bboxes (IoU > 0.50, quimeras, reflejos < 10%);
+
+|#F0FFF4|Backend (FastAPI)|
+:Crear SessionStateManager (estado=CREATED);
+
+|#FFF3E0|Frontend (React 19 + Vite Proxy)|
+if (¿Cuántas personas detectadas?) then (= 1)
+  :Mostrar "¿Eres tú en el video?";
+else (>= 2)
+  |#E6F3FF|Alumno|
+  :Seleccionar silueta interactiva (bounding box);
+endif
+
+|#F0FFF4|Backend (FastAPI)|
+:POST /evaluaciones/{session_id}/seleccionar-persona\n(estado=PERSONA_SELECTED);
+:POST /evaluaciones/analizar;
+:Crear registro Evaluacion (estado='procesando');
+:Congelar sucursal_id histórico del alumno;
+
+|#FFEBEE|IA de Visión (YOLO + ViCoS)|
+:Extraer secuencia temporal 3D por persona;
+:Tracking competitivo multi-atleta (IoU + proximidad);
+:Opcional: depth-map para resolver oclusiones;
+
+|#FFF9C4|IA de Conocimiento (DTW + Qwen)|
+:PoseNormalizer -> vector canónico de 46 dims\n(34 posiciones + 12 ángulos);
+:DTW multidimensional (dtaidistance);
+
+|#E8F5E9|Persistencia (PostgreSQL + Qdrant)|
+:Recuperar secuencia del patrón activo\n(get_patron_activo);
+:SELECT patron_activo_id + Qdrant scroll;
+
+|#FFF9C4|IA de Conocimiento (DTW + Qwen)|
+:Alinear secuencias (maestro vs alumno);
+:Calcular similitud (0-100%);
+:Identificar frame crítico + articulaciones\n[Fin fase UC-03 -> Inicia UC-04];
+
+if (¿Similitud < 85.0%?) then (Sí — requiere corrección UC-04)
+  |#FFF9C4|IA de Conocimiento (DTW + Qwen)|
+  :Qwen3-VL-Embedding-2B (MLX):\nvectorizar frame crítico + query textual\n(2048 dims);
+  
+  |#E8F5E9|Persistencia (PostgreSQL + Qdrant)|
+  :Qdrant búsqueda híbrida Dense + BM25;
+  :Retornar top-20 candidatos filtrados por técnica_id\n+ alcance='global';
+  
+  |#FFF9C4|IA de Conocimiento (DTW + Qwen)|
+  :Qwen3-VL-Reranker-2B (Cross-Encoder):\nSeleccionar top-3 fragmentos (Prioridad 1 RAG);
+  :Si RAG insuficiente -> aplicar mensaje_profesor (Prioridad 2);
+  
+  if (¿Existe respaldo RAG o Directriz?) then (Sí)
+    :Qwen3-VL-Instruct-4B (MLX 4-bit):\nGenerar corrección JSON {summary, correction}\nen idioma del alumno (ES/PT/EN);
+    :LLM-as-a-Judge (fidelidad factual);
+    if (¿Faithfulness >= 0.85?) then (Sí)
+      :Aprobar respuesta pedagógica;
+    else (No)
+      :Activar Graceful Fallback;
+      :Reporte biomecánico numérico\nsin texto generativo;
+    endif
+  else (No — Prioridad 3 Fallback Seguro)
+    :Retornar mensaje determinístico sin invocar VLM;
+  endif
+else (No — técnica dominada)
+  |#FFF9C4|IA de Conocimiento (DTW + Qwen)|
+  :Generar mensaje de felicitación;
+endif
+
+|#F0FFF4|Backend (FastAPI)|
+:Generar frame crítico anotado (OpenCV)\narticulaciones en rojo + banner técnico;
+:Guardar meta_{id}.json con timestamp_error_segundos;
+
+|#E8F5E9|Persistencia (PostgreSQL + Qdrant)|
+:UPDATE evaluaciones_alumnos\nestado='completado', porcentaje_similitud;
+:Registrar feedback en tabla;
+
+|#FFF3E0|Frontend (React 19 + Vite Proxy)|
+:Polling GET /evaluaciones/{id} cada 3s;
+
+|#F0FFF4|Backend (FastAPI)|
+:Leer meta_{id}.json (timestamp + articulaciones);
+:Traducir nombres de articulaciones al idioma;
+:Retornar JSON con video URLs + feedback;
+
+|#FFF3E0|Frontend (React 19 + Vite Proxy)|
+:Renderizar FeedbackView:\nVideo Maestro + Video Alumno\n+ Tarjeta IA + Enlace YouTube + Modal Frame;
+
+|#E6F3FF|Alumno|
+:Revisar feedback y saltar al segundo del error;
+:Ver articulaciones afectadas en modal;
+
+stop
+
+@enduml

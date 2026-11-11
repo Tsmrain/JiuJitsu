@@ -1,0 +1,39 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Profesor" as PR
+actor "Servicio de Catalogación\nde Conocimiento" as SCC
+actor "Base de Conocimiento\nTécnica" as BCT
+
+rectangle "Sistema Corpo e Mente - Conocimiento Técnico" {
+    usecase "UC-06: Gestionar Conocimiento\nTécnico y Directrices" as UC06
+    usecase "Registrar Directriz Pedagógica\ndel Instructor" as UC06_Msg
+    usecase "Incorporar Obra Bibliográfica\nde Referencia" as UC06_Doc
+    usecase "Extraer Pasajes e\nIlustraciones Técnicas" as UC06_Ext
+    usecase "Catalogar Fragmentos para\nConsulta Semántica" as UC06_Cat
+}
+
+PR --> UC06
+UC06 ..> UC06_Msg : <<include>>
+UC06 ..> UC06_Doc : <<include>>
+UC06_Doc ..> UC06_Ext : <<include>>
+UC06_Ext ..> UC06_Cat : <<include>>
+
+UC06_Ext --> SCC
+UC06_Cat --> BCT
+@enduml

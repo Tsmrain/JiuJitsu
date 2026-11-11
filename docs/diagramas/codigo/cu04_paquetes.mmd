@@ -1,0 +1,32 @@
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Feedback["FeedbackView.jsx"]
+        P_Player["VideoPlayerOverlay.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Orquestación RAG y Pedagógica)"]
+        A_Routes["evaluaciones_routes.py"]
+        A_Facade["intelligence_facade.py"]
+        A_RAG["MultimodalRAGService"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Recuperación, Estrategias y Entidades)"]
+        D_Hybrid["HybridRetriever"]
+        D_Glossary["GlossaryService"]
+        D_Prompt["PromptStrategy (ES/PT/EN)"]
+        D_Teoria["TeoriaRAG"]
+        D_Eval["Evaluacion / AnalisisResultDTO"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (VLM Local, Reranker y Almacenamiento)"]
+        I_VLM["local_vlm_adapter.py (MLX)"]
+        I_QwenEmb["qwen_embedding_adapter.py"]
+        I_Rerank["qwen_reranker.py"]
+        I_Qdrant["qdrant_rag_adapter.py"]
+        I_PG["PostgreSQL / OpenCV"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

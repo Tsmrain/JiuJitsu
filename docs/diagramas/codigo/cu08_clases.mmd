@@ -1,0 +1,26 @@
+classDiagram
+    class StudentProgressView {
+        +handleAprobarPase(alumno_id)
+        +renderBadgeEstado(estado)
+    }
+
+    class AuthRoutes {
+        +activarPaseTatami(alumno_id) Response
+    }
+
+    class SubscriptionManager {
+        +activarMembresia30Dias(profesor_id, alumno_id) Usuario
+        +verificarMismaSucursal(prof_id, alumno_id) Boolean
+    }
+
+    class Usuario {
+        +id: UUID
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +fecha_expiracion: DateTime
+        +activarPor30Dias()
+    }
+
+    StudentProgressView ..> AuthRoutes : HTTP PUT
+    AuthRoutes --> SubscriptionManager : coordina
+    SubscriptionManager --> Usuario : actualiza estado

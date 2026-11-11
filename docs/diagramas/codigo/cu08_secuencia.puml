@@ -1,0 +1,35 @@
+@startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-08: Activar Pase de Tatami
+autonumber
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Profesor" as PR
+boundary "PantallaDeMembresías" as B1
+control "CoordinadorDeMembresías" as C1
+entity "Usuario" as E1
+entity "PaseDeTatami" as E2
+
+PR -> B1 : solicitarActivaciónDePase(alumno)
+B1 -> C1 : activarPaseDeTatami(profesor, alumno)
+C1 -> E1 : verificarMismaSucursal(profesor, alumno)
+E1 --> C1 : pertenenciaConfirmada
+C1 -> E2 : habilitarPorTreintaDías(alumno, fechaActual)
+E2 --> C1 : vigenciaActualizada
+C1 -> E1 : actualizarEstadoDeMembresía(vigenciaActualizada)
+C1 --> B1 : paseActivado(alumno, fechaVencimiento)
+B1 --> PR : confirmarHabilitaciónDeAcceso(alumno, fechaVencimiento)
+@enduml

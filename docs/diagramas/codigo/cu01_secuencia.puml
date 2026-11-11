@@ -1,0 +1,40 @@
+@startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-01: Iniciar Sesión
+autonumber
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Usuario" as U
+boundary "PantallaDeAcceso" as B1
+control "CoordinadorDeAcceso" as C1
+entity "Usuario" as E1
+entity "Sucursal" as E2
+entity "SesiónDeUsuario" as E3
+
+U -> B1 : solicitarAcceso(identificador, clave)
+B1 -> C1 : autenticarUsuario(identificador, clave)
+C1 -> C1 : verificarIntentosPermitidos(solicitante)
+C1 -> E1 : buscarPorIdentificador(identificador)
+E1 --> C1 : datosDeUsuario
+C1 -> E1 : validarCredenciales(clave)
+E1 --> C1 : credencialesVálidas
+C1 -> E2 : obtenerSedeAdscrita(usuario)
+E2 --> C1 : datosDeSucursal
+C1 -> E3 : iniciarSesión(usuario, rol, sucursal)
+E3 --> C1 : sesiónActiva
+C1 --> B1 : accesoAutorizado(sesiónActiva, perfil)
+B1 --> U : presentarEntornoDeTrabajo(rol, sucursal)
+@enduml

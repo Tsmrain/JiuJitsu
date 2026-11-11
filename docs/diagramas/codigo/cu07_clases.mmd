@@ -1,0 +1,36 @@
+classDiagram
+    class StudentProgressView {
+        +alumnos: List
+        +alumno_seleccionado: Usuario
+        +cargarAlumnos()
+        +verDetalleEvaluacion(id)
+    }
+
+    class ProgressRoutes {
+        +obtenerAlumnosSucursal() List~UsuarioDTO~
+        +obtenerHistorialAlumno(alumno_id) List~EvaluacionDTO~
+    }
+
+    class ProgressController {
+        +listarAlumnosPorSucursal(sucursal_id) List
+        +obtenerHistorialEvaluaciones(alumno_id) List
+    }
+
+    class Usuario {
+        +id: UUID
+        +nombre_completo: String
+        +cinturon: String
+        +estado_suscripcion: String
+    }
+
+    class Evaluacion {
+        +id: UUID
+        +fecha: DateTime
+        +porcentaje_similitud: Float
+        +feedback_texto: String
+    }
+
+    StudentProgressView ..> ProgressRoutes : HTTP GET
+    ProgressRoutes --> ProgressController : delega
+    ProgressController --> Usuario : consulta
+    ProgressController --> Evaluacion : recupera historial

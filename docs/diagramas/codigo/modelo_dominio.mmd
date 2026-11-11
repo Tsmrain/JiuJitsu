@@ -1,0 +1,76 @@
+classDiagram
+    class Sucursal {
+        nombre
+        ciudad
+        pais
+        direccion
+        latitud
+        longitud
+    }
+
+    class Profesor {
+        nombre_completo
+        correo
+        cinturon
+    }
+
+    class Alumno {
+        nombre_completo
+        correo
+        cinturon
+    }
+
+    class Administrador {
+        nombre_completo
+        correo
+    }
+
+    class Tecnica {
+        nombre
+        nivel_cinturon
+    }
+
+    class VideoReferencia {
+        archivo_video
+        fecha_subida
+    }
+
+    class TeoriaRAG {
+        texto
+        fuente
+        pagina
+    }
+
+    class Evaluacion {
+        fecha
+        porcentaje_similitud
+        retroalimentacion
+    }
+
+    class PaseTatami {
+        fecha_inicio
+        fecha_fin
+        estado
+    }
+
+    class EsqueletoBiomecanico {
+        puntos_articulaciones
+        angulos_corporales
+    }
+
+    Sucursal "1" *-- "1..*" Profesor : tiene
+    Sucursal "1" *-- "1..*" Alumno : tiene
+    Sucursal "1" *-- "1..*" Administrador : tiene
+
+    Profesor "1" -- "1..*" Tecnica : enseña
+    Profesor "1" -- "1..*" VideoReferencia : graba
+    Profesor "1" -- "0..*" TeoriaRAG : escribe
+
+    Alumno "1" -- "1..*" Evaluacion : realiza
+    Alumno "1" -- "0..1" PaseTatami : paga
+
+    Tecnica "1" *-- "1..*" VideoReferencia : usa
+    Tecnica "1" -- "0..*" TeoriaRAG : tiene
+    Tecnica "1" -- "1..*" Evaluacion : es_evaluada_en
+
+    Evaluacion "1" *-- "1" EsqueletoBiomecanico : genera

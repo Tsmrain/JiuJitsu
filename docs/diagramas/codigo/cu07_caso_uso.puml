@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Profesor" as PR
+actor "Alumno" as AL
+
+rectangle "Sistema Corpo e Mente - Seguimiento de Progreso" {
+    usecase "UC-07: Ver Progreso\nde Alumnos" as UC07
+    usecase "Consultar Practicantes\nde la Sede" as UC07_List
+    usecase "Revisar Historial Cronológico\nde Evaluaciones" as UC07_Time
+    usecase "Inspeccionar Ejecución y\nCorrección Pedagógica" as UC07_Play
+}
+
+PR --> UC07
+PR --> UC07_List
+PR --> UC07_Time
+PR --> UC07_Play
+
+AL --> UC07_Time
+AL --> UC07_Play
+@enduml

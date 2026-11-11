@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Profesor" as PR
+actor "Administrador" as AD
+actor "Servicio de Visión\npor Computadora" as SVC
+
+rectangle "Sistema Corpo e Mente - Catálogo y Referencias" {
+    usecase "UC-05: Gestionar Técnicas y\nVideos de Referencia" as UC05
+    usecase "Registrar Demostración\nde Referencia del Instructor" as UC05_Vid
+    usecase "Reconocer Secuencia Postural\ndel Instructor" as UC05_Post
+    usecase "Catalogar Patrón\nBiomecánico Oficial" as UC05_Cat
+}
+
+PR --> UC05
+AD --> UC05
+PR --> UC05_Vid
+UC05_Vid ..> UC05_Post : <<include>>
+UC05_Post ..> UC05_Cat : <<include>>
+UC05_Post --> SVC
+@enduml

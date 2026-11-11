@@ -1,0 +1,42 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Alumno" as AL
+actor "Profesor" as PR
+actor "Servicio de Identidad\ny Acceso" as SIA
+
+rectangle "Sistema Corpo e Mente - Registro de Usuarios" {
+    usecase "UC-02: Registrar Nuevo Usuario" as UC02
+    usecase "Seleccionar Sede de\nAdscripción" as UC02_Sede
+    usecase "Validar Formato y Unicidad\ndel Identificador" as UC02_Val
+    usecase "Crear Cuenta y Estado\nInicial de Membresía" as UC02_Crear
+    usecase "Constituir Sesión\nde Trabajo Inicial" as UC02_Ses
+}
+
+AL --> UC02
+PR --> UC02
+
+UC02 ..> UC02_Sede : <<include>>
+UC02 ..> UC02_Val : <<include>>
+UC02 ..> UC02_Crear : <<include>>
+UC02 ..> UC02_Ses : <<include>>
+
+UC02_Val --> SIA
+UC02_Crear --> SIA
+UC02_Ses --> SIA
+@enduml

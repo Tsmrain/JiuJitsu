@@ -1,0 +1,59 @@
+classDiagram
+    class LoginView {
+        +username_or_email: String
+        +password: String
+        +handleLoginSubmit()
+        +displayError(msg)
+    }
+
+    class AuthRoutes {
+        +login(credentials: LoginDTO) LoginResponse
+        +getMiPerfil(token: String) UsuarioDTO
+    }
+
+    class RateLimiter {
+        +verificarLimiteIP(ip: String) Boolean
+    }
+
+    class AuthService {
+        +autenticarUsuario(user_or_email: String, password: String) TokenJWT
+        +verificarPassword(plain: String, hashed: String) Boolean
+    }
+
+    class SessionManager {
+        +crearTokenJWT(user: Usuario) String
+        +validarToken(token: String) Claims
+    }
+
+    class Usuario {
+        +id: UUID
+        +username: String
+        +email: String
+        +password_hash: String
+        +rol: RolUsuario
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +fecha_expiracion: DateTime
+        +idioma_preferido: String
+    }
+
+    class Sucursal {
+        +id: UUID
+        +nombre: String
+        +ciudad: String
+        +pais: String
+    }
+
+    class TokenJWT {
+        +access_token: String
+        +token_type: String
+        +expires_in: Integer
+    }
+
+    LoginView ..> AuthRoutes : HTTP POST
+    AuthRoutes --> RateLimiter : consulta
+    AuthRoutes --> AuthService : delega
+    AuthService --> SessionManager : solicita token
+    AuthService --> Usuario : consulta y valida
+    Usuario "1" --> "1" Sucursal : pertenece_a
+    SessionManager ..> TokenJWT : genera

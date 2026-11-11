@@ -1,0 +1,19 @@
+graph TD
+    subgraph Presentacion ["Presentación"]
+        StudentView["StudentProgress.jsx (Badge Pase)"]
+    end
+    subgraph Aplicacion ["Aplicación"]
+        AuthAPI["auth_routes.py"]
+        SubManager["SubscriptionManager"]
+    end
+    subgraph Dominio ["Dominio"]
+        EntUsuario["Usuario (Membresía)"]
+    end
+    subgraph Infraestructura ["Infraestructura"]
+        Postgres["PostgreSQL"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

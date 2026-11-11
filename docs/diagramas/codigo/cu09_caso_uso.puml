@@ -1,0 +1,37 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Administrador" as AD
+actor "Servicio de Cartografía\ny Localización" as SCL
+
+rectangle "Sistema Corpo e Mente - Gestión de Sedes" {
+    usecase "UC-09: Gestionar Sucursales y\nCoordenadas Geográficas" as UC09
+    usecase "Indicar Ubicación Geográfica\nde la Sede" as UC09_Map
+    usecase "Determinar Datos Administrativos\nde la Zona" as UC09_Geo
+    usecase "Registrar Sede en el\nDirectorio Oficial" as UC09_Save
+    usecase "Reasignar Practicantes\ne Instructores" as UC09_Assign
+}
+
+AD --> UC09
+UC09 ..> UC09_Map : <<include>>
+UC09_Map ..> UC09_Geo : <<include>>
+UC09 ..> UC09_Save : <<include>>
+UC09 ..> UC09_Assign : <<extend>>
+
+UC09_Geo --> SCL
+@enduml

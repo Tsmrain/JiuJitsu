@@ -164,18 +164,20 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
   * 4.4. Identificación de Casos de Uso y Trazabilidad
   * 4.5. Modelo de Dominio
 * **Capítulo V: Análisis y Diseño Orientado a Objetos**
-  * 5.1. Caso de Uso 1: Iniciar Sesión y Registro de Usuarios (UC-01)
-  * 5.2. Caso de Uso 2: Analizar Técnica y Generar Feedback Biomecánico (UC-02)
-  * 5.3. Caso de Uso 3: Gestionar Técnicas y Videos de Referencia (UC-03)
-  * 5.4. Caso de Uso 4: Gestionar Teoría RAG (UC-04)
-  * 5.5. Caso de Uso 5: Ver Progreso de Alumnos (UC-05)
-  * 5.6. Caso de Uso 6: Activar Pase de Tatami (UC-06)
-  * 5.7. Caso de Uso 7: Gestionar Sucursales y Coordenadas Geográficas (UC-07)
-  * 5.8. Caso de Uso 8: Entrar como otro Usuario / Impersonificación (UC-08)
-  * 5.9. Diagramas de Arquitectura Consolidada del Sistema Completo
-    * 5.9.1. Diagrama de Casos de Uso del Sistema Completo
-    * 5.9.2. Diagrama de Actividad con Carriles del Sistema Completo (Flujo Principal UC-02)
-    * 5.9.3. Diagrama de Clases del Sistema Completo
+  * 5.1. Caso de Uso 1: Iniciar Sesión (UC-01)
+  * 5.2. Caso de Uso 2: Registrar Nuevo Usuario (UC-02)
+  * 5.3. Caso de Uso 3: Analizar Técnica (UC-03)
+  * 5.4. Caso de Uso 4: Generar Feedback Biomecánico (UC-04)
+  * 5.5. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05)
+  * 5.6. Caso de Uso 6: Gestionar Teoría RAG (UC-06)
+  * 5.7. Caso de Uso 7: Ver Progreso de Alumnos (UC-07)
+  * 5.8. Caso de Uso 8: Activar Pase de Tatami (UC-08)
+  * 5.9. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09)
+  * 5.10. Caso de Uso 10: Entrar como Otro Usuario / Impersonificación (UC-10)
+  * 5.11. Diagramas de Arquitectura Consolidada del Sistema Completo
+    * 5.11.1. Diagrama de Casos de Uso del Sistema Completo
+    * 5.11.2. Diagrama de Actividad con Carriles del Sistema Completo (Flujo Principal UC-03 y UC-04)
+    * 5.11.3. Diagrama de Clases del Sistema Completo
 * **Capítulo VI: Desarrollo**
   * 6.1. Introducción al Proceso de Construcción
   * 6.2. Herramientas de Desarrollo, Licencias y Software Utilizado
@@ -974,19 +976,19 @@ Tabla 17
 
 | Nro | Historia de Usuario (Lo que el usuario quiere) | #Req | #CU | Descripción del Caso de Uso |
 | :--- | :--- | :--- | :--- | :--- |
-| **1** | Como Alumno, Profesor o Admin, quiero entrar a mi cuenta con mi nombre y contraseña para usar la plataforma. | RF-01 | UC-01 | **Iniciar Sesión:** El sistema valida las credenciales y entrega un acceso seguro según el tipo de cuenta. |
-| **2** | Como nuevo interesado, quiero crear una cuenta eligiendo si soy Alumno o Profesor para unirme a una sucursal. | RF-02 | UC-01 | **Iniciar Sesión / Registro:** El sistema crea el perfil, valida que el nombre no tenga espacios y lo guarda en la sucursal. |
-| **3** | Como Administrador, quiero tomar el control de la cuenta de un Alumno o Profesor para ayudarlo a resolver un problema técnico. | RF-03 | UC-08 | **Entrar como otro Usuario:** El Admin asume la identidad temporal de otra persona mostrando un aviso en pantalla. |
-| **4** | Como Profesor, quiero crear o editar las técnicas del catálogo para mantener actualizada a mi academia. | RF-04 | UC-03 | **Gestionar Técnicas:** El profesor añade, modifica o elimina los nombres de las técnicas y sus niveles de cinturón. |
-| **5** | Como Profesor, quiero subir el video de mi ejecución perfecta (patrón de oro) para que el sistema lo use como referencia. | RF-05 | UC-03 | **Gestionar Técnicas:** El sistema guarda el video del profesor en el almacenamiento local y lo asocia a la técnica. |
-| **6** | Como Profesor, quiero subir manuales en PDF y escribir mis propios consejos para que la Inteligencia Artificial enseñe a los alumnos con mis palabras. | RF-06 | UC-04 | **Gestionar Teoría RAG:** El sistema lee el texto y las fotos del PDF, y guarda los consejos del profesor para usarlos luego. |
-| **7** | Como Alumno, quiero seleccionar a mi profesor y la técnica que voy a practicar para estar seguro de compararme con el video correcto. | RF-07 | UC-02 | **Analizar Técnica:** El sistema muestra la lista de profesores y técnicas disponibles en la sucursal del alumno. |
-| **8** | Como Alumno, quiero subir mi video de práctica para que la Inteligencia Artificial analice mis movimientos. | RF-08, RF-09 | UC-02 | **Analizar Técnica:** El sistema recibe el video, verifica que sea Jiu-Jitsu (filtro anti-spam) y lo prepara para su análisis. |
-| **9** | Como Alumno, quiero saber qué porcentaje de similitud tengo con mi profesor y ver cuál fue el error exacto en mi esqueleto. | RF-10, RF-11 | UC-02 | **Analizar Técnica:** El sistema extrae los esqueletos 3D, los compara matemáticamente y calcula un porcentaje de similitud (0 a 100%). |
-| **10** | Como Alumno, quiero que el sistema me explique cómo corregir mi error (citando el libro del profesor) si mi nota fue menor al 85%. | RF-12 | UC-02 | **Analizar Técnica:** El sistema genera un texto pedagógico usando IA, citando las páginas exactas del manual; si la nota es alta, solo da un mensaje de felicitación. |
-| **11** | Como Profesor, quiero ver un historial de las notas y errores de mis alumnos para saber en qué están fallando. | RF-13 | UC-05 | **Ver Progreso de Alumnos:** El sistema muestra un panel con la lista de alumnos de su sucursal y sus evaluaciones pasadas. |
-| **12** | Como Profesor, quiero activar la cuenta de un alumno por 30 días (Pase de Tatami) después de verificar que pagó en la academia. | RF-14 | UC-06 | **Activar Pase de Tatami:** El profesor otorga acceso al alumno; el sistema bloquea la cuenta automáticamente al cumplirse los 30 días. |
-| **13** | Como Administrador, quiero registrar las sucursales de mi academia en un mapa para mostrar dónde entrenamos. | RF-15 | UC-07 | **Gestionar Sucursales:** El sistema captura las coordenadas de latitud y longitud haciendo clic en un mapa interactivo y guarda la dirección. |
+| **1** | Como Alumno, Profesor o Admin, quiero entrar a mi cuenta con mi nombre y contraseña para usar la plataforma. | RF-01 | UC-01 | **Iniciar Sesión:** El sistema valida las credenciales, controla intentos fallidos y entrega un acceso seguro según el tipo de cuenta. |
+| **2** | Como nuevo interesado, quiero crear una cuenta eligiendo si soy Alumno o Profesor para unirme a una sucursal. | RF-02 | UC-02 | **Registrar Nuevo Usuario:** El sistema valida formato único sin espacios, crea el perfil con membresía inicial y lo asocia a la sucursal. |
+| **3** | Como Administrador, quiero tomar el control de la cuenta de un Alumno o Profesor para ayudarlo a resolver un problema técnico. | RF-03 | UC-10 | **Entrar como Otro Usuario:** El Admin asume la identidad temporal de otra persona mostrando un aviso permanente de soporte en pantalla. |
+| **4** | Como Profesor, quiero crear o editar las técnicas del catálogo para mantener actualizada a mi academia. | RF-04 | UC-05 | **Gestionar Técnicas y Referencias:** El profesor añade, modifica o elimina los nombres de las técnicas y sus niveles de cinturón. |
+| **5** | Como Profesor, quiero subir el video de mi ejecución perfecta (patrón de oro) para que el sistema lo use como referencia. | RF-05 | UC-05 | **Gestionar Técnicas y Referencias:** El sistema extrae y cataloga la secuencia postural del profesor como patrón oficial de referencia. |
+| **6** | Como Profesor, quiero subir manuales en PDF y escribir mis propios consejos para que la Inteligencia Artificial enseñe a los alumnos con mis palabras. | RF-06 | UC-06 | **Gestionar Teoría RAG:** El sistema lee el texto y las ilustraciones del documento, y guarda las directrices del profesor para consulta semántica. |
+| **7** | Como Alumno, quiero seleccionar a mi profesor y la técnica que voy a practicar para estar seguro de compararme con el video correcto. | RF-07 | UC-03 | **Analizar Técnica:** El sistema verifica la vigencia del Pase de Tatami y muestra la lista de profesores y técnicas disponibles en su sucursal. |
+| **8** | Como Alumno, quiero subir mi video de práctica para que la Inteligencia Artificial analice mis movimientos. | RF-08, RF-09 | UC-03 | **Analizar Técnica:** El sistema recibe el video, verifica que sea Jiu-Jitsu (filtro anti-spam) e identifica a los practicantes en el encuadre inicial. |
+| **9** | Como Alumno, quiero saber qué porcentaje de similitud tengo con mi profesor y ver cuál fue el error exacto en mi esqueleto. | RF-10, RF-11 | UC-03 | **Analizar Técnica:** El sistema extrae los esqueletos 3D, los compara cinemáticamente, calcula un porcentaje de similitud (0 a 100%) e identifica el fotograma crítico. |
+| **10** | Como Alumno, quiero que el sistema me explique cómo corregir mi error (citando el libro del profesor) si mi nota fue menor al 85%. | RF-12 | UC-04 | **Generar Feedback Biomecánico:** Aplicando jerarquía estricta de fuentes doctrinales y auditoría de fidelidad, el sistema redacta un consejo pedagógico citado en el idioma del alumno (o felicita si supera el 85%). |
+| **11** | Como Profesor, quiero ver un historial de las notas y errores de mis alumnos para saber en qué están fallando. | RF-13 | UC-07 | **Ver Progreso de Alumnos:** El sistema muestra un panel con la lista de alumnos de su sucursal y sus evaluaciones pasadas. |
+| **12** | Como Profesor, quiero activar la cuenta de un alumno por 30 días (Pase de Tatami) después de verificar que pagó en la academia. | RF-14 | UC-08 | **Activar Pase de Tatami:** El profesor otorga acceso al alumno por 30 días; el sistema bloquea la cuenta automáticamente al cumplirse el plazo. |
+| **13** | Como Administrador, quiero registrar las sucursales de mi academia en un mapa para mostrar dónde entrenamos. | RF-15 | UC-09 | **Gestionar Sucursales:** El sistema captura las coordenadas de latitud y longitud en un mapa interactivo y guarda la dirección. |
 
 *Nota.* Elaboración propia (2026).
 
@@ -997,86 +999,7 @@ Para mantener un vocabulario simple y fácil de entender, se han separado claram
 
 *Figura 6: Diagrama de Modelo de Dominio del Sistema.*
 
-```mermaid
-classDiagram
-    class Sucursal {
-        nombre
-        ciudad
-        pais
-        direccion
-        latitud
-        longitud
-    }
-
-    class Profesor {
-        nombre_completo
-        correo
-        cinturon
-    }
-
-    class Alumno {
-        nombre_completo
-        correo
-        cinturon
-    }
-
-    class Administrador {
-        nombre_completo
-        correo
-    }
-
-    class Tecnica {
-        nombre
-        nivel_cinturon
-    }
-
-    class VideoReferencia {
-        archivo_video
-        fecha_subida
-    }
-
-    class TeoriaRAG {
-        texto
-        fuente
-        pagina
-    }
-
-    class Evaluacion {
-        fecha
-        porcentaje_similitud
-        retroalimentacion
-    }
-
-    class PaseTatami {
-        fecha_inicio
-        fecha_fin
-        estado
-    }
-
-    class EsqueletoBiomecanico {
-        puntos_articulaciones
-        angulos_corporales
-    }
-
-    %% Relaciones y Cardinalidad
-    
-    Sucursal "1" *-- "1..*" Profesor : tiene
-    Sucursal "1" *-- "1..*" Alumno : tiene
-    Sucursal "1" *-- "1..*" Administrador : tiene
-
-    Profesor "1" -- "1..*" Tecnica : enseña
-    Profesor "1" -- "1..*" VideoReferencia : graba
-    Profesor "1" -- "0..*" TeoriaRAG : escribe
-
-    Alumno "1" -- "1..*" Evaluacion : realiza
-    Alumno "1" -- "0..1" PaseTatami : paga
-
-    Tecnica "1" *-- "1..*" VideoReferencia : usa
-    Tecnica "1" -- "0..*" TeoriaRAG : tiene
-    Tecnica "1" -- "1..*" Evaluacion : es_evaluada_en
-
-    Evaluacion "1" *-- "1" EsqueletoBiomecanico : genera
-```
+![Diagrama de Modelo de Dominio del Sistema](diagramas/modelo_dominio.png)
 
 ---
 
@@ -1094,526 +1017,260 @@ Para cada caso de uso identificado en la matriz de trazabilidad del Capítulo IV
 
 ---
 
-## 5.1. Caso de Uso 1: Iniciar Sesión y Registro de Usuarios (UC-01)
+## 5.1. Caso de Uso 1: Iniciar Sesión (UC-01)
 
-### 5.1.1. Caso de Uso 1: Iniciar Sesión y Registro de Usuarios (UC-01) — Nivel de Análisis
+### 5.1.1. Caso de Uso 1: Iniciar Sesión (UC-01) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-01** |
-| **Nombre** | Iniciar Sesión y Registro de Usuarios |
+| **Nombre** | Iniciar Sesión |
 | **Actores** | **Principal:** Alumno, Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Identidad y Acceso. |
-| **Descripción** | Permite a un practicante, instructor o administrador acreditarse ante el sistema para acceder a las funciones propias de su rol, o bien dar de alta una nueva cuenta vinculada a una sede de la academia. |
-| **Precondiciones** | El solicitante desea acreditarse o dar de alta una cuenta vinculada a una sede de la academia. |
-| **Postcondiciones** | 1. Se constituye una sesión de trabajo activa asociada al rol y a la sede del usuario.<br>2. El usuario queda habilitado para operar las responsabilidades propias de su rol.<br>3. Toda cuenta nueva de alumno se inicia con su Pase de Tatami en estado pendiente de habilitación. |
+| **Descripción** | Permite a un practicante, instructor o administrador ya registrado acreditarse mediante sus credenciales personales para acceder al entorno operativo correspondiente a su rol y sede de adscripción. |
+| **Precondiciones** | El usuario cuenta previamente con una cuenta registrada en la plataforma de la academia. |
+| **Postcondiciones** | 1. Se constituye una sesión de trabajo activa asociada al rol, al idioma preferido y a la sede del usuario.<br>2. El usuario queda habilitado para operar las funcionalidades autorizadas de su perfil. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Usuario solicita identificarse ante el sistema aportando su identificador personal y su clave secreta. | El Sistema comprueba que el solicitante no haya excedido el umbral de intentos fallidos permitidos. |
-| 2 | | El Sistema verifica la correspondencia de las credenciales con el registro del usuario y determina su rol, su sede adscrita y la vigencia de su membresía. |
-| 3 | | El Sistema constituye una sesión de trabajo activa y habilita al usuario el entorno correspondiente a su rol: práctica para el alumno, instrucción para el profesor o gestión global para el administrador. |
+| 1 | El Usuario solicita ingresar al sistema aportando su identificador personal (nombre de usuario o correo electrónico) y su clave secreta. | El Sistema comprueba que el solicitante no haya superado el umbral máximo de intentos fallidos permitidos en la ventana de tiempo vigente. |
+| 2 | | El Sistema valida la correspondencia de las credenciales aportadas frente al registro del usuario y consulta su rol, sede de adscripción, idioma preferido y vigencia de membresía. |
+| 3 | | El Sistema constituye una sesión de trabajo activa y habilita al usuario el entorno propio de su perfil: práctica para el alumno, instrucción para el profesor o gestión global para el administrador. |
 
 #### Secuencias Alternativas
-* **1a. Registro de un nuevo practicante o instructor:**
-  * 1a.1. El solicitante indica su intención de abrir una nueva cuenta en la academia.
-  * 1a.2. El Sistema solicita los datos personales, el rol requerido (alumno o profesor) y la sede de adscripción.
-  * 1a.3. El solicitante aporta la información requerida.
-  * 1a.4. El Sistema comprueba que el identificador elegido sea único y cumpla las reglas de formato del dominio.
-  * 1a.5. El Sistema registra la cuenta con el estado inicial de membresía correspondiente a su rol y constituye la sesión activa.
-* **1b. Umbral de intentos fallidos superado:**
-  * El Sistema suspende temporalmente las solicitudes de identificación del solicitante por política de protección de cuentas.
-* **2a. Credenciales incorrectas:**
-  * El Sistema rechaza la solicitud mediante un aviso unificado sin revelar si la discrepancia corresponde al identificador o a la clave secreta, evitando la enumeración de cuentas.
+* **1a. Umbral de intentos fallidos superado:**
+  * El Sistema bloquea temporalmente nuevas solicitudes de identificación provenientes del solicitante conforme a la política de protección de cuentas.
+* **2a. Credenciales incorrectas o cuenta inexistente:**
+  * El Sistema rechaza el acceso mediante un aviso unificado sin revelar si la discrepancia radica en el identificador o en la clave secreta, previniendo la enumeración de cuentas.
 
 #### Excepciones
 * **E1. Servicio de identidad no disponible:** El Sistema informa que la acreditación se encuentra temporalmente fuera de servicio y conserva intacto el estado previo.
+
 ---
 
-### 5.1.2 Diagrama de Caso de Uso UC-01
+### 5.1.2. Diagrama de Caso de Uso UC-01
+
 ![Diagrama de Caso de Uso UC-01](diagramas/cu01_caso_uso.png)
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Alumno" as AL
-actor "Profesor" as PR
-actor "Administrador" as AD
-actor "Servicio de Identidad\ny Acceso" as SIA
-
-rectangle "Sistema Corpo e Mente - Identificación y Acceso" {
-    usecase "UC-01: Iniciar Sesión y\nRegistro de Usuarios" as UC01
-    usecase "Registrar Nueva Cuenta\nde Practicante o Instructor" as UC01_Reg
-    usecase "Verificar Credenciales\nde Identificación" as UC01_Val
-    usecase "Constituir Sesión\nde Trabajo Activa" as UC01_Ses
-    usecase "Controlar Umbral de\nIntentos Fallidos" as UC01_Lim
-}
-
-AL --> UC01
-PR --> UC01
-AD --> UC01
-
-AL --> UC01_Reg
-PR --> UC01_Reg
-
-UC01 ..> UC01_Val : <<include>>
-UC01 ..> UC01_Ses : <<include>>
-UC01 ..> UC01_Lim : <<include>>
-UC01_Reg ..> UC01_Ses : <<include>>
-
-UC01_Val --> SIA
-UC01_Ses --> SIA
-@enduml
-```
 ---
 
-### 5.1.3 Diagrama de Clases de Diseño (Participantes) UC-01
+### 5.1.3. Diagrama de Clases de Diseño (Participantes) UC-01
 El siguiente diagrama de nivel de diseño concreta los participantes conceptuales del análisis ECB en clases de implementación reales:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeAcceso` se materializa en los componentes de presentación (`LoginView`, `SignupView`) y en el controlador de rutas (`AuthRoutes`).
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeAcceso` se materializa en el componente visual de autenticación (`LoginView`) y en el controlador de rutas (`AuthRoutes`).
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeAcceso` se implementa mediante los servicios de aplicación y seguridad (`AuthService`, `SessionManager`, `RateLimiter`).
 * **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `Sucursal` y `SesiónDeUsuario` se implementan en las clases de dominio y transferencia (`Usuario`, `Sucursal`, `TokenJWT`).
 
-```mermaid
-classDiagram
-    %% Boundary
-    class LoginView {
-        +username: String
-        +password: String
-        +handleSubmit()
-        +displayError(msg)
-    }
-
-    class AuthRoutes {
-        +login(credentials: LoginDTO) Response
-        +signup(user_data: SignupDTO) Response
-    }
-
-    %% Control
-    class AuthService {
-        +autenticarUsuario(user_or_email, password) TokenJWT
-        +registrarUsuario(data: SignupDTO) Usuario
-        +verificarPassword(plain, hashed) Boolean
-    }
-
-    class SessionManager {
-        +crearTokenJWT(user: Usuario) String
-        +validarToken(token: String) Claims
-    }
-
-    class RateLimiter {
-        +verificarLimiteIP(ip: String) Boolean
-    }
-
-    %% Entity
-    class Usuario {
-        +id: UUID
-        +nombre_completo: String
-        +username: String
-        +password_hash: String
-        +rol: RolUsuario
-        +sucursal_id: UUID
-        +estado_suscripcion: String
-        +fecha_expiracion: DateTime
-    }
-
-    class Sucursal {
-        +id: UUID
-        +nombre: String
-        +ciudad: String
-        +pais: String
-    }
-
-    class TokenJWT {
-        +access_token: String
-        +token_type: String
-        +expires_in: Integer
-    }
-
-    LoginView ..> AuthRoutes : HTTP POST
-    AuthRoutes --> RateLimiter : consulta
-    AuthRoutes --> AuthService : delega
-    AuthService --> SessionManager : solicita token
-    AuthService --> Usuario : consulta / valida
-    Usuario "1" --> "1" Sucursal : pertenece_a
-    SessionManager ..> TokenJWT : genera
-```
+![Diagrama de Clases de Diseño UC-01](diagramas/cu01_clases.png)
 
 ---
 
-### 5.1.4 Diagrama de Secuencia UC-01
+### 5.1.4. Diagrama de Secuencia UC-01
 
 ![Diagrama de Secuencia UC-01](diagramas/cu01_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-01: Iniciar Sesión y Registro de Usuarios
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Usuario" as U
-boundary "PantallaDeAcceso" as B1
-control "CoordinadorDeAcceso" as C1
-entity "Usuario" as E1
-entity "Sucursal" as E2
-entity "SesiónDeUsuario" as E3
-
-U -> B1 : solicitarAcceso(identificador, clave)
-B1 -> C1 : autenticarUsuario(identificador, clave)
-C1 -> C1 : verificarIntentosPermitidos(solicitante)
-C1 -> E1 : buscarPorIdentificador(identificador)
-E1 --> C1 : datosDeUsuario
-C1 -> E1 : validarCredenciales(clave)
-E1 --> C1 : credencialesVálidas
-C1 -> E2 : obtenerSedeAdscrita(usuario)
-E2 --> C1 : datosDeSucursal
-C1 -> E3 : iniciarSesión(usuario, rol, sucursal)
-E3 --> C1 : sesiónActiva
-C1 --> B1 : accesoAutorizado(sesiónActiva, perfil)
-B1 --> U : presentarEntornoDeTrabajo(rol, sucursal)
-@enduml
-```
 ---
 
-### 5.1.5 Diagrama de Paquetes UC-01
-El diagrama de paquetes refleja el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las abstracciones de las capas internas (`Aplicacion` y `Dominio`), mientras que el núcleo de `Dominio` no depende de ninguna capa técnica externa.
+### 5.1.5. Diagrama de Paquetes UC-01
+El diagrama de paquetes refleja el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las abstracciones de las capas internas (`Aplicacion` y `Dominio`), mientras que el núcleo de `Dominio` permanece libre de dependencias hacia `Infraestructura`.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Capa de Presentación (Frontend)"]
-        UI_Login["Login.jsx / Signup.jsx"]
-        UI_State["AuthContext.jsx"]
-    end
-
-    subgraph Aplicacion ["📦 Capa de Aplicación (Casos de Uso y Control)"]
-        API_Auth["auth_routes.py"]
-        Ctrl_Auth["AuthService"]
-        Ctrl_Session["session_manager.py"]
-        Ctrl_Security["rate_limiter.py"]
-    end
-
-    subgraph Dominio ["📦 Capa de Dominio (Entidades y Reglas)"]
-        Ent_User["Usuario / Roles"]
-        Ent_Sucursal["Sucursal"]
-    end
-
-    subgraph Infraestructura ["📦 Capa de Infraestructura (Persistencia y Criptografía)"]
-        Infra_DB["PostgreSQL / PostgREST"]
-        Infra_Crypto["bcrypt / PyJWT"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-01](diagramas/cu01_paquetes.png)
 
 ---
 
-## 5.2. Caso de Uso 2: Analizar Técnica y Generar Feedback Biomecánico (UC-02)
+## 5.2. Caso de Uso 2: Registrar Nuevo Usuario (UC-02)
 
-### 5.2.1. Caso de Uso 2: Analizar Técnica y Generar Feedback Biomecánico (UC-02) — Nivel de Análisis
+### 5.2.1. Caso de Uso 2: Registrar Nuevo Usuario (UC-02) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-02** |
-| **Nombre** | Analizar Técnica y Generar Feedback Biomecánico |
-| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (percepción de la postura), Base de Conocimiento Técnica (bibliografía y directrices del instructor), Servicio de Redacción Pedagógica (generación del consejo). |
-| **Descripción** | El alumno solicita evaluar su ejecución de una técnica de Jiu-Jitsu; el sistema reconoce su postura corporal a lo largo del movimiento, la compara contra el patrón de referencia del profesor, determina el instante y las articulaciones con mayor desviación y, cuando existen discrepancias relevantes, elabora una corrección pedagógica fundamentada en el conocimiento técnico. |
-| **Precondiciones** | 1. El alumno cuenta con una sesión activa y su Pase de Tatami vigente.<br>2. Existe un patrón de referencia registrado por el profesor para la técnica seleccionada. |
-| **Postcondiciones** | 1. La evaluación queda registrada en el historial del alumno con su porcentaje de similitud.<br>2. El alumno recibe el diagnóstico con el instante exacto de mayor desviación, las articulaciones comprometidas y, cuando corresponde, la corrección pedagógica en su idioma. |
+| **Nombre** | Registrar Nuevo Usuario |
+| **Actores** | **Principal:** Alumno, Profesor (como nuevo solicitante).<br>**Secundario (Sistemas de Apoyo):** Servicio de Identidad y Acceso. |
+| **Descripción** | Permite a un nuevo practicante o instructor dar de alta una cuenta personal vinculada a una sede oficial de la academia, validando las reglas de unicidad de identidad e inicializando su perfil y membresía. |
+| **Precondiciones** | 1. El solicitante no posee aún una cuenta registrada con el mismo identificador ni correo electrónico.<br>2. Existe al menos una sede oficial activa en el directorio de la academia. |
+| **Postcondiciones** | 1. La nueva cuenta queda incorporada al registro oficial de la sede elegida.<br>2. Todo perfil nuevo de alumno se inicializa con su Pase de Tatami en estado pendiente de habilitación hasta verificar su pago presencial.<br>3. Se constituye una sesión de trabajo inicial para el usuario registrado. |
 
 #### Secuencia Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Alumno solicita evaluar su ejecución seleccionando al profesor de su academia, la técnica practicada y aportando el video de su movimiento. | El Sistema comprueba la vigencia del Pase de Tatami del alumno y verifica que el material aportado corresponda a una práctica válida de Jiu-Jitsu. |
-| 2 | | El Sistema identifica a los practicantes presentes en el inicio del video y solicita al alumno confirmar cuál de ellos es él. |
-| 3 | El Alumno confirma su identidad dentro de la escena. | El Sistema registra la evaluación en curso y extrae la secuencia de posturas corporales del alumno durante toda la ejecución. |
-| 4 | | El Sistema obtiene el patrón de referencia del profesor para la técnica e inicia la comparación cinemática entre ambas posturas. |
-| 5 | | El Sistema calcula el grado de similitud global e identifica el fotograma crítico junto con las articulaciones que presentan mayor desviación postural. |
-| 6 | | Cuando existen discrepancias significativas, el Sistema consulta la biblioteca técnica y las directrices del instructor asociadas a la técnica y a las articulaciones comprometidas. |
-| 7 | | El Sistema elabora una recomendación pedagógica en el idioma del alumno y verifica su fidelidad frente al material técnico consultado. |
-| 8 | | El Sistema actualiza la evaluación con el resultado definitivo y presenta al alumno el reporte completo con el grado de similitud, el fotograma crítico y la corrección pedagógica. |
+| 1 | El solicitante manifiesta su intención de registrar una nueva cuenta en la plataforma. | El Sistema consulta el directorio de sedes oficiales activas y presenta las opciones de rol permitidas (alumno o profesor) junto con los datos requeridos. |
+| 2 | El solicitante ingresa su nombre completo, identificador personal deseado, correo electrónico, clave secreta, rol solicitado y sede de adscripción. | El Sistema valida que el identificador cumpla las reglas de formato permitidas (sin espacios en blanco ni caracteres inválidos) y comprueba la unicidad del identificador y del correo. |
+| 3 | | El Sistema crea el perfil asignando el estado inicial de membresía correspondiente al rol, constituye la sesión inicial de trabajo y presenta el entorno de bienvenida en su sede. |
 
 #### Secuencias Alternativas
-* **1a. Material no elegible** (no corresponde a una práctica de Jiu-Jitsu o excede los límites admitidos): El Sistema rechaza la solicitud e indica al alumno que debe aportar una grabación válida de la técnica.
-* **1b. Pase de Tatami vencido o pendiente:** El Sistema informa al alumno que debe solicitar la renovación de su membresía ante su instructor antes de realizar nuevas evaluaciones.
-* **5a. Ejecución satisfactoria** (grado de similitud igual o superior al umbral de dominio): El Sistema emite un reconocimiento de ejecución correcta sin requerir corrección correctiva extensa.
-* **6a. Ausencia de fundamento documental:** Si no existen pasajes bibliográficos ni directrices del instructor aplicables a la técnica, el Sistema entrega el diagnóstico postural cuantitativo e informa que no cuenta con material teórico suficiente para redactar un consejo adicional.
+* **2a. Formato de identificador inválido (presencia de espacios o longitud insuficiente):**
+  * El Sistema rechaza el registro de forma inmediata e indica al solicitante los criterios válidos para su identificador.
+* **2b. Identificador o correo electrónico previamente registrado:**
+  * El Sistema informa que las credenciales de identificación ingresadas ya pertenecen a una cuenta existente e invita a iniciar sesión.
 
 #### Excepciones
-* **E1. Procesamiento prolongado:** El Sistema informa al alumno que la evaluación continúa en curso y que el dictamen estará disponible en su historial de progreso al concluir.
-* **E2. Técnica sin patrón de referencia vigente:** El Sistema impide iniciar la comparación e informa que el instructor aún no ha registrado el patrón oficial para dicha técnica.
+* **E1. Servicio de identidad o directorio de sedes no disponible:** El Sistema informa que el registro de nuevas cuentas se encuentra temporalmente fuera de servicio y no persiste registros parciales.
+
 ---
 
-### 5.2.2 Diagrama de Caso de Uso UC-02
+### 5.2.2. Diagrama de Caso de Uso UC-02
+
 ![Diagrama de Caso de Uso UC-02](diagramas/cu02_caso_uso.png)
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Alumno" as AL
-actor "Servicio de Visión\npor Computadora" as SVC
-actor "Base de Conocimiento\nTécnica" as BCT
-actor "Servicio de Redacción\nPedagógica" as SRP
-
-rectangle "Sistema Corpo e Mente - Evaluación Biomecánica" {
-    usecase "UC-02: Analizar Técnica y\nGenerar Feedback Biomecánico" as UC02
-    usecase "Verificar Elegibilidad\nde la Ejecución" as UC02_Elig
-    usecase "Reconocer Postura Corporal\ndel Practicante" as UC02_Post
-    usecase "Comparar Posturas contra\nPatrón del Profesor" as UC02_Comp
-    usecase "Consultar Conocimiento\nTécnico de Referencia" as UC02_Con
-    usecase "Elaborar Corrección\nPedagógica" as UC02_Corr
-    usecase "Auditar Fidelidad\nPedagógica del Consejo" as UC02_Aud
-}
-
-AL --> UC02
-UC02 ..> UC02_Elig : <<include>>
-UC02 ..> UC02_Post : <<include>>
-UC02 ..> UC02_Comp : <<include>>
-UC02 ..> UC02_Con : <<extend>>\n(Desviación Significativa)
-UC02 ..> UC02_Corr : <<extend>>\n(Desviación Significativa)
-UC02_Corr ..> UC02_Aud : <<include>>
-
-UC02_Post --> SVC
-UC02_Con --> BCT
-UC02_Corr --> SRP
-@enduml
-```
 ---
 
-### 5.2.3 Diagrama de Clases de Diseño (Participantes) UC-02
-El diagrama de clases de nivel de diseño materializa los estereotipos ECB del análisis en componentes técnicos concretos:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeEvaluación` se implementa mediante `VideoUploadView`, `FeedbackView` y el controlador `EvaluacionesRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeEvaluación` se descompone en `EvaluacionService`, apoyado en los servicios y adaptadores `YOLOPoseAdapter`, `DTWService`, `RAGRetriever` y `LocalVLMAdapter`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Evaluación`, `PatrónDeReferencia` y `BibliotecaTécnica` se representan en las clases de dominio `Evaluacion`, `PatronReferencia` y `TeoriaRAG`.
+### 5.2.3. Diagrama de Clases de Diseño (Participantes) UC-02
+El diagrama de clases de diseño traduce los participantes del análisis ECB en componentes dedicados al alta de usuarios:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeRegistro` se implementa mediante `SignupView` y las operaciones de registro y consulta de sedes de `AuthRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeRegistro` se materializa en `AuthService`, validando los contratos `SignupRequest` y delegando la emisión inicial a `SessionManager`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `Sucursal` y `SesiónDeUsuario` se concretan en `Usuario`, `Sucursal` y `TokenJWT`.
 
-```mermaid
-classDiagram
-    %% Boundary
-    class VideoUploadView {
-        +archivo_video: File
-        +profesor_id: UUID
-        +tecnica_id: UUID
-        +handleUpload()
-        +displayProgress()
-    }
-
-    class FeedbackView {
-        +similitud: Float
-        +articulaciones_falla: List
-        +feedback_texto: String
-        +renderVideoPlayer()
-        +renderKeypointsOverlay()
-    }
-
-    class EvaluacionesRoutes {
-        +analizarTecnica(file, data) ResultadoDTO
-    }
-
-    %% Control
-    class EvaluacionService {
-        +procesarVideo(file, tecnica_id, prof_id, alumno_id) Evaluacion
-        +filtrarContenidoAntiSpam(video) Boolean
-    }
-
-    class YOLOPoseAdapter {
-        +extraerSecuencia3D(video_path) Tensor3D
-    }
-
-    class DTWService {
-        +alinearSecuencias(seq_alumno, seq_profesor) Float
-        +identificarFrameCritico(seq_alumno, seq_prof) Int
-    }
-
-    class RAGRetriever {
-        +recuperarTeoriaDosEtapas(frame, tecnica_id) List~TeoriaRAG~
-    }
-
-    class LocalVLMAdapter {
-        +generarConsejo(frame, teoria, mensaje_prof) String
-        +auditarFidelidad(texto, teoria) Float
-    }
-
-    %% Entity
-    class Evaluacion {
-        +id: UUID
-        +alumno_id: UUID
-        +profesor_id: UUID
-        +tecnica_id: UUID
-        +sucursal_id: UUID
-        +porcentaje_similitud: Float
-        +frame_error_idx: Integer
-        +feedback_texto: String
-        +fecha: DateTime
-    }
-
-    class PatronReferencia {
-        +tecnica_id: UUID
-        +profesor_id: UUID
-        +secuencia_3d: Tensor
-    }
-
-    class TeoriaRAG {
-        +texto: String
-        +pagina: Integer
-        +fuente: String
-    }
-
-    VideoUploadView ..> EvaluacionesRoutes : HTTP POST
-    EvaluacionesRoutes --> EvaluacionService : orquesta
-    EvaluacionService --> YOLOPoseAdapter : extrae poses
-    EvaluacionService --> DTWService : calcula distancia
-    EvaluacionService --> RAGRetriever : busca teoría
-    EvaluacionService --> LocalVLMAdapter : solicita texto IA
-    EvaluacionService --> Evaluacion : persiste
-    EvaluacionService --> PatronReferencia : compara
-    RAGRetriever ..> TeoriaRAG : retorna
-    FeedbackView ..> Evaluacion : visualiza
-```
+![Diagrama de Clases de Diseño UC-02](diagramas/cu02_clases.png)
 
 ---
 
-### 5.2.4 Diagrama de Secuencia UC-02
+### 5.2.4. Diagrama de Secuencia UC-02
 
 ![Diagrama de Secuencia UC-02](diagramas/cu02_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-02: Analizar Técnica
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Alumno" as AL
-boundary "PantallaDeEvaluación" as B1
-control "CoordinadorDeEvaluación" as C1
-entity "Evaluación" as E1
-entity "PatrónDeReferencia" as E2
-entity "BibliotecaTécnica" as E3
-
-AL -> B1 : solicitarEvaluación(profesor, técnica, video)
-B1 -> C1 : crearEvaluación(alumno, profesor, técnica, video)
-C1 -> E1 : crear(alumno, profesor, técnica)
-E1 --> C1 : evaluaciónRegistrada
-C1 -> E2 : obtenerPatrónDeReferencia(técnica, profesor)
-E2 --> C1 : secuenciaDeReferencia
-C1 -> C1 : compararPosturas(videoAlumno, secuenciaDeReferencia)
-C1 -> E3 : buscarConocimientoTécnico(técnica, discrepancias)
-E3 --> C1 : fragmentosDeConocimiento
-C1 -> C1 : generarFeedbackPedagógico(discrepancias, conocimiento)
-C1 -> E1 : actualizarResultado(similitud, feedback)
-C1 --> B1 : evaluaciónCompletada
-B1 --> AL : mostrarReporte(similitud, feedback, fotogramaCrítico)
-@enduml
-```
 ---
 
-### 5.2.5 Diagrama de Paquetes UC-02
-Las dependencias entre paquetes respetan el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen hacia adentro de `Aplicacion` y `Dominio`.
+### 5.2.5. Diagrama de Paquetes UC-02
+Las dependencias entre paquetes observan estrictamente el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen hacia adentro de `Aplicacion` y `Dominio`, preservando las reglas de validación de identidad aisladas de la infraestructura criptográfica y relacional.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación (Frontend)"]
-        P_Upload["VideoUpload.jsx"]
-        P_Feedback["FeedbackView.jsx"]
-        P_Player["VideoPlayerOverlay.jsx"]
-    end
-
-    subgraph Aplicacion ["📦 Aplicación (Orquestación de Casos de Uso)"]
-        A_Routes["evaluaciones_routes.py"]
-        A_Facade["intelligence_facade.py"]
-        A_EvalSvc["EvaluacionService"]
-    end
-
-    subgraph Dominio ["📦 Dominio (Algoritmos Biomecánicos y Entidades)"]
-        D_DTW["dtw_service.py"]
-        D_Norm["pose_normalizer.py"]
-        D_EntEval["Evaluacion"]
-        D_EntPatron["PatronReferencia"]
-    end
-
-    subgraph Infraestructura ["📦 Infraestructura (IA Local y Persistencia)"]
-        I_YOLO["yolo_adapters.py (Ultralytics)"]
-        I_VLM["local_vlm_adapter.py (MLX)"]
-        I_RAG["rag_reranker.py"]
-        I_Qdrant["qdrant_adapter.py"]
-        I_PG["PostgreSQL / PostgREST"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-02](diagramas/cu02_paquetes.png)
 
 ---
 
-## 5.3. Caso de Uso 3: Gestionar Técnicas y Videos de Referencia (UC-03)
+## 5.3. Caso de Uso 3: Analizar Técnica (UC-03)
 
-### 5.3.1. Caso de Uso 3: Gestionar Técnicas y Videos de Referencia (UC-03) — Nivel de Análisis
+### 5.3.1. Caso de Uso 3: Analizar Técnica (UC-03) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-03** |
+| **Nombre** | Analizar Técnica |
+| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (detección y reconocimiento de secuencia postural). |
+| **Descripción** | El alumno aporta la grabación de su ejecución de una técnica de Jiu-Jitsu; el sistema valida su membresía y la elegibilidad deportiva del video, confirma la identidad del practicante en escena, extrae su secuencia postural 3D y la compara cinemáticamente frente al patrón oficial del profesor para cuantificar el grado de similitud e identificar el fotograma crítico de mayor desviación. |
+| **Precondiciones** | 1. El alumno mantiene una sesión activa y su Pase de Tatami se encuentra vigente.<br>2. Existe un patrón biomecánico oficial registrado por el profesor seleccionado para la técnica evaluada. |
+| **Postcondiciones** | 1. La evaluación queda registrada en el historial personal del alumno asociada inmutablemente a su sede de entrenamiento actual.<br>2. Se determinan el porcentaje de similitud global (0 a 100%), el instante del fotograma crítico y las articulaciones con mayor desviación.<br>3. Queda preparado el diagnóstico cinemático para invocar el caso de uso de retroalimentación pedagógica (**UC-04**). |
+
+#### Secuencia Normal
+| Paso | Intención del Actor | Respuesta Observable del Sistema |
+| :---: | :--- | :--- |
+| 1 | El Alumno solicita analizar su ejecución seleccionando a su instructor, la técnica practicada y adjuntando el video de práctica. | El Sistema comprueba la vigencia del Pase de Tatami del alumno y verifica mediante análisis visual que la grabación corresponda efectivamente a una práctica válida de Jiu-Jitsu. |
+| 2 | | El Sistema inspecciona la escena inicial del video, detecta a los practicantes presentes sin duplicidades y solicita al alumno confirmar cuál silueta corresponde a su persona. |
+| 3 | El Alumno confirma su identidad seleccionando su silueta en escena. | El Sistema registra la evaluación en curso congelando la sede histórica del alumno y realiza el seguimiento continuo de su secuencia postural 3D a lo largo de todo el movimiento. |
+| 4 | | El Sistema recupera el patrón biomecánico oficial registrado por el profesor para la técnica seleccionada y ejecuta la alineación cinemática temporal entre ambas ejecuciones. |
+| 5 | | El Sistema calcula el porcentaje global de similitud, localiza el fotograma crítico donde ocurre la máxima discrepancia y determina las articulaciones corporales comprometidas, dando paso al caso de uso **UC-04: Generar Feedback Biomecánico**. |
+
+#### Secuencias Alternativas
+* **1a. Pase de Tatami vencido o pendiente:** El Sistema bloquea el análisis e indica al alumno que debe gestionar la activación o renovación de su membresía con su instructor.
+* **1b. Grabación no elegible (no corresponde a Jiu-Jitsu o excede límites admitidos):** El Sistema rechaza el archivo de manera temprana sin iniciar el procesamiento biomecánico e instruye subir una práctica válida.
+* **2a. Presencia de múltiples practicantes o reflejos:** El Sistema depura falsos detecciones y exige la confirmación explícita del atleta objetivo para evitar saltos de identidad durante el agarre en suelo.
+
+#### Excepciones
+* **E1. Técnica sin patrón oficial de referencia:** El Sistema impide ejecutar la comparación e informa que el instructor aún no ha registrado su video patrón para dicha técnica.
+* **E2. Procesamiento prolongado:** El Sistema informa que la extracción y alineación prosiguen en segundo plano y mantiene consultable el estado en el historial del alumno.
+
+---
+
+### 5.3.2. Diagrama de Caso de Uso UC-03
+
+![Diagrama de Caso de Uso UC-03](diagramas/cu03_caso_uso.png)
+
+---
+
+### 5.3.3. Diagrama de Clases de Diseño (Participantes) UC-03
+El diagrama de clases de diseño concreta los participantes conceptuales de la fase de evaluación cinemática:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeEvaluación` se materializa en `VideoUploadView`, `SelectorPersonaVideo` y los endpoints de captura y análisis de `EvaluacionesRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeAnálisisTécnico` se descompone en `SessionStateManager`, `LocalSpamFilter`, `IntelligenceAnalysisFacade`, `YOLOPoseAdapter`, `PoseNormalizer` y `DTWComparator`.
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Evaluación`, `PatrónDeReferencia` y `EsqueletoBiomecánico` se representan en `Evaluacion`, `PatronReferencia` y `EsqueletoBiomecanico`.
+
+![Diagrama de Clases de Diseño UC-03](diagramas/cu03_clases.png)
+
+---
+
+### 5.3.4. Diagrama de Secuencia UC-03
+
+![Diagrama de Secuencia UC-03](diagramas/cu03_secuencia.png)
+
+---
+
+### 5.3.5. Diagrama de Paquetes UC-03
+Las dependencias entre paquetes respetan el **Principio de Inversión de Dependencias (DIP)**: los adaptadores de visión (`YOLOPoseAdapter`, `LocalSpamFilter`) y persistencia residen en `Infraestructura` y dependen de las abstracciones y algoritmos biomecánicos puros (`DTWComparator`, `PoseNormalizer`) encapsulados en `Dominio`.
+
+![Diagrama de Paquetes UC-03](diagramas/cu03_paquetes.png)
+
+---
+
+## 5.4. Caso de Uso 4: Generar Feedback Biomecánico (UC-04)
+
+### 5.4.1. Caso de Uso 4: Generar Feedback Biomecánico (UC-04) — Nivel de Análisis
+
+| Campo | Especificación |
+| :--- | :--- |
+| **Identificador** | **UC-04** |
+| **Nombre** | Generar Feedback Biomecánico |
+| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Base de Conocimiento Técnica (obras bibliográficas y directrices del profesor), Servicio de Redacción Pedagógica (elaboración y auditoría del consejo). |
+| **Descripción** | A partir del diagnóstico cinemático obtenido en **UC-03** (porcentaje de similitud, fotograma crítico y articulaciones comprometidas), el sistema determina la estrategia pedagógica adecuada aplicando una jerarquía determinística de fuentes doctrinales, elabora la explicación correctiva en el idioma del alumno y audita su fidelidad antes de presentar el reporte visual definitivo. |
+| **Precondiciones** | 1. Se ha completado exitosamente la comparación postural del caso de uso **UC-03** con similitud calculada y fotograma crítico identificado.<br>2. El alumno tiene configurado un idioma preferido (español, portugués o inglés). |
+| **Postcondiciones** | 1. El reporte final queda consolidado en la evaluación del alumno con el fotograma crítico anotado visualmente y los nombres anatómicos traducidos a su idioma.<br>2. Si correspondía corrección y existió respaldo confiable, el alumno recibe la explicación pedagógica con citas bibliográficas o directrices del profesor.<br>3. Se garantiza cero invención doctrinal mediante validación de fidelidad y respaldo seguro. |
+
+#### Secuencia Normal
+| Paso | Intención del Actor | Respuesta Observable del Sistema |
+| :---: | :--- | :--- |
+| 1 | Al concluir el análisis cinemático (**UC-03**), el Alumno solicita visualizar la retroalimentación biomecánica de su ejecución en su idioma preferido. | El Sistema evalúa el porcentaje de similitud obtenido frente al umbral de dominio técnico (85%) para decidir si corresponde redactar una corrección o emitir un reconocimiento. |
+| 2 | | Cuando existen discrepancias significativas (similitud inferior al 85%), el Sistema consulta en dos etapas la base bibliográfica de la técnica (texto e ilustraciones) junto con las articulaciones comprometidas. |
+| 3 | | El Sistema aplica la jerarquía estricta de contexto: prioriza los pasajes bibliográficos de alta relevancia (Prioridad 1); si no existen pasajes pertinentes, recurre a la directriz escrita por el instructor (Prioridad 2). |
+| 4 | | Con base en el fotograma crítico y la fuente doctrinal prioritaria, el Sistema redacta una corrección pedagógica clara en el idioma del alumno citando la obra y página de respaldo cuando corresponde. |
+| 5 | | El Sistema somete la corrección generada a una auditoría automática de fidelidad frente al material consultado para descartar cualquier instrucción no fundamentada. |
+| 6 | | El Sistema anota visualmente las articulaciones erróneas sobre el fotograma crítico, traduce los términos anatómicos al idioma del alumno, actualiza el registro definitivo de la evaluación y despliega el reporte interactivo completo. |
+
+#### Secuencias Alternativas
+* **1a. Ejecución satisfactoria (similitud igual o superior al 85%):**
+  * El Sistema omite la corrección extensa y emite un mensaje de reconocimiento al desempeño correcto junto con el resumen comparativo en el idioma del alumno.
+* **3a. Ausencia de bibliografía pertinente y de directriz del instructor (Prioridad 3 — Respaldo Seguro):**
+  * El Sistema no invoca al redactor pedagógico y entrega de forma determinística el diagnóstico numérico, el fotograma crítico y un aviso estandarizado indicando que no existe material doctrinal suficiente para emitir consejo textual adicional.
+* **5a. Fidelidad pedagógica inferior al umbral exigido (Degradación Elegante):**
+  * Si la auditoría detecta desviaciones respecto a las fuentes consultadas, el Sistema descarta el texto redactado y presenta únicamente los datos biomecánicos objetivos y las articulaciones afectadas.
+
+#### Excepciones
+* **E1. Servicio de redacción pedagógica o base documental temporalmente no disponible:** El Sistema preserva intacta la evaluación cuantitativa con su porcentaje de similitud y fotograma crítico anotado para consulta inmediata del alumno.
+
+---
+
+### 5.4.2. Diagrama de Caso de Uso UC-04
+
+![Diagrama de Caso de Uso UC-04](diagramas/cu04_caso_uso.png)
+
+---
+
+### 5.4.3. Diagrama de Clases de Diseño (Participantes) UC-04
+El diagrama de clases de nivel de diseño desacopla el pipeline de recuperación multimodal y generación auditada bajo los estereotipos ECB:
+* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeResultados` se materializa en `FeedbackView` y en la consulta de reporte de `EvaluacionesRoutes`.
+* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeFeedbackPedagógico` se implementa en `IntelligenceAnalysisFacade`, `MultimodalRAGService`, `HybridRetriever` (RRF + `GlossaryService`), `Qwen3VLRerankerCrossEncoder`, la familia de estrategias `PromptStrategy` y `LocalVLMAdapter` (incluyendo la auditoría `evaluarFidelidadGrounding`).
+* **Entidad (`entity` $\rightarrow$ Diseño):** `Evaluación`, `BibliotecaTécnica` y el objeto de transferencia resultante corresponden a `Evaluacion`, `TeoriaRAG` y `AnalisisResultDTO`.
+
+![Diagrama de Clases de Diseño UC-04](diagramas/cu04_clases.png)
+
+---
+
+### 5.4.4. Diagrama de Secuencia UC-04
+
+![Diagrama de Secuencia UC-04](diagramas/cu04_secuencia.png)
+
+---
+
+### 5.4.5. Diagrama de Paquetes UC-04
+Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: las estrategias de idioma (`Spanish/Portuguese/English`), la fusión híbrida (`HybridRetriever`) y las entidades residen en `Dominio`, mientras que los adaptadores concretos de inferencia (`MLX Qwen3-VL`), embeddings y base vectorial (`Qdrant`) permanecen aislados en `Infraestructura`.
+
+![Diagrama de Paquetes UC-04](diagramas/cu04_paquetes.png)
+
+---
+
+## 5.5. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05)
+
+### 5.5.1. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05) — Nivel de Análisis
+
+| Campo | Especificación |
+| :--- | :--- |
+| **Identificador** | **UC-05** |
 | **Nombre** | Gestionar Técnicas y Videos de Referencia |
 | **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (reconocimiento de la secuencia postural). |
 | **Descripción** | El instructor administra el catálogo técnico de la academia y registra su propia ejecución ejemplar como patrón biomecánico oficial de referencia para cada técnica. |
@@ -1636,184 +1293,45 @@ graph TD
 
 #### Excepciones
 * **E1. Nombre de técnica duplicado en el catálogo:** El Sistema advierte la coincidencia y solicita confirmación antes de actualizar o crear el registro.
+
 ---
 
-### 5.3.2 Diagrama de Caso de Uso UC-03
-![Diagrama de Caso de Uso UC-03](diagramas/cu03_caso_uso.png)
+### 5.5.2. Diagrama de Caso de Uso UC-05
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
+![Diagrama de Caso de Uso UC-05](diagramas/cu05_caso_uso.png)
 
-actor "Profesor" as PR
-actor "Administrador" as AD
-actor "Servicio de Visión\npor Computadora" as SVC
-
-rectangle "Sistema Corpo e Mente - Catálogo y Referencias" {
-    usecase "UC-03: Gestionar Técnicas y\nVideos de Referencia" as UC03
-    usecase "Registrar Demostración\nde Referencia del Instructor" as UC03_Vid
-    usecase "Reconocer Secuencia Postural\ndel Instructor" as UC03_Post
-    usecase "Catalogar Patrón\nBiomecánico Oficial" as UC03_Cat
-}
-
-PR --> UC03
-AD --> UC03
-PR --> UC03_Vid
-UC03_Vid ..> UC03_Post : <<include>>
-UC03_Post ..> UC03_Cat : <<include>>
-UC03_Post --> SVC
-@enduml
-```
 ---
 
-### 5.3.3 Diagrama de Clases de Diseño (Participantes) UC-03
+### 5.5.3. Diagrama de Clases de Diseño (Participantes) UC-05
 Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
 * **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeCatálogoTécnico` se implementa en `ProfesorTecnicasView` y `TecnicasRoutes`.
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeTécnicas` se materializa en `TecnicasService` y el adaptador `YOLOPoseAdapter`.
 * **Entidad (`entity` $\rightarrow$ Diseño):** `Técnica` y `PatrónDeReferencia` corresponden a las clases `Tecnica` y `PatronReferencia`.
 
-```mermaid
-classDiagram
-    class ProfesorTecnicasView {
-        +nombre: String
-        +cinturon: String
-        +video_file: File
-        +handleGuardarTecnica()
-    }
-
-    class TecnicasRoutes {
-        +crearTecnica(data: TecnicaDTO) Response
-        +subirVideoReferencia(id, file) Response
-    }
-
-    class TecnicasService {
-        +guardarTecnica(data) Tecnica
-        +procesarPatronOro(tecnica_id, prof_id, file) PatronReferencia
-    }
-
-    class YOLOPoseAdapter {
-        +extraerSecuencia3D(path) Tensor
-    }
-
-    class Tecnica {
-        +id: UUID
-        +nombre: String
-        +nivel_cinturon: String
-        +descripcion: String
-    }
-
-    class PatronReferencia {
-        +id: UUID
-        +tecnica_id: UUID
-        +profesor_id: UUID
-        +url_video: String
-        +secuencia_keypoints: Array
-    }
-
-    ProfesorTecnicasView ..> TecnicasRoutes : HTTP POST
-    TecnicasRoutes --> TecnicasService : delega
-    TecnicasService --> YOLOPoseAdapter : invoca
-    TecnicasService --> Tecnica : administra
-    TecnicasService --> PatronReferencia : genera
-```
+![Diagrama de Clases de Diseño UC-05](diagramas/cu05_clases.png)
 
 ---
 
-### 5.3.4 Diagrama de Secuencia UC-03
+### 5.5.4. Diagrama de Secuencia UC-05
 
-![Diagrama de Secuencia UC-03](diagramas/cu03_secuencia.png)
+![Diagrama de Secuencia UC-05](diagramas/cu05_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-03: Gestionar Técnicas y Referencias
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Profesor" as PR
-boundary "PantallaDeCatálogoTécnico" as B1
-control "CoordinadorDeTécnicas" as C1
-entity "Técnica" as E1
-entity "PatrónDeReferencia" as E2
-
-PR -> B1 : solicitarRegistroDeTécnica(nombre, cinturón, indicaciones, videoDemostración)
-B1 -> C1 : registrarTécnicaConReferencia(profesor, datosTécnica, videoDemostración)
-C1 -> E1 : crear(nombre, cinturón, indicaciones)
-E1 --> C1 : técnicaRegistrada
-C1 -> C1 : extraerSecuenciaPostural(videoDemostración, instructorConfirmado)
-C1 -> E2 : guardarPatrónOficial(técnicaRegistrada, profesor, secuenciaPostural)
-E2 --> C1 : patrónVigente
-C1 -> E1 : vincularPatrónVigente(patrónVigente)
-C1 --> B1 : registroCompletado(técnicaRegistrada, patrónVigente)
-B1 --> PR : confirmarDisponibilidadDeTécnica(técnicaRegistrada)
-@enduml
-```
 ---
 
-### 5.3.5 Diagrama de Paquetes UC-03
+### 5.5.5. Diagrama de Paquetes UC-05
 Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las capas internas (`Aplicacion` y `Dominio`).
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación (React)"]
-        ProfesorTecnicas["ProfesorTecnicas.jsx"]
-    end
-    subgraph Aplicacion ["📦 Aplicación (Casos de Uso)"]
-        TecnicasRoutes["tecnicas_routes.py"]
-        TecnicasService["tecnicas_service.py"]
-    end
-    subgraph Dominio ["📦 Dominio (Entidades)"]
-        EntTecnica["Tecnica"]
-        EntPatron["PatronReferencia"]
-    end
-    subgraph Infraestructura ["📦 Infraestructura (Adaptadores y Persistencia)"]
-        YOLO["YOLOPoseAdapter"]
-        DB_Storage["PostgreSQL / Qdrant"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-05](diagramas/cu05_paquetes.png)
 
 ---
 
-## 5.4. Caso de Uso 4: Gestionar Teoría RAG (UC-04)
+## 5.6. Caso de Uso 6: Gestionar Teoría RAG (UC-06)
 
-### 5.4.1. Caso de Uso 4: Gestionar Conocimiento Técnico y Directrices del Profesor (UC-04) — Nivel de Análisis
+### 5.6.1. Caso de Uso 6: Gestionar Conocimiento Técnico y Directrices del Profesor (UC-06) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
-| **Identificador** | **UC-04** |
+| **Identificador** | **UC-06** |
 | **Nombre** | Gestionar Conocimiento Técnico y Directrices del Profesor |
 | **Actores** | **Principal:** Profesor.<br>**Secundario (Sistemas de Apoyo):** Servicio de Catalogación de Conocimiento, Base de Conocimiento Técnica. |
 | **Descripción** | El instructor nutre el acervo doctrinal de la academia incorporando obras bibliográficas de referencia y registrando directrices pedagógicas propias para orientar la corrección de cada técnica. |
@@ -1836,179 +1354,45 @@ graph TD
 
 #### Excepciones
 * **E1. Servicio de catalogación temporalmente no disponible:** El Sistema conserva el documento original y notifica al profesor para reintentar su catalogación cuando el servicio se restablezca.
+
 ---
 
-### 5.4.2 Diagrama de Caso de Uso UC-04
-![Diagrama de Caso de Uso UC-04](diagramas/cu04_caso_uso.png)
+### 5.6.2. Diagrama de Caso de Uso UC-06
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
+![Diagrama de Caso de Uso UC-06](diagramas/cu06_caso_uso.png)
 
-actor "Profesor" as PR
-actor "Servicio de Catalogación\nde Conocimiento" as SCC
-actor "Base de Conocimiento\nTécnica" as BCT
-
-rectangle "Sistema Corpo e Mente - Conocimiento Técnico" {
-    usecase "UC-04: Gestionar Conocimiento\nTécnico y Directrices" as UC04
-    usecase "Registrar Directriz Pedagógica\ndel Instructor" as UC04_Msg
-    usecase "Incorporar Obra Bibliográfica\nde Referencia" as UC04_Doc
-    usecase "Extraer Pasajes e\nIlustraciones Técnicas" as UC04_Ext
-    usecase "Catalogar Fragmentos para\nConsulta Semántica" as UC04_Cat
-}
-
-PR --> UC04
-UC04 ..> UC04_Msg : <<include>>
-UC04 ..> UC04_Doc : <<include>>
-UC04_Doc ..> UC04_Ext : <<include>>
-UC04_Ext ..> UC04_Cat : <<include>>
-
-UC04_Ext --> SCC
-UC04_Cat --> BCT
-@enduml
-```
 ---
 
-### 5.4.3 Diagrama de Clases de Diseño (Participantes) UC-04
+### 5.6.3. Diagrama de Clases de Diseño (Participantes) UC-06
 Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
 * **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeConocimientoTécnico` se implementa mediante `TheoryManagerModal`, `GlobalKnowledgeModal` y `ConocimientoRoutes`.
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeConocimiento` se materializa en `KnowledgeController` (`IngestKnowledgeUseCase`) y `QwenEmbeddingAdapter`.
 * **Entidad (`entity` $\rightarrow$ Diseño):** `Técnica` y `BibliotecaTécnica` corresponden a las entidades `Tecnica` y `TeoriaRAG`.
 
-```mermaid
-classDiagram
-    class TheoryManagerModal {
-        +tecnica_id: UUID
-        +mensaje_profesor: String
-        +archivo_pdf: File
-        +handleGuardarTeoria()
-    }
-
-    class ConocimientoRoutes {
-        +ingestarManual(tecnica_id, file) Response
-        +actualizarMensajeProfesor(tecnica_id, msg) Response
-    }
-
-    class KnowledgeController {
-        +procesarDocumentoPDF(pdf_path, tecnica_id) Integer
-        +guardarMensajeProfesor(tecnica_id, texto) Boolean
-    }
-
-    class QwenEmbeddingAdapter {
-        +generarEmbeddingMultimodal(texto, imagen) Vector2048
-    }
-
-    class TeoriaRAG {
-        +id: UUID
-        +tecnica_id: UUID
-        +texto: String
-        +numero_pagina: Integer
-        +fuente: String
-        +vector_embedding: Array
-    }
-
-    TheoryManagerModal ..> ConocimientoRoutes : HTTP POST
-    ConocimientoRoutes --> KnowledgeController : delega
-    KnowledgeController --> QwenEmbeddingAdapter : vectoriza
-    KnowledgeController --> TeoriaRAG : crea
-```
+![Diagrama de Clases de Diseño UC-06](diagramas/cu06_clases.png)
 
 ---
 
-### 5.4.4 Diagrama de Secuencia UC-04
+### 5.6.4. Diagrama de Secuencia UC-06
 
-![Diagrama de Secuencia UC-04](diagramas/cu04_secuencia.png)
+![Diagrama de Secuencia UC-06](diagramas/cu06_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-04: Gestionar Conocimiento Técnico
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Profesor" as PR
-boundary "PantallaDeConocimientoTécnico" as B1
-control "CoordinadorDeConocimiento" as C1
-entity "Técnica" as E1
-entity "BibliotecaTécnica" as E2
-
-PR -> B1 : aportarMaterialDoctrinal(técnica, directrizInstructor, documentoTécnico)
-B1 -> C1 : actualizarConocimientoTécnico(profesor, técnica, directrizInstructor, documentoTécnico)
-C1 -> E1 : actualizarDirectrizDelInstructor(directrizInstructor)
-E1 --> C1 : directrizVigente
-C1 -> C1 : segmentarContenidoEIlustraciones(documentoTécnico)
-C1 -> E2 : catalogarFragmentos(fuente, fragmentosExtraídos)
-E2 --> C1 : fragmentosCatalogados
-C1 --> B1 : conocimientoActualizado(totalFragmentos, directrizVigente)
-B1 --> PR : confirmarMaterialDisponible(totalFragmentos)
-@enduml
-```
 ---
 
-### 5.4.5 Diagrama de Paquetes UC-04
+### 5.6.5. Diagrama de Paquetes UC-06
 Las dependencias entre paquetes siguen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación"]
-        Modal["TheoryManagerModal.jsx / GlobalKnowledgeModal.jsx"]
-    end
-    subgraph Aplicacion ["📦 Aplicación"]
-        API["conocimiento_routes.py"]
-        Controller["KnowledgeController"]
-    end
-    subgraph Dominio ["📦 Dominio"]
-        EntTeoria["TeoriaRAG"]
-    end
-    subgraph Infraestructura ["📦 Infraestructura"]
-        Embedding["QwenEmbeddingAdapter (MLX)"]
-        Qdrant["Qdrant DB"]
-        Postgres["PostgreSQL"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-06](diagramas/cu06_paquetes.png)
 
 ---
 
-## 5.5. Caso de Uso 5: Ver Progreso de Alumnos (UC-05)
+## 5.7. Caso de Uso 7: Ver Progreso de Alumnos (UC-07)
 
-### 5.5.1. Caso de Uso 5: Ver Progreso de Alumnos (UC-05) — Nivel de Análisis
+### 5.7.1. Caso de Uso 7: Ver Progreso de Alumnos (UC-07) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
-| **Identificador** | **UC-05** |
+| **Identificador** | **UC-07** |
 | **Nombre** | Ver Progreso de Alumnos |
 | **Actores** | **Principal:** Profesor, Alumno.<br>**Secundario (Sistemas de Apoyo):** Ninguno. |
 | **Descripción** | El profesor supervisa la evolución biomecánica de los practicantes adscritos a su sede a partir de su historial cronológico de evaluaciones; el alumno consulta su propia evolución técnica. |
@@ -2030,176 +1414,45 @@ graph TD
 
 #### Excepciones
 * **E1. Información histórica temporalmente inaccesible:** El Sistema informa la indisponibilidad momentánea del registro de progreso.
+
 ---
 
-### 5.5.2 Diagrama de Caso de Uso UC-05
-![Diagrama de Caso de Uso UC-05](diagramas/cu05_caso_uso.png)
+### 5.7.2. Diagrama de Caso de Uso UC-07
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
+![Diagrama de Caso de Uso UC-07](diagramas/cu07_caso_uso.png)
 
-actor "Profesor" as PR
-actor "Alumno" as AL
-
-rectangle "Sistema Corpo e Mente - Seguimiento de Progreso" {
-    usecase "UC-05: Ver Progreso\nde Alumnos" as UC05
-    usecase "Consultar Practicantes\nde la Sede" as UC05_List
-    usecase "Revisar Historial Cronológico\nde Evaluaciones" as UC05_Time
-    usecase "Inspeccionar Ejecución y\nCorrección Pedagógica" as UC05_Play
-}
-
-PR --> UC05
-PR --> UC05_List
-PR --> UC05_Time
-PR --> UC05_Play
-
-AL --> UC05_Time
-AL --> UC05_Play
-@enduml
-```
 ---
 
-### 5.5.3 Diagrama de Clases de Diseño (Participantes) UC-05
+### 5.7.3. Diagrama de Clases de Diseño (Participantes) UC-07
 Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
 * **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeProgreso` se implementa en `StudentProgressView` y `ProgressRoutes`.
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeProgreso` se materializa en `ProgressController`.
 * **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario` y `Evaluación` corresponden a las clases de dominio `Usuario` y `Evaluacion`.
 
-```mermaid
-classDiagram
-    class StudentProgressView {
-        +alumnos: List
-        +alumno_seleccionado: Usuario
-        +cargarAlumnos()
-        +verDetalleEvaluacion(id)
-    }
-
-    class ProgressRoutes {
-        +obtenerAlumnosSucursal() List~UsuarioDTO~
-        +obtenerHistorialAlumno(alumno_id) List~EvaluacionDTO~
-    }
-
-    class ProgressController {
-        +listarAlumnosPorSucursal(sucursal_id) List
-        +obtenerHistorialEvaluaciones(alumno_id) List
-    }
-
-    class Usuario {
-        +id: UUID
-        +nombre_completo: String
-        +cinturon: String
-        +estado_suscripcion: String
-    }
-
-    class Evaluacion {
-        +id: UUID
-        +fecha: DateTime
-        +porcentaje_similitud: Float
-        +feedback_texto: String
-    }
-
-    StudentProgressView ..> ProgressRoutes : HTTP GET
-    ProgressRoutes --> ProgressController : delega
-    ProgressController --> Usuario : consulta
-    ProgressController --> Evaluacion : recupera historial
-```
+![Diagrama de Clases de Diseño UC-07](diagramas/cu07_clases.png)
 
 ---
 
-### 5.5.4 Diagrama de Secuencia UC-05
+### 5.7.4. Diagrama de Secuencia UC-07
 
-![Diagrama de Secuencia UC-05](diagramas/cu05_secuencia.png)
+![Diagrama de Secuencia UC-07](diagramas/cu07_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-05: Ver Progreso de Alumnos
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Profesor" as PR
-boundary "PantallaDeProgreso" as B1
-control "CoordinadorDeProgreso" as C1
-entity "Usuario" as E1
-entity "Evaluación" as E2
-
-PR -> B1 : solicitarSeguimientoDeSede(sucursal)
-B1 -> C1 : consultarProgresoDeAlumnos(profesor, sucursal)
-C1 -> E1 : obtenerAlumnosDeSucursal(sucursal)
-E1 --> C1 : listaDeAlumnos
-C1 -> E2 : obtenerHistorialDeEvaluaciones(listaDeAlumnos)
-E2 --> C1 : historialPorAlumno
-C1 -> C1 : consolidarEvoluciónTécnica(listaDeAlumnos, historialPorAlumno)
-C1 --> B1 : resumenDeProgreso(alumnos, evolución, estadoMembresía)
-B1 --> PR : mostrarEvoluciónTécnica(alumnos, historialPorAlumno)
-@enduml
-```
 ---
 
-### 5.5.5 Diagrama de Paquetes UC-05
+### 5.7.5. Diagrama de Paquetes UC-07
 Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación"]
-        ProgView["StudentProgress.jsx"]
-    end
-    subgraph Aplicacion ["📦 Aplicación"]
-        ProgRoutes["progress_routes.py"]
-        ProgCtrl["ProgressController"]
-    end
-    subgraph Dominio ["📦 Dominio"]
-        EntUsuario["Usuario"]
-        EntEvaluacion["Evaluacion"]
-    end
-    subgraph Infraestructura ["📦 Infraestructura"]
-        Postgres["PostgreSQL con RLS"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-07](diagramas/cu07_paquetes.png)
 
 ---
 
-## 5.6. Caso de Uso 6: Activar Pase de Tatami (UC-06)
+## 5.8. Caso de Uso 8: Activar Pase de Tatami (UC-08)
 
-### 5.6.1. Caso de Uso 6: Activar Pase de Tatami (UC-06) — Nivel de Análisis
+### 5.8.1. Caso de Uso 8: Activar Pase de Tatami (UC-08) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
-| **Identificador** | **UC-06** |
+| **Identificador** | **UC-08** |
 | **Nombre** | Activar Pase de Tatami (Control de Membresías) |
 | **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Ninguno. |
 | **Descripción** | El instructor o administrador habilita la membresía de tatami de un alumno durante un periodo de treinta días, tras constatar de forma presencial el pago de su mensualidad en la sede de la academia. |
@@ -2221,165 +1474,45 @@ graph TD
 
 #### Excepciones
 * **E1. Registro de membresías temporalmente inaccesible:** El Sistema informa la imposibilidad momentánea de actualizar la vigencia y preserva el estado anterior del alumno.
+
 ---
 
-### 5.6.2 Diagrama de Caso de Uso UC-06
-![Diagrama de Caso de Uso UC-06](diagramas/cu06_caso_uso.png)
+### 5.8.2. Diagrama de Caso de Uso UC-08
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
+![Diagrama de Caso de Uso UC-08](diagramas/cu08_caso_uso.png)
 
-actor "Profesor" as PR
-actor "Administrador" as AD
-
-rectangle "Sistema Corpo e Mente - Control de Membresías" {
-    usecase "UC-06: Activar Pase\nde Tatami (30 Días)" as UC06
-    usecase "Confirmar Pago Presencial\nen la Academia" as UC06_Pay
-    usecase "Verificar Pertenencia\na la Misma Sede" as UC06_Sede
-    usecase "Habilitar Vigencia por\nTreinta Días" as UC06_Act
-    usecase "Suspender Acceso\nal Vencer el Periodo" as UC06_Block
-}
-
-PR --> UC06
-AD --> UC06
-UC06 ..> UC06_Pay : <<include>>
-UC06 ..> UC06_Sede : <<include>>
-UC06 ..> UC06_Act : <<include>>
-UC06 ..> UC06_Block : <<extend>>
-@enduml
-```
 ---
 
-### 5.6.3 Diagrama de Clases de Diseño (Participantes) UC-06
+### 5.8.3. Diagrama de Clases de Diseño (Participantes) UC-08
 Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
 * **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeMembresías` se implementa en `StudentProgressView` y `AuthRoutes`.
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeMembresías` se materializa en `SubscriptionManager`.
 * **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario` y `PaseDeTatami` corresponden a la entidad de dominio `Usuario` y sus atributos de suscripción.
 
-```mermaid
-classDiagram
-    class StudentProgressView {
-        +handleAprobarPase(alumno_id)
-        +renderBadgeEstado(estado)
-    }
-
-    class AuthRoutes {
-        +activarPaseTatami(alumno_id) Response
-    }
-
-    class SubscriptionManager {
-        +activarMembresia30Dias(profesor_id, alumno_id) Usuario
-        +verificarMismaSucursal(prof_id, alumno_id) Boolean
-    }
-
-    class Usuario {
-        +id: UUID
-        +sucursal_id: UUID
-        +estado_suscripcion: String
-        +fecha_expiracion: DateTime
-        +activarPor30Dias()
-    }
-
-    StudentProgressView ..> AuthRoutes : HTTP PUT
-    AuthRoutes --> SubscriptionManager : coordina
-    SubscriptionManager --> Usuario : actualiza estado
-```
+![Diagrama de Clases de Diseño UC-08](diagramas/cu08_clases.png)
 
 ---
 
-### 5.6.4 Diagrama de Secuencia UC-06
+### 5.8.4. Diagrama de Secuencia UC-08
 
-![Diagrama de Secuencia UC-06](diagramas/cu06_secuencia.png)
+![Diagrama de Secuencia UC-08](diagramas/cu08_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-06: Activar Pase de Tatami
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Profesor" as PR
-boundary "PantallaDeMembresías" as B1
-control "CoordinadorDeMembresías" as C1
-entity "Usuario" as E1
-entity "PaseDeTatami" as E2
-
-PR -> B1 : solicitarActivaciónDePase(alumno)
-B1 -> C1 : activarPaseDeTatami(profesor, alumno)
-C1 -> E1 : verificarMismaSucursal(profesor, alumno)
-E1 --> C1 : pertenenciaConfirmada
-C1 -> E2 : habilitarPorTreintaDías(alumno, fechaActual)
-E2 --> C1 : vigenciaActualizada
-C1 -> E1 : actualizarEstadoDeMembresía(vigenciaActualizada)
-C1 --> B1 : paseActivado(alumno, fechaVencimiento)
-B1 --> PR : confirmarHabilitaciónDeAcceso(alumno, fechaVencimiento)
-@enduml
-```
 ---
 
-### 5.6.5 Diagrama de Paquetes UC-06
+### 5.8.5. Diagrama de Paquetes UC-08
 Las dependencias entre paquetes obedecen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación"]
-        StudentView["StudentProgress.jsx (Badge Pase)"]
-    end
-    subgraph Aplicacion ["📦 Aplicación"]
-        AuthAPI["auth_routes.py"]
-        SubManager["SubscriptionManager"]
-    end
-    subgraph Dominio ["📦 Dominio"]
-        EntUsuario["Usuario (Membresía)"]
-    end
-    subgraph Infraestructura ["📦 Infraestructura"]
-        Postgres["PostgreSQL"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-08](diagramas/cu08_paquetes.png)
 
 ---
 
-## 5.7. Caso de Uso 7: Gestionar Sucursales y Coordenadas Geográficas (UC-07)
+## 5.9. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09)
 
-### 5.7.1. Caso de Uso 7: Gestionar Sucursales y Coordenadas Geográficas (UC-07) — Nivel de Análisis
+### 5.9.1. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
-| **Identificador** | **UC-07** |
+| **Identificador** | **UC-09** |
 | **Nombre** | Gestionar Sucursales y Coordenadas Geográficas |
 | **Actores** | **Principal:** Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Cartografía y Localización (determinación geográfica de direcciones). |
 | **Descripción** | El administrador administra el directorio oficial de sedes físicas de la academia, registrando su localización geográfica exacta para la adscripción de alumnos e instructores. |
@@ -2400,180 +1533,45 @@ graph TD
 
 #### Excepciones
 * **E1. Servicio de cartografía no disponible:** El Sistema permite completar el registro de la sede ingresando manualmente el país, la ciudad, la dirección y las coordenadas geográficas.
+
 ---
 
-### 5.7.2 Diagrama de Caso de Uso UC-07
-![Diagrama de Caso de Uso UC-07](diagramas/cu07_caso_uso.png)
+### 5.9.2. Diagrama de Caso de Uso UC-09
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
+![Diagrama de Caso de Uso UC-09](diagramas/cu09_caso_uso.png)
 
-actor "Administrador" as AD
-actor "Servicio de Cartografía\ny Localización" as SCL
-
-rectangle "Sistema Corpo e Mente - Gestión de Sedes" {
-    usecase "UC-07: Gestionar Sucursales y\nCoordenadas Geográficas" as UC07
-    usecase "Indicar Ubicación Geográfica\nde la Sede" as UC07_Map
-    usecase "Determinar Datos Administrativos\nde la Zona" as UC07_Geo
-    usecase "Registrar Sede en el\nDirectorio Oficial" as UC07_Save
-    usecase "Reasignar Practicantes\ne Instructores" as UC07_Assign
-}
-
-AD --> UC07
-UC07 ..> UC07_Map : <<include>>
-UC07_Map ..> UC07_Geo : <<include>>
-UC07 ..> UC07_Save : <<include>>
-UC07 ..> UC07_Assign : <<extend>>
-
-UC07_Geo --> SCL
-@enduml
-```
 ---
 
-### 5.7.3 Diagrama de Clases de Diseño (Participantes) UC-07
+### 5.9.3. Diagrama de Clases de Diseño (Participantes) UC-09
 Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
 * **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeGestiónDeSedes` se implementa en `BranchManagerView` y `SucursalesRoutes`.
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeSucursales` se materializa en `BranchController` y el cliente `NominatimClient`.
 * **Entidad (`entity` $\rightarrow$ Diseño):** `Sucursal` corresponde a la entidad de dominio `Sucursal`.
 
-```mermaid
-classDiagram
-    class BranchManagerView {
-        +mapaLeaflet: MapInstance
-        +latitud: Float
-        +longitud: Float
-        +nombre: String
-        +handleMapClick(lat, lng)
-        +guardarSucursal()
-    }
-
-    class SucursalesRoutes {
-        +listarSucursales() List~SucursalDTO~
-        +crearSucursal(data: SucursalDTO) Response
-    }
-
-    class BranchController {
-        +registrarSucursal(data) Sucursal
-        +obtenerDireccionInversa(lat, lng) DireccionDTO
-    }
-
-    class NominatimClient {
-        +reverseGeocode(lat, lng) JSON
-    }
-
-    class Sucursal {
-        +id: UUID
-        +nombre: String
-        +pais: String
-        +ciudad: String
-        +direccion: String
-        +latitud: Float
-        +longitud: Float
-    }
-
-    BranchManagerView ..> SucursalesRoutes : HTTP POST
-    SucursalesRoutes --> BranchController : delega
-    BranchController --> NominatimClient : consulta geocodificación
-    BranchController --> Sucursal : persiste
-```
+![Diagrama de Clases de Diseño UC-09](diagramas/cu09_clases.png)
 
 ---
 
-### 5.7.4 Diagrama de Secuencia UC-07
+### 5.9.4. Diagrama de Secuencia UC-09
 
-![Diagrama de Secuencia UC-07](diagramas/cu07_secuencia.png)
+![Diagrama de Secuencia UC-09](diagramas/cu09_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-07: Gestionar Sucursales
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Administrador" as AD
-boundary "PantallaDeGestiónDeSedes" as B1
-control "CoordinadorDeSucursales" as C1
-entity "Sucursal" as E1
-
-AD -> B1 : indicarCoordenadasDeSede(latitud, longitud)
-B1 -> C1 : consultarUbicaciónGeográfica(latitud, longitud)
-C1 -> C1 : determinarDivisiónAdministrativa(latitud, longitud)
-C1 --> B1 : ubicaciónPropuesta(país, ciudad, dirección)
-B1 --> AD : presentarUbicaciónPropuesta(país, ciudad, dirección)
-AD -> B1 : confirmarRegistroDeSede(nombre, país, ciudad, dirección, latitud, longitud)
-B1 -> C1 : registrarNuevaSucursal(nombre, país, ciudad, dirección, latitud, longitud)
-C1 -> E1 : crear(nombre, país, ciudad, dirección, latitud, longitud)
-E1 --> C1 : sucursalRegistrada
-C1 --> B1 : registroDeSedeCompletado(sucursalRegistrada)
-B1 --> AD : mostrarDirectorioActualizado(sucursalRegistrada)
-@enduml
-```
 ---
 
-### 5.7.5 Diagrama de Paquetes UC-07
+### 5.9.5. Diagrama de Paquetes UC-09
 Las dependencias entre paquetes siguen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación"]
-        BranchView["BranchManager.jsx (Leaflet)"]
-    end
-    subgraph Aplicacion ["📦 Aplicación"]
-        BranchRoutes["sucursales_routes.py"]
-        BranchCtrl["BranchController"]
-    end
-    subgraph Dominio ["📦 Dominio"]
-        EntSucursal["Sucursal"]
-    end
-    subgraph Infraestructura ["📦 Infraestructura"]
-        OSM_Client["Nominatim OpenStreetMap"]
-        Postgres["PostgreSQL"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-09](diagramas/cu09_paquetes.png)
 
 ---
 
-## 5.8. Caso de Uso 8: Entrar como otro Usuario / Impersonificación (UC-08)
+## 5.10. Caso de Uso 10: Entrar como Otro Usuario / Impersonificación (UC-10)
 
-### 5.8.1. Caso de Uso 8: Entrar como Otro Usuario / Impersonificación (UC-08) — Nivel de Análisis
+### 5.10.1. Caso de Uso 10: Entrar como Otro Usuario / Impersonificación (UC-10) — Nivel de Análisis
 
 | Campo | Especificación |
 | :--- | :--- |
-| **Identificador** | **UC-08** |
+| **Identificador** | **UC-10** |
 | **Nombre** | Entrar como Otro Usuario (Impersonificación de Soporte) |
 | **Actores** | **Principal:** Administrador.<br>**Secundario:** Usuario Asistido (alumno o profesor) como beneficiario de la operación. |
 | **Descripción** | El administrador asume temporalmente la identidad de un usuario afectado por una incidencia operativa con el propósito de reproducir y diagnosticar el problema desde la perspectiva real del usuario. La sesión delegada es acotada y mantiene una advertencia permanente de modo soporte. |
@@ -2596,54 +1594,16 @@ graph TD
 
 #### Excepciones
 * **E1. Expiración de la sesión durante el diagnóstico:** El Sistema finaliza el modo de soporte y solicita al administrador acreditarse nuevamente.
+
 ---
 
-### 5.8.2 Diagrama de Caso de Uso UC-08
-![Diagrama de Caso de Uso UC-08](diagramas/cu08_caso_uso.png)
+### 5.10.2. Diagrama de Caso de Uso UC-10
 
-```plantuml
-@startuml
-left to right direction
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
+![Diagrama de Caso de Uso UC-10](diagramas/cu10_caso_uso.png)
 
-actor "Administrador" as AD
-actor "Usuario Asistido" as UA
-
-rectangle "Sistema Corpo e Mente - Soporte Técnico" {
-    usecase "UC-08: Entrar como Otro Usuario\n(Impersonificación de Soporte)" as UC08
-    usecase "Reconfirmar Autorización\ndel Administrador" as UC08_Auth
-    usecase "Registrar Constancia de\nAsistencia Técnica" as UC08_Audit
-    usecase "Establecer Sesión Temporal\nde Diagnóstico" as UC08_Ses
-    usecase "Mantener Aviso Visible\nde Modo Soporte" as UC08_Aviso
-    usecase "Restituir Sesión Original\ndel Administrador" as UC08_Restore
-}
-
-AD --> UC08
-UC08 --> UA
-UC08 ..> UC08_Auth : <<include>>
-UC08 ..> UC08_Audit : <<include>>
-UC08 ..> UC08_Ses : <<include>>
-UC08 ..> UC08_Aviso : <<include>>
-AD --> UC08_Restore
-@enduml
-```
 ---
 
-### 5.8.3 Diagrama de Clases de Diseño (Participantes) UC-08
+### 5.10.3. Diagrama de Clases de Diseño (Participantes) UC-10
 Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
 * **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeSoporteTécnico` se implementa en `AdminUsersModal`, `ImpersonationBanner` y `AuthRoutes`.
 * **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeSoporte` se materializa en `SessionManager` y `AuditoriaService`.
@@ -2651,1025 +1611,44 @@ Correspondencia entre los participantes conceptuales del análisis ECB y las cla
 
 > **Nota de trazabilidad de diseño:** la re-autenticación por contraseña y la persistencia dedicada en la tabla `auditoria_impersonacion` se registran como deuda técnica para iteración futura (§6.7 y §8.6), mientras que la emisión del token JWT con el claim `impersonator_admin_id` y la activación de `ImpersonationBanner` se encuentran operativas en producción.
 
-```mermaid
-classDiagram
-    class AdminUsersModal {
-        +usuarios: List
-        +handleImpersonar(usuario_id)
-    }
-
-    class ImpersonationBanner {
-        +usuario_nombre: String
-        +handleRestaurarAdmin()
-    }
-
-    class AuthRoutes {
-        +impersonarUsuario(id, admin_pass) Response
-        +salirImpersonacion() Response
-    }
-
-    class SessionManager {
-        +crearTokenImpersonacion(admin, objetivo) String
-        +restaurarTokenAdmin(admin_id) String
-    }
-
-    class AuditoriaService {
-        +registrarEvento(admin_id, target_id, accion) Void
-    }
-
-    class RegistroAuditoria {
-        +id: UUID
-        +admin_id: UUID
-        +usuario_objetivo_id: UUID
-        +fecha: DateTime
-        +ip_origen: String
-        +accion: String
-    }
-
-    AdminUsersModal ..> AuthRoutes : HTTP POST
-    ImpersonationBanner ..> AuthRoutes : HTTP POST
-    AuthRoutes --> SessionManager : genera sesión
-    AuthRoutes --> AuditoriaService : audita
-    AuditoriaService --> RegistroAuditoria : persiste
-```
+![Diagrama de Clases de Diseño UC-10](diagramas/cu10_clases.png)
 
 ---
 
-### 5.8.4 Diagrama de Secuencia UC-08
+### 5.10.4. Diagrama de Secuencia UC-10
 
-![Diagrama de Secuencia UC-08](diagramas/cu08_secuencia.png)
+![Diagrama de Secuencia UC-10](diagramas/cu10_secuencia.png)
 
-```plantuml
-@startuml
-title Diagrama de Secuencia de Análisis (ECB) — UC-08: Impersonificación de Soporte
-autonumber
-skinparam shadowing false
-skinparam monochrome false
-skinparam defaultFontName Arial
-skinparam roundcorner 6
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam BoundaryBorderColor #2B6CB0
-skinparam BoundaryBackgroundColor #EBF8FF
-skinparam ControlBorderColor #2F855A
-skinparam ControlBackgroundColor #F0FFF4
-skinparam EntityBorderColor #D69E2E
-skinparam EntityBackgroundColor #FFFFF0
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-
-actor "Administrador" as AD
-boundary "PantallaDeSoporteTécnico" as B1
-control "CoordinadorDeSoporte" as C1
-entity "Usuario" as E1
-entity "RegistroDeAuditoría" as E2
-entity "SesiónDeSoporte" as E3
-
-AD -> B1 : solicitarAsumirIdentidad(usuarioObjetivo, autorizaciónAdmin)
-B1 -> C1 : iniciarModoSoporte(administrador, usuarioObjetivo, autorizaciónAdmin)
-C1 -> E1 : verificarJerarquíaYAutorización(administrador, usuarioObjetivo, autorizaciónAdmin)
-E1 --> C1 : operaciónAutorizada
-C1 -> E2 : registrarInicioDeAsistencia(administrador, usuarioObjetivo, fechaHora)
-E2 --> C1 : constanciaRegistrada
-C1 -> E3 : constituirSesiónTemporal(administrador, usuarioObjetivo)
-E3 --> C1 : sesiónTemporalActiva
-C1 --> B1 : entornoDeSoporteHabilitado(sesiónTemporalActiva, avisoVisible)
-B1 --> AD : presentarVistaDelUsuarioConAvisoDeSoporte(usuarioObjetivo)
-AD -> B1 : finalizarModoSoporte()
-B1 -> C1 : restituirSesiónDeAdministrador(sesiónTemporalActiva)
-C1 -> E3 : cerrarSesiónTemporal()
-E3 --> C1 : sesiónOriginalRestituida
-C1 --> B1 : retornoConfirmado(sesiónOriginalRestituida)
-B1 --> AD : presentarEntornoDeAdministración()
-@enduml
-```
 ---
 
-### 5.8.5 Diagrama de Paquetes UC-08
+### 5.10.5. Diagrama de Paquetes UC-10
 Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-```mermaid
-graph TD
-    subgraph Presentacion ["📦 Presentación"]
-        AdminModal["AdminUsersModal.jsx"]
-        ImpBanner["ImpersonationBanner.jsx"]
-    end
-    subgraph Aplicacion ["📦 Aplicación"]
-        AuthRoutes["auth_routes.py"]
-        SessionMgr["SessionManager"]
-        AuditSvc["AuditoriaService"]
-    end
-    subgraph Dominio ["📦 Dominio"]
-        EntUser["Usuario (Roles & Claims)"]
-        EntAudit["RegistroAuditoria"]
-    end
-    subgraph Infraestructura ["📦 Infraestructura"]
-        Postgres["PostgreSQL"]
-        Crypto["PyJWT"]
-    end
-
-    Presentacion --> Aplicacion
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
-    Aplicacion --> Dominio
-```
+![Diagrama de Paquetes UC-10](diagramas/cu10_paquetes.png)
 
 ---
 
----
-
----
-
-## 5.9. Diagramas de Arquitectura Consolidada del Sistema Completo
+## 5.11. Diagramas de Arquitectura Consolidada del Sistema Completo
 Como culminación de la fase de análisis y diseño orientado a objetos, se presentan los tres modelos arquitectónicos globales que consolidan la totalidad de las interacciones, componentes y casos de uso de la plataforma web de la academia "Corpo e Mente". Estos diagramas integran de forma coherente la interacción entre los actores humanos (Alumno, Profesor y Administrador), los motores de inteligencia artificial local (YOLOv26 y Qwen3-VL), la capa de servicios desacoplados en FastAPI y la persistencia híbrida (PostgreSQL y Qdrant).
 
-### 5.9.1. Diagrama de Casos de Uso del Sistema Completo
-El diagrama de casos de uso consolidado agrupa los ocho casos de uso funcionales (UC-01 a UC-08) estructurados por subsistemas temáticos (Autenticación, Análisis Biomecánico, Gestión de Técnicas, Conocimiento RAG, Progreso, Pase de Tatami, Sucursales y Soporte Técnico), explicitando sus dependencias `<<include>>` y `<<extend>>`, así como la interacción con los servicios de apoyo externos (Cloudflare Tunnel y OpenStreetMap Nominatim):
+### 5.11.1. Diagrama de Casos de Uso del Sistema Completo
+El diagrama de casos de uso consolidado agrupa los diez casos de uso funcionales (`UC-01` a `UC-10`) estructurados por subsistemas temáticos (Identificación y Acceso, Análisis y Feedback Biomecánico, Gestión de Técnicas, Conocimiento RAG, Progreso, Pase de Tatami, Sucursales y Soporte Técnico), explicitando la separación de responsabilidades entre inicio de sesión (`UC-01`) y registro (`UC-02`), así como entre análisis cinemático (`UC-03`) y generación de feedback pedagógico (`UC-04`), junto con sus dependencias `<<include>>`, `<<extend>>` y servicios de apoyo externos (Cloudflare Tunnel y OpenStreetMap Nominatim):
 
 ![Diagrama de Casos de Uso del Sistema Completo](diagramas/sistema_completo_casos_uso.png)
 
-```plantuml
-@startuml Diagrama_Casos_Uso_Sistema_Completo
-title Diagrama de Casos de Uso — Sistema Completo Corpo e Mente
-
-left to right direction
-
-skinparam shadowing false
-skinparam defaultFontName Arial
-skinparam roundcorner 8
-skinparam ArrowColor #2B6CB0
-skinparam ActorBorderColor #C53030
-skinparam ActorBackgroundColor #FFF5F5
-skinparam UsecaseBorderColor #2B6CB0
-skinparam UsecaseBackgroundColor #F7FAFC
-skinparam PackageBorderColor #2F855A
-skinparam PackageBackgroundColor #F0FFF4
-
-' ============================================
-' ACTORES
-' ============================================
-actor "🥋 Alumno" as AL
-actor "🥋 Profesor" as PR
-actor "🛡️ Administrador" as AD
-
-actor "👁️ YOLOv26\n(Pose + Depth + Seg)" as YOLO
-actor "🧠 Qwen3-VL\n(Embedding + Reranker + Instruct)" as QWEN
-actor "🔍 Qdrant\nVector DB" as QDRANT
-actor "🗄️ PostgreSQL\n(RLS + pgcrypto)" as PG
-actor "🌐 Cloudflare Tunnel" as CF
-actor "🗺️ Nominatim\n(OpenStreetMap)" as OSM
-
-' ============================================
-' SUBSISTEMA: AUTENTICACIÓN (UC-01)
-' ============================================
-package "🔐 Subsistema de Autenticación" as S1 {
-  usecase "UC-01: Iniciar Sesión\ny Registro de Usuarios" as UC01
-  usecase "Validar Credenciales\n(bcrypt + Rate Limit)" as UC01_VAL
-  usecase "Emitir Token JWT\n(HS256, 24h)" as UC01_JWT
-}
-
-' ============================================
-' SUBSISTEMA: ANÁLISIS BIOMECÁNICO (UC-02)
-' ============================================
-package "🎯 Subsistema de Análisis Biomecánico" as S2 {
-  usecase "UC-02: Analizar Técnica y\nGenerar Feedback Biomecánico" as UC02
-  usecase "Validar Video\n(Anti-SPAM ViCoS)" as UC02_SPAM
-  usecase "Seleccionar Persona\nen Frame Inicial" as UC02_PERSONA
-  usecase "Extraer Esqueleto 3D\n(x,y,z)" as UC02_POSE
-  usecase "Calcular Similitud DTW\n(0-100%)" as UC02_DTW
-  usecase "Recuperar Teoría RAG\n(Two-Stage)" as UC02_RAG
-  usecase "Generar Corrección\nde IA (VLM Local)" as UC02_VLM
-  usecase "Auditar Fidelidad\n(LLM-as-a-Judge)" as UC02_JUDGE
-}
-
-' ============================================
-' SUBSISTEMA: GESTIÓN DE TÉCNICAS (UC-03)
-' ============================================
-package "📋 Subsistema de Gestión de Técnicas" as S3 {
-  usecase "UC-03: Gestionar Técnicas\ny Videos de Referencia" as UC03
-  usecase "Subir Video de Referencia\n(Patrón de Oro)" as UC03_VIDEO
-  usecase "Extraer Esqueleto\nCanónico 3D" as UC03_YOLO
-  usecase "Indexar Patrón\nen PostgreSQL+Qdrant" as UC03_INDEX
-}
-
-' ============================================
-' SUBSISTEMA: GESTIÓN RAG (UC-04)
-' ============================================
-package "📚 Subsistema de Conocimiento RAG" as S4 {
-  usecase "UC-04: Gestionar Teoría RAG\ny Mensajes del Profesor" as UC04
-  usecase "Escribir Mensaje Directo\n(mensaje_profesor)" as UC04_MSG
-  usecase "Cargar Manual PDF\n(Texto + Diagramas)" as UC04_PDF
-  usecase "Vectorizar con Qwen3-VL\n(2048 dims)" as UC04_EMB
-  usecase "Indexar en Qdrant\nColección rag_knowledge" as UC04_STORE
-}
-
-' ============================================
-' SUBSISTEMA: PROGRESO (UC-05)
-' ============================================
-package "📊 Subsistema de Progreso y Evaluaciones" as S5 {
-  usecase "UC-05: Ver Progreso\nde Alumnos" as UC05
-  usecase "Consultar Lista de\nAlumnos por Sucursal" as UC05_LIST
-  usecase "Ver Historial\nde Evaluaciones" as UC05_HIST
-  usecase "Reproducir Video con\nCorrección de IA" as UC05_PLAY
-}
-
-' ============================================
-' SUBSISTEMA: PASE DE TATAMI (UC-06)
-' ============================================
-package "🥋 Subsistema de Pase de Tatami" as S6 {
-  usecase "UC-06: Activar Pase\nde Tatami (30 Días)" as UC06
-  usecase "Verificar Pago\nen Recepción" as UC06_PAY
-  usecase "Calcular Fecha\nde Expiración (+30d)" as UC06_CALC
-  usecase "Bloqueo Automático\nal Expirar" as UC06_BLOCK
-}
-
-' ============================================
-' SUBSISTEMA: SUCURSALES (UC-07)
-' ============================================
-package "🗺️ Subsistema de Gestión de Sucursales" as S7 {
-  usecase "UC-07: Gestionar Sucursales\ny Coordenadas Geográficas" as UC07
-  usecase "Seleccionar Ubicación\nen Mapa Leaflet" as UC07_MAP
-  usecase "Geocodificación\nInversa (Nominatim)" as UC07_GEO
-  usecase "Guardar Coordenadas\n(lat, lng)" as UC07_SAVE
-}
-
-' ============================================
-' SUBSISTEMA: SOPORTE TÉCNICO (UC-08)
-' ============================================
-package "🔧 Subsistema de Soporte Técnico" as S8 {
-  usecase "UC-08: Entrar como\nOtro Usuario" as UC08
-  usecase "Reconfirmar Clave\nAdministrador" as UC08_AUTH
-  usecase "Registrar Auditoría\n(deuda técnica)" as UC08_AUDIT
-  usecase "Emitir JWT con\nimpersonator_admin_id" as UC08_JWT
-  usecase "Activar Banner\nRojo de Soporte" as UC08_BANNER
-  usecase "Restaurar Sesión\nOriginal" as UC08_RESTORE
-}
-
-' ============================================
-' RELACIONES ACTORES → CASOS DE USO
-' ============================================
-
-AL --> UC01
-PR --> UC01
-AD --> UC01
-
-AL --> UC02
-AL --> UC05
-AL --> UC04
-
-PR --> UC03
-PR --> UC04
-PR --> UC05
-PR --> UC06
-
-AD --> UC03
-AD --> UC06
-AD --> UC07
-AD --> UC08
-
-' ============================================
-' RELACIONES INCLUDE / EXTEND
-' ============================================
-
-' UC-01
-UC01 ..> UC01_VAL : <<include>>
-UC01 ..> UC01_JWT : <<include>>
-
-' UC-02
-UC02 ..> UC02_SPAM : <<include>>
-UC02 ..> UC02_PERSONA : <<include>>
-UC02 ..> UC02_POSE : <<include>>
-UC02 ..> UC02_DTW : <<include>>
-UC02 ..> UC02_RAG : <<extend>>\n(Similitud < 85%)
-UC02 ..> UC02_VLM : <<extend>>\n(Similitud < 85%)
-UC02_VLM ..> UC02_JUDGE : <<include>>
-
-' UC-03
-UC03 --> UC03_VIDEO
-UC03_VIDEO ..> UC03_YOLO : <<include>>
-UC03_YOLO ..> UC03_INDEX : <<include>>
-
-' UC-04
-UC04 ..> UC04_MSG : <<include>>
-UC04 ..> UC04_PDF : <<include>>
-UC04_PDF ..> UC04_EMB : <<include>>
-UC04_EMB ..> UC04_STORE : <<include>>
-
-' UC-05
-UC05 ..> UC05_LIST : <<include>>
-UC05 ..> UC05_HIST : <<include>>
-UC05 ..> UC05_PLAY : <<extend>>
-
-' UC-06
-UC06 ..> UC06_PAY : <<include>>
-UC06 ..> UC06_CALC : <<include>>
-UC06 ..> UC06_BLOCK : <<extend>>
-
-' UC-07
-UC07 ..> UC07_MAP : <<include>>
-UC07_MAP ..> UC07_GEO : <<include>>
-UC07 ..> UC07_SAVE : <<include>>
-
-' UC-08
-UC08 ..> UC08_AUTH : <<include>>
-UC08 ..> UC08_JWT : <<include>>
-UC08 ..> UC08_BANNER : <<include>>
-AD --> UC08_RESTORE
-
-' ============================================
-' RELACIONES SISTEMA → ACTORES SECUNDARIOS
-' ============================================
-
-UC02_POSE --> YOLO
-UC02_RAG --> QDRANT
-UC02_VLM --> QWEN
-UC02_SPAM --> YOLO
-
-UC03_YOLO --> YOLO
-UC03_INDEX --> QDRANT
-UC03_INDEX --> PG
-
-UC04_EMB --> QWEN
-UC04_STORE --> QDRANT
-
-UC01_VAL --> PG
-UC01_JWT --> PG
-
-UC05_LIST --> PG
-UC05_HIST --> PG
-
-UC06_CALC --> PG
-
-UC07_GEO --> OSM
-UC07_SAVE --> PG
-
-' Cloudflare Tunnel como actor externo de exposición
-AL ..> CF : HTTPS
-PR ..> CF : HTTPS
-AD ..> CF : HTTPS
-
-@enduml
-```
-
 ---
 
-### 5.9.2. Diagrama de Actividad con Carriles del Sistema Completo (Flujo Principal UC-02)
-El diagrama de actividad con carriles (*Swimlanes Activity Diagram*) detalla la dinámica operativa completa del caso de uso central (UC-02: Analizar Técnica y Generar Feedback Biomecánico), cruzando las seis capas de ejecución del sistema: Alumno (Cliente), Frontend (React 19 + Vite Proxy), Backend (FastAPI), IA de Visión (YOLOv26 + ViCoS), IA de Conocimiento (DTW + Qwen3-VL en MLX) y Persistencia (PostgreSQL + Qdrant). Este flujo modela con rigor las bifurcaciones condicionales de validación de membresía, filtrado anti-spam, selección interactiva de silueta, recuperación RAG en dos etapas y la auditoría de fidelidad con degradación elegante (*Graceful Fallback*):
+### 5.11.2. Diagrama de Actividad con Carriles del Sistema Completo (Flujo Principal UC-03 y UC-04)
+El diagrama de actividad con carriles (*Swimlanes Activity Diagram*) detalla la dinámica operativa completa del flujo central compuesto por **UC-03 (Analizar Técnica)** y **UC-04 (Generar Feedback Biomecánico)**, cruzando las seis capas de ejecución del sistema: Alumno (Cliente), Frontend (React 19 + Vite Proxy), Backend (FastAPI), IA de Visión (YOLOv26 + ViCoS), IA de Conocimiento (DTW + Qwen3-VL en MLX) y Persistencia (PostgreSQL + Qdrant). Este flujo modela con rigor las bifurcaciones condicionales de validación de membresía, filtrado anti-spam, selección interactiva de silueta, alineación DTW, jerarquía estricta de contexto doctrinal en dos etapas (Manual RAG > Directriz del Profesor > Fallback Seguro) y auditoría de fidelidad con degradación elegante (*Graceful Fallback*):
 
 ![Diagrama de Actividad con Carriles del Sistema Completo](diagramas/sistema_completo_actividad.png)
 
-```plantuml
-@startuml Diagrama_Actividad_Sistema_Completo
-title Diagrama de Actividad con Carriles — Flujo Completo de Análisis Biomecánico (UC-02)
-
-skinparam shadowing false
-skinparam defaultFontName Arial
-skinparam roundcorner 8
-skinparam ArrowColor #2B6CB0
-skinparam ActivityBorderColor #2B6CB0
-skinparam ActivityBackgroundColor #F7FAFC
-skinparam ActivityDiamondBorderColor #C53030
-skinparam ActivityDiamondBackgroundColor #FFF5F5
-
-|#E6F3FF|👤 Alumno|
-start
-:Iniciar sesión en la plataforma\n(username o email + contraseña);
-:Seleccionar Instructor de su sucursal;
-:Seleccionar Técnica a evaluar;
-:Grabar y seleccionar video de ejecución;
-
-|#FFF3E0|🖥️ Frontend (React 19 + Vite Proxy)|
-:Validar peso del archivo (<95 MB);
-:Enviar video a POST /evaluaciones/validar-spam;
-
-|#F0FFF4|⚙️ Backend (FastAPI)|
-:Verificar JWT y Pase de Tatami activo;
-if (¿Suscripción activa?) then (No)
-  :Responder HTTP 403 Forbidden;
-  |#E6F3FF|👤 Alumno|
-  :Ver mensaje de Pase expirado;
-  stop
-else (Sí)
-endif
-
-|#FFEBEE|👁️ IA de Visión (YOLO + ViCoS)|
-:Extraer primeras muestras de frames;
-:Clasificador ViCoS MLP (16 posiciones);
-if (¿Es Jiu-Jitsu? ratio >= 0.60) then (No)
-  |#F0FFF4|⚙️ Backend (FastAPI)|
-  :Rechazar HTTP 422;
-  |#E6F3FF|👤 Alumno|
-  :Ver "Video no es de BJJ";
-  stop
-else (Sí)
-endif
-
-|#F0FFF4|⚙️ Backend (FastAPI)|
-:Guardar video temporal en /tmp/corpocmente_videos;
-:POST /evaluaciones/primer-frame (extracción inicial);
-
-|#FFEBEE|👁️ IA de Visión (YOLO + ViCoS)|
-:YOLO26n-pose sobre frame inicial;
-:Deduplicar bboxes (IoU > 0.50, quimeras, reflejos < 10%);
-
-|#F0FFF4|⚙️ Backend (FastAPI)|
-:Crear SessionStateManager (estado=CREATED);
-
-|#FFF3E0|🖥️ Frontend (React 19 + Vite Proxy)|
-if (¿Cuántas personas detectadas?) then (= 1)
-  :Mostrar "¿Eres tú en el video?";
-else (>= 2)
-  |#E6F3FF|👤 Alumno|
-  :Seleccionar silueta interactiva (bounding box);
-endif
-
-|#F0FFF4|⚙️ Backend (FastAPI)|
-:POST /evaluaciones/{session_id}/seleccionar-persona\n(estado=PERSONA_SELECTED);
-:POST /evaluaciones/analizar;
-:Crear registro Evaluacion (estado='procesando');
-:Congelar sucursal_id histórico del alumno;
-
-|#FFEBEE|👁️ IA de Visión (YOLO + ViCoS)|
-:Extraer secuencia temporal 3D por persona;
-:Tracking competitivo multi-atleta (IoU + proximidad);
-:Opcional: depth-map para resolver oclusiones;
-
-|#FFF9C4|🧠 IA de Conocimiento (DTW + Qwen)|
-:PoseNormalizer → vector canónico de 46 dims\n(34 posiciones + 12 ángulos);
-:DTW multidimensional (dtaidistance);
-
-|#E8F5E9|🗄️ Persistencia (PostgreSQL + Qdrant)|
-:Recuperar secuencia del patrón activo\n(get_patron_activo);
-:SELECT patron_activo_id + Qdrant scroll;
-
-|#FFF9C4|🧠 IA de Conocimiento (DTW + Qwen)|
-:Alinear secuencias (maestro vs alumno);
-:Calcular similitud (0-100%);
-:Identificar frame crítico + articulaciones;
-
-if (¿Similitud < 85.0%?) then (Sí — requiere corrección)
-  |#FFF9C4|🧠 IA de Conocimiento (DTW + Qwen)|
-  :Qwen3-VL-Embedding-2B (MLX):\nvectorizar frame crítico + query textual\n(2048 dims);
-  
-  |#E8F5E9|🗄️ Persistencia (PostgreSQL + Qdrant)|
-  :Qdrant búsqueda híbrida Dense + BM25:
-  :Retornar top-20 candidatos filtrados por técnica_id\n+ alcance='global';
-  
-  |#FFF9C4|🧠 IA de Conocimiento (DTW + Qwen)|
-  :Qwen3-VL-Reranker-2B (Cross-Encoder):
-  :Seleccionar top-3 fragmentos;
-  :Incluir mensaje_profesor (instructor_message);
-  
-  :Qwen3-VL-Instruct-4B (MLX 4-bit):
-  :Generar corrección JSON {summary, correction}
-  :en idioma del alumno (ES/PT/EN);
-  
-  :LLM-as-a-Judge (fidelidad factual);
-  
-  if (¿Faithfulness >= 0.85?) then (Sí)
-    :Aprobar respuesta pedagógica;
-  else (No)
-    :Activar Graceful Fallback;
-    :Reporte biomecánico numérico\nsin texto generativo;
-  endif
-else (No — técnica dominada)
-  |#FFF9C4|🧠 IA de Conocimiento (DTW + Qwen)|
-  :Generar mensaje de felicitación;
-endif
-
-|#F0FFF4|⚙️ Backend (FastAPI)|
-:Generar frame crítico anotado (OpenCV)\narticulaciones en rojo + banner técnico;
-:Guardar meta_{id}.json con timestamp_error_segundos;
-
-|#E8F5E9|🗄️ Persistencia (PostgreSQL + Qdrant)|
-:UPDATE evaluaciones_alumnos
-:estado='completado', porcentaje_similitud;
-:Registrar feedback en tabla;
-
-|#FFF3E0|🖥️ Frontend (React 19 + Vite Proxy)|
-:Polling GET /evaluaciones/{id} cada 3s;
-
-|#F0FFF4|⚙️ Backend (FastAPI)|
-:Leer meta_{id}.json (timestamp + articulaciones);
-:Traducir nombres de articulaciones al idioma;
-:Retornar JSON con video URLs + feedback;
-
-|#FFF3E0|🖥️ Frontend (React 19 + Vite Proxy)|
-:Renderizar FeedbackView:
-:Video Maestro + Video Alumno\n+ Tarjeta IA + Enlace YouTube + Modal Frame;
-
-|#E6F3FF|👤 Alumno|
-:Revisar feedback y saltar al segundo del error;
-:Ver articulaciones afectadas en modal;
-
-stop
-
-@enduml
-```
-
 ---
 
-### 5.9.3. Diagrama de Clases del Sistema Completo
+### 5.11.3. Diagrama de Clases del Sistema Completo
 El diagrama de clases estructural del sistema completo modela todas las clases participantes organizadas rigurosamente según sus responsabilidades por capas: Frontera de Presentación (*Boundary Frontend*), Frontera de API (*Boundary Backend*), Control de Aplicación (*Control Application*), Servicios de Dominio (*Domain Services*), Biomecánica, Entidades de Dominio (*Domain Entities*) y Adaptadores de Infraestructura (*Infrastructure AI, Persistencia y Video*):
 
 ![Diagrama de Clases del Sistema Completo](diagramas/sistema_completo_clases.png)
-
-```plantuml
-@startuml Diagrama_Clases_Sistema_Completo
-title Diagrama de Clases del Sistema Completo — Corpo e Mente BJJ
-
-skinparam shadowing false
-skinparam defaultFontName Arial
-skinparam roundcorner 8
-skinparam ArrowColor #2B6CB0
-skinparam ClassBorderColor #2B6CB0
-skinparam ClassBackgroundColor #F7FAFC
-skinparam ClassHeaderBackgroundColor #EBF8FF
-skinparam ClassFontStyle bold
-
-'======================================================
-' CAPA DE FRONTERA (BOUNDARY) - FRONTEND
-'======================================================
-package "🌐 Capa de Presentación (Frontend React 19)" as Frontend {
-
-  class App <<Boundary>> {
-    +user: Usuario
-    +idioma: String
-    +appState: State
-    +handleUploadStart(data)
-    +handleLanguageChange(lang)
-    +onImpersonate(user, admin)
-  }
-
-  class LoginModal <<Boundary>> {
-    +loginUserOrEmail: String
-    +loginPassword: String
-    +signupRol: String
-    +handleLoginSubmit()
-    +handleSignupSubmit()
-  }
-
-  class VideoUpload <<Boundary>> {
-    +profesores: List
-    +tecnicas: List
-    +selectedFile: File
-    +sessionData: Session
-    +handleFile(file)
-    +handleSubmit()
-    +handleDrag(event)
-  }
-
-  class FeedbackView <<Boundary>> {
-    +result: AnalisisResultDTO
-    +showFrameModal: Boolean
-    +renderMarkdownFeedback()
-    +jumpToError(timestamp)
-    +openFrameModal()
-  }
-
-  class StudentProgress <<Boundary>> {
-    +evaluaciones: List
-    +fetchEvaluaciones()
-    +renderVideoPlayer()
-  }
-
-  class LibraryView <<Boundary>> {
-    +query: String
-    +resultados: List
-    +activeTab: String
-    +handleSearch()
-    +fetchManuales()
-  }
-
-  class ProfesorTecnicas <<Boundary>> {
-    +alumnos: List
-    +tecnicas: List
-    +pendientes: List
-    +handleActivarPase(alumno_id)
-    +handleGuardarTecnica()
-  }
-
-  class AdminSucursales <<Boundary>> {
-    +sucursales: List
-    +usuarios: List
-    +handleGoogleMapsUrlChange(url)
-    +handleImpersonate(user_id)
-  }
-
-  class TheoryManagerModal <<Boundary>> {
-    +tecnica_id: UUID
-    +chunks: List
-    +mensaje_profesor: String
-    +handleDeleteAll()
-  }
-
-  class SelectorPersonaVideo <<Boundary>> {
-    +sessionData: Session
-    +selectedPersonaIdx: Int
-    +onSelect(idx)
-  }
-}
-
-'======================================================
-' CAPA DE FRONTERA (BOUNDARY) - BACKEND API
-'======================================================
-package "🚪 Capa de Frontera (API FastAPI)" as API {
-
-  class AuthRoutes <<Boundary>> {
-    +login(req: LoginRequest) LoginResponse
-    +signup(req: SignupRequest) LoginResponse
-    +get_mi_perfil(auth) LoginResponse
-    +impersonate_user(user_id, auth)
-    +listar_sucursales() List
-    +crear_sucursal(req, auth)
-    +activar_pase_tatami(alumno_id, req, auth)
-    +cambiar_sucursal_usuario(user_id, req, auth)
-    +parse_gmaps_link(req, auth)
-  }
-
-  class EvaluacionesRoutes <<Boundary>> {
-    +analizar_video(background, tecnica_id, video, ...) Dict
-    +obtener_primer_frame(video, auth) Dict
-    +confirmar_seleccion_persona(session_id, request, auth) Dict
-    +validar_spam(video, auth) Dict
-    +consultar_evaluacion(evaluacion_id, auth) Dict
-    +buscar_en_biblioteca(req, auth) Dict
-    +ingerir_archivo_teoria(request, background, archivo, ...) Dict
-    +listar_teoria(tecnica_id, solo_mios, auth) Dict
-    +eliminar_teoria(tecnica_id, auth) Dict
-  }
-
-  class TecnicasRoutes <<Boundary>> {
-    +listar_tecnicas(profesor_id) List
-    +crear_tecnica(req, background, auth) TecnicaResponse
-    +actualizar_tecnica(id, req, background, auth)
-    +registrar_patron_tecnica(id, background, session_id, ...)
-    +consultar_patron_activo(tecnica_id, auth)
-  }
-
-  class ComparacionesRoutes <<Boundary>> {
-    +comparar_video_a_video(background, video_alumno, ...) Dict
-    +leer_comparacion(comparacion_id, auth) Dict
-    +descargar_video_comparacion(id, auth) FileResponse
-  }
-}
-
-'======================================================
-' CAPA DE CONTROL (APPLICATION)
-'======================================================
-package "⚙️ Capa de Aplicación (Servicios y Casos de Uso)" as Application {
-
-  class IntelligenceAnalysisFacade <<Control>> {
-    -yolo: YOLOPoseAdapter
-    -qdrant: QdrantVectorAdapter
-    -gemini: LocalVLMAdapter
-    -qwen: QwenEmbeddingAdapter
-    +ejecutar_analisis_completo(video_path, tecnica_id, ...) AnalisisResultDTO
-  }
-
-  class IngestKnowledgeUseCase <<Control>> {
-    -qdrant_rag: QdrantRAGAdapter
-    -db: PostgrestClient
-    +execute(tecnica_id, contenido_texto, ...) IngestionResponse
-  }
-
-  class DeleteTheoryUseCase <<Control>> {
-    -db: PostgrestClient
-    -qdrant_rag: QdrantRAGAdapter
-    +execute(tecnica_id, profesor_id) Dict
-  }
-
-  class ListTheoryUseCase <<Control>> {
-    -db: PostgrestClient
-    +execute(tecnica_id, profesor_id) List
-  }
-
-  class VideoComparisonService <<Control>> {
-    +crear_comparacion(comparacion_id, ...) String
-    +obtener_comparacion(id, token) Dict
-    +procesar_comparacion_video_a_video(id, ...) Void
-  }
-
-  class InstructorMessageIngestion <<Control>> {
-    +sincronizar_mensaje_profesor(tecnica_id, mensaje) Int
-  }
-
-  class MultimodalRAGService <<Control>> {
-    +construir_query_textual_rag(tecnica_nombre, discrepancias) String
-    +obtener_evidencias_rag_multimodal(...) List
-    +formatear_evidencias_texto(evidencias) String
-    +incluir_mensaje_profesor(evidencias, qdrant, tecnica_id, limit) List
-  }
-
-  class RagVideoIngestion <<Control>> {
-    +indexar_frames_video_rag(tecnica_id, video_path, ...) Int
-  }
-}
-
-'======================================================
-' CAPA DE DOMINIO - SERVICIOS
-'======================================================
-package "📐 Capa de Dominio (Servicios)" as DomainServices {
-
-  class HybridRetriever <<Control>> {
-    +DEFAULT_K_RRF = 60
-    +fusionar_rrf(densos, bm25, top_k, k_rrf) List
-    +recuperar(query_texto, qdrant, qwen, ...) List
-  }
-
-  class Qwen3VLRerankerCrossEncoder <<Control>> {
-    +MODEL_ID = "mlx-community/Qwen3-VL-Reranker-2B-4bit"
-    +rerank_pairs(query, documents, instruction) List
-    +get_instance() Tuple
-  }
-
-  class SessionStateManager <<Control>> {
-    +crear_sesion(session_id, video_path, ...) Dict
-    +seleccionar_persona(session_id, idx) Dict
-    +iniciar_operacion(session_id, tecnica_id) Dict
-    +finalizar_operacion(session_id, exito, error) Dict
-  }
-
-  class GlossaryService <<Control>> {
-    +cargar_glosario(force_reload) Dict
-    +obtener_sinonimos_multilingues(texto) Set
-    +expandir_query_con_glosario(query) String
-  }
-
-  class PromptStrategy <<Interface>> {
-    +construir_prompt_evaluacion(tecnica, discrepancias, mensaje) String
-  }
-
-  class SpanishPromptStrategy {
-    +construir_prompt_evaluacion(...) String
-  }
-
-  class PortuguesePromptStrategy {
-    +construir_prompt_evaluacion(...) String
-  }
-
-  class EnglishPromptStrategy {
-    +construir_prompt_evaluacion(...) String
-  }
-}
-
-'======================================================
-' CAPA DE DOMINIO - BIOMECÁNICA
-'======================================================
-package "🦴 Capa de Dominio (Biomecánica)" as Biomechanics {
-
-  class DTWComparator <<Control>> {
-    +comparar_secuencias_con_dtw(seq_maestro, seq_alumno, ...) Dict
-    +detectar_articulaciones_criticas(vec_m, vec_a, top_k) List
-    +resumen_alineacion(alineacion, max_items) List
-  }
-
-  class PoseNormalizer <<Control>> {
-    +VECTOR_DIM = 46
-    +normalizar(kpts_flat) Dict
-    +similitud_esqueletos(a, b, w_pos, w_ang) Dict
-    +articulaciones_criticas(a, b, top_k) List
-  }
-}
-
-'======================================================
-' CAPA DE DOMINIO - ENTIDADES
-'======================================================
-package "📦 Capa de Dominio (Entidades)" as Entities {
-
-  class Usuario <<Entity>> {
-    +id: UUID
-    +nombre_completo: String
-    +username: String
-    +email: String
-    +password_hash: String
-    +rol: RolUsuario
-    +sucursal_id: UUID
-    +idioma_preferido: String
-    +avatar_url: String
-    +estado_suscripcion: String
-    +fecha_expiracion: DateTime
-  }
-
-  class Sucursal <<Entity>> {
-    +id: UUID
-    +nombre: String
-    +pais: String
-    +ciudad: String
-    +direccion: String
-    +latitud: Float
-    +longitud: Float
-  }
-
-  class Tecnica <<Entity>> {
-    +id: UUID
-    +nombre: String
-    +nivel_cinturon: String
-    +mensaje_profesor: String
-    +patron_activo_id: UUID
-  }
-
-  class Evaluacion <<Entity>> {
-    +id: UUID
-    +alumno_id: UUID
-    +tecnica_id: UUID
-    +sucursal_id: UUID
-    +porcentaje_similitud: Float
-    +feedback_gemini_es: String
-    +feedback_summary: String
-    +estado: String
-    +fecha_evaluacion: DateTime
-  }
-
-  class PatronReferencia <<Entity>> {
-    +tecnica_id: UUID
-    +profesor_id: UUID
-    +secuencia_3d: List
-    +patron_id: UUID
-  }
-
-  class TeoriaRAG <<Entity>> {
-    +id: UUID
-    +tecnica_id: UUID
-    +profesor_id: UUID
-    +chunk_index: Int
-    +contenido_texto: String
-    +qdrant_point_id: UUID
-    +fuente_tipo: String
-  }
-
-  class EsqueletoBiomecanico <<Entity>> {
-    +frame_idx: Int
-    +keypoints133: List
-    +angulos_articulares: Dict
-    +to_vector_array() List
-  }
-
-  class AnalisisResultDTO <<Entity>> {
-    +similitud: Float
-    +feedback: String
-    +feedback_summary: String
-    +frame_critico_path: String
-    +timestamp_error_segundos: Float
-    +articulaciones_criticas: List
-    +nombres_articulaciones_criticas: List
-  }
-
-  class TokenJWT <<Entity>> {
-    +access_token: String
-    +token_type: String
-    +expires_in: Int
-  }
-}
-
-'======================================================
-' CAPA DE INFRAESTRUCTURA - IA
-'======================================================
-package "🤖 Capa de Infraestructura (IA Local)" as InfrastructureAI {
-
-  class YOLOPoseAdapter <<Adapter>> {
-    +extraer_secuencia(video_path, persona_idx_inicial) Dict
-    +extraer_frame_y_dibujar_error(...) String
-    +extraer_keypoints(video_path) List
-    +extraer_frame_limpio(video_path, idx, out) String
-  }
-
-  class LocalSpamFilter <<Adapter>> {
-    +validar_es_jiujitsu(video_path) Boolean
-  }
-
-  class QwenEmbeddingAdapter <<Adapter>> {
-    +MODEL_ID
-    +generar_embedding_texto(texto) List
-    +generar_embedding_imagen(image_path, prompt) List
-    +generar_embeddings_texto_lote(textos) List
-  }
-
-  class LocalVLMAdapter <<Adapter>> {
-    +MODEL_NAME = "mlx-community/Qwen3-VL-4B-Instruct-4bit"
-    +generar_texto_feedback(prompt, frame, evidencias, idioma) Dict
-    +reescribir_query_cognitiva(query) String
-    +evaluar_fidelidad_grounding(respuesta, contexto, mensaje) Dict
-  }
-}
-
-'======================================================
-' CAPA DE INFRAESTRUCTURA - PERSISTENCIA
-'======================================================
-package "🗄️ Capa de Infraestructura (Persistencia)" as InfrastructurePersistence {
-
-  class PostgrestClient <<Adapter>> {
-    +get(table, params, token) Dict
-    +post(table, data, token) Dict
-    +patch(table, filters, data, token) Dict
-    +delete(table, filters, token) Dict
-    +rpc(function_name, params, token) Dict
-  }
-
-  class QdrantVectorAdapter <<Adapter>> {
-    +asegurar_coleccion(vector_size) Void
-    +guardar_patron_secuencia(tecnica_id, patron_id, ...) Int
-    +obtener_secuencia_referencia(tecnica_id, patron_id) List
-    +buscar_maxima_diferencia(esqueletos, tecnica_id) VectorSearchResultDTO
-    +recuperar_evidencias_rag_multimodal(...) List
-    +obtener_mensaje_profesor_rag(tecnica_id) List
-  }
-
-  class QdrantRAGAdapter <<Adapter>> {
-    +ingestar_desde_respuesta(data, tecnica_id, ...) Dict
-    +recuperar_contexto(query_embedding, tecnica_id, top_k) List
-    +buscar_biblioteca(query_embedding, limit) List
-    +buscar_biblioteca_multimodal(text_vec, image_vec, alpha, limit) List
-    +eliminar_puntos(point_ids) Int
-    +eliminar_mensaje_profesor(tecnica_id) Void
-  }
-}
-
-'======================================================
-' CAPA DE INFRAESTRUCTURA - VIDEO
-'======================================================
-package "🎥 Capa de Infraestructura (Video)" as InfrastructureVideo {
-
-  class ComparadorVisual <<Adapter>> {
-    +generar_video_comparacion(video_alumno, video_maestro, alineacion, output_path, ...) String
-  }
-}
-
-'======================================================
-' RELACIONES ENTRE CLASES
-'======================================================
-
-' Frontend → API (HTTP)
-App ..> LoginModal : abre
-App ..> VideoUpload : renderiza
-App ..> FeedbackView : renderiza
-App ..> StudentProgress : renderiza
-App ..> LibraryView : renderiza
-App ..> ProfesorTecnicas : renderiza
-App ..> AdminSucursales : renderiza
-
-VideoUpload ..> SelectorPersonaVideo : usa
-ProfesorTecnicas ..> TheoryManagerModal : abre
-
-' API → Application
-AuthRoutes --> PostgrestClient : usa
-AuthRoutes --> TokenJWT : genera
-EvaluacionesRoutes --> IntelligenceAnalysisFacade : invoca
-EvaluacionesRoutes --> IngestKnowledgeUseCase : invoca
-EvaluacionesRoutes --> ListTheoryUseCase : invoca
-EvaluacionesRoutes --> DeleteTheoryUseCase : invoca
-EvaluacionesRoutes --> SessionStateManager : controla
-TecnicasRoutes --> PostgrestClient : usa
-TecnicasRoutes --> RagVideoIngestion : invoca
-ComparacionesRoutes --> VideoComparisonService : invoca
-
-' Application → Domain Services
-IntelligenceAnalysisFacade --> YOLOPoseAdapter : usa
-IntelligenceAnalysisFacade --> QdrantVectorAdapter : consulta
-IntelligenceAnalysisFacade --> LocalVLMAdapter : genera
-IntelligenceAnalysisFacade --> QwenEmbeddingAdapter : vectoriza
-IntelligenceAnalysisFacade --> DTWComparator : compara
-IntelligenceAnalysisFacade --> HybridRetriever : recupera
-IntelligenceAnalysisFacade --> Qwen3VLRerankerCrossEncoder : rerank
-IntelligenceAnalysisFacade --> MultimodalRAGService : orquesta
-
-' Application → Entities
-IngestKnowledgeUseCase --> TeoriaRAG : crea
-IngestKnowledgeUseCase --> QdrantRAGAdapter : vectoriza
-ListTheoryUseCase --> PostgrestClient : consulta
-DeleteTheoryUseCase --> PostgrestClient : borra
-DeleteTheoryUseCase --> QdrantRAGAdapter : purga
-
-' Domain Services → Entities & Biomechanics
-IntelligenceAnalysisFacade ..> AnalisisResultDTO : retorna
-DTWComparator ..> PoseNormalizer : usa
-PoseNormalizer ..> EsqueletoBiomecanico : procesa
-
-' Domain Entities relationships
-Usuario "1" --> "1" Sucursal : pertenece_a
-Usuario "1" --> "*" Evaluacion : realiza
-Tecnica "1" --> "*" Evaluacion : evaluada_en
-Tecnica "1" --> "*" PatronReferencia : tiene
-Tecnica "1" --> "*" TeoriaRAG : referencia
-Evaluacion "1" --> "1" PatronReferencia : compara_con
-Evaluacion "1" --> "1" AnalisisResultDTO : genera
-
-' Infrastructure relationships
-HybridRetriever --> QdrantVectorAdapter : consulta
-HybridRetriever --> GlossaryService : expande
-Qwen3VLRerankerCrossEncoder --> QwenEmbeddingAdapter : reutiliza
-LocalVLMAdapter ..> YOLOPoseAdapter : recibe frames
-
-' Prompt Strategies
-PromptStrategy <|.. SpanishPromptStrategy
-PromptStrategy <|.. PortuguesePromptStrategy
-PromptStrategy <|.. EnglishPromptStrategy
-IntelligenceAnalysisFacade --> PromptStrategy : utiliza
-
-@enduml
-```
-
 
 ---
 
@@ -3678,7 +1657,7 @@ IntelligenceAnalysisFacade --> PromptStrategy : utiliza
 ## 6.1. Introducción al Proceso de Construcción
 El desarrollo del Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño para la academia "Corpo e Mente" se rigió bajo los postulados del Proceso Unificado Ágil promovido por Craig Larman (2004), estructurado en ciclos iterativos, incrementales y acotados en el tiempo (*timeboxed*). A diferencia de los enfoques tradicionales en cascada, la construcción del software no postergó la integración de los componentes críticos; por el contrario, desde las primeras iteraciones se atacaron los riesgos arquitectónicos de mayor impacto, tales como la coexistencia de modelos de Inteligencia Artificial en memoria unificada, la latencia de inferencia en video y el aislamiento multi-tenant en bases de datos relacionales.
 
-El ciclo de vida del proyecto transitó por cuatro fases disciplinares documentadas exhaustivamente en la bitácora de ingeniería (`docs/PlanEvaluacionIteraciones.md`): Incepción (definición de alcance y viabilidad técnica), Elaboración (establecimiento de la línea base arquitectónica con FastAPI, PostgreSQL, Qdrant y YOLO), Construcción (desarrollo evolutivo de los ocho casos de uso, refinamiento del algoritmo DTW y pipelines RAG multimodales) y Transición (endurecimiento de seguridad en producción, pruebas E2E, internacionalización y auditoría de ciberseguridad). La totalidad del código fuente, configuraciones y scripts de automatización residen en un repositorio Git versionado, asegurando trazabilidad bidireccional y capacidad de reversión (*rollback*) ante cualquier regresión funcional.
+El ciclo de vida del proyecto transitó por cuatro fases disciplinares documentadas exhaustivamente en la bitácora de ingeniería (`docs/PlanEvaluacionIteraciones.md`): Incepción (definición de alcance y viabilidad técnica), Elaboración (establecimiento de la línea base arquitectónica con FastAPI, PostgreSQL, Qdrant y YOLO), Construcción (desarrollo evolutivo de los diez casos de uso, refinamiento del algoritmo DTW y pipelines RAG multimodales) y Transición (endurecimiento de seguridad en producción, pruebas E2E, internacionalización y auditoría de ciberseguridad). La totalidad del código fuente, configuraciones y scripts de automatización residen en un repositorio Git versionado, asegurando trazabilidad bidireccional y capacidad de reversión (*rollback*) ante cualquier regresión funcional.
 
 ## 6.2. Herramientas de Desarrollo, Licencias y Software Utilizado
 
@@ -3746,9 +1725,9 @@ Tabla 21
 
 | Herramienta | Propósito en el Proyecto | Tipo de Licencia |
 | :--- | :--- | :--- |
-| **PlantUML** | Generación de diagramas formales de Casos de Uso y Secuencia con separación de responsabilidades (16 diagramas PNG en `docs/diagramas/`). | GPL / Servicio Kroki de código abierto |
+| **PlantUML** | Generación de diagramas formales de Casos de Uso, Secuencia ECB y Arquitectura Consolidada con código fuente externalizado en `docs/diagramas/codigo/` (23 diagramas PNG en `docs/diagramas/`). | GPL / Servicio Kroki de código abierto |
 | **Mermaid Live Editor** | Prototipado rápido y validación sintáctica previa de diagramas de clases y paquetes antes de integrarlos al repositorio. | MIT |
-| **Mermaid (Markdown)** | Modelado visual embebido directamente en la documentación técnica del proyecto (diagramas de clases, paquetes y modelo de dominio). | MIT |
+| **Mermaid** | Modelado visual de Clases de Diseño, Paquetes, Modelo de Dominio y Superficie de Ataque mediante fuentes `.mmd` externalizadas en `docs/diagramas/codigo/` y renderizadas a PNG en `docs/diagramas/` (22 diagramas PNG). | MIT |
 | **Craig Larman (2004)** | Referencia metodológica formal para el Proceso Unificado Ágil, patrones de asignación de responsabilidades GRASP y diagramas de secuencia. | Referencia bibliográfica académica |
 | **Michael V. Mannino (2018)** | Fundamento teórico para el diseño relacional de bases de datos, formas normales (3NF/BCNF) y restricciones de integridad. | Referencia bibliográfica académica |
 | **Hugging Face Hub** | Repositorio de artefactos para la descarga de modelos cuantizados a 4 bits (`mlx-community/Qwen3-VL-*`) y consulta de especificaciones técnicas. | Apache 2.0 / Model Hub |
@@ -3816,7 +1795,7 @@ Dado que el Jiu-Jitsu Brasileño tiene su origen histórico en Brasil y su prác
 ## 6.7. Deuda Técnica Registrada en Desarrollo
 En concordancia con el principio de honestidad técnica y transparencia metodológica (Larman, 2004), se reconocen las siguientes deudas técnicas priorizadas para iteraciones posteriores a la defensa de grado:
 1. **Procedimiento Almacenado `admin_delete_user`:** Invocado opcionalmente dentro de la suite de pruebas `verify_iter_4h.py` mediante bloques de captura de excepción (`try/except`); su implementación formal en la capa SQL no es crítica para la operación regular pero debe estandarizarse para evitar advertencias en pruebas automáticas.
-2. **Tabla de Auditoría de Impersonación:** Aunque el frontend y el backend emiten tokens temporales que incluyen de forma inmutable el identificador del administrador (`impersonator_admin_id`), la persistencia en una tabla física denominada `auditoria_impersonacion` se mantiene como una deuda técnica registrada (ver §5.8.1).
+2. **Tabla de Auditoría de Impersonación:** Aunque el frontend y el backend emiten tokens temporales que incluyen de forma inmutable el identificador del administrador (`impersonator_admin_id`), la persistencia en una tabla física denominada `auditoria_impersonacion` se mantiene como una deuda técnica registrada (ver §5.10.1).
 3. **Reconciliación Automática en Segundo Plano (Postgres ↔ Qdrant):** La verificación de consistencia entre los metadatos relacionales de las técnicas y los vectores de conocimiento almacenados en Qdrant se ejecuta actualmente mediante un script de consola administrado por el operador (`reconcile_rag.py --fix`); se planifica migrar esta rutina a una tarea programada (*cron job* o worker asíncrono).
 4. **Deduplicación por Hash de Contenido (`content_hash`):** En la ingesta de páginas de manuales PDF, la detección de duplicados opera mediante verificación de nombre de archivo y número de página; se encuentra especificada la adición de un hash criptográfico SHA-256 por fragmento de texto para optimizar el espacio vectorial en bibliotecas con múltiples ediciones del mismo libro.
 
@@ -3933,39 +1912,7 @@ Se diseñaron escenarios adversos para evaluar la solidez del sistema ante entra
 ## 8.1. Modelo de Amenazas y Superficie de Ataque
 El Sistema de Análisis Biomecánico maneja activos de alta sensibilidad, entre ellos: grabaciones en video de los alumnos y profesores de la academia, datos de contacto, registros de asistencia, credenciales de acceso administrativo y llaves criptográficas de sesión. Para proteger estos activos en un despliegue expuesto a internet mediante túneles seguros, se formalizó el siguiente modelo de superficie de ataque:
 
-```mermaid
-graph LR
-    subgraph Exterior ["Red Pública / Internet"]
-        Cliente["🥋 Dispositivo Móvil / Navegador"]
-        Atacante["⚠️ Amenaza Externa / Botnet"]
-    end
-
-    subgraph Perimetro ["Borde Seguro (Edge)"]
-        Tunnel["🛡️ Cloudflare Tunnel (cloudflared)<br/>Cifrado TLS 1.3 / Anti-DDoS"]
-    end
-
-    subgraph Servidor_Local ["Servidor Local del Tatami (Apple Silicon)"]
-        ViteProxy["🚪 Vite Reverse Proxy<br/>Filtro allowedHosts"]
-        FastAPI["⚙️ FastAPI Backend<br/>RateLimiter / AuthMiddleware"]
-        PostgREST["🔌 PostgREST Engine<br/>Validación de Claims JWT"]
-        
-        subgraph Almacenamiento ["Capa de Datos Segura"]
-            Postgres["🗄️ PostgreSQL 16<br/>Políticas RLS / pgcrypto"]
-            Qdrant["🔍 Qdrant Vectorial<br/>Filtrado por Tenant"]
-            Filesystem["📁 Sistema de Archivos Local<br/>Videos Temporales en /tmp"]
-        end
-    end
-
-    Cliente -->|HTTPS / WSS| Tunnel
-    Atacante -.->|Intento de Fuerza Bruta / SSRF| Tunnel
-    Tunnel --> ViteProxy
-    ViteProxy --> FastAPI
-    ViteProxy --> PostgREST
-    FastAPI --> Postgres
-    FastAPI --> Qdrant
-    FastAPI --> Filesystem
-    PostgREST --> Postgres
-```
+![Diagrama de Superficie de Ataque y Defensa Perimetral](diagramas/superficie_ataque.png)
 
 ## 8.2. Marco de Auditoría: `briiirussell/cybersecurity-skills`
 La evaluación de la postura defensiva del sistema se realizó integrando el repositorio de ciberseguridad **`briiirussell/cybersecurity-skills`**, aplicando tres vectores de análisis sobre el código fuente y los entornos de ejecución: `api-audit`, `cloud-audit` y `secrets-audit`. Los hallazgos resultantes se consolidaron en el archivo `findings.json` en la raíz del proyecto.

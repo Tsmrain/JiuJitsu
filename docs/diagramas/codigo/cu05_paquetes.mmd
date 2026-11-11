@@ -1,0 +1,21 @@
+graph TD
+    subgraph Presentacion ["Presentación (React)"]
+        ProfesorTecnicas["ProfesorTecnicas.jsx"]
+    end
+    subgraph Aplicacion ["Aplicación (Casos de Uso)"]
+        TecnicasRoutes["tecnicas_routes.py"]
+        TecnicasService["tecnicas_service.py"]
+    end
+    subgraph Dominio ["Dominio (Entidades)"]
+        EntTecnica["Tecnica"]
+        EntPatron["PatronReferencia"]
+    end
+    subgraph Infraestructura ["Infraestructura (Adaptadores y Persistencia)"]
+        YOLO["YOLOPoseAdapter"]
+        DB_Storage["PostgreSQL / Qdrant"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

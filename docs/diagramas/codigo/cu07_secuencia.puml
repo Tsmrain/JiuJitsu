@@ -1,0 +1,35 @@
+@startuml
+title Diagrama de Secuencia de Análisis (ECB) — UC-07: Ver Progreso de Alumnos
+autonumber
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam ArrowColor #2B6CB0
+skinparam ActorBorderColor #C53030
+skinparam ActorBackgroundColor #FFF5F5
+skinparam BoundaryBorderColor #2B6CB0
+skinparam BoundaryBackgroundColor #EBF8FF
+skinparam ControlBorderColor #2F855A
+skinparam ControlBackgroundColor #F0FFF4
+skinparam EntityBorderColor #D69E2E
+skinparam EntityBackgroundColor #FFFFF0
+skinparam UsecaseBorderColor #2B6CB0
+skinparam UsecaseBackgroundColor #F7FAFC
+
+actor "Profesor" as PR
+boundary "PantallaDeProgreso" as B1
+control "CoordinadorDeProgreso" as C1
+entity "Usuario" as E1
+entity "Evaluación" as E2
+
+PR -> B1 : solicitarSeguimientoDeSede(sucursal)
+B1 -> C1 : consultarProgresoDeAlumnos(profesor, sucursal)
+C1 -> E1 : obtenerAlumnosDeSucursal(sucursal)
+E1 --> C1 : listaDeAlumnos
+C1 -> E2 : obtenerHistorialDeEvaluaciones(listaDeAlumnos)
+E2 --> C1 : historialPorAlumno
+C1 -> C1 : consolidarEvoluciónTécnica(listaDeAlumnos, historialPorAlumno)
+C1 --> B1 : resumenDeProgreso(alumnos, evolución, estadoMembresía)
+B1 --> PR : mostrarEvoluciónTécnica(alumnos, historialPorAlumno)
+@enduml

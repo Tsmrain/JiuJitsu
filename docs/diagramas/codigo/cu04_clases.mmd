@@ -1,0 +1,79 @@
+classDiagram
+    class FeedbackView {
+        +similitud: Float
+        +articulaciones_falla: List
+        +feedback_texto: String
+        +frame_critico_url: String
+        +renderMarkdownFeedback()
+        +jumpToError(timestamp)
+    }
+
+    class EvaluacionesRoutes {
+        +consultarEvaluacion(evaluacion_id: UUID) AnalisisResultDTO
+    }
+
+    class IntelligenceAnalysisFacade {
+        +generarFeedbackPedagogico(diagnostico_cinematico, idioma) AnalisisResultDTO
+    }
+
+    class MultimodalRAGService {
+        +construirQueryTextual(tecnica_nombre, discrepancias) String
+        +obtenerEvidenciasPrioritarias(frame, tecnica_id) List~TeoriaRAG~
+        +obtenerMensajeProfesor(tecnica_id) String
+    }
+
+    class HybridRetriever {
+        +fusionarRRF(densos, bm25, top_k) List
+        +recuperar(query, tecnica_id) List
+    }
+
+    class Qwen3VLRerankerCrossEncoder {
+        +rerankPairs(query, documents) List
+    }
+
+    class GlossaryService {
+        +expandirQueryMultilingue(query) String
+    }
+
+    class PromptStrategy {
+        <<interface>>
+        +construirPrompt(tecnica, discrepancias, contexto) String
+    }
+
+    class LocalVLMAdapter {
+        +generarTextoFeedback(prompt, frame, evidencias, idioma) Dict
+        +evaluarFidelidadGrounding(respuesta, contexto) Float
+    }
+
+    class Evaluacion {
+        +id: UUID
+        +porcentaje_similitud: Float
+        +feedback_gemini_es: String
+        +feedback_summary: String
+    }
+
+    class TeoriaRAG {
+        +id: UUID
+        +contenido_texto: String
+        +pagina: Integer
+        +fuente: String
+    }
+
+    class AnalisisResultDTO {
+        +similitud: Float
+        +feedback: String
+        +frame_critico_path: String
+        +timestamp_error_segundos: Float
+    }
+
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : delega
+    FeedbackView ..> EvaluacionesRoutes : HTTP GET
+    IntelligenceAnalysisFacade --> MultimodalRAGService : aplica jerarquía
+    MultimodalRAGService --> HybridRetriever : recupera candidatos
+    HybridRetriever --> GlossaryService : expande términos
+    MultimodalRAGService --> Qwen3VLRerankerCrossEncoder : reordena top-3
+    IntelligenceAnalysisFacade --> PromptStrategy : selecciona idioma
+    IntelligenceAnalysisFacade --> LocalVLMAdapter : genera y audita
+    MultimodalRAGService ..> TeoriaRAG : consulta
+    IntelligenceAnalysisFacade --> Evaluacion : actualiza feedback
+    EvaluacionesRoutes ..> AnalisisResultDTO : retorna

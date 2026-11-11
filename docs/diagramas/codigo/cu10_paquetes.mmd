@@ -1,0 +1,23 @@
+graph TD
+    subgraph Presentacion ["Presentación"]
+        AdminModal["AdminUsersModal.jsx"]
+        ImpBanner["ImpersonationBanner.jsx"]
+    end
+    subgraph Aplicacion ["Aplicación"]
+        AuthRoutes["auth_routes.py"]
+        SessionMgr["SessionManager"]
+        AuditSvc["AuditoriaService"]
+    end
+    subgraph Dominio ["Dominio"]
+        EntUser["Usuario (Roles & Claims)"]
+        EntAudit["RegistroAuditoria"]
+    end
+    subgraph Infraestructura ["Infraestructura"]
+        Postgres["PostgreSQL"]
+        Crypto["PyJWT"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

@@ -1,0 +1,21 @@
+graph TD
+    subgraph Presentacion ["Presentación"]
+        Modal["TheoryManagerModal.jsx / GlobalKnowledgeModal.jsx"]
+    end
+    subgraph Aplicacion ["Aplicación"]
+        API["conocimiento_routes.py"]
+        Controller["KnowledgeController"]
+    end
+    subgraph Dominio ["Dominio"]
+        EntTeoria["TeoriaRAG"]
+    end
+    subgraph Infraestructura ["Infraestructura"]
+        Embedding["QwenEmbeddingAdapter (MLX)"]
+        Qdrant["Qdrant DB"]
+        Postgres["PostgreSQL"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

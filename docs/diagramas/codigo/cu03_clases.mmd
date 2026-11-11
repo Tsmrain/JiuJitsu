@@ -1,0 +1,83 @@
+classDiagram
+    class VideoUploadView {
+        +archivo_video: File
+        +profesor_id: UUID
+        +tecnica_id: UUID
+        +handleUpload()
+        +displayProgress()
+    }
+
+    class SelectorPersonaVideo {
+        +session_id: String
+        +candidatos: List
+        +selected_persona_idx: Int
+        +onSelect(idx)
+    }
+
+    class EvaluacionesRoutes {
+        +validarSpam(video: File) Boolean
+        +obtenerPrimerFrame(video: File) PrimerFrameDTO
+        +confirmarSeleccionPersona(session_id, idx) Dict
+        +analizarTecnica(file, data) EvaluacionDTO
+    }
+
+    class SessionStateManager {
+        +crearSesion(video_path) String
+        +seleccionarPersona(session_id, idx) Void
+        +finalizarOperacion(session_id, exito) Void
+    }
+
+    class IntelligenceAnalysisFacade {
+        +ejecutarComparacionCinematica(video_path, tecnica_id, prof_id, idx) ResultadoCinematico
+    }
+
+    class LocalSpamFilter {
+        +validarEsJiuJitsu(video_path: String) Boolean
+    }
+
+    class YOLOPoseAdapter {
+        +extraerSecuencia3D(video_path: String, persona_idx: Int) List~EsqueletoBiomecanico~
+    }
+
+    class PoseNormalizer {
+        +normalizar(keypoints133: List) Vector46
+    }
+
+    class DTWComparator {
+        +compararSecuencias(seq_maestro, seq_alumno) Dict
+        +identificarFrameCritico(alineacion) Int
+    }
+
+    class Evaluacion {
+        +id: UUID
+        +alumno_id: UUID
+        +profesor_id: UUID
+        +tecnica_id: UUID
+        +sucursal_id: UUID
+        +porcentaje_similitud: Float
+        +estado: String
+    }
+
+    class PatronReferencia {
+        +tecnica_id: UUID
+        +profesor_id: UUID
+        +secuencia_3d: List
+    }
+
+    class EsqueletoBiomecanico {
+        +frame_idx: Int
+        +keypoints133: List
+        +angulos_articulares: Dict
+    }
+
+    VideoUploadView ..> SelectorPersonaVideo : muestra siluetas
+    VideoUploadView ..> EvaluacionesRoutes : HTTP POST
+    EvaluacionesRoutes --> SessionStateManager : controla ciclo
+    EvaluacionesRoutes --> LocalSpamFilter : filtra spam
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : orquesta análisis
+    IntelligenceAnalysisFacade --> YOLOPoseAdapter : extrae poses
+    IntelligenceAnalysisFacade --> PoseNormalizer : normaliza 46 dims
+    IntelligenceAnalysisFacade --> DTWComparator : alinea secuencias
+    IntelligenceAnalysisFacade --> PatronReferencia : obtiene patrón maestro
+    IntelligenceAnalysisFacade --> Evaluacion : registra similitud
+    YOLOPoseAdapter ..> EsqueletoBiomecanico : construye

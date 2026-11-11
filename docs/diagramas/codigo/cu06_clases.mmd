@@ -1,0 +1,35 @@
+classDiagram
+    class TheoryManagerModal {
+        +tecnica_id: UUID
+        +mensaje_profesor: String
+        +archivo_pdf: File
+        +handleGuardarTeoria()
+    }
+
+    class ConocimientoRoutes {
+        +ingestarManual(tecnica_id, file) Response
+        +actualizarMensajeProfesor(tecnica_id, msg) Response
+    }
+
+    class KnowledgeController {
+        +procesarDocumentoPDF(pdf_path, tecnica_id) Integer
+        +guardarMensajeProfesor(tecnica_id, texto) Boolean
+    }
+
+    class QwenEmbeddingAdapter {
+        +generarEmbeddingMultimodal(texto, imagen) Vector2048
+    }
+
+    class TeoriaRAG {
+        +id: UUID
+        +tecnica_id: UUID
+        +texto: String
+        +numero_pagina: Integer
+        +fuente: String
+        +vector_embedding: Array
+    }
+
+    TheoryManagerModal ..> ConocimientoRoutes : HTTP POST
+    ConocimientoRoutes --> KnowledgeController : delega
+    KnowledgeController --> QwenEmbeddingAdapter : vectoriza
+    KnowledgeController --> TeoriaRAG : crea

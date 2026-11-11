@@ -1,0 +1,30 @@
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Upload["VideoUpload.jsx"]
+        P_Selector["SelectorPersonaVideo.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Orquestación de Análisis)"]
+        A_Routes["evaluaciones_routes.py"]
+        A_Facade["intelligence_facade.py"]
+        A_Session["SessionStateManager"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Biomecánica y Entidades)"]
+        D_DTW["dtw_comparator.py"]
+        D_Norm["pose_normalizer.py"]
+        D_Eval["Evaluacion"]
+        D_Patron["PatronReferencia"]
+        D_Esq["EsqueletoBiomecanico"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Visión y Persistencia)"]
+        I_YOLO["yolo_adapters.py (YOLOv26-pose)"]
+        I_Spam["local_spam_filter.py (ViCoS)"]
+        I_DB["PostgreSQL / Qdrant"]
+    end
+
+    Presentacion --> Aplicacion
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+    Aplicacion --> Dominio

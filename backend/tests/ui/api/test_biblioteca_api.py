@@ -69,11 +69,43 @@ def test_biblioteca_buscar_exitoso(mock_qwen_emb, mock_qwen_init, mock_rag_searc
     data = response.json()
     assert data["query"] == "armbar"
     assert data["total"] == 1
+    assert "answer" in data
+    assert len(data["sources"]) == 1
+    assert data["sources"][0]["index"] == 1
+    assert data["sources"][0]["pagina"] == 555
     assert len(data["resultados"]) == 1
     res = data["resultados"][0]
     assert res["pagina"] == 555
     assert "/pagina_555.jpg" in res["media_url"]
     assert "Keep your elbow tight" in res["contenido_texto"]
+
+
+def test_local_vlm_rag_chat_incluye_top3_citas_inline():
+    from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
+
+    vlm = object.__new__(LocalVLMAdapter)
+    vlm.model_name = "mock"
+    vlm.model = MagicMock()
+    vlm.processor = MagicMock()
+    vlm.processor.apply_chat_template.return_value = "PROMPT"
+
+    chunks = [
+        {"cita": "Manual A, p. 10", "contenido_texto": "Primer paso: controlar la muñeca.", "pagina": 10},
+        {"cita": "Manual B, p. 20", "contenido_texto": "Segundo paso: subir la cadera.", "pagina": 20},
+        {"cita": "Manual C, p. 30", "contenido_texto": "Tercer paso: cruzar la pierna.", "pagina": 30},
+        {"cita": "Manual D, p. 40", "contenido_texto": "Cuarto fragmento excluido.", "pagina": 40},
+    ]
+
+    with patch("mlx_vlm.generate", return_value="Controla la muñeca [1] y sube la cadera [2] antes de cruzar [3].") as mock_gen:
+        ans = vlm.generar_respuesta_rag_chat("¿Cómo hacer armbar?", chunks, idioma="es")
+
+    assert "[1]" in ans and "[2]" in ans and "[3]" in ans
+    template_msgs = vlm.processor.apply_chat_template.call_args[0][0]
+    prompt_txt = template_msgs[0]["content"][0]["text"]
+    assert "Manual A, p. 10" in prompt_txt
+    assert "Manual C, p. 30" in prompt_txt
+    assert "Manual D, p. 40" not in prompt_txt
+    mock_gen.assert_called_once()
 
 
 def test_listar_manuales_sin_auth_retorna_401():
@@ -156,12 +188,14 @@ def test_biblioteca_query_rewriting_cognitivo(mock_qwen_emb, mock_qwen_init, moc
     assert any(term in called_query.lower() for term in ["escape", "survive", "defend"])
 
 
+@patch("corpocmente.ui.api.routes.get_db")
 @patch("corpocmente.infrastructure.persistence.qdrant_rag_adapter.QdrantRAGAdapter.__init__", return_value=None)
 @patch("corpocmente.infrastructure.persistence.qdrant_rag_adapter.QdrantRAGAdapter.buscar_biblioteca_multimodal")
 @patch("corpocmente.infrastructure.ai.qwen_adapter.QwenEmbeddingAdapter.__init__", return_value=None)
 @patch("corpocmente.infrastructure.ai.qwen_adapter.QwenEmbeddingAdapter.generar_embedding_texto")
 @patch("corpocmente.infrastructure.ai.qwen_adapter.QwenEmbeddingAdapter.generar_embedding_imagen")
-def test_biblioteca_buscar_multimodal_con_imagen(mock_qwen_img, mock_qwen_txt, mock_qwen_init, mock_rag_search_multi, mock_rag_init, tmp_path):
+def test_biblioteca_buscar_multimodal_con_imagen(mock_qwen_img, mock_qwen_txt, mock_qwen_init, mock_rag_search_multi, mock_rag_init, mock_get_db, tmp_path):
+    mock_get_db.return_value.rpc.return_value = []
     mock_qwen_txt.return_value = [0.1] * 2048
     mock_qwen_img.return_value = [0.2] * 2048
     mock_rag_search_multi.return_value = [
@@ -298,6 +332,88 @@ def test_descargar_archivo_conocimiento_con_query_token(monkeypatch, tmp_path):
     assert response.status_code == 200
     assert "text/plain" in response.headers["content-type"]
     assert "Contenido de prueba" in response.text
+
+
+def test_rag_chat_prompt_humanizado_sin_jerga_bd(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
+
+    adapter = object.__new__(LocalVLMAdapter)
+    adapter.model = MagicMock()
+    adapter.processor = None
+
+    captured_prompts = []
+
+    def fake_generate(model, processor, prompt, images, **kwargs):
+        captured_prompts.append(prompt)
+        return "Mantén tu postura baja y controla las solapas con calma en el tatami [1]."
+
+    monkeypatch.setitem(sys.modules, "mlx_vlm", SimpleNamespace(generate=fake_generate))
+
+    res = adapter.generar_respuesta_rag_chat(
+        query="¿Cómo hacer pasaje de guardia?",
+        chunks=[{"cita": "Instrucciones del Profesor (Pasaje de Guardia)", "contenido_texto": "Controla ambas solapas y mantén presión lateral."}],
+        idioma="es",
+    )
+    assert "profesor de Jiu-Jitsu Brasileño" in captured_prompts[0]
+    assert "No uses lenguaje técnico de bases de datos" in captured_prompts[0]
+    assert "[1]" in res
+
+    empty_res = adapter.generar_respuesta_rag_chat(query="duda desconocida", chunks=[], idioma="es")
+    assert "fragmentos" not in empty_res.lower()
+    assert "instructor" in empty_res.lower() or "profesor" in empty_res.lower()
+
+
+@patch("corpocmente.ui.api.routes.get_db")
+@patch("corpocmente.infrastructure.ai.local_vlm_adapter.LocalVLMAdapter")
+@patch("corpocmente.infrastructure.persistence.qdrant_rag_adapter.QdrantRAGAdapter")
+@patch("corpocmente.infrastructure.ai.qwen_adapter.QwenEmbeddingAdapter")
+def test_buscar_en_biblioteca_inyecta_mensaje_profesor_de_tecnica_coincidente(
+    mock_qwen_cls, mock_rag_cls, mock_vlm_cls, mock_get_db
+):
+    mock_qwen = mock_qwen_cls.return_value
+    mock_qwen.generar_embedding_texto.return_value = [0.2] * 2048
+
+    mock_rag = mock_rag_cls.return_value
+    mock_rag.buscar_biblioteca.return_value = [
+        {
+            "id": "manual-1",
+            "score": 0.85,
+            "cita": "Jiu-Jitsu University, p. 45",
+            "fuente_nombre": "Jiu-Jitsu University",
+            "pagina": 45,
+            "contenido_texto": "Pin the hips before stepping over.",
+        }
+    ]
+
+    mock_db = MagicMock()
+    mock_db.rpc.return_value = [
+        {
+            "id": str(uuid4()),
+            "nombre": "Pasaje de Guardia",
+            "mensaje_profesor": "Asegura las rodillas juntas del compañero y presiona su cadera antes de pasar.",
+        }
+    ]
+    mock_get_db.return_value = mock_db
+
+    mock_vlm = mock_vlm_cls.return_value
+    mock_vlm.reescribir_query_cognitiva.return_value = "pasaje de guardia"
+    mock_vlm.generar_respuesta_rag_chat.return_value = (
+        "Para hacer el pasaje de guardia, asegura sus rodillas juntas y presiona la cadera antes de cruzar [1][2]."
+    )
+
+    response = client.post(
+        "/api/v1/conocimiento/biblioteca/buscar",
+        json={"query": "pasaje de guardia", "idioma": "es"},
+        headers=_auth_headers(),
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "Instrucciones del Profesor (Pasaje de Guardia)" in data["sources"][0]["cita"]
+    assert "rodillas juntas" in data["sources"][0]["contenido_texto"]
+    chunks_passed = mock_vlm.generar_respuesta_rag_chat.call_args.args[1]
+    assert chunks_passed[0]["fuente_tipo"] == "instructor_message"
 
 
 

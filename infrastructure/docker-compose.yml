@@ -6,7 +6,7 @@ services:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - ../data/qdrant:/qdrant/storage
+      - corpocmente_qdrant_data:/qdrant/storage
     restart: unless-stopped
 
   postgres:
@@ -20,7 +20,7 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d:ro
-      - ../data/postgres:/var/lib/postgresql/data
+      - corpocmente_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d corpocmente"]
       interval: 3s
@@ -44,3 +44,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  corpocmente_qdrant_data:
+  corpocmente_postgres_data:

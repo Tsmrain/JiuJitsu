@@ -781,6 +781,67 @@ async def impersonate_user(user_id: UUID, authorization: Optional[str] = Header(
         fecha_expiracion=raw_exp
     )
 
+
+@router.delete("/auth/usuarios/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_usuario(
+    user_id: UUID,
+    reasignar_a: Optional[UUID] = None,
+    auto_reasignar: bool = False,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Elimina un usuario del sistema (solo Admin).
+    - Impide auto-eliminación del administrador en sesión.
+    - Si es profesor con videos/patrones/teoría asociados, exige reasignación
+      (`reasignar_a` o `auto_reasignar=true` para reasignar al administrador).
+    - Si es alumno, Postgres ejecuta limpieza en cascada de evaluaciones y pases.
+    """
+    caller = require_admin(authorization)
+    caller_uid = str(caller.get("uid") or "")
+    if str(user_id) == caller_uid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No puedes eliminar tu propia cuenta de administrador.",
+        )
+
+    target_reassign = reasignar_a
+    if target_reassign is None and auto_reasignar and caller_uid:
+        target_reassign = UUID(caller_uid)
+
+    db = get_db()
+    rows = db.rpc(
+        "admin_delete_user",
+        {
+            "p_user_id": str(user_id),
+            "p_caller_id": caller_uid or None,
+            "p_reasignar_a": str(target_reassign) if target_reassign else None,
+        },
+    )
+    result = rows[0] if isinstance(rows, list) and rows else (rows if isinstance(rows, dict) else {})
+    if not result:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error eliminando usuario.")
+
+    reason = result.get("reason")
+    if reason == "NOT_FOUND":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    if reason == "SELF_DELETE_FORBIDDEN":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No puedes eliminar tu propia cuenta de administrador.",
+        )
+    if reason == "PROFESOR_HAS_CONTENT":
+        refs = result.get("reassigned_count") or 0
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"El profesor tiene {refs} recursos asociados (videos, patrones o teoría). "
+                "Reasígnalos a otro usuario antes de eliminar (auto_reasignar=true)."
+            ),
+        )
+    if not result.get("deleted"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not delete user.")
+    return None
+
 @router.get("/sucursales", response_model=List[SucursalResponse], status_code=status.HTTP_200_OK)
 async def listar_sucursales():
     """
@@ -881,16 +942,11 @@ async def listar_alumnos_pendientes(
     try:
         pendientes = db.rpc("get_alumnos_pendientes", {"p_profesor_id": str(profesor_id)})
     except Exception as e:
-        logger.warning(f"Error calling get_alumnos_pendientes: {e}")
-        caller_role = caller.get("role")
-        caller_sucursal = caller.get("sucursal_id")
-        params = {"rol": "eq.alumno", "estado_suscripcion": "neq.activo"}
-        if caller_role != "admin" and caller_sucursal:
-            params["sucursal_id"] = f"eq.{caller_sucursal}"
-        try:
-            pendientes = db.get("usuarios", params)
-        except Exception:
-            pendientes = []
+        logger.error(f"Error calling get_alumnos_pendientes: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al consultar alumnos pendientes: {str(e)}"
+        )
 
     resultado = []
     for p in pendientes:
@@ -999,8 +1055,6 @@ async def listar_evaluaciones_alumno(
         evaluaciones = []
 
     for evaluacion in evaluaciones or []:
-        tec_nom = evaluacion.get("tecnica_nombre") or "jiu-jitsu"
-        evaluacion["practice_url"] = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(tec_nom + ' jiu-jitsu tutorial')}"
         if not evaluacion.get("feedback_summary"):
             evaluacion["feedback_summary"] = clean_fallback_summary(evaluacion.get("feedback_gemini_es") or evaluacion.get("feedback_gemini_pt"))
 
@@ -1035,29 +1089,19 @@ async def listar_evaluaciones_alumno(
         else:
             evaluacion["frame_error_url"] = None
 
-        videos_dir = "/tmp/corpocmente_videos"
-        os.makedirs(videos_dir, exist_ok=True)
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+        from corpocmente.infrastructure.persistence.video_storage import resolver_video_estatico
 
-        for campo in ("url_video_alumno", "video_referencia_url"):
-            ruta = evaluacion.get(campo)
-            if ruta:
-                filename = os.path.basename(ruta)
-                target_video = os.path.join(videos_dir, filename)
-                if not os.path.exists(target_video):
-                    if os.path.exists(ruta):
-                        try:
-                            shutil.copy2(ruta, target_video)
-                        except Exception:
-                            pass
-                    elif "67beb825" in filename:
-                        cand = os.path.join(repo_root, "profesor salida de Guardia Parandose.mp4")
-                        if os.path.exists(cand):
-                            try:
-                                shutil.copy2(cand, target_video)
-                            except Exception:
-                                pass
-                evaluacion[campo] = f"/static/videos/{filename}"
+        evaluacion["url_video_alumno"] = resolver_video_estatico(
+            evaluacion.get("url_video_alumno"),
+            es_referencia=False,
+        )
+        evaluacion["video_referencia_url"] = resolver_video_estatico(
+            evaluacion.get("video_referencia_url"),
+            es_referencia=True,
+            tecnica_id=evaluacion.get("tecnica_id"),
+            tecnica_nombre=evaluacion.get("tecnica_nombre"),
+            db=db,
+        )
     return evaluaciones or []
 
 @router.post("/sucursales", response_model=SucursalResponse, status_code=status.HTTP_201_CREATED)

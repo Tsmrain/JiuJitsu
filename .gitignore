@@ -1,18 +1,24 @@
 # Datos locales y binarios (NUNCA commitear)
-/data/
+storage/
+data/
 !backend/data/
 !backend/data/golden_test.jsonl
-/storage/
 backend/storage/
-venv_mlx/
+.claude/
 runs/
-*.mov
-*.mp4
-*.pt
-*.pdf
-*.zip
 client_secret_*.json
 client_secret*.json
+
+# Modelos pesados y videos
+*.pt
+*.pth
+*.onnx
+*.mov
+*.mp4
+*.avi
+*.webm
+*.pdf
+*.zip
 
 # Secretos
 .env
@@ -31,9 +37,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.pytest_cache/
-.coverage
-htmlcov/
 
 # Node
 node_modules/
@@ -42,8 +45,11 @@ dist-ssr/
 *.local
 .pnpm-store/
 
-# Modelos binarios
-*.pt
+# Artefactos de pruebas y logs
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
 
 # SO / editor
 .DS_Store

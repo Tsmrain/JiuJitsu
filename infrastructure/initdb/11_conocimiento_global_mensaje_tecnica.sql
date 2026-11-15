@@ -104,7 +104,7 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT t.id, t.nombre, t.nivel_cinturon, vr.id, vr.profesor_id, vr.url_video_gcs,
-           (t.patron_activo_id IS NOT NULL), t.mensaje_profesor
+           (EXISTS (SELECT 1 FROM patrones_referencia pr WHERE pr.tecnica_id = t.id AND pr.activo = TRUE)), t.mensaje_profesor
     FROM tecnicas t LEFT JOIN videos_referencia vr ON vr.tecnica_id = t.id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -13,7 +13,7 @@ import threading
 import time
 from pathlib import Path
 from uuid import UUID, uuid4
-from typing import Optional
+from typing import Any, Dict, List, Optional
 import cv2
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Header, BackgroundTasks, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -59,28 +59,42 @@ def _set_knowledge_progress(job_id: str, progress: int, stage: str, **extra):
             _knowledge_jobs[job_id].update({"avance": max(0, min(100, int(progress))), "etapa": stage}, **extra)
 
 _yolo_pose_model = None
+_yolo_seg_model = None
 
 def get_yolo_pose_model():
     global _yolo_pose_model
     if _yolo_pose_model is None:
+        from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
+        _yolo_pose_model = YOLOPoseAdapter()._get_model()
+    return _yolo_pose_model
+
+
+def get_yolo_seg_model():
+    """Carga lazy y cacheada del modelo de segmentación de instancias YOLO para desambiguar cuerpos entrelazados."""
+    global _yolo_seg_model
+    if _yolo_seg_model is None:
         import torch
         from ultralytics import YOLO
+        from pathlib import Path
+        from corpocmente.config import storage_root
+
         _orig_torch_load = torch.load
         def _safe_torch_load(*args, **kwargs):
             kwargs["weights_only"] = False
             return _orig_torch_load(*args, **kwargs)
         torch.load = _safe_torch_load
-        from pathlib import Path
+
         repo_root = Path(__file__).resolve().parents[4]
         candidates = [
-            str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
-            str(repo_root / "backend" / "yolo26n-pose.pt"),
-            "storage/models/yolo26n-pose.pt",
-            "yolo26n-pose.pt",
+            str(storage_root() / "models" / "yolo26n-seg.pt"),
+            str(repo_root / "backend" / "storage" / "models" / "yolo26n-seg.pt"),
+            str(repo_root / "storage" / "models" / "yolo26n-seg.pt"),
+            str(repo_root / "backend" / "yolo26n-seg.pt"),
+            "yolo26n-seg.pt",
         ]
-        weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-pose.pt")
-        _yolo_pose_model = YOLO(weights)
-    return _yolo_pose_model
+        weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-seg.pt")
+        _yolo_seg_model = YOLO(weights)
+    return _yolo_seg_model
 
 router = APIRouter(prefix="/api/v1", tags=["Evaluaciones", "Conocimiento"])
 
@@ -134,6 +148,14 @@ def ejecutar_evaluacion_background(
 ):
     import logging
     logger = logging.getLogger(__name__)
+    logger.info(
+        "[INTEGRACION] ejecutar_evaluacion_background eval_id=%s video_path=%s exists=%s persona_idx=%s session_id=%s",
+        eval_id,
+        video_alumno_path,
+        os.path.exists(video_alumno_path or ""),
+        persona_idx,
+        session_id,
+    )
     try:
         from corpocmente.domain.services.intelligence_facade import IntelligenceAnalysisFacade
         from corpocmente.infrastructure.ai.adapters import YOLOPoseAdapter
@@ -158,9 +180,20 @@ def ejecutar_evaluacion_background(
         mensaje_profesor = ""
         try:
             db_tec = get_db()
-            tec_rows = db_tec.get("tecnicas", {"id": f"eq.{tecnica_id}", "select": "mensaje_profesor"})
-            if tec_rows and isinstance(tec_rows, list) and len(tec_rows) > 0:
-                mensaje_profesor = tec_rows[0].get("mensaje_profesor") or ""
+            try:
+                tec_rpc_rows = db_tec.rpc("get_tecnicas_with_videos", {})
+                if isinstance(tec_rpc_rows, list):
+                    for row_tec in tec_rpc_rows:
+                        if str(row_tec.get("id")) == str(tecnica_id) and row_tec.get("mensaje_profesor"):
+                            mensaje_profesor = str(row_tec["mensaje_profesor"]).strip()
+                            break
+            except Exception as e_rpc:
+                logger.debug("Fallo consultando mensaje_profesor via RPC: %s", e_rpc)
+
+            if not mensaje_profesor:
+                tec_rows = db_tec.get("tecnicas", {"id": f"eq.{tecnica_id}", "select": "mensaje_profesor"})
+                if tec_rows and isinstance(tec_rows, list) and len(tec_rows) > 0:
+                    mensaje_profesor = str(tec_rows[0].get("mensaje_profesor") or "").strip()
         except Exception as e_msg:
             logger.debug("Fallo consultando mensaje_profesor via PostgREST: %s", e_msg)
 
@@ -176,9 +209,17 @@ def ejecutar_evaluacion_background(
                 cur.close()
                 conn.close()
                 if row and row[0]:
-                    mensaje_profesor = str(row[0])
+                    mensaje_profesor = str(row[0]).strip()
             except Exception as e_sql:
                 logger.debug("Fallo consultando mensaje_profesor via SQL fallback: %s", e_sql)
+
+        if not mensaje_profesor:
+            try:
+                msgs_qdrant = qdrant.obtener_mensaje_profesor_rag(tecnica_id)
+                if isinstance(msgs_qdrant, list) and len(msgs_qdrant) > 0:
+                    mensaje_profesor = str(msgs_qdrant[0].get("contenido_texto") or "").strip()
+            except Exception as e_qm:
+                logger.debug("Fallo consultando mensaje_profesor via Qdrant: %s", e_qm)
 
         res = facade.ejecutar_analisis_completo(
             video_path=video_alumno_path,
@@ -224,8 +265,24 @@ def ejecutar_evaluacion_background(
         except Exception as e_meta:
             logger.warning("No se pudo guardar meta JSON: %s", e_meta)
 
-        # Guardar en base de datos con reintentos y fallback SQL con commit explícito (evita Race Condition)
+        # Verificar si la evaluación fue cancelada mientras corría en background
         db = get_db()
+        try:
+            eval_check = db.rpc("get_evaluacion_by_id", {"p_evaluacion_id": str(eval_id)})
+            if eval_check and isinstance(eval_check, list) and eval_check[0].get("estado") == "cancelado":
+                logger.info("Evaluación %s fue cancelada en curso; omitiendo escritura de resultado.", eval_id)
+                if video_alumno_path and os.path.exists(video_alumno_path):
+                    try:
+                        os.remove(video_alumno_path)
+                    except OSError:
+                        pass
+                if session_id:
+                    SessionStateManager.finalizar_operacion(session_id, exito=False, error="Cancelado por usuario", eliminar_video=False)
+                return
+        except Exception as e_chk:
+            logger.debug("No se pudo verificar estado previo de cancelación para %s: %s", eval_id, e_chk)
+
+        # Guardar en base de datos con reintentos y fallback SQL con commit explícito (evita Race Condition)
         actualizado = False
         for intento in range(3):
             try:
@@ -257,7 +314,8 @@ def ejecutar_evaluacion_background(
                         feedback_gemini_es = %s,
                         estado = %s,
                         feedback_summary = %s
-                    WHERE id = %s;
+                    WHERE id = %s
+                      AND estado <> 'cancelado';
                     """,
                     (res.similitud, res.feedback, "completado", res.feedback_summary or "Technique feedback", str(eval_id))
                 )
@@ -285,6 +343,9 @@ def ejecutar_evaluacion_background(
                 pass
         try:
             db = get_db()
+            eval_check = db.rpc("get_evaluacion_by_id", {"p_evaluacion_id": str(eval_id)})
+            if eval_check and isinstance(eval_check, list) and eval_check[0].get("estado") == "cancelado":
+                return
             db.rpc("worker_update_result", {
                 "p_evaluacion_id": str(eval_id),
                 "p_similitud": 0.0,
@@ -328,10 +389,11 @@ async def analizar_video(
 
     db = get_db()
 
-    # 1. Verificar si existe patrón activo en PostgreSQL / Qdrant
+    # 1. Verificar si existe patrón activo en PostgreSQL y vectores reales en Qdrant
     from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
     qdrant = QdrantVectorAdapter()
     patron_id = qdrant._get_patron_activo_db(tecnica_id)
+    tiene_vectores_qdrant = qdrant.tiene_patrones_en_qdrant(tecnica_id)
     video_ref_id = None
     video_ref_path = None
 
@@ -351,10 +413,10 @@ async def analizar_video(
     except Exception:
         videos_ref = []
 
-    if not patron_id and not videos_ref:
+    if not tiene_vectores_qdrant or (not patron_id and not videos_ref):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No active biomechanical pattern registered for this technique."
+            detail="No hay patrón de referencia para esta técnica. Pídele al profesor que suba un video."
         )
 
     # 2. Resolver sesión o video directo
@@ -514,6 +576,54 @@ async def recibir_resultado(
 
     return {"status": "ok"}
 
+@router.post("/evaluaciones/{evaluacion_id}/cancelar")
+async def cancelar_evaluacion_endpoint(
+    evaluacion_id: UUID,
+    session_id: Optional[str] = None,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Cancela una evaluación en curso ('procesando' o 'en_progreso_worker'),
+    limpia su archivo temporal de video y libera la sesión activa si existe.
+    """
+    caller = require_auth(authorization)
+    es_admin = caller.get("role") == "admin"
+    db = get_db()
+
+    rows = db.rpc(
+        "cancelar_evaluacion",
+        {
+            "p_evaluacion_id": str(evaluacion_id),
+            "p_usuario_id": str(caller.get("uid")),
+            "p_es_admin": es_admin,
+        },
+    )
+    res = rows[0] if isinstance(rows, list) and rows else (rows if isinstance(rows, dict) else {})
+    if not res or not res.get("found"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evaluación no encontrada")
+    if not res.get("authorized"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para cancelar esta evaluación.")
+
+    video_path = res.get("url_video_alumno")
+    if res.get("cancelled") and video_path and os.path.exists(video_path):
+        try:
+            os.remove(video_path)
+        except OSError as e_rm:
+            logger.warning("No se pudo eliminar video temporal %s al cancelar: %s", video_path, e_rm)
+
+    if session_id:
+        try:
+            from corpocmente.domain.services.session_manager import SessionStateManager
+            SessionStateManager.finalizar_operacion(session_id, exito=False, error="Cancelado por el usuario", eliminar_video=False)
+        except Exception:
+            pass
+
+    return {
+        "evaluacion_id": str(evaluacion_id),
+        "estado": res.get("estado_actual") or "cancelado",
+        "cancelado": bool(res.get("cancelled")),
+    }
+
 @router.get("/evaluaciones/{evaluacion_id}")
 async def consultar_evaluacion(
     evaluacion_id: UUID,
@@ -579,55 +689,28 @@ async def consultar_evaluacion(
     if timestamp_error_segundos is None:
         timestamp_error_segundos = 0.0
 
-    video_alumno_url = None
-    if raw_video_alumno:
-        filename_alumno = os.path.basename(raw_video_alumno)
-        target_video = os.path.join(VIDEOS_DIR, filename_alumno)
-        if not os.path.exists(target_video) and os.path.exists(raw_video_alumno) and target_video != raw_video_alumno:
-            try:
-                shutil.copy2(raw_video_alumno, target_video)
-            except Exception:
-                pass
-        video_alumno_url = f"/static/videos/{filename_alumno}"
+    from corpocmente.infrastructure.persistence.video_storage import resolver_video_estatico
 
-    # Convertir ruta local del video de referencia a URL pública estática
+    video_alumno_url = resolver_video_estatico(
+        raw_video_alumno,
+        es_referencia=False,
+    )
+
+    # Convertir ruta local del video de referencia a URL pública estática (auto-curando si falta)
     raw_video_path = eval_data.get("video_referencia_url") or ""
-    video_ref_url = None
-    if raw_video_path:
-        filename = os.path.basename(raw_video_path)
-        target_ref = os.path.join(VIDEOS_DIR, filename)
-        if not os.path.exists(target_ref):
-            if os.path.exists(raw_video_path):
-                try:
-                    shutil.copy2(raw_video_path, target_ref)
-                except Exception:
-                    pass
-            else:
-                # Buscar en raíz del repositorio si el nombre o fallback coincide
-                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-                cand_root = os.path.join(repo_root, filename)
-                if os.path.exists(cand_root):
-                    try:
-                        shutil.copy2(cand_root, target_ref)
-                    except Exception:
-                        pass
-                elif "67beb825" in filename:
-                    fallback_esc = os.path.join(repo_root, "profesor salida de Guardia Parandose.mp4")
-                    if os.path.exists(fallback_esc):
-                        try:
-                            shutil.copy2(fallback_esc, target_ref)
-                        except Exception:
-                            pass
-        video_ref_url = f"/static/videos/{filename}"
+    video_ref_url = resolver_video_estatico(
+        raw_video_path,
+        es_referencia=True,
+        tecnica_id=eval_data.get("tecnica_id"),
+        tecnica_nombre=eval_data.get("tecnica_nombre"),
+        db=db,
+    )
 
     # Fotograma crítico anotado con el error si ya fue procesado
     frame_error_url = None
     frame_candidate = os.path.join(FRAMES_DIR, f"critico_{evaluacion_id}.jpg")
     if os.path.exists(frame_candidate):
         frame_error_url = f"/static/frames/critico_{evaluacion_id}.jpg"
-
-    tecnica_nombre = eval_data.get("tecnica_nombre") or "jiu-jitsu"
-    practice_url = f"https://www.youtube.com/results?search_query={quote_plus(tecnica_nombre + ' jiu-jitsu tutorial')}"
 
     return {
         "id": eval_data["id"],
@@ -640,12 +723,11 @@ async def consultar_evaluacion(
         "tecnica_id": eval_data["tecnica_id"],
         "tecnica_nombre": eval_data["tecnica_nombre"],
         "video_referencia_url": video_ref_url,
-        "video_referencia_nombre": os.path.basename(raw_video_path) if raw_video_path else None,
+        "video_referencia_nombre": os.path.basename(video_ref_url) if video_ref_url else (os.path.basename(raw_video_path) if raw_video_path else None),
         "video_referencia_profesor_nombre": eval_data.get("video_referencia_profesor_nombre"),
         "frame_error_url": frame_error_url,
         "articulaciones_criticas": articulaciones_criticas,
         "nombres_articulaciones_criticas": nombres_articulaciones_criticas,
-        "practice_url": practice_url,
     }
 
 @router.post("/evaluaciones/validar-spam", status_code=status.HTTP_200_OK)
@@ -1342,6 +1424,114 @@ def resolver_ruta_imagen_local(imagen_url: Optional[str]) -> Optional[Path]:
     return None
 
 
+_STOPWORDS_BUSQUEDA = {
+    "como", "hacer", "para", "sobre", "tengo", "puedo", "paso", "cual", "cuales",
+    "cuando", "donde", "esta", "este", "unos", "unas", "desde", "hacia", "sobre",
+    "what", "how", "when", "where", "from", "with", "this", "that", "fazer", "sobre",
+}
+
+
+def _normalizar_texto_busqueda(texto: str) -> str:
+    import unicodedata
+    sin_acentos = "".join(
+        ch for ch in unicodedata.normalize("NFKD", texto or "")
+        if not unicodedata.combining(ch)
+    )
+    return " ".join(sin_acentos.lower().strip().split())
+
+
+def _buscar_instrucciones_profesor_para_query(query: str) -> List[Dict[str, Any]]:
+    """
+    Busca técnicas en PostgreSQL cuyo nombre coincida con la consulta del alumno
+    y que tengan instrucciones configuradas en `tecnicas.mensaje_profesor`.
+    """
+    q_norm = _normalizar_texto_busqueda(query)
+    if not q_norm:
+        return []
+
+    q_tokens = {
+        tok for tok in q_norm.replace(",", " ").replace("?", " ").replace(".", " ").split()
+        if len(tok) >= 4 and tok not in _STOPWORDS_BUSQUEDA
+    }
+
+    rows: List[Dict[str, Any]] = []
+    rpc_ok = False
+    try:
+        db_tec = get_db()
+        rpc_rows = db_tec.rpc("get_tecnicas_with_videos", {})
+        if isinstance(rpc_rows, list):
+            rows = rpc_rows
+            rpc_ok = True
+    except Exception:
+        rows = []
+
+    if not rpc_ok:
+        try:
+            import psycopg2
+            from corpocmente.config import settings
+            db_url = getattr(settings, "DATABASE_URL", "postgres://postgres:postgres@localhost:5432/corpocmente")
+            conn = psycopg2.connect(db_url)
+            cur = conn.cursor()
+            cur.execute("SELECT id::text, nombre, mensaje_profesor FROM tecnicas WHERE COALESCE(TRIM(mensaje_profesor), '') <> ''")
+            rows = [{"id": r[0], "nombre": r[1], "mensaje_profesor": r[2]} for r in cur.fetchall()]
+            cur.close()
+            conn.close()
+        except Exception:
+            rows = []
+
+    if not isinstance(rows, list):
+        return []
+
+    vistos = set()
+    coincidencias: List[Dict[str, Any]] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        tec_id = str(r.get("id") or "")
+        nombre = str(r.get("nombre") or "").strip()
+        msg_prof = str(r.get("mensaje_profesor") or "").strip()
+        if not nombre or not msg_prof:
+            continue
+        dedup_key = (tec_id, nombre.lower())
+        if dedup_key in vistos:
+            continue
+        vistos.add(dedup_key)
+
+        tec_norm = _normalizar_texto_busqueda(nombre)
+        if not tec_norm:
+            continue
+
+        score = 0.0
+        if tec_norm in q_norm or q_norm in tec_norm:
+            score = 1.0
+        elif q_tokens:
+            tec_tokens = {
+                tok for tok in tec_norm.replace(",", " ").replace("-", " ").split()
+                if len(tok) >= 4 and tok not in _STOPWORDS_BUSQUEDA
+            }
+            comunes = q_tokens & tec_tokens
+            if comunes:
+                score = 0.85 + min(0.14, 0.04 * len(comunes))
+
+        if score > 0.0:
+            coincidencias.append({
+                "id": f"instructor_{tec_id or tec_norm}",
+                "fuente_nombre": f"Instrucciones del Profesor ({nombre})",
+                "fuente_tipo": "instructor_message",
+                "fuente_url": None,
+                "media_url": None,
+                "pagina": None,
+                "cita": f"Instrucciones del Profesor ({nombre})",
+                "contenido_texto": msg_prof,
+                "score": round(score, 4),
+                "tecnica_id": tec_id or None,
+                "alcance": "tecnica",
+            })
+
+    coincidencias.sort(key=lambda item: float(item.get("score") or 0.0), reverse=True)
+    return coincidencias
+
+
 @router.post("/conocimiento/biblioteca/buscar", status_code=status.HTTP_200_OK)
 async def buscar_en_biblioteca(
     req: BibliotecaBuscarRequest,
@@ -1365,11 +1555,14 @@ async def buscar_en_biblioteca(
             "imagen_url": None,
             "imagen_procesada": None,
             "busqueda_multimodal": False,
+            "answer": "",
+            "sources": [],
             "total": 0,
             "resultados": []
         }
 
     # Búsqueda Cognitiva: Reescribir query para diferenciar conceptos de ataque vs defensa
+    vlm = None
     try:
         from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
         vlm = LocalVLMAdapter()
@@ -1402,6 +1595,57 @@ async def buscar_en_biblioteca(
     else:
         resultados = rag.buscar_biblioteca(query_vector, limit=req.limit or 10)
 
+    instrucciones_profesor = _buscar_instrucciones_profesor_para_query(
+        query_limpia or query_cognitiva or ""
+    )
+    manuales_lista = list(resultados or [])
+    if instrucciones_profesor:
+        ids_inst = {item.get("contenido_texto") for item in instrucciones_profesor}
+        manuales_filtrados = [
+            m for m in manuales_lista
+            if m.get("fuente_tipo") != "instructor_message" and m.get("contenido_texto") not in ids_inst
+        ]
+        resultados_combinados = instrucciones_profesor + manuales_filtrados
+    else:
+        resultados_combinados = manuales_lista
+
+    top_chunks = resultados_combinados[:3]
+    sources = [
+        {
+            "index": idx,
+            "id": item.get("id"),
+            "cita": item.get("cita") or item.get("fuente_nombre") or f"Fuente {idx}",
+            "fuente_nombre": item.get("fuente_nombre"),
+            "fuente_tipo": item.get("fuente_tipo"),
+            "fuente_url": item.get("fuente_url"),
+            "media_url": item.get("media_url"),
+            "pagina": item.get("pagina"),
+            "score": item.get("score"),
+            "contenido_texto": item.get("contenido_texto"),
+        }
+        for idx, item in enumerate(top_chunks, start=1)
+    ]
+
+    answer = ""
+    try:
+        if vlm is None:
+            from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
+            vlm = LocalVLMAdapter()
+        answer = vlm.generar_respuesta_rag_chat(
+            query_limpia or "Explica esta técnica de Jiu-Jitsu",
+            top_chunks,
+            idioma=req.idioma or "es",
+        )
+    except Exception as e_ans:
+        logger.warning("Fallo generando respuesta conversacional RAG: %s", e_ans)
+        if sources:
+            answer = "\n".join(
+                f"- {(s.get('contenido_texto') or '')[:220]} [{s['index']}]"
+                for s in sources
+            )
+        else:
+            answer = "Aún no tengo esa información en nuestros manuales ni en las notas de tu profesor. Te sugiero preguntárselo directamente a tu instructor en el tatami."
+
     return {
         "query": query_limpia,
         "query_cognitiva": query_cognitiva,
@@ -1410,8 +1654,10 @@ async def buscar_en_biblioteca(
         "imagen_url": req.imagen_url,
         "imagen_procesada": img_procesada_str,
         "busqueda_multimodal": busqueda_multimodal,
-        "total": len(resultados),
-        "resultados": resultados,
+        "answer": answer,
+        "sources": sources,
+        "total": len(resultados_combinados),
+        "resultados": resultados_combinados,
     }
 
 
@@ -1577,6 +1823,96 @@ async def servir_manual_pdf(
         filename=safe_name,
         headers={"Content-Disposition": f'{disposition}; filename="{safe_name}"'}
     )
+
+
+@router.delete("/conocimiento/manuales/{filename}")
+async def eliminar_manual_conocimiento(
+    filename: str,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Elimina un manual de conocimiento de Qdrant (`rag_knowledge`), PostgreSQL (`teoria_referencia`)
+    y del almacenamiento físico en disco (`MANUALES_DIR` y storage legado).
+    Requiere privilegios de profesor o administrador.
+    """
+    import shutil
+    from pathlib import Path
+    from urllib.parse import unquote
+
+    caller = require_auth(authorization)
+    if caller.get("role") not in ("profesor", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo profesores y administradores pueden eliminar manuales.",
+        )
+
+    decoded = unquote(filename or "").strip()
+    if not decoded or "/" in decoded or "\\" in decoded or ".." in decoded:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre de archivo inválido.")
+    safe_name = os.path.basename(decoded)
+
+    # 1. Eliminar puntos en Qdrant que coincidan por fuente_nombre, fuente_url o media_path
+    qdrant_deleted = 0
+    try:
+        from corpocmente.infrastructure.persistence.qdrant_rag_adapter import QdrantRAGAdapter
+        rag = QdrantRAGAdapter()
+        qdrant_deleted += rag.eliminar_por_manual(safe_name)
+    except Exception as e_qdrant:
+        logger.warning("Error limpiando manual '%s' en Qdrant: %s", safe_name, e_qdrant)
+
+    # 2. Eliminar filas en Postgres y recuperar qdrant_point_id / URLs asociados
+    db = get_db()
+    pg_deleted = 0
+    extra_filenames = {safe_name}
+    try:
+        pg_rows = db.rpc("admin_delete_manual_teoria", {"p_filename": safe_name})
+        row = pg_rows[0] if isinstance(pg_rows, list) and pg_rows else (pg_rows if isinstance(pg_rows, dict) else {})
+        pg_deleted = int(row.get("deleted_count") or 0)
+        deleted_ids = [str(pid) for pid in (row.get("deleted_qdrant_ids") or []) if pid]
+        for url in (row.get("deleted_urls") or []):
+            base = os.path.basename(unquote(str(url).split("?")[0]))
+            if base:
+                extra_filenames.add(base)
+        if deleted_ids:
+            try:
+                from corpocmente.infrastructure.persistence.qdrant_rag_adapter import QdrantRAGAdapter
+                rag = QdrantRAGAdapter()
+                rag.eliminar_puntos(deleted_ids)
+            except Exception as e_pts:
+                logger.warning("Error limpiando point IDs residuales en Qdrant: %s", e_pts)
+    except Exception as e_pg:
+        logger.warning("Error limpiando manual '%s' en Postgres: %s", safe_name, e_pg)
+
+    # 3. Eliminar archivos físicos en MANUALES_DIR y storage legado
+    legacy_dir = Path(__file__).resolve().parents[3] / "storage" / "manuales"
+    files_deleted = 0
+    for directory in (Path(MANUALES_DIR), legacy_dir):
+        if not directory.exists():
+            continue
+        for fname in extra_filenames:
+            target_file = directory / os.path.basename(fname)
+            if target_file.is_file():
+                try:
+                    target_file.unlink()
+                    files_deleted += 1
+                except OSError as e_rm:
+                    logger.warning("No se pudo eliminar archivo %s: %s", target_file, e_rm)
+            stem = Path(fname).stem
+            if stem:
+                images_dir = directory / f"{stem}_imagenes"
+                if images_dir.is_dir():
+                    shutil.rmtree(images_dir, ignore_errors=True)
+
+    if qdrant_deleted == 0 and pg_deleted == 0 and files_deleted == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manual no encontrado.")
+
+    return {
+        "status": "deleted",
+        "filename": safe_name,
+        "qdrant_deleted": qdrant_deleted,
+        "postgres_deleted": pg_deleted,
+        "files_deleted": files_deleted,
+    }
 
 
 @router.get("/conocimiento/media/paginas/{asset_path:path}")
@@ -1804,6 +2140,176 @@ def _limpiar_candidatos_bboxes(candidates: list, w_img: int, h_img: int) -> list
     return sorted(dedup, key=lambda c: c["idx"])
 
 
+def _split_candidate_via_segmentation(frame, merged_candidate: dict, w_img: int, h_img: int) -> Optional[list]:
+    """
+    Intenta separar dos atletas entrelazados usando segmentación de instancias (`yolo26n-seg.pt`).
+    Retorna 2 candidatos válidos si detecta dos máscaras de tamaño corporal real, o None en caso contrario.
+    """
+    try:
+        seg_model = get_yolo_seg_model()
+        seg_results = seg_model.predict(source=frame, conf=0.15, classes=[0], verbose=False)
+    except Exception as e:
+        logger.warning("Fallback de segmentación yolo26n-seg falló o no está disponible: %s", e)
+        return None
+
+    if not seg_results or seg_results[0].boxes is None or len(seg_results[0].boxes) < 2:
+        return None
+
+    r0 = seg_results[0]
+    boxes_xyxy = r0.boxes.xyxy.cpu().numpy()
+    confs = r0.boxes.conf.cpu().numpy()
+    masks_xy = r0.masks.xy if (r0.masks is not None and hasattr(r0.masks, "xy")) else None
+
+    mx1, my1, mx2, my2 = merged_candidate["bbox_raw"]
+    merged_area = max(1.0, (mx2 - mx1) * (my2 - my1))
+    min_person_area = max(1200.0, 0.12 * merged_area)
+
+    seg_candidates = []
+    pose = merged_candidate.get("pose")
+    valid_pts = np.empty((0, 2))
+    if isinstance(pose, np.ndarray) and pose.shape == (17, 3):
+        pmask = (pose[:, 2] > 0.3) & (pose[:, 0] > 0)
+        valid_pts = pose[pmask, :2]
+
+    for i, box in enumerate(boxes_xyxy):
+        x1, y1, x2, y2 = [float(v) for v in box[:4]]
+        if masks_xy is not None and i < len(masks_xy) and len(masks_xy[i]) >= 3:
+            poly = masks_xy[i]
+            x1, y1 = float(poly[:, 0].min()), float(poly[:, 1].min())
+            x2, y2 = float(poly[:, 0].max()), float(poly[:, 1].max())
+
+        x1 = max(0.0, min(float(w_img), x1))
+        y1 = max(0.0, min(float(h_img), y1))
+        x2 = max(0.0, min(float(w_img), x2))
+        y2 = max(0.0, min(float(h_img), y2))
+        area = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+        if area < min_person_area:
+            continue
+
+        kpts_in_box = 0
+        if len(valid_pts) > 0:
+            inside = (
+                (valid_pts[:, 0] >= x1) & (valid_pts[:, 0] <= x2)
+                & (valid_pts[:, 1] >= y1) & (valid_pts[:, 1] <= y2)
+            )
+            kpts_in_box = int(np.count_nonzero(inside))
+
+        seg_candidates.append({
+            "area": area,
+            "bbox_raw": [x1, y1, x2, y2],
+            "confianza": round(float(confs[i]), 3),
+            "keypoints_validos": max(4, kpts_in_box),
+        })
+
+    if len(seg_candidates) < 2:
+        return None
+
+    top_two = sorted(seg_candidates, key=lambda c: c["area"], reverse=True)[:2]
+    top_two.sort(key=lambda c: (c["bbox_raw"][0], c["bbox_raw"][1]))
+    for idx, item in enumerate(top_two):
+        item["idx"] = idx
+    return top_two
+
+
+def _split_candidate_via_kmeans(merged_candidate: dict) -> Optional[list]:
+    """
+    Clustering K-Means (k=2) determinístico sobre los keypoints válidos de una caja fusionada (>10 keypoints),
+    calculando un bounding box independiente para cada grupo de articulaciones.
+    """
+    if merged_candidate.get("keypoints_validos", 0) <= 10:
+        return None
+
+    pose = merged_candidate.get("pose")
+    if not isinstance(pose, np.ndarray) or pose.shape != (17, 3):
+        return None
+
+    mask = (pose[:, 2] > 0.3) & (pose[:, 0] > 0)
+    pts = pose[mask, :2]
+    if len(pts) <= 10:
+        return None
+
+    # Elegir eje principal de separación (horizontal o vertical) para inicializar centroides determinísticos
+    spread_x = float(pts[:, 0].max() - pts[:, 0].min())
+    spread_y = float(pts[:, 1].max() - pts[:, 1].min())
+    axis = 0 if spread_x >= spread_y else 1
+
+    c0 = pts[int(np.argmin(pts[:, axis]))].copy()
+    c1 = pts[int(np.argmax(pts[:, axis]))].copy()
+    labels = np.zeros(len(pts), dtype=int)
+
+    for _ in range(20):
+        d0 = np.linalg.norm(pts - c0, axis=1)
+        d1 = np.linalg.norm(pts - c1, axis=1)
+        new_labels = (d1 < d0).astype(int)
+        if np.array_equal(new_labels, labels) and _ > 0:
+            break
+        labels = new_labels
+        if np.any(labels == 0):
+            c0 = pts[labels == 0].mean(axis=0)
+        if np.any(labels == 1):
+            c1 = pts[labels == 1].mean(axis=0)
+
+    if int(np.count_nonzero(labels == 0)) < 2 or int(np.count_nonzero(labels == 1)) < 2:
+        order = np.argsort(pts[:, axis])
+        mid = len(order) // 2
+        labels = np.zeros(len(pts), dtype=int)
+        labels[order[mid:]] = 1
+
+    split_cands = []
+    for g in (0, 1):
+        gpts = pts[labels == g]
+        gx1, gy1 = float(gpts[:, 0].min()), float(gpts[:, 1].min())
+        gx2, gy2 = float(gpts[:, 0].max()), float(gpts[:, 1].max())
+        # Garantizar dimensiones mínimas razonables si todos los puntos del grupo están casi alineados
+        if (gx2 - gx1) < 12.0:
+            gx1, gx2 = gx1 - 6.0, gx2 + 6.0
+        if (gy2 - gy1) < 12.0:
+            gy1, gy2 = gy1 - 6.0, gy2 + 6.0
+        split_cands.append({
+            "bbox_raw": [gx1, gy1, gx2, gy2],
+            "confianza": merged_candidate["confianza"],
+            "keypoints_validos": int(len(gpts)),
+        })
+
+    split_cands.sort(key=lambda c: (c["bbox_raw"][0], c["bbox_raw"][1]))
+    for idx, item in enumerate(split_cands):
+        item["idx"] = idx
+    return split_cands
+
+
+def _resolver_cajas_fusionadas(frame, candidatos_limpios: list, w_img: int, h_img: int) -> list:
+    """
+    Cuando YOLO Pose fusiona a dos atletas entrelazados en el suelo en 1 sola caja ancha
+    (>40% del ancho del frame), aplica segmentación de instancias (`yolo26n-seg.pt`) y,
+    como respaldo, clustering K-Means (k=2) sobre keypoints.
+    """
+    if len(candidatos_limpios) != 1 or w_img <= 0:
+        return candidatos_limpios
+
+    unico = candidatos_limpios[0]
+    min_x, _, max_x, _ = unico["bbox_raw"]
+    if (max_x - min_x) <= 0.40 * float(w_img):
+        return candidatos_limpios
+
+    logger.info(
+        "Detectada posible caja fusionada (ancho=%.1f / %d = %.1f%%). Ejecutando desambiguación...",
+        max_x - min_x,
+        w_img,
+        ((max_x - min_x) / float(w_img)) * 100.0,
+    )
+    seg_split = _split_candidate_via_segmentation(frame, unico, w_img, h_img)
+    if seg_split and len(seg_split) == 2:
+        logger.info("Caja fusionada separada exitosamente mediante yolo26n-seg.")
+        return seg_split
+
+    kmeans_split = _split_candidate_via_kmeans(unico)
+    if kmeans_split and len(kmeans_split) == 2:
+        logger.info("Caja fusionada separada exitosamente mediante K-Means (k=2) sobre keypoints.")
+        return kmeans_split
+
+    return candidatos_limpios
+
+
 @router.post("/evaluaciones/primer-frame", status_code=status.HTTP_200_OK)
 async def obtener_primer_frame(
     video: UploadFile = File(...),
@@ -1878,6 +2384,7 @@ async def obtener_primer_frame(
                 candidatos_limpios = _limpiar_candidatos_bboxes(candidates, frame.shape[1], frame.shape[0])
                 if not candidatos_limpios:
                     continue
+                candidatos_limpios = _resolver_cajas_fusionadas(frame, candidatos_limpios, frame.shape[1], frame.shape[0])
 
                 frame_idx_encontrado = target
                 frame_encontrado = frame

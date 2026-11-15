@@ -6,16 +6,14 @@
 
 BEGIN;
 
--- 1. Desvincular patrones activos en tecnicas para permitir el vaciado limpio de videos_referencia
-UPDATE tecnicas SET patron_activo_id = NULL;
-
--- 2. Limpieza total de tablas transaccionales y de prueba mediante TRUNCATE CASCADE
+-- 1. Limpieza total de tablas transaccionales y de prueba mediante TRUNCATE CASCADE
 TRUNCATE TABLE 
     evaluaciones_alumnos, 
     comparaciones_video, 
     teoria_referencia, 
     activaciones_pases, 
-    videos_referencia 
+    videos_referencia,
+    patrones_referencia
 CASCADE;
 
 -- 3. Erradicación de usuarios de prueba / alumnos

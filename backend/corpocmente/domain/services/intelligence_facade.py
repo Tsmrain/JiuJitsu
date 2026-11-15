@@ -44,18 +44,29 @@ class IntelligenceAnalysisFacade:
     ) -> AnalisisResultDTO:
         from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
-        # 0. Recuperar patrón activo de referencia desde Qdrant
-        secuencia_maestro = None
-        if hasattr(self.qdrant, "obtener_secuencia_referencia"):
+        # 0. Recuperar patrones activos de referencia desde Qdrant (Soporte 1:N)
+        secuencias_referencia = []
+        if hasattr(self.qdrant, "obtener_todas_secuencias_referencia"):
+            try:
+                res_all = self.qdrant.obtener_todas_secuencias_referencia(tecnica_id=tecnica_id)
+                if isinstance(res_all, list) and len(res_all) > 0 and isinstance(res_all[0], list):
+                    secuencias_referencia = res_all
+            except Exception as e_q:
+                logger.warning(f"Error consultando obtener_todas_secuencias_referencia: {e_q}")
+
+        if not secuencias_referencia and hasattr(self.qdrant, "obtener_secuencia_referencia"):
             try:
                 res_q = self.qdrant.obtener_secuencia_referencia(tecnica_id=tecnica_id)
-                if isinstance(res_q, list) and len(res_q) > 0:
-                    secuencia_maestro = res_q
+                if isinstance(res_q, list) and len(res_q) > 0 and isinstance(res_q[0], list):
+                    if len(res_q[0]) > 0 and isinstance(res_q[0][0], list):
+                        secuencias_referencia = res_q
+                    else:
+                        secuencias_referencia = [res_q]
             except Exception as e_q:
                 logger.warning(f"Error consultando obtener_secuencia_referencia: {e_q}")
 
         # Si no hay patrón en Qdrant pero se proveyó video de referencia, asegurar ingesta
-        if not secuencia_maestro and video_referencia_path and hasattr(self.qdrant, "asegurar_poses_referencia"):
+        if not secuencias_referencia and video_referencia_path and hasattr(self.qdrant, "asegurar_poses_referencia"):
             try:
                 self.qdrant.asegurar_poses_referencia(
                     tecnica_id=tecnica_id,
@@ -63,15 +74,28 @@ class IntelligenceAnalysisFacade:
                     yolo_adapter=self.yolo,
                     tecnica_nombre=tecnica_nombre
                 )
-                if hasattr(self.qdrant, "obtener_secuencia_referencia"):
+                if hasattr(self.qdrant, "obtener_todas_secuencias_referencia"):
+                    res_all = self.qdrant.obtener_todas_secuencias_referencia(tecnica_id=tecnica_id)
+                    if isinstance(res_all, list) and len(res_all) > 0 and isinstance(res_all[0], list):
+                        secuencias_referencia = res_all
+                elif hasattr(self.qdrant, "obtener_secuencia_referencia"):
                     res_q = self.qdrant.obtener_secuencia_referencia(tecnica_id=tecnica_id)
-                    if isinstance(res_q, list) and len(res_q) > 0:
-                        secuencia_maestro = res_q
+                    if isinstance(res_q, list) and len(res_q) > 0 and isinstance(res_q[0], list):
+                        if len(res_q[0]) > 0 and isinstance(res_q[0][0], list):
+                            secuencias_referencia = res_q
+                        else:
+                            secuencias_referencia = [res_q]
             except Exception as e_ref:
                 logger.warning(f"No se pudo auto-ingerir video de referencia del profesor: {e_ref}")
 
         secuencia_alumno = None
         if hasattr(self.yolo, "extraer_secuencia"):
+            logger.info(
+                "[INTEGRACION] Facade -> extraer_secuencia video=%s persona_idx=%s patrones_ref=%d",
+                video_path,
+                persona_idx,
+                len(secuencias_referencia),
+            )
             ext_res = self.yolo.extraer_secuencia(
                 video_path,
                 persona_idx_inicial=persona_idx,
@@ -94,13 +118,25 @@ class IntelligenceAnalysisFacade:
         if not secuencia_alumno:
             raise ValueError("No se pudo detectar el esqueleto biomecánico en el video del alumno.")
 
-        # 2. Comparación DTW o fallback a máxima diferencia
-        if secuencia_maestro:
+        # 2. Comparación DTW multi-referencia (1:N) o fallback a máxima diferencia
+        mejor_dtw_res = None
+        if secuencias_referencia:
             from corpocmente.domain.biomechanics.dtw_comparator import comparar_secuencias_con_dtw
-            dtw_res = comparar_secuencias_con_dtw(secuencia_maestro, secuencia_alumno)
-            similitud = dtw_res["score_similitud"]
-            frame_alumno_critico = dtw_res["frame_alumno_critico"]
-            arts_criticas = dtw_res.get("articulaciones_criticas", [])
+            logger.info("Comparando video del alumno contra %d patrón(es) de referencia activo(s) para técnica %s", len(secuencias_referencia), tecnica_id)
+            for idx_ref, sec_ref in enumerate(secuencias_referencia):
+                try:
+                    dtw_cand = comparar_secuencias_con_dtw(sec_ref, secuencia_alumno)
+                    score_cand = dtw_cand.get("score_similitud", 0.0)
+                    logger.debug("Patrón ref #%d: score_similitud = %.2f%%", idx_ref + 1, score_cand)
+                    if mejor_dtw_res is None or score_cand > mejor_dtw_res.get("score_similitud", -1.0):
+                        mejor_dtw_res = dtw_cand
+                except Exception as e_dtw:
+                    logger.warning("Error comparando con patrón #%d: %s", idx_ref + 1, e_dtw)
+
+        if mejor_dtw_res:
+            similitud = mejor_dtw_res["score_similitud"]
+            frame_alumno_critico = mejor_dtw_res["frame_alumno_critico"]
+            arts_criticas = mejor_dtw_res.get("articulaciones_criticas", [])
             from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
             nombres_arts = obtener_nombres_articulaciones(arts_criticas, idioma=idioma)
             lang_clean = (idioma or "es").lower().strip()
@@ -119,8 +155,8 @@ class IntelligenceAnalysisFacade:
                     f"Desviación biomecánica en {art}: desalineación respecto al patrón del instructor."
                     for art in nombres_arts
                 ]
-            dtw_distance = dtw_res.get("dtw_distance")
-            dtw_normalizado = dtw_res.get("dtw_normalizado")
+            dtw_distance = mejor_dtw_res.get("dtw_distance")
+            dtw_normalizado = mejor_dtw_res.get("dtw_normalizado")
             kpts_critico = secuencia_alumno[frame_alumno_critico] if frame_alumno_critico < len(secuencia_alumno) else None
         elif hasattr(self.qdrant, "buscar_maxima_diferencia"):
             if esqueletos_frames is not None:
@@ -285,6 +321,25 @@ class IntelligenceAnalysisFacade:
                                 )
                 except Exception as e_rag:
                     logger.warning("Fallo en recuperación RAG multimodal o reranking (no bloqueante): %s", e_rag)
+            elif hasattr(self.qdrant, "recuperar_contexto_rag"):
+                try:
+                    ctx_directo = self.qdrant.recuperar_contexto_rag(tecnica_id, discrepancias_detectadas)
+                    if ctx_directo:
+                        tiene_contexto_rag = True
+                        contexto_profundo = f"\n\n[Contexto RAG]:\n{ctx_directo}"
+                        logger.info("Prioridad 1 activa: RAG de texto directo obtenido desde qdrant para '%s'", tecnica_nombre)
+                except Exception as e_ctx:
+                    logger.warning("Fallo en recuperación RAG directa desde qdrant: %s", e_ctx)
+
+            if not (mensaje_profesor and str(mensaje_profesor).strip()) and hasattr(self.qdrant, "obtener_mensaje_profesor_rag"):
+                try:
+                    msgs_qdrant = self.qdrant.obtener_mensaje_profesor_rag(tecnica_id)
+                    if isinstance(msgs_qdrant, list) and len(msgs_qdrant) > 0 and isinstance(msgs_qdrant[0], dict):
+                        txt_q = (msgs_qdrant[0].get("contenido_texto") or "").strip()
+                        if txt_q:
+                            mensaje_profesor = txt_q
+                except Exception as e_qm:
+                    logger.debug("Fallo consultando mensaje_profesor en Qdrant fallback: %s", e_qm)
 
             from corpocmente.domain.strategies.prompt_strategies import obtener_estrategia_prompt
             strategy = obtener_estrategia_prompt(idioma)
@@ -360,11 +415,17 @@ class IntelligenceAnalysisFacade:
 
             # Mecanismo de Grounding (Anti-Alucinaciones con LLM-as-a-Judge)
             # Solo aplica si se consultó al VLM (Prioridad 1 o 2)
-            if (tiene_contexto_rag or (mensaje_profesor and mensaje_profesor.strip())) and hasattr(self.gemini, "evaluar_fidelidad_grounding"):
+            tiene_mensaje_profesor = bool(mensaje_profesor and str(mensaje_profesor).strip())
+            if (tiene_contexto_rag or tiene_mensaje_profesor) and hasattr(self.gemini, "evaluar_fidelidad_grounding"):
                 try:
+                    contexto_juez = contexto_profundo if tiene_contexto_rag else (
+                        "Observaciones biomecánicas del frame:\n"
+                        + "\n".join(f"- {d}" for d in (discrepancias_detectadas or []))
+                        if discrepancias_detectadas else ""
+                    )
                     eval_grounding = self.gemini.evaluar_fidelidad_grounding(
                         respuesta={"summary": feedback_summary, "correction": feedback_correction},
-                        contexto=contexto_profundo if tiene_contexto_rag else "",
+                        contexto=contexto_juez,
                         mensaje_profesor="" if tiene_contexto_rag else mensaje_profesor,
                     )
                     if (
@@ -380,13 +441,24 @@ class IntelligenceAnalysisFacade:
                                 faith_score,
                                 unsupported,
                             )
-                            fallback_data = strategy.obtener_mensaje_sin_contexto()
-                            feedback_summary = fallback_data.get("summary", "Información insuficiente")
-                            feedback_correction = fallback_data.get(
-                                "correction",
-                                "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
-                            )
-                            feedback_texto = feedback_correction
+                            if tiene_mensaje_profesor:
+                                lang_fb = (idioma or "es").lower().strip()
+                                if lang_fb.startswith("pt"):
+                                    feedback_summary = f"Ajuste técnico em {tecnica_nombre}"
+                                elif lang_fb.startswith("en"):
+                                    feedback_summary = f"Coach cue for {tecnica_nombre}"
+                                else:
+                                    feedback_summary = f"Indicaciones del profesor: {tecnica_nombre}"
+                                feedback_correction = str(mensaje_profesor).strip()
+                                feedback_texto = feedback_correction
+                            else:
+                                fallback_data = strategy.obtener_mensaje_sin_contexto()
+                                feedback_summary = fallback_data.get("summary", "Información insuficiente")
+                                feedback_correction = fallback_data.get(
+                                    "correction",
+                                    "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
+                                )
+                                feedback_texto = feedback_correction
                 except Exception as e_judge:
                     logger.warning("Fallo en evaluación de fidelidad grounding (no bloqueante): %s", e_judge)
 

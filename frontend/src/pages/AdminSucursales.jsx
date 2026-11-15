@@ -406,6 +406,36 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
     }
   };
 
+  const handleDeleteUser = async (targetUser) => {
+    const label = targetUser.nombre_completo || targetUser.username || targetUser.email;
+    if (!confirm(`${t('confirmDeleteUser')} "${label}"?`)) return;
+
+    try {
+      let res = await fetch(`${API_BASE}/api/v1/auth/usuarios/${targetUser.user_id}`, {
+        method: 'DELETE',
+        headers: { "Authorization": `Bearer ${user.token}` }
+      });
+
+      if (res.status === 409) {
+        if (!confirm(t('confirmReassignUser'))) return;
+        res = await fetch(`${API_BASE}/api/v1/auth/usuarios/${targetUser.user_id}?auto_reasignar=true`, {
+          method: 'DELETE',
+          headers: { "Authorization": `Bearer ${user.token}` }
+        });
+      }
+
+      if (res.ok) {
+        fetchUsuarios();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || t('errorDeletingUser'));
+      }
+    } catch (e) {
+      console.error("Error deleting user:", e);
+      alert(t('connectionError'));
+    }
+  };
+
   return (
     <div style={{ padding: '1rem 0.5rem', width: '100%', maxWidth: '100%', margin: '0 auto', color: 'white', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -664,13 +694,31 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
                   </div>
                   
                   {u.rol !== 'admin' && (
-                    <button 
-                      onClick={() => handleImpersonate(u.user_id)}
-                      className="btn-primary"
-                      style={{ marginTop: '0.5rem', padding: '0.5rem', fontSize: '0.8rem', background: 'var(--brand-red)', border: 'none' }}
-                    >
-                      {u.rol === 'profesor' ? t('impersonateInstructor') : t('impersonateStudent')}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        onClick={() => handleImpersonate(u.user_id)}
+                        className="btn-primary"
+                        style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem', background: 'var(--brand-red)', border: 'none' }}
+                      >
+                        {u.rol === 'profesor' ? t('impersonateInstructor') : t('impersonateStudent')}
+                      </button>
+                      {u.user_id !== user?.user_id && (
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="btn-secondary"
+                          style={{
+                            padding: '0.5rem 0.75rem',
+                            fontSize: '0.8rem',
+                            background: 'rgba(239, 68, 68, 0.14)',
+                            color: '#fca5a5',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                          }}
+                          title={t('deleteUser')}
+                        >
+                          🗑️ {t('deleteUser')}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

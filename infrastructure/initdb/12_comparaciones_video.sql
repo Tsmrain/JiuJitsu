@@ -48,7 +48,7 @@ DROP POLICY IF EXISTS comparaciones_video_auth_all ON comparaciones_video;
 CREATE POLICY comparaciones_video_auth_all
 ON comparaciones_video
 FOR ALL
-TO authenticated
+TO alumno, profesor, admin
 USING (
     alumno_id::text = (current_setting('request.jwt.claims', true)::jsonb ->> 'uid')
     OR (current_setting('request.jwt.claims', true)::jsonb ->> 'role') = 'admin'
@@ -57,3 +57,5 @@ WITH CHECK (
     alumno_id::text = (current_setting('request.jwt.claims', true)::jsonb ->> 'uid')
     OR (current_setting('request.jwt.claims', true)::jsonb ->> 'role') = 'admin'
 );
+
+GRANT ALL ON comparaciones_video TO alumno, profesor, admin;

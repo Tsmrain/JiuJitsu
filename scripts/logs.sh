@@ -2,8 +2,15 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-mkdir -p data/logs
-touch data/logs/backend.log data/logs/frontend.log
+
+if [ -f backend/.env ]; then
+  set -a
+  source backend/.env
+  set +a
+fi
+DATA_DIR="${CORPOCMENTE_DATA_DIR:-/tmp/corpocmente_data}"
+mkdir -p "$DATA_DIR/logs"
+touch "$DATA_DIR/logs/backend.log" "$DATA_DIR/logs/frontend.log"
 echo "▸ Siguiendo logs (Ctrl+C para salir)"
-tail -f data/logs/backend.log data/logs/frontend.log
+tail -f "$DATA_DIR/logs/backend.log" "$DATA_DIR/logs/frontend.log"
 

@@ -269,8 +269,11 @@ class YOLOPoseAdapter:
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
+            from corpocmente.config import storage_root
             repo_root = Path(__file__).resolve().parents[4]
             candidates = [
+                str(storage_root() / "models" / "yolo26n-seg.pt"),
+                str(repo_root / "backend" / "storage" / "models" / "yolo26n-seg.pt"),
                 str(repo_root / "storage" / "models" / "yolo26n-seg.pt"),
                 str(repo_root / "backend" / "yolo26n-seg.pt"),
                 "storage/models/yolo26n-seg.pt",
@@ -321,18 +324,19 @@ class YOLOPoseAdapter:
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
+            from corpocmente.config import storage_root
             candidates = [
-                str(repo_root / "yolo26n_americana.pt"),
-                str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
-                str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
-                str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
-                str(repo_root / "backend" / "yolo26n-pose.pt"),
-                "storage/models/yolo26n-pose.pt",
-                "yolo26n-pose.pt",
+                str(storage_root() / "models" / "yolo26l-pose.pt"),
+                str(repo_root / "backend" / "storage" / "models" / "yolo26l-pose.pt"),
+                str(repo_root / "storage" / "models" / "yolo26l-pose.pt"),
+                str(repo_root / "backend" / "yolo26l-pose.pt"),
+                "storage/models/yolo26l-pose.pt",
+                "yolo26l-pose.pt",
             ]
-            weights = next((c for c in candidates if os.path.exists(c)), "yolo26n-pose.pt")
+            weights = next((c for c in candidates if os.path.exists(c)), "yolo26l-pose.pt")
             self._model_cache = YOLO(weights)
             self._model_cache.path = str(weights)
+            logger.info("[YOLO] Modelo Pose cargado: %s", weights)
         return self._model_cache
 
     def extraer_secuencia(
@@ -665,11 +669,27 @@ class YOLOPoseAdapter:
                             personas_depth[c_idx] = cand_depths[c_idx]
                     assigned_trackers.update(personas_rastreadas.keys())
                 else:
+                    frame_w = w if w > 1.0 else (
+                        float(r.orig_img.shape[1]) if getattr(r, "orig_img", None) is not None else 1280.0
+                    )
+                    max_jump_px = min(0.20, float(max_disp_norm)) * frame_w if max_disp_norm > 0 else 0.20 * frame_w
                     cost_matrix = {}
                     for t_idx, t_pose in personas_rastreadas.items():
                         box_t = self._extraer_caja_c(t_pose)
+                        if box_t == [0.0, 0.0, 0.0, 0.0]:
+                            continue
+                        cx_t = (box_t[0] + box_t[2]) * 0.5
+                        cy_t = (box_t[1] + box_t[3]) * 0.5
                         for c_idx, c in enumerate(candidatos):
                             box_c = self._extraer_caja_c(c)
+                            if box_c == [0.0, 0.0, 0.0, 0.0]:
+                                continue
+                            cx_c = (box_c[0] + box_c[2]) * 0.5
+                            cy_c = (box_c[1] + box_c[3]) * 0.5
+                            dist_centro = ((cx_c - cx_t) ** 2 + (cy_c - cy_t) ** 2) ** 0.5
+                            if dist_centro > max_jump_px:
+                                continue
+
                             iou = self._calcular_iou(box_t, box_c)
                             cost = 1.0 - iou
 
@@ -778,6 +798,377 @@ class YOLOPoseAdapter:
             ))
         return esqueletos
 
+    def _seleccionar_candidato_recorte(
+        self,
+        cands_crop: list,
+        cx1: int,
+        cy1: int,
+        crop_w: int,
+        crop_h: int,
+        pts_orig: dict[int, tuple[int, int, float]],
+    ):
+        """Selecciona el esqueleto del atleta objetivo dentro de un recorte Top-Down."""
+        if len(cands_crop) == 1:
+            return cands_crop[0]
+
+        import numpy as np
+
+        best_cand = None
+        best_dist = float("inf")
+        crop_center = (crop_w * 0.5, crop_h * 0.5)
+
+        for pk in cands_crop:
+            dists = []
+            for idx, (ox, oy, oconf) in pts_orig.items():
+                if oconf > 0.30 and (ox > 0 or oy > 0) and pk[idx, 2] > 0.30 and pk[idx, 0] > 0:
+                    gx = float(pk[idx, 0]) + cx1
+                    gy = float(pk[idx, 1]) + cy1
+                    dists.append(((gx - ox) ** 2 + (gy - oy) ** 2) ** 0.5)
+            if dists:
+                score = float(np.mean(dists))
+            else:
+                valid = pk[(pk[:, 2] > 0.30) & (pk[:, 0] > 0), :2]
+                if len(valid) == 0:
+                    continue
+                mx, my = float(valid[:, 0].mean()), float(valid[:, 1].mean())
+                score = ((mx - crop_center[0]) ** 2 + (my - crop_center[1]) ** 2) ** 0.5
+
+            if score < best_dist:
+                best_dist = score
+                best_cand = pk
+
+        return best_cand if best_cand is not None else cands_crop[0]
+
+    def _seleccionar_caja_objetivo(
+        self,
+        boxes: Optional[list],
+        kpt_box: Optional[list],
+        persona_idx: Optional[int] = None,
+    ) -> Optional[list]:
+        """Elige la caja delimitadora objetivo desde YOLO o cae a la caja de keypoints."""
+        target_box = None
+        if boxes:
+            if kpt_box is not None:
+                best_iou = 0.0
+                best_box = None
+                for b in boxes:
+                    box_f = [float(b[0]), float(b[1]), float(b[2]), float(b[3])]
+                    iou = self._calcular_iou(kpt_box, box_f)
+                    if iou > best_iou:
+                        best_iou = iou
+                        best_box = box_f
+                if best_box is not None and best_iou >= 0.15:
+                    target_box = best_box
+            else:
+                p_idx = persona_idx if (persona_idx is not None and 0 <= persona_idx < len(boxes)) else 0
+                b = boxes[p_idx]
+                target_box = [float(b[0]), float(b[1]), float(b[2]), float(b[3])]
+
+        if target_box is None and kpt_box is not None:
+            target_box = kpt_box
+        return target_box
+
+    def _aislar_recorte_caja_ancha(
+        self,
+        frame,
+        target_box: list,
+        pts_orig: dict[int, tuple[int, int, float]],
+        persona_idx: Optional[int] = None,
+    ) -> tuple[object, list, dict[int, tuple[int, int, float]]]:
+        """
+        Cuando la bounding box supera el 40% del ancho del frame (dos cuerpos entrelazados),
+        aísla al atleta objetivo evitando el recorte global:
+          Opción A: K-Means (k=2) sobre keypoints válidos para descartar extremidades del oponente.
+          Opción B: Segmentación (`yolo26n-seg.pt`) para enmascarar la silueta objetivo.
+        Retorna (source_frame_para_pose, caja_aislada, pts_objetivo_filtrados).
+        """
+        import cv2
+        import numpy as np
+
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = [float(v) for v in target_box]
+
+        # Opción A: K-Means espacial (n_clusters=2) sobre keypoints válidos (conf > 0.3)
+        valid_kpts = [
+            (idx, float(px), float(py))
+            for idx, (px, py, conf) in pts_orig.items()
+            if conf > 0.30 and (px > 0 or py > 0)
+        ]
+        if len(valid_kpts) >= 4:
+            try:
+                from sklearn.cluster import KMeans
+
+                coords = np.array([[x, y] for _, x, y in valid_kpts], dtype=np.float32)
+                km = KMeans(n_clusters=2, n_init=10, random_state=42).fit(coords)
+                labels = km.labels_
+
+                # Elegir el clúster principal del atleta seleccionado (prioriza torso/cabeza idx <= 12)
+                best_cl = max(
+                    (0, 1),
+                    key=lambda cl: (
+                        sum(1 for k in range(len(valid_kpts)) if labels[k] == cl and valid_kpts[k][0] <= 12),
+                        sum(1 for lb in labels if lb == cl),
+                    ),
+                )
+                cpts = [valid_kpts[k] for k in range(len(valid_kpts)) if labels[k] == best_cl]
+                if len(cpts) >= 3:
+                    cxs = [p[1] for p in cpts]
+                    cys = [p[2] for p in cpts]
+                    mx1, my1, mx2, my2 = min(cxs), min(cys), max(cxs), max(cys)
+                    cbw = max(20.0, mx2 - mx1)
+                    cbh = max(20.0, my2 - my1)
+                    if cbw <= 0.40 * float(w):
+                        pad_x = max(30.0, cbw * 0.20)
+                        pad_y = max(30.0, cbh * 0.25)
+                        max_half = 0.20 * float(w)
+                        cx_mid = (mx1 + mx2) * 0.5
+                        ax1 = max(0.0, cx_mid - min(max_half, cbw * 0.5 + pad_x))
+                        ax2 = min(float(w), cx_mid + min(max_half, cbw * 0.5 + pad_x))
+                        ay1 = max(0.0, min(y1, my1 - pad_y))
+                        ay2 = min(float(h), my2 + pad_y)
+                        pts_cluster = {idx: pts_orig[idx] for idx, _, _ in cpts if idx in pts_orig}
+                        logger.info(
+                            "[TOP-DOWN] Aislamiento K-Means (k=2): %d->%d kpts, caja=%.0f,%.0f a %.0f,%.0f (%.1f%% ancho)",
+                            len(valid_kpts),
+                            len(cpts),
+                            ax1,
+                            ay1,
+                            ax2,
+                            ay2,
+                            ((ax2 - ax1) / max(1.0, float(w))) * 100.0,
+                        )
+                        return frame, [ax1, ay1, ax2, ay2], pts_cluster
+            except Exception as e_km:
+                logger.debug("[TOP-DOWN] Aislamiento K-Means falló (%s); intentando segmentación.", e_km)
+
+        # Opción B: Segmentación por silueta con yolo26n-seg.pt
+        try:
+            seg_model = self._get_seg_model()
+            seg_res = seg_model.predict(source=frame, conf=0.15, classes=[0], verbose=False)
+            if (
+                seg_res
+                and getattr(seg_res[0], "masks", None) is not None
+                and len(seg_res[0].masks.data) > 0
+                and getattr(seg_res[0], "boxes", None) is not None
+            ):
+                masks_data = seg_res[0].masks.data.cpu().numpy()
+                seg_boxes = seg_res[0].boxes.xyxy.cpu().numpy()
+
+                # Seleccionar máscara que más keypoints válidos de pts_orig contiene (o mayor IoU / persona_idx)
+                chosen_idx = 0
+                best_hits = -1
+                best_iou = -1.0
+                for mi, mb in enumerate(seg_boxes):
+                    m_full = cv2.resize(masks_data[mi], (w, h)) > 0.5
+                    if valid_kpts:
+                        hits = sum(
+                            1 for _, kx, ky in valid_kpts
+                            if m_full[max(0, min(h - 1, int(ky))), max(0, min(w - 1, int(kx)))]
+                        )
+                        iou_m = self._calcular_iou(target_box, [float(v) for v in mb[:4]])
+                        if hits > best_hits or (hits == best_hits and iou_m > best_iou):
+                            best_hits = hits
+                            best_iou = iou_m
+                            chosen_idx = mi
+                    else:
+                        iou_m = self._calcular_iou(target_box, [float(v) for v in mb[:4]])
+                        if iou_m > best_iou:
+                            best_iou = iou_m
+                            chosen_idx = mi
+
+                if not valid_kpts and persona_idx is not None and 0 <= persona_idx < len(seg_boxes):
+                    chosen_idx = persona_idx
+
+                mask_target = cv2.resize(masks_data[chosen_idx], (w, h)) > 0.5
+                if len(masks_data) > 1:
+                    mask_others = np.zeros((h, w), dtype=bool)
+                    for oi in range(len(masks_data)):
+                        if oi != chosen_idx:
+                            mask_others |= (cv2.resize(masks_data[oi], (w, h)) > 0.5)
+                    exclusive = mask_target & (~mask_others)
+                    if int(exclusive.sum()) >= int(0.20 * max(1, int(mask_target.sum()))):
+                        mask_target = exclusive
+
+                if int(mask_target.sum()) > 100:
+                    mask_dil = cv2.dilate(mask_target.astype(np.uint8), np.ones((15, 15), np.uint8)) > 0
+                    masked_frame = np.full_like(frame, 114)
+                    masked_frame[mask_dil] = frame[mask_dil]
+                    ys_m, xs_m = np.where(mask_dil)
+                    sx1, sy1, sx2, sy2 = float(xs_m.min()), float(ys_m.min()), float(xs_m.max()), float(ys_m.max())
+                    logger.info(
+                        "[TOP-DOWN] Aislamiento por segmentación yolo26n-seg aplicado (mask idx=%d, caja=%.0f,%.0f a %.0f,%.0f)",
+                        chosen_idx,
+                        sx1,
+                        sy1,
+                        sx2,
+                        sy2,
+                    )
+                    return masked_frame, [sx1, sy1, sx2, sy2], pts_orig
+        except Exception as e_seg:
+            logger.debug("[TOP-DOWN] Aislamiento por segmentación falló: %s", e_seg)
+
+        return frame, target_box, pts_orig
+
+    def _ejecutar_recorte_top_down(
+        self,
+        frame,
+        target_box: list,
+        pts_orig: dict[int, tuple[int, int, float]],
+        model,
+        device=None,
+        persona_idx: Optional[int] = None,
+    ):
+        """
+        Recorta la región del atleta objetivo con 10% de padding de seguridad (o aplica aislamiento
+        forzado por K-Means/Segmentación si el ancho supera el 40% del frame), ejecuta inferencia
+        pose aislada sobre el recorte y retorna un ndarray (17, 3) en coordenadas globales.
+        """
+        import numpy as np
+
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = float(target_box[0]), float(target_box[1]), float(target_box[2]), float(target_box[3])
+        logger.info(f"Bounding box a recortar: {int(round(x1))},{int(round(y1))} a {int(round(x2))},{int(round(y2))}")
+
+        bw = max(0.0, x2 - x1)
+        bh = max(0.0, y2 - y1)
+        if bw < 10.0 or bh < 10.0:
+            return None
+
+        source_frame = frame
+        pts_for_match = pts_orig
+        use_direct_box = False
+
+        if w > 0 and bw > 0.40 * float(w):
+            logger.info(
+                "[TOP-DOWN] Caja supera 40%% del ancho (%.0f/%d = %.1f%%). Evitando recorte global; aislando cuerpo.",
+                bw,
+                w,
+                (bw / float(w)) * 100.0,
+            )
+            source_frame, isolated_box, pts_for_match = self._aislar_recorte_caja_ancha(
+                frame, target_box, pts_orig, persona_idx=persona_idx
+            )
+            if isolated_box is not target_box:
+                x1, y1, x2, y2 = [float(v) for v in isolated_box]
+                bw = max(0.0, x2 - x1)
+                bh = max(0.0, y2 - y1)
+                use_direct_box = True
+
+        if use_direct_box:
+            cx1 = max(0, int(round(x1)))
+            cy1 = max(0, int(round(y1)))
+            cx2 = min(w, int(round(x2)))
+            cy2 = min(h, int(round(y2)))
+        else:
+            pad_x = bw * 0.10
+            pad_y = bh * 0.10
+            cx1 = max(0, int(round(x1 - pad_x)))
+            cy1 = max(0, int(round(y1 - pad_y)))
+            cx2 = min(w, int(round(x2 + pad_x)))
+            cy2 = min(h, int(round(y2 + pad_y)))
+
+        if (cx2 - cx1) < 20 or (cy2 - cy1) < 20:
+            return None
+
+        crop = source_frame[cy1:cy2, cx1:cx2]
+        predict_kwargs = {"source": crop, "conf": 0.15, "verbose": False}
+        if device is not None:
+            predict_kwargs["device"] = device
+        crop_res = model.predict(**predict_kwargs)
+        if not crop_res or getattr(crop_res[0], "keypoints", None) is None or len(crop_res[0].keypoints.data) == 0:
+            return None
+
+        raw_crop = crop_res[0].keypoints.data.cpu().numpy()
+        cands_crop = [
+            p for p in raw_crop
+            if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.30) & (p[:, 0] > 0)) >= 4
+        ]
+        if not cands_crop:
+            return None
+
+        chosen_crop = self._seleccionar_candidato_recorte(
+            cands_crop, cx1, cy1, cx2 - cx1, cy2 - cy1, pts_for_match
+        )
+        global_kpts = np.zeros((17, 3), dtype=np.float32)
+        for i in range(17):
+            kx = float(chosen_crop[i, 0])
+            ky = float(chosen_crop[i, 1])
+            kconf = float(chosen_crop[i, 2])
+            if kx <= 0.0 and ky <= 0.0:
+                global_kpts[i] = (0.0, 0.0, kconf)
+            else:
+                global_kpts[i, 0] = float(max(0, min(w - 1, int(round(kx + cx1)))))
+                global_kpts[i, 1] = float(max(0, min(h - 1, int(round(ky + cy1)))))
+                global_kpts[i, 2] = kconf
+        return global_kpts
+
+    def _refinar_keypoints_top_down(
+        self,
+        frame,
+        pts_orig: dict[int, tuple[int, int, float]],
+        persona_idx: Optional[int] = None,
+        frame_idx: Optional[int] = None,
+    ) -> tuple[Optional[dict[int, tuple[int, int, float]]], Optional[dict[int, tuple[int, int, float]]]]:
+        """
+        Refina los 17 keypoints COCO en el fotograma crítico mediante arquitectura Top-Down:
+        localiza la bounding box del atleta seleccionado, recorta con 10% de padding,
+        ejecuta inferencia aislada con yolo26l-pose.pt y mapea coordenadas al frame global.
+        Retorna (pts_refinados, pts_fallback_frame_completo).
+        """
+        import numpy as np
+
+        logger.info("[TOP-DOWN] Aplicando recorte en frame %s para persona_idx %s", frame_idx, persona_idx)
+
+        h, w = frame.shape[:2]
+        valid_pts = [(px, py) for px, py, conf in pts_orig.values() if conf > 0.30 and (px > 0 or py > 0)]
+        kpt_box = None
+        if len(valid_pts) >= 2:
+            xs = [p[0] for p in valid_pts]
+            ys = [p[1] for p in valid_pts]
+            kpt_box = [float(min(xs)), float(min(ys)), float(max(xs)), float(max(ys))]
+
+        model = self._get_model()
+        results = model.predict(source=frame, conf=0.15, verbose=False)
+
+        fallback_pts: Optional[dict[int, tuple[int, int, float]]] = None
+
+        boxes = []
+        if results and getattr(results[0], "boxes", None) is not None and len(results[0].boxes.xyxy) > 0:
+            boxes = results[0].boxes.xyxy.cpu().numpy().tolist()
+
+        cands_full = []
+        if results and getattr(results[0], "keypoints", None) is not None and len(results[0].keypoints.data) > 0:
+            raw_full = results[0].keypoints.data.cpu().numpy()
+            cands_full = [
+                p for p in raw_full
+                if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.30) & (p[:, 0] > 0)) >= 4
+            ]
+
+        if not pts_orig and cands_full:
+            p_idx = persona_idx if (persona_idx is not None and 0 <= persona_idx < len(cands_full)) else 0
+            chosen_full = cands_full[p_idx]
+            fallback_pts = {}
+            for i in range(17):
+                fx, fy, fconf = float(chosen_full[i, 0]), float(chosen_full[i, 1]), float(chosen_full[i, 2])
+                if fx <= 0.0 and fy <= 0.0:
+                    fallback_pts[i] = (0, 0, fconf)
+                else:
+                    fallback_pts[i] = (max(0, min(w - 1, int(fx))), max(0, min(h - 1, int(fy))), fconf)
+
+        target_box = self._seleccionar_caja_objetivo(boxes, kpt_box, persona_idx=persona_idx)
+        if target_box is None:
+            return None, fallback_pts
+
+        isolated = self._ejecutar_recorte_top_down(frame, target_box, pts_orig, model, persona_idx=persona_idx)
+        if isolated is None:
+            return None, fallback_pts
+
+        refined_pts: dict[int, tuple[int, int, float]] = {
+            i: (int(isolated[i, 0]), int(isolated[i, 1]), float(isolated[i, 2]))
+            for i in range(17)
+        }
+        return refined_pts, fallback_pts
+
     def extraer_frame_y_dibujar_error(
         self,
         video_path: str,
@@ -795,16 +1186,16 @@ class YOLOPoseAdapter:
         y dibuja el esqueleto COCO con las articulaciones en error resaltadas visualmente.
         Si clean_output_path es provisto, guarda primero el fotograma limpio sin anotaciones.
 
-        REGLA ESTRICTA (Larman):
-        Si keypoints133 contiene datos válidos (>= 51 floats con algún valor > 0),
-        se usan directamente esos keypoints (los de la persona seleccionada).
-        NO se vuelve a ejecutar YOLO.
-        Solo si keypoints133 no fue provisto o es nulo/cero, se invoca YOLO como fallback,
-        usando persona_idx para seleccionar al atleta correcto.
+        Aplica refinamiento Top-Down: localiza la caja delimitadora de la persona
+        seleccionada, recorta con 10% de padding de seguridad, ejecuta yolo26l-pose.pt
+        aislado en el recorte y mapea los 17 keypoints de vuelta al fotograma original.
+        Si el recorte falla o no detecta persona válida, cae limpiamente a los
+        keypoints originales provistos en keypoints133.
         """
         import cv2
         import numpy as np
 
+        logger.info(f"[DRAW] Dibujando esqueleto para persona_idx={persona_idx}")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         # 1. Extraer el fotograma exacto del video usando OpenCV
@@ -834,7 +1225,7 @@ class YOLOPoseAdapter:
 
         h, w = frame.shape[:2]
 
-        # 2. Parsear keypoints si están disponibles (NO re-ejecutar YOLO si vienen keypoints133)
+        # 2. Parsear keypoints originales del tracker (respaldo) y aplicar refinamiento Top-Down
         pts: dict[int, tuple[int, int, float]] = {}
         has_kpts = keypoints133 is not None and len(keypoints133) >= 51 and any(v > 0.0 for v in keypoints133[:51])
 
@@ -851,36 +1242,21 @@ class YOLOPoseAdapter:
                 px = max(0, min(w - 1, px))
                 py = max(0, min(h - 1, py))
                 pts[i] = (px, py, conf)
-        elif os.path.exists(video_path) and frame is not None:
-            # Fallback excepcional solo si keypoints133 no fue provisto
+
+        if os.path.exists(video_path) and frame is not None:
             try:
-                from ultralytics import YOLO
-                repo_root = Path(__file__).resolve().parents[4]
-                _candidates = [
-                    str(repo_root / "yolo26n_autonomous.pt"),
-                    str(repo_root / "storage" / "models" / "yolo26n_autonomous.pt"),
-                    str(repo_root / "yolo26n_americana.pt"),
-                    str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
-                    str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
-                    str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
-                    str(repo_root / "backend" / "yolo26n-pose.pt"),
-                    "storage/models/yolo26n-pose.pt",
-                    "yolo26n-pose.pt",
-                ]
-                model = self._get_model()
-                results = model.predict(source=frame, conf=0.15, verbose=False)
-                if results and results[0].keypoints is not None and len(results[0].keypoints.data) > 0:
-                    raw = results[0].keypoints.data.cpu().numpy()
-                    cands = [p for p in raw if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 4]
-                    if cands:
-                        p_idx = persona_idx if (persona_idx is not None and 0 <= persona_idx < len(cands)) else 0
-                        chosen = cands[p_idx]
-                        for i in range(17):
-                            px = max(0, min(w - 1, int(chosen[i, 0])))
-                            py = max(0, min(h - 1, int(chosen[i, 1])))
-                            pts[i] = (px, py, float(chosen[i, 2]))
-            except Exception as e_yolo_fb:
-                logger.warning(f"Fallback YOLO en extraer_frame_y_dibujar_error falló: {e_yolo_fb}")
+                refined_pts, fallback_pts = self._refinar_keypoints_top_down(
+                    frame, pts, persona_idx=persona_idx, frame_idx=frame_idx
+                )
+                if refined_pts:
+                    pts = refined_pts
+                    logger.info(
+                        f"Refinamiento Top-Down aplicado en frame {frame_idx} (persona_idx={persona_idx})."
+                    )
+                elif not has_kpts and fallback_pts:
+                    pts = fallback_pts
+            except Exception as e_topdown:
+                logger.warning(f"Refinamiento Top-Down en frame {frame_idx} hizo fallback: {e_topdown}")
 
         # 3. Dibujar conexiones del esqueleto (huesos)
         for p1, p2 in COCO_SKELETON_PAIRS:

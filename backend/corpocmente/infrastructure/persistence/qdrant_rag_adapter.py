@@ -89,16 +89,27 @@ class QdrantRAGAdapter:
     def recuperar_contexto(self, query_embedding: list, tecnica_id: str, top_k: int = 3) -> list:
         if len(query_embedding) != EXPECTED_RAG_DIM:
             raise ValueError(f"Embedding de consulta inválido: se esperaban {EXPECTED_RAG_DIM} dimensiones.")
-        filtro = Filter(should=[
-            Filter(must=[FieldCondition(key="tecnica_id", match=MatchValue(value=tecnica_id))]),
-            Filter(must=[FieldCondition(key="alcance", match=MatchValue(value="global"))]),
-        ])
-        resultados = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=("dense", query_embedding),
-            query_filter=filtro,
-            limit=top_k
-        )
+        
+        # 1. Priorizar búsqueda específica por tecnica_id
+        resultados = []
+        if tecnica_id:
+            filtro_tecnica = Filter(must=[FieldCondition(key="tecnica_id", match=MatchValue(value=tecnica_id))])
+            resultados = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=("dense", query_embedding),
+                query_filter=filtro_tecnica,
+                limit=top_k
+            )
+
+        # 2. Fallback a alcance global si la técnica no tiene fragmentos asignados
+        if not resultados:
+            filtro_global = Filter(must=[FieldCondition(key="alcance", match=MatchValue(value="global"))])
+            resultados = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=("dense", query_embedding),
+                query_filter=filtro_global,
+                limit=top_k
+            )
         fragmentos = []
         for resultado in resultados:
             payload = resultado.payload or {}
@@ -140,6 +151,84 @@ class QdrantRAGAdapter:
             collection_name=self.collection_name,
             points_selector=FilterSelector(filter=filtro),
         )
+
+    def eliminar_por_tecnica(self, tecnica_id: str) -> int:
+        """Elimina de Qdrant todos los fragmentos RAG asociados a una técnica."""
+        filtro = Filter(must=[
+            FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id))),
+        ])
+        try:
+            count_res = self.client.count(
+                collection_name=self.collection_name,
+                count_filter=filtro,
+                exact=True,
+            )
+            total = int(getattr(count_res, "count", 0) or 0)
+            if total > 0:
+                self.client.delete(
+                    collection_name=self.collection_name,
+                    points_selector=FilterSelector(filter=filtro),
+                )
+            return total
+        except Exception as e:
+            logger.warning("Error eliminando chunks RAG por tecnica_id=%s: %s", tecnica_id, e)
+            return 0
+
+    def eliminar_por_manual(self, filename: str) -> int:
+        """
+        Elimina de la colección RAG todos los puntos pertenecientes a un manual
+        identificado por su filename en disco, fuente_nombre, fuente_url o media_path.
+        """
+        import os
+        from urllib.parse import unquote
+
+        target_raw = (filename or "").strip()
+        target_name = os.path.basename(unquote(target_raw))
+        if not target_name:
+            return 0
+
+        matched_ids = []
+        next_offset = None
+        try:
+            while True:
+                points, next_offset = self.client.scroll(
+                    collection_name=self.collection_name,
+                    limit=256,
+                    offset=next_offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+                for p in points:
+                    payload = p.payload or {}
+                    fuente_nombre = str(payload.get("fuente_nombre") or "")
+                    fuente_url = unquote(str(payload.get("fuente_url") or ""))
+                    media_url = unquote(str(payload.get("media_url") or ""))
+                    media_path = unquote(str(payload.get("media_path") or ""))
+
+                    url_basename = os.path.basename(fuente_url.split("?")[0]) if fuente_url else ""
+                    media_url_base = os.path.basename(media_url.split("?")[0]) if media_url else ""
+                    media_path_base = os.path.basename(media_path) if media_path else ""
+
+                    if (
+                        fuente_nombre == target_name
+                        or fuente_nombre == target_raw
+                        or url_basename == target_name
+                        or media_url_base == target_name
+                        or media_path_base == target_name
+                        or (f"/{target_name}" in fuente_url)
+                        or (f"/{target_name}" in media_path)
+                    ):
+                        matched_ids.append(str(p.id))
+
+                if next_offset is None:
+                    break
+        except Exception as e:
+            logger.warning("Error escaneando Qdrant para eliminar manual '%s': %s", target_name, e)
+            return 0
+
+        if not matched_ids:
+            return 0
+        return self.eliminar_puntos(matched_ids)
 
     def buscar_biblioteca(self, query_embedding: list, limit: int = 10) -> list:
         """

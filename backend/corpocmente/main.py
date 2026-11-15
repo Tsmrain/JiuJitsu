@@ -11,6 +11,15 @@ from corpocmente.ui.api.auth_routes import router as auth_router
 from corpocmente.ui.api.tecnicas_routes import router as tecnicas_router
 from corpocmente.api.routes.comparaciones import router as comparaciones_router
 
+_pkg_logger = logging.getLogger("corpocmente")
+_pkg_logger.setLevel(logging.INFO)
+if not _pkg_logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setLevel(logging.INFO)
+    _handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    _pkg_logger.addHandler(_handler)
+_pkg_logger.propagate = False
+
 logger = logging.getLogger("corpocmente.api")
 
 app = FastAPI(
@@ -83,33 +92,14 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Montar carpeta pública para videos de referencia
 import os
-import shutil
 from fastapi.staticfiles import StaticFiles
+from corpocmente.infrastructure.persistence.video_storage import (
+    VIDEOS_DIR as UPLOAD_DIR,
+    autocurar_videos_referencia_en_arranque,
+)
 
-UPLOAD_DIR = "/tmp/corpocmente_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Seeding preventivo de videos de referencia conocidos
-def seed_reference_videos():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    mapping = {
-        "67beb825-87d1-4c46-8380-9b0cb6ef0489.mp4": "profesor salida de Guardia Parandose.mp4",
-        "38f8b98c-b6bd-4cd7-ac18-1bd922174854.mp4": "Escape de 100 kilos brazo por debajo.mp4",
-        "53062479-765e-4a33-b467-2ab120ccd3f6.mp4": "Profesor ensena 1 escape de guardia cerrada.mp4",
-        "e74b10ca-f33c-4662-8f08-b4fb9a4b1110.mp4": "Profesor dill pasaje de guardia abierta.mp4",
-        "c92e5499-d2bc-48da-aaff-a1995c09d964.mp4": "Maestro.mp4",
-    }
-    for target_name, src_name in mapping.items():
-        dst = os.path.join(UPLOAD_DIR, target_name)
-        if not os.path.exists(dst):
-            src = os.path.join(repo_root, src_name)
-            if os.path.exists(src):
-                try:
-                    shutil.copy2(src, dst)
-                except Exception:
-                    pass
-
-seed_reference_videos()
+autocurar_videos_referencia_en_arranque()
 app.mount("/static/videos", StaticFiles(directory=UPLOAD_DIR), name="videos")
 
 FRAMES_DIR = "/tmp/corpocmente_frames"

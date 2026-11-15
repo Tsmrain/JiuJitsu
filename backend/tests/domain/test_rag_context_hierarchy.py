@@ -281,3 +281,29 @@ class TestIntelligenceFacadeContextHierarchy:
         mock_gemini.generar_texto_feedback.assert_not_called()
         assert res.feedback_summary == "Informações insuficientes"
         assert res.feedback == "Não há informações suficientes nos manuais nem nas instruções do instrutor para avaliar esta técnica."
+
+    def test_prioridad_2_mensaje_profesor_no_cae_en_informacion_insuficiente_si_judge_rechaza(self):
+        facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen = self._setup_facade()
+        mock_qdrant.recuperar_evidencias_rag_multimodal.return_value = []
+        mock_gemini.generar_texto_feedback.return_value = {
+            "summary": "Base elevada",
+            "correction": "Baja la cadera y controla las solapas como indicó tu profesor.",
+        }
+        mock_gemini.evaluar_fidelidad_grounding.return_value = {
+            "faithfulness_score": 0.4,
+            "unsupported_claims": ["Observación adicional"],
+            "reasoning": "Diferencia menor",
+        }
+
+        with patch("os.path.exists", return_value=True):
+            res = facade.ejecutar_analisis_completo(
+                video_path="/tmp/video.mp4",
+                tecnica_id=uuid4(),
+                tecnica_nombre="Pasaje de Guardia",
+                mensaje_profesor="Mantén la base baja, controla las solapas y evita levantar la cadera.",
+                idioma="es",
+            )
+
+        assert res.feedback_summary != "Información insuficiente"
+        assert "base baja" in res.feedback.lower()
+        assert "solapas" in res.feedback.lower()

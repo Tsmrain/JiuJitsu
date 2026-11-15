@@ -21,7 +21,7 @@ BEGIN
         vr.id AS video_id,
         vr.profesor_id AS video_profesor_id,
         vr.url_video_gcs AS video_url,
-        (t.patron_activo_id IS NOT NULL) AS tiene_patron
+        (EXISTS (SELECT 1 FROM patrones_referencia pr WHERE pr.tecnica_id = t.id AND pr.activo = TRUE)) AS tiene_patron
     FROM tecnicas t
     LEFT JOIN videos_referencia vr ON vr.tecnica_id = t.id;
 END;

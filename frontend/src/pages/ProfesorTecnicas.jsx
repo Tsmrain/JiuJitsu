@@ -43,6 +43,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
   const [showGlobalKnowledge, setShowGlobalKnowledge] = useState(false);
   const [personaSelection, setPersonaSelection] = useState(null);
   const [personaSelectionError, setPersonaSelectionError] = useState('');
+  const [brokenVideoIds, setBrokenVideoIds] = useState({});
   const [confirmingPersona, setConfirmingPersona] = useState(false);
   const [theoryModalTecnica, setTheoryModalTecnica] = useState(null);
   const [selectedAlumnoDetail, setSelectedAlumnoDetail] = useState(null);
@@ -67,6 +68,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
       });
       if (res.ok) {
         const data = await res.json();
+        setBrokenVideoIds({});
         setTecnicas(await incluirEstadoPatrones(data, user?.token));
       }
     } catch (err) {
@@ -571,7 +573,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                                 </div>
 
                                 <p style={{ fontSize: '0.85rem', color: '#ffffff', margin: '0 0 0.5rem 0', fontWeight: '600', lineHeight: '1.4' }}>
-                                  {evalItem.feedback_summary || (evalItem.feedback_gemini_es ? evalItem.feedback_gemini_es.split('.')[0] : t('practiceRecommendation'))}
+                                  {evalItem.feedback_summary || (evalItem.feedback_gemini_es ? evalItem.feedback_gemini_es.split('.')[0] : t('aiTechnicalAnalysis'))}
                                 </p>
                               </div>
 
@@ -763,13 +765,14 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                         <div className="video-status has-video" style={{ marginBottom: '0.5rem' }}>
                           {tech.tiene_patron ? `✅ ${t('activeBiomechanicalPattern')}` : t('hasReferenceVideo')}
                         </div>
-                        {tech.video_url && (
+                        {tech.video_url && !brokenVideoIds[tech.id] ? (
                           <div className="card-video-preview" style={{ marginTop: '0.5rem' }}>
                             <video 
                               src={tech.video_url} 
                               controls 
                               playsInline
                               preload="metadata"
+                              onError={() => setBrokenVideoIds(prev => ({ ...prev, [tech.id]: true }))}
                               style={{ 
                                 width: '100%', 
                                 maxHeight: '180px', 
@@ -780,11 +783,15 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                               }} 
                             />
                           </div>
-                        )}
-                        {tech.tiene_patron && !tech.video_url && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
-                            {t('referenceVideoUnavailable')}
-                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => handleEdit(tech)}
+                            style={{ marginTop: '0.45rem', width: '100%', fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
+                          >
+                            📹 {t('reuploadReferenceVideo')}
+                          </button>
                         )}
                       </div>
                     ) : (
@@ -1023,16 +1030,6 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
               }}>
                 {selectedAlumnoDetail.evalItem.porcentaje_similitud >= 85 ? t('excellent') : selectedAlumnoDetail.evalItem.porcentaje_similitud >= 70 ? t('good') : t('needsWork')} ({Math.round(selectedAlumnoDetail.evalItem.porcentaje_similitud)}%)
               </div>
-              {selectedAlumnoDetail.evalItem.practice_url && (
-                <a
-                  href={selectedAlumnoDetail.evalItem.practice_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: '#ef4444', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-                >
-                  {t('youtubeTutorials')} ↗
-                </a>
-              )}
             </div>
 
             {selectedAlumnoDetail.evalItem.feedback_summary && (

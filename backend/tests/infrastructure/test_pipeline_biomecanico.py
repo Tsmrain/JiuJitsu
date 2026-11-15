@@ -167,3 +167,118 @@ def test_facade_orquestacion_completa_con_dibujo_y_gemini(tmp_path):
     prompt_usado, imagen_usada = args
     assert "Armbar" in prompt_usado
     assert imagen_usada == resultado.frame_critico_path
+
+
+def test_top_down_crop_padding_y_mapeo_coordenadas():
+    import torch
+
+    adapter = YOLOPoseAdapter(colab_url="https://placeholder")
+    frame = np.zeros((400, 600, 3), dtype=np.uint8)
+
+    # Caja persona: [100, 50, 300, 250] -> bw=200, bh=200 -> 10% padding => crop [80, 30, 320, 270]
+    pts_orig = {
+        5: (150, 100, 0.9),
+        6: (250, 100, 0.9),
+        11: (160, 200, 0.9),
+        12: (240, 200, 0.9),
+    }
+
+    full_res = MagicMock()
+    full_res.boxes = MagicMock()
+    full_res.boxes.xyxy = torch.tensor([[100.0, 50.0, 300.0, 250.0]])
+    full_res.keypoints = None
+
+    crop_kpts = np.zeros((1, 17, 3), dtype=np.float32)
+    # 5 keypoints válidos dentro del recorte [80:320, 30:270]
+    crop_kpts[0, 5] = [70.0, 70.0, 0.95]   # global: (70+80=150, 70+30=100)
+    crop_kpts[0, 6] = [170.0, 70.0, 0.95]  # global: (170+80=250, 70+30=100)
+    crop_kpts[0, 7] = [60.0, 120.0, 0.92]  # global: (140, 150)
+    crop_kpts[0, 11] = [80.0, 170.0, 0.91] # global: (160, 200)
+    crop_kpts[0, 12] = [160.0, 170.0, 0.91]
+
+    crop_res = MagicMock()
+    crop_res.keypoints = MagicMock()
+    crop_res.keypoints.data = torch.from_numpy(crop_kpts)
+
+    mock_model = MagicMock()
+    mock_model.predict.side_effect = [[full_res], [crop_res]]
+    adapter._get_model = MagicMock(return_value=mock_model)
+
+    refined, _ = adapter._refinar_keypoints_top_down(frame, pts_orig, persona_idx=0)
+    assert refined is not None
+    # Verificar tamaño exacto del recorte con 10% padding: (270-30=240, 320-80=240)
+    assert mock_model.predict.call_count == 2
+    crop_arg = mock_model.predict.call_args_list[1].kwargs["source"]
+    assert crop_arg.shape[:2] == (240, 240)
+    # Verificar mapeo de vuelta a coordenadas globales sumando (cx1=80, cy1=30)
+    assert refined[5][:2] == (150, 100)
+    assert refined[7][:2] == (140, 150)
+    assert refined[12][:2] == (240, 200)
+
+
+def test_top_down_fallback_si_recorte_no_detecta_persona():
+    import torch
+
+    adapter = YOLOPoseAdapter(colab_url="https://placeholder")
+    frame = np.zeros((400, 600, 3), dtype=np.uint8)
+    pts_orig = {5: (150, 100, 0.9), 6: (250, 100, 0.9)}
+
+    full_res = MagicMock()
+    full_res.boxes = MagicMock()
+    full_res.boxes.xyxy = torch.tensor([[100.0, 50.0, 300.0, 250.0]])
+    full_res.keypoints = None
+
+    crop_res_empty = MagicMock()
+    crop_res_empty.keypoints = None
+
+    mock_model = MagicMock()
+    mock_model.predict.side_effect = [[full_res], [crop_res_empty]]
+    adapter._get_model = MagicMock(return_value=mock_model)
+
+    refined, _ = adapter._refinar_keypoints_top_down(frame, pts_orig, persona_idx=0)
+    assert refined is None
+
+
+def test_top_down_aisla_por_kmeans_si_caja_supera_40_porciento():
+    import torch
+
+    adapter = YOLOPoseAdapter(colab_url="https://placeholder")
+    frame = np.zeros((400, 1000, 3), dtype=np.uint8)
+
+    # Caja ancha = 600px de 1000px (60% > 40%): incluye atacante en x=300..450 y punto lejano en x=880
+    pts_orig = {
+        5: (310, 100, 0.9),
+        6: (430, 100, 0.9),
+        7: (300, 200, 0.9),
+        8: (440, 200, 0.9),
+        11: (320, 300, 0.9),
+        12: (420, 300, 0.9),
+        15: (880, 320, 0.9),
+        16: (890, 330, 0.9),
+    }
+
+    full_res = MagicMock()
+    full_res.boxes = MagicMock()
+    full_res.boxes.xyxy = torch.tensor([[290.0, 80.0, 900.0, 360.0]])  # 610px = 61% > 40%
+    full_res.keypoints = None
+
+    crop_kpts = np.zeros((1, 17, 3), dtype=np.float32)
+    crop_kpts[0, 5] = [80.0, 40.0, 0.95]
+    crop_kpts[0, 6] = [180.0, 40.0, 0.95]
+    crop_kpts[0, 7] = [70.0, 140.0, 0.95]
+    crop_kpts[0, 11] = [90.0, 240.0, 0.95]
+    crop_kpts[0, 12] = [170.0, 240.0, 0.95]
+
+    crop_res = MagicMock()
+    crop_res.keypoints = MagicMock()
+    crop_res.keypoints.data = torch.from_numpy(crop_kpts)
+
+    mock_model = MagicMock()
+    mock_model.predict.side_effect = [[full_res], [crop_res]]
+    adapter._get_model = MagicMock(return_value=mock_model)
+
+    refined, _ = adapter._refinar_keypoints_top_down(frame, pts_orig, persona_idx=0)
+    assert refined is not None
+    crop_arg = mock_model.predict.call_args_list[1].kwargs["source"]
+    # El ancho del recorte aislado debe haberse reducido a <= 40% de 1000px (<= 400px)
+    assert crop_arg.shape[1] <= 400

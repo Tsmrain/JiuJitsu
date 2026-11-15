@@ -1,6 +1,14 @@
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
-from corpocmente.ui.api.routes import _bbox_iou, _bbox_iomin, _limpiar_candidatos_bboxes
+from corpocmente.ui.api.routes import (
+    _bbox_iou,
+    _bbox_iomin,
+    _limpiar_candidatos_bboxes,
+    _resolver_cajas_fusionadas,
+    _split_candidate_via_kmeans,
+)
 
 
 def test_bbox_iou_and_iomin():
@@ -136,3 +144,75 @@ def test_limpiar_candidatos_elimina_reflejo_espejo_diminuto():
     limpios = _limpiar_candidatos_bboxes([atleta_principal, reflejo_espejo], 1920, 1080)
     assert len(limpios) == 1
     assert limpios[0]["idx"] == 0
+
+
+def test_resolver_cajas_fusionadas_usa_segmentacion_si_detecta_dos_cuerpos():
+    frame = np.zeros((800, 500, 3), dtype=np.uint8)
+    pose = np.zeros((17, 3), dtype=np.float32)
+    pose[:, 0] = 200.0
+    pose[:, 1] = 400.0
+    pose[:, 2] = 0.9
+
+    merged = [{
+        "idx": 0,
+        "pose": pose,
+        "bbox_raw": [20.0, 200.0, 380.0, 650.0],  # 360px / 500px = 72% > 40%
+        "confianza": 0.95,
+        "keypoints_validos": 17,
+    }]
+
+    mock_box_data = MagicMock()
+    mock_box_data.__len__.return_value = 3
+    mock_box_data.xyxy.cpu.return_value.numpy.return_value = np.array([
+        [20.0, 210.0, 180.0, 580.0],
+        [200.0, 220.0, 375.0, 620.0],
+        [5.0, 5.0, 20.0, 25.0],  # Ruido diminuto < 12% área
+    ])
+    mock_box_data.conf.cpu.return_value.numpy.return_value = np.array([0.88, 0.86, 0.20])
+    mock_masks = SimpleNamespace(xy=[
+        np.array([[25.0, 215.0], [175.0, 215.0], [175.0, 575.0]]),
+        np.array([[205.0, 225.0], [370.0, 225.0], [370.0, 615.0]]),
+        np.array([[5.0, 5.0], [20.0, 5.0], [20.0, 25.0]]),
+    ])
+    mock_seg_model = MagicMock()
+    mock_seg_model.predict.return_value = [SimpleNamespace(boxes=mock_box_data, masks=mock_masks)]
+
+    with patch("corpocmente.ui.api.routes.get_yolo_seg_model", return_value=mock_seg_model):
+        res = _resolver_cajas_fusionadas(frame, merged, 500, 800)
+
+    assert len(res) == 2
+    assert [r["idx"] for r in res] == [0, 1]
+    assert res[0]["bbox_raw"][2] < res[1]["bbox_raw"][0]
+
+
+def test_resolver_cajas_fusionadas_fallback_kmeans_cuando_seg_falla():
+    frame = np.zeros((832, 464, 3), dtype=np.uint8)
+    pose = np.zeros((17, 3), dtype=np.float32)
+    # 7 puntos en izquierda-abajo y 10 puntos en derecha-arriba (17 válidos > 10)
+    for i in range(7):
+        pose[i] = [70.0 + i * 10.0, 500.0 + i * 5.0, 0.9]
+    for i in range(7, 17):
+        pose[i] = [240.0 + (i - 7) * 8.0, 330.0 + (i - 7) * 8.0, 0.9]
+
+    merged = [{
+        "idx": 0,
+        "pose": pose,
+        "bbox_raw": [60.0, 280.0, 340.0, 640.0],  # 280px / 464px = 60.3% > 40%
+        "confianza": 0.96,
+        "keypoints_validos": 17,
+    }]
+
+    mock_seg_model = MagicMock()
+    # Simular que seg tampoco logra separar en 2 cuerpos
+    mock_box_data = MagicMock()
+    mock_box_data.__len__.return_value = 1
+    mock_seg_model.predict.return_value = [SimpleNamespace(boxes=mock_box_data, masks=None)]
+
+    with patch("corpocmente.ui.api.routes.get_yolo_seg_model", return_value=mock_seg_model):
+        res = _resolver_cajas_fusionadas(frame, merged, 464, 832)
+
+    assert len(res) == 2
+    assert res[0]["keypoints_validos"] == 7
+    assert res[1]["keypoints_validos"] == 10
+    assert res[0]["bbox_raw"][2] < 160.0
+    assert res[1]["bbox_raw"][0] >= 240.0

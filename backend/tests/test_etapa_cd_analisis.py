@@ -35,7 +35,42 @@ def test_analizar_tecnica_sin_patron_activo_retorna_404():
     )
     assert res.status_code == 404
     detail = res.json()["detail"]
-    assert "No active biomechanical pattern" in detail or "No existe un patrón biomecánico activo" in detail
+    assert "No hay patrón de referencia para esta técnica" in detail
+
+
+def test_analizar_tecnica_con_video_pero_sin_vectores_qdrant_retorna_404():
+    """Si Postgres tiene fila pero Qdrant tiene 0 vectores para la técnica, debe rechazar con mensaje explícito."""
+    alumno_uid = str(uuid4())
+    token = make_token(role="alumno", uid=alumno_uid)
+    tecnica_id = str(uuid4())
+
+    with patch("corpocmente.ui.api.routes.get_db") as mock_db_getter, \
+         patch("corpocmente.infrastructure.persistence.qdrant_adapter.QdrantVectorAdapter") as mock_qdrant_cls, \
+         patch("corpocmente.ui.api.auth_routes.check_student_subscription", return_value={"activo": True}):
+
+        mock_db = MagicMock()
+        mock_qdrant = MagicMock()
+        mock_db_getter.return_value = mock_db
+        mock_qdrant_cls.return_value = mock_qdrant
+
+        mock_qdrant._get_patron_activo_db.return_value = str(uuid4())
+        mock_qdrant.tiene_patrones_en_qdrant.return_value = False
+        mock_db.rpc.return_value = [{"id": str(uuid4()), "url_video_gcs": "/tmp/v.mp4"}]
+
+        res = client.post(
+            "/api/v1/evaluaciones/analizar",
+            headers={"Authorization": f"Bearer {token}"},
+            data={
+                "tecnica_id": tecnica_id,
+                "tecnica_nombre": "Armbar",
+                "alumno_id": alumno_uid,
+                "persona_idx": 0,
+            },
+            files={"video": ("test.mp4", b"dummy video content", "video/mp4")},
+        )
+
+        assert res.status_code == 404
+        assert res.json()["detail"] == "No hay patrón de referencia para esta técnica. Pídele al profesor que suba un video."
 
 
 def test_sesion_reutilizada_o_concurrencia_retorna_409():
@@ -97,6 +132,8 @@ def test_comparacion_dtw_con_secuencias_reales():
     tecnica_id = tecnicas[0]["id"] if tecnicas else "30a4afe4-23cc-4479-9f14-4f6d867de7dd"
     adapter = QdrantVectorAdapter()
     secuencia_maestro = adapter.obtener_secuencia_referencia(tecnica_id=tecnica_id)
+    if isinstance(secuencia_maestro, list) and len(secuencia_maestro) > 0 and isinstance(secuencia_maestro[0], list) and len(secuencia_maestro[0]) > 0 and isinstance(secuencia_maestro[0][0], list):
+        secuencia_maestro = secuencia_maestro[0]
     cleanup = False
     patron_id = None
     if not secuencia_maestro:

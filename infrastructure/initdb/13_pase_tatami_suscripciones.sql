@@ -27,10 +27,10 @@ UPDATE usuarios
 SET estado_suscripcion = 'activo', fecha_expiracion = NULL 
 WHERE rol IN ('admin', 'profesor');
 
--- Alumno santi inicializado con pase activo de 30 días para compatibilidad de suite
-UPDATE usuarios 
-SET estado_suscripcion = 'activo', fecha_expiracion = CURRENT_TIMESTAMP + INTERVAL '30 days' 
-WHERE username = 'santi';
+-- Alumno santi inicializado en estado 'pendiente' por defecto para el flujo de activación de pase de tatami
+-- UPDATE usuarios 
+-- SET estado_suscripcion = 'activo', fecha_expiracion = CURRENT_TIMESTAMP + INTERVAL '30 days' 
+-- WHERE username = 'santi';
 
 -- 3. Tabla de auditoría de activaciones de pases de tatami
 CREATE TABLE IF NOT EXISTS activaciones_pases (

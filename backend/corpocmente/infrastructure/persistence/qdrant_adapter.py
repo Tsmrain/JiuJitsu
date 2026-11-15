@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union
 from uuid import UUID
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
@@ -139,6 +139,49 @@ class QdrantVectorAdapter:
         logger.info(f"Guardados {total_puntos} vectores en Qdrant para patrón {patron_id} (técnica {tecnica_id}).")
         return total_puntos
 
+    def _get_patrones_activos_db(self, tecnica_id: UUID) -> List[UUID]:
+        """
+        Consulta PostgreSQL para obtener todos los patrones de referencia activos (1:N)
+        asociados a la técnica dada.
+        """
+        try:
+            from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
+            db = PostgrestClient()
+            res = db.rpc("get_patrones_referencia", {"p_tecnica_id": str(tecnica_id)})
+            if res and isinstance(res, list):
+                patrones = []
+                for row in res:
+                    pid = row.get("qdrant_patron_id") or row.get("patron_id")
+                    if pid:
+                        patrones.append(UUID(str(pid)))
+                if patrones:
+                    return patrones
+        except Exception as e:
+            logger.debug(f"Error consultando get_patrones_referencia via PostgREST: {e}")
+
+        # Fallback a psycopg2
+        try:
+            import psycopg2
+            from corpocmente.config import settings
+            db_url = getattr(settings, "DATABASE_URL", "postgres://postgres:postgres@localhost:5432/corpocmente")
+            conn = psycopg2.connect(db_url)
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT qdrant_patron_id FROM patrones_referencia WHERE tecnica_id = %s AND activo = TRUE ORDER BY fecha_creacion ASC",
+                (str(tecnica_id),)
+            )
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+            if rows:
+                return [UUID(str(r[0])) for r in rows if r[0]]
+        except Exception as e_sql:
+            logger.debug(f"Error en fallback SQL get_patrones_referencia: {e_sql}")
+
+        # Fallback de compatibilidad si solo existe get_patron_activo
+        single = self._get_patron_activo_db(tecnica_id)
+        return [single] if single else []
+
     def _get_patron_activo_db(self, tecnica_id: UUID) -> Optional[UUID]:
         try:
             from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
@@ -148,9 +191,9 @@ class QdrantVectorAdapter:
                 if isinstance(res, list) and len(res) > 0:
                     val = res[0]
                     if isinstance(val, dict):
-                        val = val.get("patron_activo_id")
+                        val = val.get("patron_activo_id") or val.get("qdrant_patron_id") or val.get("get_patron_activo")
                 elif isinstance(res, dict):
-                    val = res.get("patron_activo_id")
+                    val = res.get("patron_activo_id") or res.get("qdrant_patron_id") or res.get("get_patron_activo")
                 else:
                     val = res
                 if val:
@@ -165,7 +208,7 @@ class QdrantVectorAdapter:
             db_url = getattr(settings, "DATABASE_URL", "postgres://postgres:postgres@localhost:5432/corpocmente")
             conn = psycopg2.connect(db_url)
             cur = conn.cursor()
-            cur.execute("SELECT patron_activo_id FROM tecnicas WHERE id = %s", (str(tecnica_id),))
+            cur.execute("SELECT qdrant_patron_id FROM patrones_referencia WHERE tecnica_id = %s AND activo = TRUE ORDER BY fecha_creacion DESC LIMIT 1", (str(tecnica_id),))
             row = cur.fetchone()
             cur.close()
             conn.close()
@@ -175,23 +218,12 @@ class QdrantVectorAdapter:
             logger.error(f"Error en fallback SQL get_patron_activo: {e_sql}")
         return None
 
-    def obtener_secuencia_referencia(
-        self,
-        tecnica_id: UUID,
-        patron_id: Optional[UUID] = None
-    ) -> List[List[float]]:
+    def _obtener_secuencia_por_patron(self, tecnica_id: UUID, patron_id: UUID) -> List[List[float]]:
         """
-        Recupera de Qdrant la secuencia completa de vectores de referencia (133 dims),
-        paginando con scroll, validando el esquema coco17_v1 y ordenando por frame_idx ascendente.
-        Si patron_id es None, consulta PostgreSQL para obtener el patron_activo_id.
+        Recupera de Qdrant la secuencia de vectores (133 dims) de un patron_id específico,
+        ordenada por frame_idx ascendente.
         """
         self.asegurar_coleccion(vector_size=133)
-        if patron_id is None:
-            patron_id = self._get_patron_activo_db(tecnica_id)
-            if not patron_id:
-                logger.warning(f"No hay patrón activo en PostgreSQL para técnica {tecnica_id}")
-                return []
-
         filtro = Filter(must=[
             FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id))),
             FieldCondition(key="patron_id", match=MatchValue(value=str(patron_id))),
@@ -220,7 +252,6 @@ class QdrantVectorAdapter:
             payload = p.payload or {}
             schema = payload.get("keypoint_schema_version", "coco17_v1")
             if schema != "coco17_v1":
-                logger.warning(f"Vector {p.id} tiene esquema incompatible: {schema}")
                 continue
             frame_idx = payload.get("frame_idx", 0)
             raw_vec = payload.get("keypoints_raw")
@@ -232,6 +263,60 @@ class QdrantVectorAdapter:
 
         puntos_validos.sort(key=lambda x: x[0])
         return [vec for _, vec in puntos_validos]
+
+    def obtener_secuencia_referencia(
+        self,
+        tecnica_id: UUID,
+        patron_id: Optional[UUID] = None
+    ) -> Union[List[List[float]], List[List[List[float]]]]:
+        """
+        Recupera de Qdrant las secuencias de referencia (133 dims).
+        - Si patron_id es provisto, retorna la secuencia individual (List[List[float]]).
+        - Si patron_id es None, retorna todas las secuencias de referencia activas (List[List[List[float]]])
+          asociadas a la técnica para comparación multi-patrón 1:N.
+        """
+        self.asegurar_coleccion(vector_size=133)
+        if patron_id is not None:
+            return self._obtener_secuencia_por_patron(tecnica_id, patron_id)
+
+        patrones = self._get_patrones_activos_db(tecnica_id)
+        if not patrones:
+            logger.warning(f"No hay patrones activos en PostgreSQL para técnica {tecnica_id}")
+            return []
+
+        secuencias = []
+        for pid in patrones:
+            seq = self._obtener_secuencia_por_patron(tecnica_id, pid)
+            if seq:
+                secuencias.append(seq)
+        return secuencias
+
+    def obtener_todas_secuencias_referencia(self, tecnica_id: UUID) -> List[List[List[float]]]:
+        """
+        Retorna explícitamente una lista con todas las secuencias activas de referencia para la técnica.
+        """
+        res = self.obtener_secuencia_referencia(tecnica_id, patron_id=None)
+        if not res:
+            return []
+        if isinstance(res[0], list) and len(res[0]) > 0 and isinstance(res[0][0], list):
+            return res
+        return [res]
+
+    def tiene_patrones_en_qdrant(self, tecnica_id: UUID) -> bool:
+        """Verifica directamente en Qdrant si existen vectores de referencia para la técnica."""
+        filtro = Filter(must=[
+            FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))
+        ])
+        try:
+            res = self.client.count(
+                collection_name=self.pose_collection_name,
+                count_filter=filtro,
+                exact=True,
+            )
+            return int(getattr(res, "count", 0) or 0) > 0
+        except Exception as e:
+            logger.warning("No se pudo verificar existencia de patrones en Qdrant para %s: %s", tecnica_id, e)
+            return False
 
     def eliminar_patron(self, patron_id: UUID) -> int:
         """
@@ -249,6 +334,32 @@ class QdrantVectorAdapter:
             return 1
         except Exception as e:
             logger.warning(f"Error al eliminar patrón {patron_id} de Qdrant: {e}")
+            return 0
+
+    def eliminar_por_tecnica(self, tecnica_id: UUID) -> int:
+        """
+        Elimina de la colección biomecánica todos los puntos (poses y patrones)
+        asociados a una tecnica_id específica.
+        """
+        filtro = Filter(must=[
+            FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))
+        ])
+        try:
+            count_res = self.client.count(
+                collection_name=self.pose_collection_name,
+                count_filter=filtro,
+                exact=True,
+            )
+            total = int(getattr(count_res, "count", 0) or 0)
+            if total > 0:
+                self.client.delete(
+                    collection_name=self.pose_collection_name,
+                    points_selector=filtro
+                )
+            logger.info("Eliminados %d puntos biomecánicos de Qdrant para técnica %s.", total, tecnica_id)
+            return total
+        except Exception as e:
+            logger.warning("Error eliminando vectores biomecánicos de técnica %s en Qdrant: %s", tecnica_id, e)
             return 0
 
 
@@ -470,28 +581,68 @@ class QdrantVectorAdapter:
 
         return 0
 
-    def recuperar_contexto_rag(self, vector_multimodal: List[float], tecnica_id: UUID) -> str:
+    def recuperar_contexto_rag(
+        self,
+        vector_multimodal: Optional[List[float]] = None,
+        tecnica_id: Optional[UUID] = None,
+        discrepancias: Optional[List[str]] = None,
+        limit: int = 3
+    ) -> str:
         """
-        Busca en la colección RAG (vectores de 2048 dims generados por Qwen) la teoría
-        de libros o manuales más relevante para la query textual del análisis.
+        Busca en la colección RAG (vectores de 2048 dims generados por Qwen o scroll por técnica)
+        la teoría de libros o manuales más relevante para el análisis.
 
-        Retorna los top-3 chunks concatenados con separador '---' para dar contexto
-        enriquecido al VLM. Retorna cadena vacía si no hay resultados o si falla.
+        Retorna los top chunks concatenados con separador '---' para dar contexto
+        enriquecido al VLM. Prioriza la técnica específica y cae en fallback global (Fase 4 Larman / Mannino).
         """
-        if len(vector_multimodal) != RAG_VECTOR_DIM:
+        if vector_multimodal is not None and len(vector_multimodal) != RAG_VECTOR_DIM:
             raise ValueError(f"Embedding RAG inválido: se esperaban {RAG_VECTOR_DIM} dimensiones.")
         try:
-            filtro = Filter(should=[
-                Filter(must=[FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))]),
-                Filter(must=[FieldCondition(key="alcance", match=MatchValue(value="global"))]),
-            ])
-            hits = self.client.search(
-                collection_name=self.rag_collection_name,
-                query_vector=("dense", vector_multimodal),
-                query_filter=filtro,
-                limit=3,
-                with_payload=True,
-            )
+            hits = []
+            # 1. Priorizar teoría específica de la técnica (Fase 4 Larman / Mannino)
+            if tecnica_id:
+                filtro_tecnica = Filter(must=[
+                    FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))
+                ])
+                if vector_multimodal is not None:
+                    hits = self.client.search(
+                        collection_name=self.rag_collection_name,
+                        query_vector=("dense", vector_multimodal),
+                        query_filter=filtro_tecnica,
+                        limit=limit,
+                        with_payload=True,
+                    )
+                else:
+                    records, _ = self.client.scroll(
+                        collection_name=self.rag_collection_name,
+                        scroll_filter=filtro_tecnica,
+                        limit=limit,
+                        with_payload=True,
+                    )
+                    hits = records
+
+            # 2. Fallback a biblioteca global solo si la técnica no tiene teoría local asignada
+            if not hits:
+                filtro_global = Filter(must=[
+                    FieldCondition(key="alcance", match=MatchValue(value="global"))
+                ])
+                if vector_multimodal is not None:
+                    hits = self.client.search(
+                        collection_name=self.rag_collection_name,
+                        query_vector=("dense", vector_multimodal),
+                        query_filter=filtro_global,
+                        limit=limit,
+                        with_payload=True,
+                    )
+                else:
+                    records, _ = self.client.scroll(
+                        collection_name=self.rag_collection_name,
+                        scroll_filter=filtro_global,
+                        limit=limit,
+                        with_payload=True,
+                    )
+                    hits = records
+
             chunks = []
             for hit in hits:
                 payload = hit.payload or {}
@@ -563,50 +714,46 @@ class QdrantVectorAdapter:
                     f"Embedding de consulta RAG {index} inválido: se esperaban {RAG_VECTOR_DIM} dimensiones."
                 )
 
-        should_conditions = []
-
-        if tecnica_id is not None:
-            should_conditions.append(
-                Filter(
-                    must=[
-                        FieldCondition(
-                            key="tecnica_id",
-                            match=MatchValue(value=str(tecnica_id)),
-                        )
-                    ]
-                )
-            )
-
-        should_conditions.append(
-            Filter(
-                must=[
-                    FieldCondition(
-                        key="alcance",
-                        match=MatchValue(value="global"),
-                    )
-                ]
-            )
-        )
-
-        query_filter = Filter(should=should_conditions)
         col_name = self.rag_collection_name
-
         resultados_unicos: Dict[str, Any] = {}
 
-        for vector in vectores_consulta:
-            hits = self.client.search(
-                collection_name=col_name,
-                query_vector=("dense", vector),
-                query_filter=query_filter,
-                limit=limit,
-                with_payload=True,
-            )
+        # 1. Priorizar teoría específica de la técnica si existe tecnica_id
+        if tecnica_id is not None:
+            filtro_tecnica = Filter(must=[
+                FieldCondition(key="tecnica_id", match=MatchValue(value=str(tecnica_id)))
+            ])
+            for vector in vectores_consulta:
+                hits = self.client.search(
+                    collection_name=col_name,
+                    query_vector=("dense", vector),
+                    query_filter=filtro_tecnica,
+                    limit=limit,
+                    with_payload=True,
+                )
+                for hit in hits:
+                    key = str(hit.id)
+                    actual = resultados_unicos.get(key)
+                    if actual is None or hit.score > actual.score:
+                        resultados_unicos[key] = hit
 
-            for hit in hits:
-                key = str(hit.id)
-                actual = resultados_unicos.get(key)
-                if actual is None or hit.score > actual.score:
-                    resultados_unicos[key] = hit
+        # 2. Fallback a alcance global solo si no se encontraron evidencias locales
+        if not resultados_unicos:
+            filtro_global = Filter(must=[
+                FieldCondition(key="alcance", match=MatchValue(value="global"))
+            ])
+            for vector in vectores_consulta:
+                hits = self.client.search(
+                    collection_name=col_name,
+                    query_vector=("dense", vector),
+                    query_filter=filtro_global,
+                    limit=limit,
+                    with_payload=True,
+                )
+                for hit in hits:
+                    key = str(hit.id)
+                    actual = resultados_unicos.get(key)
+                    if actual is None or hit.score > actual.score:
+                        resultados_unicos[key] = hit
 
         ordenados = sorted(
             resultados_unicos.values(),

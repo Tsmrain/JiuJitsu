@@ -1,8 +1,12 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 
+# Cargar .env antes de inicializar storage_root()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+load_dotenv(".env")
 
 def storage_root() -> Path:
     """
@@ -13,7 +17,7 @@ def storage_root() -> Path:
     if env_dir:
         root = Path(env_dir).resolve()
     else:
-        root = Path(__file__).resolve().parents[2] / "data"
+        root = Path("/tmp/corpocmente_data").resolve()
     root.mkdir(parents=True, exist_ok=True)
     return root
 

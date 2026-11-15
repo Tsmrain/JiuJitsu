@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getTranslation } from '../i18n/translations';
 
 import { API_BASE } from '../api/config';
@@ -7,16 +7,19 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
   const [activeTab, setActiveTab] = useState('search'); // 'search' | 'catalog'
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [messages, setMessages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedSourceSnippet, setSelectedSourceSnippet] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [activeImageUrl, setActiveImageUrl] = useState(initialImageUrl || null);
+  const chatEndRef = useRef(null);
 
   // Estado del Catálogo de Libros PDF
   const [manuales, setManuales] = useState([]);
   const [loadingManuales, setLoadingManuales] = useState(false);
+  const [deletingManual, setDeletingManual] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
+  const initialQueryProcessed = useRef(false);
 
   const t = (key) => getTranslation(idioma, key);
 
@@ -26,15 +29,29 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
     }
   }, [initialImageUrl]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
   const handleSearch = async (e, customQuery = null, customImage = undefined) => {
     if (e) e.preventDefault();
     const cleanQuery = (customQuery !== null ? customQuery : query).trim();
-    if (!cleanQuery) return;
-    if (customQuery !== null) {
-      setQuery(customQuery);
+    if (!cleanQuery || loading) return;
+    if (customQuery === null) {
+      setQuery('');
     }
 
     const targetImg = customImage !== undefined ? customImage : activeImageUrl;
+    const userMsgId = `u-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: userMsgId,
+        role: 'user',
+        text: cleanQuery,
+        imageUrl: targetImg || null,
+      },
+    ]);
 
     setLoading(true);
     setErrorMsg('');
@@ -42,7 +59,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
       const payload = {
         query: cleanQuery,
         idioma: idioma || 'es',
-        limit: 12,
+        limit: 6,
       };
       if (targetImg) {
         payload.imagen_url = targetImg;
@@ -63,14 +80,69 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
       }
 
       const data = await res.json();
-      setResults(data.resultados || []);
-      setHasSearched(true);
+      const sources = Array.isArray(data.sources)
+        ? data.sources
+        : (data.resultados || []).slice(0, 3).map((item, idx) => ({ ...item, index: idx + 1 }));
+      const answerText = (data.answer || '').trim() || (sources.length > 0 ? sources[0].contenido_texto : t('noResults'));
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${Date.now()}`,
+          role: 'assistant',
+          text: answerText,
+          sources,
+        },
+      ]);
     } catch (err) {
       console.error('Error buscando en biblioteca:', err);
       setErrorMsg(err.message || t('connectionError'));
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: 'assistant',
+          text: `⚠️ ${err.message || t('connectionError')}`,
+          sources: [],
+        },
+      ]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCitationClick = (src) => {
+    if (!src) return;
+    const detectedPage = src.pagina || (src.contenido_texto?.match(/\[P[aá]gina\s+(\d+)\]/i)?.[1] ?? null);
+    const mediaUrl = src.media_url ? getMediaUrl(src.media_url) : '';
+    const rawSourceUrl = src.fuente_url || '';
+    const isMediaImg = mediaUrl && !mediaUrl.toLowerCase().includes('.pdf');
+
+    if (isMediaImg) {
+      setSelectedImage({
+        url: mediaUrl,
+        cita: src.cita || `${src.fuente_nombre || 'Manual'}${detectedPage ? `, p. ${detectedPage}` : ''}`,
+      });
+      return;
+    }
+
+    const pdfCandidate = (src.media_url && src.media_url.toLowerCase().includes('.pdf'))
+      ? src.media_url
+      : rawSourceUrl;
+
+    if (pdfCandidate) {
+      const urlWithPage = (detectedPage && !pdfCandidate.includes('#') && pdfCandidate.toLowerCase().includes('.pdf'))
+        ? `${pdfCandidate}#page=${detectedPage}`
+        : pdfCandidate;
+      setSelectedPdf({
+        nombre: src.cita || src.fuente_nombre || 'Manual',
+        url: urlWithPage,
+        filename: src.fuente_nombre,
+      });
+      return;
+    }
+
+    setSelectedSourceSnippet(src);
   };
 
   const fetchManuales = async () => {
@@ -92,11 +164,44 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
     }
   };
 
+  const canDeleteManual = user?.rol === 'profesor' || user?.rol === 'admin';
+
+  const handleDeleteManual = async (filename, title) => {
+    if (!filename || !canDeleteManual) return;
+    if (!confirm(`${t('confirmDeleteManual')} "${title}"?`)) return;
+
+    setDeletingManual(filename);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/conocimiento/manuales/${encodeURIComponent(filename)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${user?.token || ''}`,
+          },
+        }
+      );
+      if (res.ok) {
+        await fetchManuales();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || t('errorDeletingManual'));
+      }
+    } catch (err) {
+      console.error('Error eliminando manual:', err);
+      alert(t('connectionError'));
+    } finally {
+      setDeletingManual(null);
+    }
+  };
+
   useEffect(() => {
-    // Si viene una consulta inicial desde el botón de teoría, ejecutarla; si no, 'guardia'
-    const targetQuery = initialQuery && initialQuery.trim() ? initialQuery.trim() : 'guardia';
-    setActiveTab('search');
-    handleSearch(null, targetQuery, initialImageUrl);
+    if (initialQuery && initialQuery.trim() && !initialQueryProcessed.current) {
+      initialQueryProcessed.current = true;
+      setActiveTab('search');
+      setMessages([]);
+      handleSearch(null, initialQuery.trim(), initialImageUrl);
+    }
   }, [initialQuery, initialImageUrl]);
 
   useEffect(() => {
@@ -204,64 +309,39 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
           </button>
         </div>
 
-        {/* PESTAÑA 1: BÚSQUEDA SEMÁNTICA */}
-        {activeTab === 'search' && (
-          <div>
-            <form onSubmit={handleSearch} className="library-search-form">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                className="library-search-input"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary library-search-btn"
-              >
-                {loading ? t('searching') : t('searchButton')}
-              </button>
-            </form>
-
-            {/* Banner de Fotograma de Error Analizado (Búsqueda Multimodal) */}
-            {activeImageUrl && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                background: 'rgba(208, 17, 24, 0.15)',
-                border: '1px solid rgba(208, 17, 24, 0.4)',
-                padding: '0.55rem 0.9rem',
-                borderRadius: '8px',
-                marginTop: '0.85rem',
-              }}>
-                <img
-                  src={getMediaUrl(activeImageUrl)}
-                  alt="Frame error"
-                  style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ffd43b' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span>✨</span> {t('multimodalSearchActive')}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {t('comparingErrorFrame')}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveImageUrl(null);
-                    handleSearch(null, query, null);
-                  }}
-                  style={{ background: 'none', border: 'none', color: '#ff8787', fontSize: '0.85rem', cursor: 'pointer', padding: '0.2rem 0.5rem' }}
-                  title={t('removeImageSearch')}
-                >
-                  ✕ {t('removeImageSearch')}
-                </button>
+        {/* PESTAÑA 1: CHAT RAG CON CITAS (Multimodal Banner si aplica) */}
+        {activeTab === 'search' && activeImageUrl && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            background: 'rgba(208, 17, 24, 0.15)',
+            border: '1px solid rgba(208, 17, 24, 0.4)',
+            padding: '0.55rem 0.9rem',
+            borderRadius: '8px',
+            marginTop: '0.85rem',
+          }}>
+            <img
+              src={getMediaUrl(activeImageUrl)}
+              alt="Frame error"
+              style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ffd43b' }}
+            />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>✨</span> {t('multimodalSearchActive')}
               </div>
-            )}
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {t('comparingErrorFrame')}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveImageUrl(null)}
+              style={{ background: 'none', border: 'none', color: '#ff8787', fontSize: '0.85rem', cursor: 'pointer', padding: '0.2rem 0.5rem' }}
+              title={t('removeImageSearch')}
+            >
+              ✕ {t('removeImageSearch')}
+            </button>
           </div>
         )}
 
@@ -284,264 +364,199 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
         )}
       </div>
 
-      {/* CONTENIDO TAB 1: RESULTADOS DE BÚSQUEDA */}
+      {/* CONTENIDO TAB 1: CHATBOT RAG CON HISTORIAL Y CHIPS DE CITA */}
       {activeTab === 'search' && (
-        <>
-          {hasSearched && (
-            <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>
-                {results.length} {t('resultsFound')}
-              </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                🌐 Qwen3-VL Dense Retrieval & Cognitive Rewriting
-              </span>
-            </div>
-          )}
+        <div
+          className="glass-panel"
+          style={{
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '460px',
+            maxHeight: '68vh',
+            overflow: 'hidden',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+          }}
+        >
+          <div style={{
+            padding: '0.75rem 1.15rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.82rem',
+            color: 'var(--text-secondary)',
+          }}>
+            <span>🥋 Asistente Técnico RAG (Qwen3-VL + Qdrant)</span>
+            {messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMessages([])}
+                className="btn-secondary"
+                style={{ padding: '0.2rem 0.65rem', fontSize: '0.75rem' }}
+              >
+                Limpiar chat
+              </button>
+            )}
+          </div>
 
-          {results.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
-              gap: '1.25rem',
-            }}>
-              {results.map((item, idx) => {
-                const pageImgUrl = getMediaUrl(item.media_url);
-                const scorePct = Math.round((item.score || 0) * 100);
-                const detectedPage = item.pagina || (item.contenido_texto?.match(/\[P[aá]gina\s+(\d+)\]/i)?.[1] ?? null);
-                const rawSourceUrl = item.fuente_url || '';
-                const sourceUrlLower = rawSourceUrl.toLowerCase();
-                const isSourcePdf = sourceUrlLower.includes('.pdf') || item.fuente_tipo === 'manual_pdf';
-                const isSourceTxt = sourceUrlLower.includes('.txt') || item.fuente_tipo === 'texto';
-                const isSourceDocx = sourceUrlLower.includes('.docx') || item.fuente_tipo === 'docx';
-                const pdfSourceUrl = isSourcePdf && rawSourceUrl
-                  ? (detectedPage && !rawSourceUrl.includes('#') ? `${rawSourceUrl}#page=${detectedPage}` : rawSourceUrl)
-                  : rawSourceUrl;
+          {/* Historial de mensajes */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '1.2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}>
+            {messages.length === 0 && !loading && (
+              <div style={{
+                margin: 'auto',
+                textAlign: 'center',
+                maxWidth: '480px',
+                color: 'var(--text-secondary)',
+                padding: '2rem 1rem',
+              }}>
+                <div style={{ fontSize: '2.2rem', marginBottom: '0.6rem' }}>💬</div>
+                <p style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#e6edf3', fontWeight: 600 }}>
+                  Pregunta sobre técnicas, escapes o principios de tus manuales
+                </p>
+                <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                  Cada respuesta incluye citas inline `[1]`, `[2]`, `[3]` con acceso directo a la página del manual.
+                </p>
+              </div>
+            )}
 
-                return (
-                  <div
-                    key={item.id || idx}
-                    className="glass-panel"
-                    style={{
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      background: 'rgba(20, 24, 30, 0.85)',
-                      transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-                    }}
-                  >
-                    <div style={{
-                      padding: '0.75rem 1rem',
-                      background: 'rgba(0, 0, 0, 0.35)',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '0.88rem', color: '#ffd43b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        📚 {item.cita || `${item.fuente_nombre || 'Manual'}${detectedPage ? ` (p. ${detectedPage})` : ''}`}
-                      </span>
-                      <span style={{
-                        fontSize: '0.75rem',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '4px',
-                        background: scorePct >= 50 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                        color: scorePct >= 50 ? '#4ade80' : 'var(--text-secondary)',
-                        fontWeight: '600',
-                      }}>
-                        {scorePct}% {t('similarityScore')}
-                      </span>
-                    </div>
-
-                    {pageImgUrl ? (
-                      pageImgUrl.toLowerCase().includes('.pdf') ? (
-                        <div
-                          onClick={() => setSelectedPdf({
-                            nombre: item.cita || item.fuente_nombre || 'Manual PDF',
-                            url: item.media_url,
-                            filename: item.fuente_nombre,
-                          })}
-                          style={{
-                            height: '130px',
-                            background: 'linear-gradient(135deg, rgba(208, 17, 24, 0.14), rgba(13, 17, 23, 0.95))',
-                            overflow: 'hidden',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.45rem',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                          }}
-                          title={t('openPdf')}
-                        >
-                          <span style={{ fontSize: '2rem' }}>📖</span>
-                          <span style={{ fontSize: '0.86rem', color: '#ffd43b', fontWeight: 'bold' }}>
-                            {detectedPage ? `${t('openPdf')} (p. ${detectedPage})` : t('openPdf')}
-                          </span>
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => setSelectedImage({ url: pageImgUrl, cita: item.cita || `${item.fuente_nombre}${detectedPage ? ` (p. ${detectedPage})` : ''}` })}
-                          style={{
-                            height: '240px',
-                            background: '#040608',
-                            overflow: 'hidden',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                          title={t('viewFullImage')}
-                        >
-                          <img
-                            src={pageImgUrl}
-                            alt={item.cita || 'Página de manual'}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'contain',
-                              transition: 'transform 0.2s ease',
-                            }}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                          <div style={{
-                            position: 'absolute',
-                            bottom: 8,
-                            right: 8,
-                            background: 'rgba(0, 0, 0, 0.75)',
-                            padding: '0.2rem 0.6rem',
-                            borderRadius: 4,
-                            fontSize: '0.72rem',
-                            color: '#ddd',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}>
-                            🔍 {t('viewFullImage')}
-                          </div>
-                        </div>
-                      )
-                    ) : rawSourceUrl && isSourcePdf ? (
-                      <div
-                        onClick={() => setSelectedPdf({
-                          nombre: item.cita || item.fuente_nombre || 'Manual PDF',
-                          url: pdfSourceUrl,
-                          filename: item.fuente_nombre,
-                        })}
-                        style={{
-                          height: '115px',
-                          background: 'linear-gradient(135deg, rgba(208, 17, 24, 0.14), rgba(13, 17, 23, 0.95))',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.35rem',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                        title={t('openPdf')}
-                      >
-                        <span style={{ fontSize: '1.75rem' }}>📕</span>
-                        <span style={{ fontSize: '0.84rem', color: '#ffd43b', fontWeight: 'bold' }}>
-                          {detectedPage ? `${t('openPdf')} (p. ${detectedPage})` : t('openPdf')}
-                        </span>
-                      </div>
-                    ) : rawSourceUrl && isSourceTxt ? (
-                      <div
-                        onClick={() => setSelectedPdf({
-                          nombre: item.cita || item.fuente_nombre || 'Documento TXT',
-                          url: rawSourceUrl,
-                          filename: item.fuente_nombre,
-                        })}
-                        style={{
-                          height: '110px',
-                          background: '#161b22',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.35rem',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                        title={t('previewFile') || 'Previsualizar'}
-                      >
-                        <span style={{ fontSize: '1.6rem' }}>📄</span>
-                        <span style={{ fontSize: '0.82rem', color: '#ffd43b', fontWeight: 'bold' }}>
-                          👁️ {t('previewFile') || 'Previsualizar'}
-                        </span>
-                      </div>
-                    ) : rawSourceUrl && isSourceDocx ? (
-                      <a
-                        href={getMediaUrl(rawSourceUrl)}
-                        download
-                        style={{
-                          height: '110px',
-                          background: '#161b22',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.35rem',
-                          textDecoration: 'none',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                      >
-                        <span style={{ fontSize: '1.6rem' }}>📘</span>
-                        <span style={{ fontSize: '0.82rem', color: '#ffd43b', fontWeight: 'bold' }}>
-                          ⬇️ {t('downloadFile') || 'Descargar'} DOCX
-                        </span>
-                      </a>
-                    ) : (
-                      <div style={{
-                        height: '110px',
-                        background: '#161b22',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.85rem',
-                        padding: '0 1rem',
-                        textAlign: 'center',
-                      }}>
-                        📄 {item.fuente_referencia || 'Fragmento textual de manual'}
-                      </div>
-                    )}
-
-                    <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{
-                        color: '#e6edf3',
-                        fontSize: '0.85rem',
-                        lineHeight: '1.45',
-                        maxHeight: '150px',
-                        overflowY: 'auto',
-                        whiteSpace: 'pre-wrap',
-                        background: 'rgba(0, 0, 0, 0.25)',
-                        padding: '0.65rem 0.8rem',
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  gap: '0.45rem',
+                }}
+              >
+                <div style={{
+                  maxWidth: '85%',
+                  padding: '0.85rem 1.05rem',
+                  borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                  background: msg.role === 'user'
+                    ? 'rgba(208, 17, 24, 0.22)'
+                    : 'rgba(22, 27, 34, 0.92)',
+                  border: msg.role === 'user'
+                    ? '1px solid rgba(208, 17, 24, 0.45)'
+                    : '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#e6edf3',
+                  fontSize: '0.92rem',
+                  lineHeight: '1.55',
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {msg.imageUrl && (
+                    <img
+                      src={getMediaUrl(msg.imageUrl)}
+                      alt="Contexto visual"
+                      style={{
+                        width: '72px',
+                        height: '52px',
+                        objectFit: 'cover',
                         borderRadius: '6px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                      }}>
-                        {item.contenido_texto}
-                      </div>
-                    </div>
+                        marginBottom: '0.45rem',
+                        display: 'block',
+                        border: '1px solid #ffd43b',
+                      }}
+                    />
+                  )}
+                  {msg.text}
+                </div>
+
+                {/* Chips de cita debajo de cada respuesta del asistente */}
+                {msg.role === 'assistant' && Array.isArray(msg.sources) && msg.sources.length > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.45rem',
+                    maxWidth: '85%',
+                  }}>
+                    {msg.sources.map((src, sIdx) => {
+                      const chipNum = src.index || sIdx + 1;
+                      const detectedPage = src.pagina || (src.contenido_texto?.match(/\[P[aá]gina\s+(\d+)\]/i)?.[1] ?? null);
+                      const chipLabel = src.cita || `${src.fuente_nombre || 'Manual'}${detectedPage ? `, p. ${detectedPage}` : ''}`;
+                      return (
+                        <button
+                          key={src.id || `${msg.id}-src-${sIdx}`}
+                          type="button"
+                          onClick={() => handleCitationClick(src)}
+                          style={{
+                            padding: '0.32rem 0.68rem',
+                            borderRadius: '999px',
+                            background: 'rgba(255, 212, 59, 0.12)',
+                            border: '1px solid rgba(255, 212, 59, 0.35)',
+                            color: '#ffd43b',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                          title={src.contenido_texto ? src.contenido_texto.slice(0, 180) : chipLabel}
+                        >
+                          <span>[{chipNum}]</span>
+                          <span>📚 {chipLabel}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          ) : hasSearched && !loading ? (
-            <div className="glass-panel" style={{ padding: '3rem 1.5rem', textAlign: 'center', borderRadius: '12px' }}>
-              <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
-                {t('noResults')}
-              </p>
-            </div>
-          ) : null}
-        </>
+                )}
+              </div>
+            ))}
+
+            {loading && (
+              <div style={{
+                alignSelf: 'flex-start',
+                padding: '0.75rem 1rem',
+                borderRadius: '14px 14px 14px 4px',
+                background: 'rgba(22, 27, 34, 0.92)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: 'var(--text-secondary)',
+                fontSize: '0.88rem',
+              }}>
+                ⏳ {t('searching')}
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input de consulta del chat */}
+          <form
+            onSubmit={handleSearch}
+            className="library-search-form"
+            style={{
+              padding: '0.85rem 1rem',
+              margin: 0,
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className="library-search-input"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !query.trim()}
+              className="btn-primary library-search-btn"
+            >
+              {loading ? t('searching') : t('searchButton')}
+            </button>
+          </form>
+        </div>
       )}
 
       {/* CONTENIDO TAB 2: CATÁLOGO DE LIBROS PDF */}
@@ -699,6 +714,26 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                       >
                         ↗
                       </a>
+                      {canDeleteManual && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteManual(filename, title)}
+                          disabled={deletingManual === filename}
+                          className="btn-secondary"
+                          style={{
+                            padding: '0.65rem 0.85rem',
+                            fontSize: '0.85rem',
+                            background: 'rgba(239, 68, 68, 0.14)',
+                            color: '#fca5a5',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                            cursor: deletingManual === filename ? 'not-allowed' : 'pointer',
+                            opacity: deletingManual === filename ? 0.6 : 1,
+                          }}
+                          title={`${t('deleteManual')} ${title}`}
+                        >
+                          {deletingManual === filename ? '...' : `🗑️ ${t('deleteManual')}`}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -789,6 +824,56 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
       )}
 
       {/* Modal Visor de Imagen en Alta Resolución */}
+      {selectedSourceSnippet && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedSourceSnippet(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel"
+            style={{
+              maxWidth: '640px',
+              width: '100%',
+              borderRadius: '12px',
+              background: '#0d1117',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{
+              padding: '0.8rem 1.2rem',
+              background: '#161b22',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            }}>
+              <span style={{ fontWeight: 'bold', color: '#ffd43b' }}>
+                📚 [{selectedSourceSnippet.index || 1}] {selectedSourceSnippet.cita || selectedSourceSnippet.fuente_nombre}
+              </span>
+              <button type="button" onClick={() => setSelectedSourceSnippet(null)} className="btn-secondary" style={{ padding: '0.25rem 0.7rem', fontSize: '0.8rem' }}>
+                ✕ {t('close')}
+              </button>
+            </div>
+            <div style={{ padding: '1.1rem', color: '#e6edf3', whiteSpace: 'pre-wrap', lineHeight: 1.55, maxHeight: '65vh', overflowY: 'auto' }}>
+              {selectedSourceSnippet.contenido_texto}
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedImage && (
         <div
           role="dialog"

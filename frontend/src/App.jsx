@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import VideoUpload from './pages/VideoUpload'
 import FeedbackView from './pages/FeedbackView'
@@ -29,6 +29,8 @@ function App() {
   const [result, setResult] = useState(null);
   const [selectedTecnica, setSelectedTecnica] = useState(null);
   const [currentEvaluacionId, setCurrentEvaluacionId] = useState(null);
+  const [cancellingAnalysis, setCancellingAnalysis] = useState(false);
+  const uploadAbortControllerRef = useRef(null);
   const [libraryInitialQuery, setLibraryInitialQuery] = useState(null);
   const [libraryInitialImage, setLibraryInitialImage] = useState(null);
 
@@ -74,6 +76,29 @@ function App() {
     (user?.fecha_expiracion && new Date(user.fecha_expiracion) <= new Date())
   );
   const isPassActive = !isAlumno || (user?.estado_suscripcion === 'activo' && !isExpired);
+
+  const handleCancelAnalysis = async () => {
+    setCancellingAnalysis(true);
+    if (uploadAbortControllerRef.current) {
+      uploadAbortControllerRef.current.abort();
+      uploadAbortControllerRef.current = null;
+    }
+    const evalIdToCancel = currentEvaluacionId;
+    if (evalIdToCancel && user?.token) {
+      try {
+        await fetch(`${API_BASE}/api/v1/evaluaciones/${evalIdToCancel}/cancelar`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${user.token}` },
+        });
+      } catch (err) {
+        console.warn('Error cancelando evaluación en servidor:', err);
+      }
+    }
+    setCurrentEvaluacionId(null);
+    setUploadProgress(0);
+    setCancellingAnalysis(false);
+    setAppState('IDLE');
+  };
 
   useEffect(() => {
     // Restaurar y validar sesión activa desde localStorage
@@ -192,11 +217,14 @@ function App() {
     formData.append("idioma", idioma);
     formData.append("alumno_id", user.user_id);
 
+    const controller = new AbortController();
+    uploadAbortControllerRef.current = controller;
     try {
       const response = await fetch(`${API_BASE}/api/v1/evaluaciones/analizar`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${user.token}` },
         body: formData,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -213,10 +241,18 @@ function App() {
       setAppState('PROCESSING');
 
     } catch (error) {
+      uploadAbortControllerRef.current = null;
+      if (error.name === 'AbortError') {
+        setUploadProgress(0);
+        setAppState('IDLE');
+        return;
+      }
       console.error("Error uploading video:", error);
       alert(t('connectionError'));
       setAppState('IDLE');
       setUploadProgress(0);
+    } finally {
+      uploadAbortControllerRef.current = null;
     }
   };
 
@@ -239,7 +275,6 @@ function App() {
                 video_referencia_nombre: data.video_referencia_nombre,
                 video_referencia_profesor_nombre: data.video_referencia_profesor_nombre,
                 frame_error_url: data.frame_error_url,
-                practice_url: data.practice_url,
                 timestamp_error_segundos: data.timestamp_error_segundos,
                 url_video_alumno: data.url_video_alumno,
                 articulaciones_criticas: data.articulaciones_criticas || [],
@@ -694,6 +729,24 @@ function App() {
                 {t('processingDesc')}
               </p>
             )}
+            <button
+              type="button"
+              onClick={handleCancelAnalysis}
+              disabled={cancellingAnalysis}
+              className="btn-secondary"
+              style={{
+                padding: '0.7rem 1.5rem',
+                borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.14)',
+                color: '#fca5a5',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                cursor: cancellingAnalysis ? 'not-allowed' : 'pointer',
+                fontWeight: 600,
+                opacity: cancellingAnalysis ? 0.65 : 1,
+              }}
+            >
+              {cancellingAnalysis ? t('cancellingAnalysis') : `⏹️ ${t('cancelAnalysis')}`}
+            </button>
           </div>
         )}
 

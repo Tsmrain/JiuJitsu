@@ -8,8 +8,13 @@ from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form, He
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from corpocmente.config import settings
+from corpocmente.config import settings, storage_root
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
+from corpocmente.infrastructure.persistence.video_storage import (
+    VIDEOS_DIR as UPLOAD_DIR,
+    persistir_video_referencia,
+    resolver_video_estatico,
+)
 from corpocmente.ui.api.auth_routes import require_auth, require_admin, require_staff
 from corpocmente.application.services.instructor_message_ingestion import sincronizar_mensaje_profesor
 
@@ -30,7 +35,6 @@ class TecnicaResponse(TecnicaCreate):
     video_url: Optional[str] = None
 
 
-UPLOAD_DIR = "/tmp/corpocmente_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 RAG_VIDEO_FRAMES_DIR = settings.video_frames_dir
 RAG_VIDEO_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
@@ -93,18 +97,32 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
         if profesor_id:
             videos_profesor = [v for v in t["videos"] if str(v["profesor_id"]) == str(profesor_id)]
             # Puede haber referencias históricas duplicadas. Usa el último archivo
-            # que realmente exista y tenga contenido, no un registro de prueba vacío.
-            video_path = next((
-                os.path.join(UPLOAD_DIR, os.path.basename(v["url"]))
-                for v in reversed(videos_profesor)
-                if v.get("url")
-                and os.path.isfile(os.path.join(UPLOAD_DIR, os.path.basename(v["url"])))
-                and os.path.getsize(os.path.join(UPLOAD_DIR, os.path.basename(v["url"]))) > 1024
-            ), None)
-            if video_path:
-                tiene_video = True
-                filename = os.path.basename(video_path)
-                video_url = f"/static/videos/{filename}"
+            # que realmente exista (o pueda auto-curarse), no un registro de prueba vacío.
+            for v in reversed(videos_profesor):
+                resolved_url = resolver_video_estatico(
+                    v.get("url"),
+                    es_referencia=True,
+                    tecnica_id=t["id"],
+                    tecnica_nombre=t["nombre"],
+                    profesor_id=profesor_id,
+                    db=db,
+                )
+                if resolved_url:
+                    tiene_video = True
+                    video_url = resolved_url
+                    break
+            if not video_url and t["tiene_patron"] and not videos_profesor:
+                resolved_url = resolver_video_estatico(
+                    None,
+                    es_referencia=True,
+                    tecnica_id=t["id"],
+                    tecnica_nombre=t["nombre"],
+                    profesor_id=profesor_id,
+                    db=db,
+                )
+                if resolved_url:
+                    tiene_video = True
+                    video_url = resolved_url
 
         resultados.append(TecnicaResponse(
             id=UUID(t["id"]),
@@ -172,9 +190,24 @@ async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, background_ta
 @router.delete("/{tecnica_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def eliminar_tecnica(tecnica_id: UUID, authorization: Optional[str] = Header(None)):
     """
-    Elimina una técnica del catálogo. Requiere token de admin o profesor.
+    Elimina una técnica del catálogo junto con sus vectores biomecánicos y fragmentos RAG en Qdrant.
+    Requiere token de admin o profesor.
     """
     require_staff(authorization)
+    try:
+        from corpocmente.infrastructure.persistence.qdrant_adapter import QdrantVectorAdapter
+        qdrant = QdrantVectorAdapter()
+        qdrant.eliminar_por_tecnica(tecnica_id)
+    except Exception as e_pose:
+        logger.warning("Error limpiando vectores biomecánicos de técnica %s en Qdrant: %s", tecnica_id, e_pose)
+
+    try:
+        from corpocmente.infrastructure.persistence.qdrant_rag_adapter import QdrantRAGAdapter
+        qdrant_rag = QdrantRAGAdapter()
+        qdrant_rag.eliminar_por_tecnica(str(tecnica_id))
+    except Exception as e_rag:
+        logger.warning("Error limpiando chunks RAG de técnica %s en Qdrant: %s", tecnica_id, e_rag)
+
     db = get_db()
     deleted_ok = db.rpc("admin_delete_tecnica", {"p_tecnica_id": str(tecnica_id)})
     if not deleted_ok:
@@ -237,60 +270,6 @@ def auto_ingerir_referencia_background(tecnica_id: UUID, video_path: str):
     auto_ingerir_video_rag_background(tecnica_id=tecnica_id, video_path=video_path)
 
 
-def entrenar_y_actualizar_modelo_autonomo(video_path: str, tecnica_id: str | UUID) -> Optional[int]:
-    """
-    Dispara el ciclo de Aprendizaje Continuo Autónomo (Autonomous MLOps Flywheel)
-    en un proceso de sistema operativo completamente separado (subprocess.Popen con start_new_session=True)
-    para no bloquear el hilo ni el event loop de FastAPI.
-    """
-    import subprocess
-    import sys
-
-    try:
-        v_path = Path(str(video_path))
-        if not v_path.exists():
-            logger.warning("Autonomous Flywheel omitido: el archivo %s no existe.", v_path)
-            return None
-
-        # Evitar disparar entrenamientos pesados sobre payloads sintéticos de 5 bytes en pytest
-        if v_path.stat().st_size < 10_000 and os.getenv("FORCE_AUTONOMOUS_FLYWHEEL_IN_TESTS") != "1":
-            logger.info("Autonomous Flywheel omitido para archivo sintético de prueba (%d bytes).", v_path.stat().st_size)
-            return None
-
-        repo_root = Path(__file__).resolve().parents[4]
-        script_path = repo_root / "backend" / "scripts" / "autonomous_flywheel.py"
-        if not script_path.exists():
-            logger.warning("No se encontró el script autonomous_flywheel.py en %s", script_path)
-            return None
-
-        # Copiar el video a un directorio persistente antes de que cualquier limpieza temporal actúe
-        autonomous_videos_dir = repo_root / "data" / "autonomous" / "videos"
-        autonomous_videos_dir.mkdir(parents=True, exist_ok=True)
-        safe_video_path = autonomous_videos_dir / f"{tecnica_id}_{v_path.name}"
-        if v_path.resolve() != safe_video_path.resolve():
-            shutil.copy2(v_path, safe_video_path)
-
-        log_path = repo_root / "data" / "autonomous" / "autonomous_subprocess.log"
-        log_file = open(log_path, "a", encoding="utf-8")
-
-        proc = subprocess.Popen(
-            [sys.executable, str(script_path), str(safe_video_path), str(tecnica_id)],
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-            cwd=str(repo_root),
-            start_new_session=True,
-        )
-        logger.info(
-            "🚀 Autonomous MLOps Flywheel lanzado en subproceso independiente (PID=%d) para técnica %s",
-            proc.pid,
-            tecnica_id,
-        )
-        return proc.pid
-    except Exception as exc:
-        logger.warning("No se pudo iniciar el subproceso de Autonomous Flywheel: %s", exc)
-        return None
-
-
 @router.post("/{tecnica_id}/video", status_code=status.HTTP_200_OK, deprecated=True)
 async def subir_video_referencia(
     tecnica_id: UUID,
@@ -348,11 +327,10 @@ async def subir_video_referencia(
 
     video_id = result[0]["video_id"] if isinstance(result, list) else result["video_id"]
 
-    # Iniciar auto-ingesta de poses del profesor en segundo plano para Qdrant y aprendizaje continuo autónomo
+    # Iniciar auto-ingesta de poses del profesor en segundo plano para Qdrant
     background_tasks.add_task(auto_ingerir_referencia_background, tecnica_id, file_path)
-    background_tasks.add_task(entrenar_y_actualizar_modelo_autonomo, file_path, str(tecnica_id))
 
-    return {"status": "ok", "message": "Técnica guardada. El sistema está aprendiendo la nueva técnica en segundo plano.", "video_id": video_id}
+    return {"status": "ok", "message": "Técnica guardada. Patrón registrado en Qdrant.", "video_id": video_id}
 
 
 @router.get("/{tecnica_id}/patron", status_code=status.HTTP_200_OK)
@@ -412,7 +390,7 @@ async def registrar_patron_tecnica(
     if not exists:
         try:
             import psycopg2
-            from corpocmente.config import settings
+            from corpocmente.config import settings, storage_root
             db_url = getattr(settings, "DATABASE_URL", "postgres://postgres:postgres@localhost:5432/corpocmente")
             conn = psycopg2.connect(db_url)
             cur = conn.cursor()
@@ -553,30 +531,25 @@ async def registrar_patron_tecnica(
             SessionStateManager.finalizar_operacion(session_id, exito=False, error=str(e_pg))
         raise HTTPException(status_code=500, detail=f"Failed to activate pattern in PostgreSQL: {e_pg}. Orphan pattern deleted.")
 
-    # 5. Limpiar patrón anterior solo tras confirmación de activación
-    if patron_anterior_id and str(patron_anterior_id) != str(nuevo_patron_id):
-        try:
-            qdrant.eliminar_patron(UUID(str(patron_anterior_id)))
-        except Exception as e_clean:
-            import logging
-            logging.getLogger(__name__).warning(f"Error limpiando patrón anterior {patron_anterior_id}: {e_clean}")
+    # 5. Aprendizaje Acumulativo (1:N): NO se borra el patrón anterior.
+    # Qdrant y PostgreSQL acumulan múltiples patrones de referencia por técnica
+    # para permitir variaciones biomecánicas válidas (Larman / Mannino).
 
-    # Mantener disponible la demostración original para mostrarla junto al
-    # fotograma crítico en los reportes. El patrón y el video son registros
-    # separados; si el guardado falla, el patrón sigue siendo válido.
+    # Mantener disponible la demostración original copiándola a /tmp/corpocmente_videos/
+    # con nombre UUID único y respaldada en storage persistente para mostrarla en los reportes.
+    canonical_video_path = persistir_video_referencia(video_path)
     video_ref_saved = False
     try:
         video_result = db.rpc("admin_save_video_referencia", {
             "p_tecnica_id": str(tecnica_id),
             "p_profesor_id": str(profesor_id),
-            "p_url_video": video_path
+            "p_url_video": canonical_video_path
         })
         if not video_result:
             raise RuntimeError("La base de datos no confirmó el video de referencia")
         video_ref_saved = True
     except Exception as e_video:
-        import logging
-        logging.getLogger(__name__).warning(
+        logger.warning(
             "Patrón %s activado, pero no se pudo asociar su video de referencia: %s",
             nuevo_patron_id, e_video
         )
@@ -594,13 +567,10 @@ async def registrar_patron_tecnica(
             auto_ingerir_video_rag_background,
             tecnica_id,
             tecnica_nombre,
-            video_path,
+            canonical_video_path,
             str(profesor_id),
             caller.get("sucursal_id"),
         )
-
-    # Disparar Aprendizaje Continuo Autónomo (Autonomous MLOps Flywheel) en proceso separado
-    background_tasks.add_task(entrenar_y_actualizar_modelo_autonomo, video_path, str(tecnica_id))
 
     return {
         "status": "ok",
@@ -610,8 +580,8 @@ async def registrar_patron_tecnica(
         "total_frames": total_frames,
         "cobertura": cobertura,
         "video_referencia_guardado": video_ref_saved,
-        "autonomous_learning_triggered": True,
-        "mensaje": "Técnica guardada. El sistema está aprendiendo la nueva técnica en segundo plano."
+        "autonomous_learning_triggered": False,
+        "mensaje": "Técnica guardada. Patrón registrado en Qdrant acumulativamente."
     }
 
 

@@ -40,7 +40,6 @@ export default function FeedbackView({ user, result, tecnica, onReset, idioma })
     : Number(result.timestamp_error_segundos || 0);
 
   const tecnicaNombre = tecnica?.nombre || result.tecnica_nombre || 'Jiu-Jitsu';
-  const practiceUrl = result.practice_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(tecnicaNombre + ' jiu-jitsu tutorial')}`;
 
   const defaultCoach = t('coach');
   const rawProfesor = result.video_referencia_profesor_nombre || tecnica?.profesorRef || defaultCoach;
@@ -79,18 +78,18 @@ export default function FeedbackView({ user, result, tecnica, onReset, idioma })
           <div className="media-wrapper">
             {videoUrl && !videoError ? (
               <video
+                src={videoUrl}
                 controls
                 playsInline
                 preload="metadata"
                 key={videoUrl}
                 onError={() => setVideoError(true)}
               >
-                <source src={videoUrl} type="video/mp4" />
                 {t('videoNotSupported')}
               </video>
             ) : (
               <div className="media-placeholder" role="status">
-                {t('referenceVideoUnavailable')}
+                {t('referenceVideoUnavailablePatternNote')}
               </div>
             )}
           </div>
@@ -281,35 +280,6 @@ export default function FeedbackView({ user, result, tecnica, onReset, idioma })
                 </div>
               </div>
             )}
-          </div>
-        </section>
-
-        {/* 4. Bottom-Right: YouTube Recommendation Card */}
-        <section className="glass-panel feedback-card youtube-card">
-          <div className="card-header">
-            <span className="card-label">{t('recommendedPractice')}</span>
-            <h3>{t('practiceRecommendation')}</h3>
-          </div>
-          <div className="youtube-card-body">
-            <div className="youtube-icon-wrap">
-              <svg width="44" height="44" viewBox="0 0 24 24" fill="#ef4444">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-              </svg>
-            </div>
-            <p className="youtube-desc">{t('youtubeDesc')}</p>
-            <a
-              href={practiceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-youtube"
-            >
-              {t('watchYoutube')}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
           </div>
         </section>
       </div>

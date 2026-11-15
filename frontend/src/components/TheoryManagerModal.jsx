@@ -150,19 +150,7 @@ export default function TheoryManagerModal({ isOpen, user, tecnica, idioma, onCl
         {/* 2. Sección Chunks RAG */}
         {loading ? (
           <p style={{ color: 'var(--text-secondary)' }}>{t('loading') || 'Cargando teoría...'}</p>
-        ) : chunks.length === 0 ? (
-          <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            textAlign: 'center',
-            color: 'var(--text-secondary)',
-            fontSize: '0.9rem',
-            lineHeight: '1.5'
-          }}>
-            {t('noTheoryUploaded')}
-          </div>
-        ) : (
+        ) : chunks.length === 0 ? null : (
           <>
             <div style={{ marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               {chunks.length} {t('totalExcerpts')}

@@ -212,7 +212,7 @@ def test_registro_y_reemplazo_patron_exitoso():
         p1_recup = adapter.obtener_secuencia_referencia(tecnica_id=tecnica_id, patron_id=patron_1_id)
         assert len(p1_recup) == 10
 
-        # 2. Registrar Patrón 2 (debe reemplazar a Patrón 1 y limpiar Qdrant)
+        # 2. Registrar Patrón 2 (Aprendizaje Acumulativo 1:N: conserva P1 y agrega P2)
         mock_ext.return_value = {
             "secuencia_kpts": frames_p2,
             "total_frames": 12,
@@ -231,15 +231,16 @@ def test_registro_y_reemplazo_patron_exitoso():
         assert patron_2_id != patron_1_id
         assert data2["patron_anterior_id"] == patron_1_id
 
-        # Verificar que el patrón activo ahora es P2
+        # Verificar que P2 está disponible en Qdrant
         p2_recup = adapter.obtener_secuencia_referencia(tecnica_id=tecnica_id, patron_id=patron_2_id)
         assert len(p2_recup) == 12
 
-        # Verificar que P1 ya fue eliminado de Qdrant
-        p1_huerfano = adapter.obtener_secuencia_referencia(tecnica_id=tecnica_id, patron_id=patron_1_id)
-        assert len(p1_huerfano) == 0
+        # Verificar que P1 NO fue eliminado: aprendizaje acumulativo sin olvido
+        p1_acumulado = adapter.obtener_secuencia_referencia(tecnica_id=tecnica_id, patron_id=patron_1_id)
+        assert len(p1_acumulado) == 10
 
         # Limpiar al finalizar
+        adapter.eliminar_patron(patron_1_id)
         adapter.eliminar_patron(patron_2_id)
 
 

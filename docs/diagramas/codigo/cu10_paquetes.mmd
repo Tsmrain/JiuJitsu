@@ -1,23 +1,26 @@
 graph TD
-    subgraph Presentacion ["Presentación"]
-        AdminModal["AdminUsersModal.jsx"]
-        ImpBanner["ImpersonationBanner.jsx"]
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Admin["AdminSucursales.jsx (Pestaña Usuarios)"]
+        P_App["App.jsx (Banner de Soporte)"]
+        P_Prof["UserProfileModal.jsx"]
     end
-    subgraph Aplicacion ["Aplicación"]
-        AuthRoutes["auth_routes.py"]
-        SessionMgr["SessionManager"]
-        AuditSvc["AuditoriaService"]
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
+        A_Auth["auth_routes.py (impersonate, update, cambiar-sucursal, delete)"]
     end
-    subgraph Dominio ["Dominio"]
-        EntUser["Usuario (Roles & Claims)"]
-        EntAudit["RegistroAuditoria"]
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_User["Usuario"]
+        D_Suc["Sucursal"]
+        D_Resp["LoginResponse / Token"]
     end
-    subgraph Infraestructura ["Infraestructura"]
-        Postgres["PostgreSQL"]
-        Crypto["PyJWT"]
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
+        I_PG["PostgrestClient / PostgreSQL (admin_delete_user)"]
+        I_JWT["PyJWT (HS256)"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

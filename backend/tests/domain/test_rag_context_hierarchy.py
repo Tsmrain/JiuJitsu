@@ -307,3 +307,52 @@ class TestIntelligenceFacadeContextHierarchy:
         assert res.feedback_summary != "Información insuficiente"
         assert "base baja" in res.feedback.lower()
         assert "solapas" in res.feedback.lower()
+
+    def test_fallback_global_cuando_tecnica_solo_tiene_video_y_sin_manuales_propios(self):
+        facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen = self._setup_facade()
+        tec_id = uuid4()
+
+        def fake_recuperar(vectores_consulta, tecnica_id=None, limit=5, video_referencia_path=None):
+            if tecnica_id is not None:
+                return [
+                    {
+                        "id": "frame-video-1",
+                        "score": 0.45,
+                        "fuente_tipo": "video_referencia",
+                        "fuente_nombre": "Video de referencia",
+                        "contenido_texto": "Frame del video del instructor.",
+                    }
+                ]
+            return [
+                {
+                    "id": "global-armbar-56",
+                    "score": 0.88,
+                    "alcance": "global",
+                    "fuente_tipo": "manual_pdf",
+                    "fuente_nombre": "BJJ-GuiaCompleto.pdf",
+                    "pagina": 56,
+                    "contenido_texto": "CHAVE DE BRAÇO NA MONTADA (ARMLOCK): Controlar la manga y cruzar la pierna sobre la cabeza.",
+                }
+            ]
+
+        mock_qdrant.recuperar_evidencias_rag_multimodal.side_effect = fake_recuperar
+        mock_gemini.generar_texto_feedback.return_value = {
+            "summary": "Alineación en llave de brazo",
+            "correction": "Controla la manga y pasa la pierna sobre la cabeza según el manual (p. 56).",
+        }
+
+        with patch("os.path.exists", return_value=True), \
+             patch("corpocmente.domain.services.intelligence_facade.rerank_evidencias_multilingue", side_effect=lambda query_texto, evidencias, **kw: [e for e in evidencias if e.get("fuente_tipo") == "manual_pdf"]):
+            res = facade.ejecutar_analisis_completo(
+                video_path="/tmp/video.mp4",
+                tecnica_id=tec_id,
+                tecnica_nombre="Llave de brazo (Armbar)",
+                mensaje_profesor="",
+                idioma="es",
+            )
+
+        called_tecnica_ids = [c.kwargs.get("tecnica_id") for c in mock_qdrant.recuperar_evidencias_rag_multimodal.call_args_list]
+        assert tec_id in called_tecnica_ids
+        assert None in called_tecnica_ids
+        assert res.feedback_summary != "Información insuficiente"
+        assert "p. 56" in res.feedback

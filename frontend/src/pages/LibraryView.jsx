@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { getTranslation } from '../i18n/translations';
 
 import { API_BASE } from '../api/config';
@@ -113,6 +114,15 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
 
   const handleCitationClick = (src) => {
     if (!src) return;
+    const isInstructorMsg =
+      src.fuente_tipo === 'instructor_message' ||
+      /instrucciones del profesor/i.test(src.fuente_nombre || '');
+
+    if (isInstructorMsg) {
+      setSelectedSourceSnippet(src);
+      return;
+    }
+
     const detectedPage = src.pagina || (src.contenido_texto?.match(/\[P[aá]gina\s+(\d+)\]/i)?.[1] ?? null);
     const mediaUrl = src.media_url ? getMediaUrl(src.media_url) : '';
     const rawSourceUrl = src.fuente_url || '';
@@ -388,7 +398,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
             fontSize: '0.82rem',
             color: 'var(--text-secondary)',
           }}>
-            <span>🥋 Asistente Técnico RAG (Qwen3-VL + Qdrant)</span>
+            <span>🥋 {t('virtualProfessorTitle') || 'Profesor Virtual IA'}</span>
             {messages.length > 0 && (
               <button
                 type="button"
@@ -468,7 +478,13 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                       }}
                     />
                   )}
-                  {msg.text}
+                  {msg.role === 'assistant' ? (
+                    <div className="markdown-chat-body" style={{ whiteSpace: 'normal' }}>
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
 
                 {/* Chips de cita debajo de cada respuesta del asistente */}
@@ -482,30 +498,57 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                     {msg.sources.map((src, sIdx) => {
                       const chipNum = src.index || sIdx + 1;
                       const detectedPage = src.pagina || (src.contenido_texto?.match(/\[P[aá]gina\s+(\d+)\]/i)?.[1] ?? null);
-                      const chipLabel = src.cita || `${src.fuente_nombre || 'Manual'}${detectedPage ? `, p. ${detectedPage}` : ''}`;
+                      const isInstructorMsg =
+                        src.fuente_tipo === 'instructor_message' ||
+                        /instrucciones del profesor/i.test(src.fuente_nombre || '');
+                      const rawBookName = (src.fuente_nombre || src.cita || 'Manual')
+                        .replace(/,\s*p\.\s*\d+$/i, '')
+                        .trim();
+                      const shortBookName = rawBookName.length > 26
+                        ? `${rawBookName.slice(0, 25).trim()}…`
+                        : rawBookName;
+                      const chipLabel = detectedPage ? `${shortBookName} (p. ${detectedPage})` : shortBookName;
+                      const hasUrl = Boolean(
+                        (src.media_url && String(src.media_url).trim()) ||
+                        (src.fuente_url && String(src.fuente_url).trim())
+                      );
+                      const hasSnippet = Boolean(src.contenido_texto && String(src.contenido_texto).trim());
+                      const isClickable = isInstructorMsg ? hasSnippet : (hasUrl || hasSnippet);
+                      const chipTooltip = !isClickable
+                        ? 'Página no disponible'
+                        : isInstructorMsg
+                          ? `Ver nota del instructor: ${rawBookName}`
+                          : `${rawBookName}${detectedPage ? ` (p. ${detectedPage})` : ''}${src.contenido_texto ? ` — ${src.contenido_texto.slice(0, 150)}` : ''}`;
                       return (
-                        <button
+                        <span
                           key={src.id || `${msg.id}-src-${sIdx}`}
-                          type="button"
-                          onClick={() => handleCitationClick(src)}
-                          style={{
-                            padding: '0.32rem 0.68rem',
-                            borderRadius: '999px',
-                            background: 'rgba(255, 212, 59, 0.12)',
-                            border: '1px solid rgba(255, 212, 59, 0.35)',
-                            color: '#ffd43b',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                          }}
-                          title={src.contenido_texto ? src.contenido_texto.slice(0, 180) : chipLabel}
+                          title={chipTooltip}
+                          style={{ display: 'inline-flex' }}
                         >
-                          <span>[{chipNum}]</span>
-                          <span>📚 {chipLabel}</span>
-                        </button>
+                          <button
+                            type="button"
+                            disabled={!isClickable}
+                            aria-disabled={!isClickable}
+                            onClick={() => isClickable && handleCitationClick(src)}
+                            style={{
+                              padding: '0.32rem 0.68rem',
+                              borderRadius: '999px',
+                              background: isClickable ? 'rgba(255, 212, 59, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                              border: isClickable ? '1px solid rgba(255, 212, 59, 0.35)' : '1px solid rgba(255, 255, 255, 0.14)',
+                              color: isClickable ? '#ffd43b' : '#8b949e',
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              cursor: isClickable ? 'pointer' : 'not-allowed',
+                              opacity: isClickable ? 1 : 0.65,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                            }}
+                          >
+                            <span>[{chipNum}]</span>
+                            <span>{isInstructorMsg ? '🥋' : '📚'} {chipLabel}</span>
+                          </button>
+                        </span>
                       );
                     })}
                   </div>
@@ -669,11 +712,7 @@ export default function LibraryView({ user, idioma, onClose, initialQuery, initi
                           className="btn-primary"
                           style={{ flex: 1, padding: '0.65rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </svg>
-                          <span>{t('openPdf')}</span>
+                          <span>👁️ {t('previewFile') || 'Previsualizar'}</span>
                         </button>
                       ) : isImg ? (
                         <button

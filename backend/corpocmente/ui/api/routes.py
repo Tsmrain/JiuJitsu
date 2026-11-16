@@ -799,6 +799,18 @@ async def ingerir_teoria(payload: IngestionRequest, authorization: Optional[str]
     return {"status": "ok", "chunks_procesados": resultado.chunks_procesados}
 
 
+def _resolver_nombre_fuente_real(fuente_nombre: Optional[str], nombre_archivo: str) -> str:
+    """
+    Prioriza el nombre real del archivo subido frente a etiquetas genéricas (ej. 'Libro 1').
+    Si el usuario dio un título específico, lo conserva; si viene vacío o genérico, usa nombre_archivo.
+    """
+    candidato = (fuente_nombre or "").strip()
+    genericos = {"libro 1", "libro1", "manual", "documento", "sin nombre", "archivo"}
+    if candidato and candidato.lower() not in genericos:
+        return candidato
+    return (nombre_archivo or candidato or "manual").strip()
+
+
 @router.post("/conocimiento/fuentes/archivo", status_code=status.HTTP_201_CREATED)
 async def ingerir_archivo_teoria(
     request: Request,
@@ -879,7 +891,7 @@ async def ingerir_archivo_teoria(
                 "imagen_hash": hashlib.sha256(contenido).hexdigest(),
                 "bytes": contenido,
                 "mime_type": IMAGE_MIME_TYPES[extension],
-                "texto": (fuente_nombre or nombre_archivo).strip(),
+                "texto": _resolver_nombre_fuente_real(fuente_nombre, nombre_archivo),
                 "pagina": None,
             })
         elif extension == ".docx":
@@ -913,7 +925,7 @@ async def ingerir_archivo_teoria(
                         "imagen_hash": image_hash,
                         "bytes": media_bytes,
                         "mime_type": mime_type,
-                        "texto": f"Figura del manual {fuente_nombre or nombre_archivo}: {os.path.basename(media_name)}",
+                        "texto": f"Figura del manual {_resolver_nombre_fuente_real(fuente_nombre, nombre_archivo)}: {os.path.basename(media_name)}",
                         "pagina": None,
                     })
             ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
@@ -995,7 +1007,7 @@ async def ingerir_archivo_teoria(
             detail="El archivo quedó guardado, pero para vectorizar su contenido debes iniciar el worker Qwen en Colab o activar USE_LOCAL_QWEN=true.",
         )
 
-    nombre_fuente = (fuente_nombre or nombre_archivo).strip()
+    nombre_fuente = _resolver_nombre_fuente_real(fuente_nombre, nombre_archivo)
     use_case = IngestKnowledgeUseCase()
     chunks_procesados = 0
     texto_embeddings = None
@@ -1532,6 +1544,94 @@ def _buscar_instrucciones_profesor_para_query(query: str) -> List[Dict[str, Any]
     return coincidencias
 
 
+def _priorizar_chunks_especificos(resultados: List[Dict[str, Any]], query_expandida: str) -> List[Dict[str, Any]]:
+    """
+    Prioriza chunks enfocados (una página/sección concreta con coincidencia léxica en el título)
+    sobre bloques extensos multi-página que mezclan múltiples técnicas distintas.
+    """
+    if len(resultados) <= 1:
+        return resultados
+
+    stopwords = {
+        "como", "hace", "hacer", "para", "sobre", "desde", "esta", "este",
+        "jiu", "jitsu", "paso", "cual", "como", "with", "from", "that",
+    }
+    tokens = {
+        tok for tok in re.findall(r"[a-zA-ZáéíóúÁÉÍÓÚñÑçÇãõÃÕ]{4,}", (query_expandida or "").lower())
+        if tok not in stopwords
+    }
+
+    def _score_item(item: Dict[str, Any]) -> float:
+        base = float(item.get("score") or 0.0)
+        texto = (item.get("contenido_texto") or "").strip()
+        head = texto[:180].lower()
+        tiene_pagina = item.get("pagina") is not None
+        es_bloque_gigante = len(texto) > 2500 and not tiene_pagina
+
+        head_hits = sum(1 for tok in tokens if tok in head)
+        bonus = 0.0
+        if head_hits > 0:
+            bonus += min(0.12, 0.04 * head_hits)
+        if tiene_pagina and len(texto) <= 2200:
+            bonus += 0.05
+        if es_bloque_gigante:
+            bonus -= 0.08
+        return base + bonus
+
+    return sorted(resultados, key=_score_item, reverse=True)
+
+
+def _resolver_metadatos_fuente(item: Dict[str, Any], idx: int, query_expandida: str = "") -> Dict[str, Any]:
+    """
+    Normaliza fuente_nombre, pagina y cita real a partir del payload o de los marcadores
+    [Página X] presentes en el texto, evitando citas genéricas sin número de página.
+    """
+    from urllib.parse import urlparse
+
+    fuente_nombre = (item.get("fuente_nombre") or "").strip()
+    if not fuente_nombre:
+        fuente_url = (item.get("fuente_url") or "").strip()
+        if fuente_url:
+            path = urlparse(fuente_url).path
+            base = os.path.basename(path)
+            if base:
+                fuente_nombre = os.path.splitext(base)[0]
+        if not fuente_nombre:
+            fuente_nombre = (item.get("fuente_tipo") or "").strip() or f"Manual {idx}"
+
+    pagina = item.get("pagina")
+    texto = (item.get("contenido_texto") or "").strip()
+    if pagina is None and texto:
+        secciones = re.split(r"(?=\[P[aá]gina\s+\d+\])", texto, flags=re.IGNORECASE)
+        tokens = {
+            tok for tok in re.findall(r"[a-zA-ZáéíóúÁÉÍÓÚñÑçÇãõÃÕ]{4,}", (query_expandida or "").lower())
+            if tok not in {"como", "hace", "hacer", "para", "sobre", "desde", "jiu", "jitsu"}
+        }
+        best_pag = None
+        best_hits = -1
+        for sec in secciones:
+            m_pag = re.match(r"\[P[aá]gina\s+(\d+)\]", sec.strip(), flags=re.IGNORECASE)
+            if not m_pag:
+                continue
+            sec_lower = sec.lower()
+            hits = sum(1 for tok in tokens if tok in sec_lower) if tokens else 0
+            if hits > best_hits:
+                best_hits = hits
+                best_pag = int(m_pag.group(1))
+        pagina = best_pag
+
+    if pagina is not None:
+        cita = f"{fuente_nombre}, p. {pagina}"
+    else:
+        cita = (item.get("cita") or "").strip() or fuente_nombre
+
+    return {
+        "fuente_nombre": fuente_nombre,
+        "pagina": pagina,
+        "cita": cita,
+    }
+
+
 @router.post("/conocimiento/biblioteca/buscar", status_code=status.HTTP_200_OK)
 async def buscar_en_biblioteca(
     req: BibliotecaBuscarRequest,
@@ -1598,7 +1698,10 @@ async def buscar_en_biblioteca(
     instrucciones_profesor = _buscar_instrucciones_profesor_para_query(
         query_limpia or query_cognitiva or ""
     )
-    manuales_lista = list(resultados or [])
+    manuales_lista = _priorizar_chunks_especificos(
+        list(resultados or []),
+        query_expandida or query_cognitiva or query_limpia,
+    )
     if instrucciones_profesor:
         ids_inst = {item.get("contenido_texto") for item in instrucciones_profesor}
         manuales_filtrados = [
@@ -1609,22 +1712,29 @@ async def buscar_en_biblioteca(
     else:
         resultados_combinados = manuales_lista
 
-    top_chunks = resultados_combinados[:3]
-    sources = [
-        {
+    top_chunks = []
+    sources = []
+    for idx, item in enumerate(resultados_combinados[:3], start=1):
+        meta = _resolver_metadatos_fuente(item, idx, query_expandida or query_cognitiva or query_limpia)
+        enriched = {
+            **item,
+            "fuente_nombre": meta["fuente_nombre"],
+            "pagina": meta["pagina"],
+            "cita": meta["cita"],
+        }
+        top_chunks.append(enriched)
+        sources.append({
             "index": idx,
             "id": item.get("id"),
-            "cita": item.get("cita") or item.get("fuente_nombre") or f"Fuente {idx}",
-            "fuente_nombre": item.get("fuente_nombre"),
+            "cita": meta["cita"],
+            "fuente_nombre": meta["fuente_nombre"],
             "fuente_tipo": item.get("fuente_tipo"),
             "fuente_url": item.get("fuente_url"),
             "media_url": item.get("media_url"),
-            "pagina": item.get("pagina"),
+            "pagina": meta["pagina"],
             "score": item.get("score"),
             "contenido_texto": item.get("contenido_texto"),
-        }
-        for idx, item in enumerate(top_chunks, start=1)
-    ]
+        })
 
     answer = ""
     try:

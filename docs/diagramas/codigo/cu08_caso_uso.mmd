@@ -1,0 +1,15 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Pase de Tatami"]
+        UC08(["UC-08: Activar Pase de Tatami por 30 Dias"]):::usecase
+        UC08_List(["Consultar Alumnos Pendientes o Expirados"]):::usecase
+    end
+
+    PR --> UC08
+    AD --> UC08
+    UC08 -.->|"«include»"| UC08_List

@@ -1,0 +1,31 @@
+sequenceDiagram
+    autonumber
+    actor PR as Profesor
+    participant B1 as «Boundary» PantallaCatalogoTecnico
+    participant C1 as «Control» CoordinadorDeTecnicas
+    participant E1 as «Entity» Tecnica
+    participant E2 as «Entity» PatronDeReferencia
+
+    alt Registrar o actualizar tecnica con video patron
+        PR->>B1: ingresarDatosTecnicaYVideo(nombre, cinturon, notaProfesor, video)
+        B1->>C1: procesarVideoInicial(video)
+        C1-->>B1: siluetasEnEscena
+        B1-->>PR: solicitarConfirmacionDeInstructor(siluetas)
+        PR->>B1: confirmarInstructorYGuardar(personaSeleccionada)
+        B1->>C1: registrarTecnicaYPatron(datos, video, personaSeleccionada)
+        C1->>E1: guardarDatosTecnica(nombre, cinturon, notaProfesor)
+        E1-->>C1: tecnicaId
+        C1->>C1: extraerSecuenciaPosturalYRespaldarVideo(video, personaSeleccionada)
+        C1->>E2: registrarPatronYVideoPersistente(tecnicaId, secuencia, videoRespaldo)
+        E2-->>C1: patronActivo
+        C1-->>B1: confirmacionDeRegistro(tecnicaId, patronActivo)
+        B1-->>PR: mostrarTecnicaListaParaEvaluar()
+    else Eliminar tecnica del catalogo
+        PR->>B1: solicitarEliminarTecnica(tecnicaId)
+        B1->>C1: eliminarTecnicaEnCascada(tecnicaId)
+        C1->>E2: limpiarPatronesYTeoriaAsociada(tecnicaId)
+        C1->>E1: eliminarRegistroDeCatalogo(tecnicaId)
+        E1-->>C1: eliminacionConfirmada
+        C1-->>B1: catalogoActualizado()
+        B1-->>PR: confirmarEliminacionDeTecnica()
+    end

@@ -28,7 +28,7 @@ class SignupRequest(BaseModel):
     nombre_completo: str
     username: str
     password: str
-    rol: str = "alumno" # Solo 'alumno' o 'profesor'
+    rol: str = "alumno" # Registro público restringido estrictamente a 'alumno'
     sucursal_id: Optional[UUID] = None
 
     @field_validator("username")
@@ -441,23 +441,18 @@ async def login(req: LoginRequest):
 @router.post("/auth/signup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
 async def signup(req: SignupRequest):
     """
-    Registro público de cuentas para Alumnos y Profesores.
-    El rol de Administrador está bloqueado desde el formulario público.
+    Registro público de cuentas estrictamente para Alumnos (`rol="alumno"`).
+    Rechaza intentos de registrar cuentas de Profesor o Administrador con HTTP 403 Forbidden.
     Usa RPC SECURITY DEFINER: password se hashea en la BD, sin exponer la tabla.
     """
     db = get_db()
-    rol_solicitado = req.rol.lower().strip()
-    if rol_solicitado == "admin":
+    rol_solicitado = (req.rol or "alumno").lower().strip()
+    if rol_solicitado != "alumno":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="The Administrator role is exclusive and restricted for security."
+            detail="El registro público solo está permitido para alumnos. Contacta al administrador para obtener una cuenta de profesor."
         )
-
-    if rol_solicitado not in ["alumno", "profesor"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration role must be 'alumno' or 'profesor'."
-        )
+    rol_final = "alumno"
 
     usr_clean = req.username.strip().lower()
     usr_email = f"{usr_clean}@mock.com"
@@ -485,7 +480,7 @@ async def signup(req: SignupRequest):
             "p_username": req.username.strip(),
             "p_email": usr_email,
             "p_password": req.password,
-            "p_rol": rol_solicitado,
+            "p_rol": rol_final,
             "p_sucursal_id": sucursal["id"]
         })
     except Exception as e:

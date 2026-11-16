@@ -1,0 +1,62 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph S1["Subsistema de Identificacion y Acceso"]
+        UC01(["UC-01: Iniciar Sesion"]):::usecase
+        UC02(["UC-02: Crear Cuenta de Alumno"]):::usecase
+    end
+
+    subgraph S2["Subsistema de Analisis y Feedback Biomecanico"]
+        UC03(["UC-03: Analizar Video de Tecnica"]):::usecase
+        UC03_Sil(["Confirmar Silueta en Escena"]):::usecase
+        UC03_Can(["Cancelar Analisis en Curso"]):::usecase
+        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
+        UC04_Rep(["Reproducir Segundo del Error y Frame Critico"]):::usecase
+    end
+
+    subgraph S3["Subsistema de Catalogo y Conocimiento"]
+        UC05(["UC-05: Gestionar Tecnicas y Videos Patron"]):::usecase
+        UC06(["UC-06: Gestionar Manuales y Notas del Profesor"]):::usecase
+        UC06_Lib(["Buscar y Previsualizar Biblioteca"]):::usecase
+    end
+
+    subgraph S4["Subsistema Academico y Administrativo"]
+        UC07(["UC-07: Consultar Progreso y Evaluaciones"]):::usecase
+        UC08(["UC-08: Activar Pase de Tatami 30 Dias"]):::usecase
+        UC09(["UC-09: Gestionar Sucursales en Mapa"]):::usecase
+        UC10(["UC-10: Soporte Tecnico y Cuentas de Usuario"]):::usecase
+    end
+
+    AL --> UC01
+    PR --> UC01
+    AD --> UC01
+
+    AL --> UC02
+
+    AL --> UC03
+    UC03 -.->|"«include»"| UC03_Sil
+    UC03_Can -.->|"«extend»"| UC03
+    UC04 -.->|"«extend»"| UC03
+    UC04_Rep -.->|"«extend»"| UC04
+
+    AL --> UC04
+    AL --> UC06_Lib
+    AL --> UC07
+
+    PR --> UC05
+    PR --> UC06
+    PR --> UC06_Lib
+    PR --> UC07
+    PR --> UC08
+
+    AD --> UC05
+    AD --> UC06
+    AD --> UC06_Lib
+    AD --> UC08
+    AD --> UC09
+    AD --> UC10

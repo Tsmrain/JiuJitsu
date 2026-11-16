@@ -1,57 +1,78 @@
 classDiagram
-    class VideoUploadView {
-        +archivo_video: File
-        +profesor_id: UUID
-        +tecnica_id: UUID
-        +handleUpload()
-        +displayProgress()
+    class App {
+        <<Boundary>>
+        +appState: String
+        +currentEvaluacionId: UUID
+        +cancellingAnalysis: Boolean
+        +handleUploadStart(uploadData)
+        +handleCancelAnalysis()
+    }
+
+    class VideoUpload {
+        <<Boundary>>
+        +profesores: List
+        +tecnicas: List
+        +selectedFile: File
+        +handleFile(file)
+        +handleSubmit()
     }
 
     class SelectorPersonaVideo {
-        +session_id: String
-        +candidatos: List
-        +selected_persona_idx: Int
+        <<Boundary>>
+        +sessionData: Dict
+        +selectedPersonaIdx: Int
         +onSelect(idx)
     }
 
     class EvaluacionesRoutes {
-        +validarSpam(video: File) Boolean
-        +obtenerPrimerFrame(video: File) PrimerFrameDTO
-        +confirmarSeleccionPersona(session_id, idx) Dict
-        +analizarTecnica(file, data) EvaluacionDTO
+        <<Boundary>>
+        +validar_spam(video) Dict
+        +obtener_primer_frame(video) Dict
+        +confirmar_seleccion_persona(session_id, idx) Dict
+        +analizar_video(background_tasks, tecnica_id, alumno_id) Dict
+        +cancelar_evaluacion_endpoint(evaluacion_id) Dict
     }
 
     class SessionStateManager {
-        +crearSesion(video_path) String
-        +seleccionarPersona(session_id, idx) Void
-        +finalizarOperacion(session_id, exito) Void
-    }
-
-    class IntelligenceAnalysisFacade {
-        +ejecutarComparacionCinematica(video_path, tecnica_id, prof_id, idx) ResultadoCinematico
+        <<Control>>
+        +crear_sesion(session_id, video_path, personas, frame_idx) Dict
+        +seleccionar_persona(session_id, persona_idx) Dict
+        +iniciar_operacion(session_id, tecnica_id) Dict
+        +finalizar_operacion(session_id, exito, error) Dict
     }
 
     class LocalSpamFilter {
-        +validarEsJiuJitsu(video_path: String) Boolean
+        <<Adapter>>
+        +validar_es_jiujitsu(video_path: String) Boolean
+    }
+
+    class IntelligenceAnalysisFacade {
+        <<Control>>
+        +ejecutar_analisis_completo(video_path, tecnica_id, idioma) AnalisisResultDTO
     }
 
     class YOLOPoseAdapter {
-        +extraerSecuencia3D(video_path: String, persona_idx: Int) List~EsqueletoBiomecanico~
+        <<Adapter>>
+        +extraer_secuencia(video_path, persona_idx_inicial) Dict
+        +extraer_frame_y_dibujar_error(video_path, frame_idx, keypoints133) String
     }
 
     class PoseNormalizer {
-        +normalizar(keypoints133: List) Vector46
+        <<Control>>
+        +normalizar(kpts_flat) Dict
+        +similitud_esqueletos(a, b) Dict
     }
 
     class DTWComparator {
-        +compararSecuencias(seq_maestro, seq_alumno) Dict
-        +identificarFrameCritico(alineacion) Int
+        <<Control>>
+        +comparar_secuencias_con_dtw(seq_ref, seq_alumno) Dict
+        +detectar_articulaciones_criticas(vec_m, vec_a) List
     }
 
     class Evaluacion {
+        <<Entity>>
         +id: UUID
         +alumno_id: UUID
-        +profesor_id: UUID
         +tecnica_id: UUID
         +sucursal_id: UUID
         +porcentaje_similitud: Float
@@ -59,25 +80,29 @@ classDiagram
     }
 
     class PatronReferencia {
+        <<Entity>>
         +tecnica_id: UUID
         +profesor_id: UUID
         +secuencia_3d: List
     }
 
     class EsqueletoBiomecanico {
+        <<Entity>>
         +frame_idx: Int
         +keypoints133: List
         +angulos_articulares: Dict
     }
 
-    VideoUploadView ..> SelectorPersonaVideo : muestra siluetas
-    VideoUploadView ..> EvaluacionesRoutes : HTTP POST
-    EvaluacionesRoutes --> SessionStateManager : controla ciclo
-    EvaluacionesRoutes --> LocalSpamFilter : filtra spam
-    EvaluacionesRoutes --> IntelligenceAnalysisFacade : orquesta análisis
+    App ..> VideoUpload : renderiza flujo
+    App ..> EvaluacionesRoutes : POST analizar y cancelar
+    VideoUpload ..> SelectorPersonaVideo : muestra siluetas
+    VideoUpload ..> EvaluacionesRoutes : validar_spam y primer-frame
+    EvaluacionesRoutes --> SessionStateManager : controla estados
+    EvaluacionesRoutes --> LocalSpamFilter : filtra no-BJJ
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : delega analisis
     IntelligenceAnalysisFacade --> YOLOPoseAdapter : extrae poses
-    IntelligenceAnalysisFacade --> PoseNormalizer : normaliza 46 dims
     IntelligenceAnalysisFacade --> DTWComparator : alinea secuencias
-    IntelligenceAnalysisFacade --> PatronReferencia : obtiene patrón maestro
-    IntelligenceAnalysisFacade --> Evaluacion : registra similitud
+    DTWComparator --> PoseNormalizer : normaliza 46 dims
+    IntelligenceAnalysisFacade --> PatronReferencia : consulta patron activo
+    IntelligenceAnalysisFacade --> Evaluacion : guarda similitud
     YOLOPoseAdapter ..> EsqueletoBiomecanico : construye

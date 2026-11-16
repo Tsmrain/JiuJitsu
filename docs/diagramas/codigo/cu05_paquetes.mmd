@@ -1,21 +1,29 @@
 graph TD
-    subgraph Presentacion ["Presentación (React)"]
-        ProfesorTecnicas["ProfesorTecnicas.jsx"]
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Prof["ProfesorTecnicas.jsx"]
+        P_Sel["SelectorPersonaVideo.jsx"]
+        P_Api["api/tecnicas.js"]
     end
-    subgraph Aplicacion ["Aplicación (Casos de Uso)"]
-        TecnicasRoutes["tecnicas_routes.py"]
-        TecnicasService["tecnicas_service.py"]
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Servicios)"]
+        A_Routes["tecnicas_routes.py"]
+        A_Msg["instructor_message_ingestion.py"]
+        A_VidRag["rag_video_ingestion.py"]
     end
-    subgraph Dominio ["Dominio (Entidades)"]
-        EntTecnica["Tecnica"]
-        EntPatron["PatronReferencia"]
+
+    subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
+        D_Tecnica["Tecnica"]
+        D_Patron["PatronReferencia"]
     end
-    subgraph Infraestructura ["Infraestructura (Adaptadores y Persistencia)"]
-        YOLO["YOLOPoseAdapter"]
-        DB_Storage["PostgreSQL / Qdrant"]
+
+    subgraph Infraestructura ["Capa de Infraestructura (Visión, Almacenamiento y BD)"]
+        I_YOLO["adapters.py (YOLOPoseAdapter)"]
+        I_Vid["video_storage.py (Respaldo y Auto-curación)"]
+        I_Qdrant["qdrant_adapter.py / qdrant_rag_adapter.py"]
+        I_PG["PostgrestClient / PostgreSQL"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

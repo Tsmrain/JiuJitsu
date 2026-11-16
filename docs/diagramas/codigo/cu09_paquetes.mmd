@@ -1,20 +1,22 @@
 graph TD
-    subgraph Presentacion ["Presentación"]
-        BranchView["BranchManager.jsx (Leaflet)"]
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Branch["AdminSucursales.jsx (Leaflet.js)"]
     end
-    subgraph Aplicacion ["Aplicación"]
-        BranchRoutes["sucursales_routes.py"]
-        BranchCtrl["BranchController"]
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
+        A_Auth["auth_routes.py (sucursales y parse-gmaps-link)"]
     end
-    subgraph Dominio ["Dominio"]
-        EntSucursal["Sucursal"]
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_Suc["Sucursal"]
     end
-    subgraph Infraestructura ["Infraestructura"]
-        OSM_Client["Nominatim OpenStreetMap"]
-        Postgres["PostgreSQL"]
+
+    subgraph Infraestructura ["Capa de Infraestructura (Cartografía y Persistencia)"]
+        I_OSM["OpenStreetMap / Nominatim"]
+        I_PG["PostgrestClient / PostgreSQL"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

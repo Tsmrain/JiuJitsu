@@ -57,7 +57,7 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
   * 1.2. Objetivos
     * 1.2.1. Objetivo General
     * 1.2.2. Objetivos Específicos
-  * 1.3. Metodología
+  * 1.3. Metodología (Proceso ICONIX)
 * **Capítulo II: Descripción de la Empresa**
   * 2.1. Identidad y Estructura Operativa
   * 2.2. Servicios Ofrecidos
@@ -68,7 +68,7 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
     * 3.1.1. ¿Qué es YOLOv26?
     * 3.1.2. Modelos Seleccionados: YOLOv26-pose, YOLOv26-depth y YOLOv26-seg
     * 3.1.3. Justificación de la Elección y Prueba Empírica de Segmentación
-    * 3.1.4. Aprendizaje Continuo (Data Flywheel) con YOLOv26x-pose
+    * 3.1.4. Aprendizaje Continuo Autónomo (Data Flywheel) y Hot-Swap
     * 3.1.5. Comparativa frente a otras opciones
   * 3.2. Infraestructura de Cómputo Acelerado Local: Apple Silicon (MLX y MPS)
     * 3.2.1. ¿Qué es Apple Silicon y la Memoria Unificada (MLX / MPS)?
@@ -120,8 +120,8 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
     * 3.11.2. Costo
     * 3.11.3. Justificación de la Elección
     * 3.11.4. Comparativa frente a otras opciones
-  * 3.12. Pruebas de Software: Pytest y Playwright
-    * 3.12.1. ¿Qué son Pytest y Playwright?
+  * 3.12. Pruebas de Software: Pytest y Verificación Web
+    * 3.12.1. ¿Qué son Pytest y la Verificación E2E?
     * 3.12.2. Costo
     * 3.12.3. Justificación de la Elección
     * 3.12.4. Comparativa frente a otras opciones
@@ -130,7 +130,7 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
     * 3.13.2. ¿Qué es RAG (Generación Aumentada por Recuperación)?
   * 3.14. Motor de Inferencia Generativa: Qwen3-VL-Instruct-4B (Local en MLX)
     * 3.14.1. ¿Qué es Qwen3-VL-Instruct?
-    * 3.14.2. Modelo Seleccionado: Qwen3-VL-Instruct-4B (4 bits) e Ingesta Multimodal Triple
+    * 3.14.2. Modelo Seleccionado: Qwen3-VL-Instruct-4B (4 bits), Ingesta Triple y Biblioteca Global
     * 3.14.3. Costo, Accesibilidad y Control contra Alucinaciones (Juez de IA)
     * 3.14.4. Comparativa frente a otras opciones (y descarte de Google Gemini)
   * 3.15. Exposición Segura a Internet: Cloudflare Tunnel (`cloudflared`)
@@ -163,17 +163,17 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
     * 4.3.4. Requisitos de Datos
   * 4.4. Identificación de Casos de Uso y Trazabilidad
   * 4.5. Modelo de Dominio
-* **Capítulo V: Análisis y Diseño Orientado a Objetos**
+* **Capítulo V: Análisis y Diseño Orientado a Objetos (Metodología ICONIX)**
   * 5.1. Caso de Uso 1: Iniciar Sesión (UC-01)
-  * 5.2. Caso de Uso 2: Registrar Nuevo Usuario (UC-02)
+  * 5.2. Caso de Uso 2: Crear Cuenta de Alumno (UC-02)
   * 5.3. Caso de Uso 3: Analizar Técnica (UC-03)
   * 5.4. Caso de Uso 4: Generar Feedback Biomecánico (UC-04)
   * 5.5. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05)
-  * 5.6. Caso de Uso 6: Gestionar Teoría RAG (UC-06)
+  * 5.6. Caso de Uso 6: Gestionar Manuales de Estudio y Notas del Profesor (UC-06)
   * 5.7. Caso de Uso 7: Ver Progreso de Alumnos (UC-07)
   * 5.8. Caso de Uso 8: Activar Pase de Tatami (UC-08)
   * 5.9. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09)
-  * 5.10. Caso de Uso 10: Entrar como Otro Usuario / Impersonificación (UC-10)
+  * 5.10. Caso de Uso 10: Soporte Técnico y Administración de Cuentas de Usuario (UC-10)
   * 5.11. Diagramas de Arquitectura Consolidada del Sistema Completo
     * 5.11.1. Diagrama de Casos de Uso del Sistema Completo
     * 5.11.2. Diagrama de Actividad con Carriles del Sistema Completo (Flujo Principal UC-03 y UC-04)
@@ -189,12 +189,15 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
   * 6.3. Estructura del Repositorio
   * 6.4. Gestión de Configuración y Entornos
   * 6.5. Internacionalización (i18n) y Localización
-  * 6.6. Validación Empírica del Data Flywheel (Human-in-the-Loop)
+  * 6.6. Aprendizaje Continuo, Prevención del Olvido y Precisión del Sistema
+    * 6.6.1. ¿Cómo aprende el sistema? (Aprendizaje Continuo Visual y Teórico)
+    * 6.6.2. ¿El sistema se olvida de lo que ya sabía? (Mitigación del Olvido Catastrófico)
+    * 6.6.3. ¿El sistema tiene precisión? (Métricas Reales de Exactitud y Rendimiento)
   * 6.7. Deuda Técnica Registrada en Desarrollo
 * **Capítulo VII: Pruebas**
   * 7.1. Estrategia de Aseguramiento de Calidad
   * 7.2. Pruebas Unitarias e Integración (Pytest)
-  * 7.3. Pruebas E2E con Playwright
+  * 7.3. Verificación Web de Extremo a Extremo (Playwright E2E)
   * 7.4. Pruebas de Rendimiento y Benchmarks
   * 7.5. Pruebas de Regresión y Puntos de Restauración (Rollback)
   * 7.6. Pruebas de Estrés y Casos Límite
@@ -207,65 +210,100 @@ Al Jiu-Jitsu Brasileño, por enseñarme a afrontar los miedos, seguir incluso cu
   * 8.5. Hardening de Producción
   * 8.6. Deuda de Seguridad Registrada
   * 8.7. Recomendaciones Futuras
+* **Capítulo IX: Conclusiones y Recomendaciones**
+  * 9.1. Conclusiones
+  * 9.2. Recomendaciones
 * **Referencias Bibliográficas**
+* **Anexo A: Currículum Vitae del Autor (Formato Harvard)**
+
+---
+
 # Capítulo I: Definición del Proyecto de Investigación
 
 ## 1.1. Definición del Problema
 
 ### 1.1.1. Situación Problemática
-En el aprendizaje del Jiu-Jitsu Brasileño, la corrección de los movimientos es fundamental. Una mala postura no solo hace que la técnica falle, sino que puede provocar lesiones graves. Sin embargo, en academias con muchos alumnos, los profesores no pueden dedicar el tiempo suficiente a corregir uno por uno durante la clase.
+En el aprendizaje del Jiu-Jitsu Brasileño, la corrección de los movimientos es fundamental. Una mala postura no solo hace que la técnica falle, sino que puede provocar lesiones graves en articulaciones como hombros, codos, rodillas o cuello. Sin embargo, en academias con muchos alumnos, los profesores no pueden dedicar el tiempo suficiente a corregir uno por uno durante la clase grupal.
 
-Además, cuando el alumno practica por su cuenta o fuera del horario de clase, no tiene a quién preguntarle si está haciendo el movimiento correctamente. Actualmente, el alumno depende de su propia percepción o de la ayuda de compañeros que a veces no tienen la experiencia suficiente para detectar errores sutiles pero importantes en la biomecánica del cuerpo.
+Además, cuando el alumno practica por su cuenta o fuera del horario de clase, no tiene a quién preguntarle si está ejecutando el movimiento de manera correcta. Actualmente, el practicante depende de su propia percepción o de la ayuda de compañeros que muchas veces aún no tienen la experiencia suficiente para detectar errores sutiles pero decisivos en la postura del cuerpo.
 
 ### 1.1.2. Situación Deseada
-Imaginemos un "entrenador virtual" disponible las 24 horas del día. El alumno graba su técnica con la cámara de su celular, sube el video a la plataforma y recibe un informe sobre su técnica.
+Se busca contar con un "entrenador virtual" disponible las 24 horas del día como apoyo al profesor humano. El alumno graba su técnica con la cámara de su celular, sube el video a la plataforma, indica quién es dentro de la escena y recibe un informe claro y fácil de entender sobre su ejecución.
 
-Este sistema le dice exactamente qué parte de su cuerpo estuvo mal posicionada (por ejemplo, "tu cadera está muy alta") y le explica cómo corregirla, basándose en la técnica perfecta de su propio profesor. Todo esto de forma automática, objetiva y en su idioma preferido (español o portugués).
+Este sistema le indica exactamente en qué segundo ocurrió el error, qué articulación estuvo mal posicionada (por ejemplo, "tu codo izquierdo quedó muy abierto") y cómo corregirla, comparándose contra la técnica modelo de su propio profesor y respaldándose en los manuales oficiales de la academia. Todo esto de forma automática, privada y en su idioma preferido (español, portugués o inglés).
 
 ### 1.1.3. Objeto de Investigación
-El objeto de este proyecto es el desarrollo de un sistema informático (una plataforma web) que utiliza Inteligencia Artificial para analizar los movimientos de los alumnos de Jiu-Jitsu. El sistema compara el video del alumno con el video de referencia de un profesor experto, detecta las diferencias físicas y genera consejos personalizados para mejorar la técnica.
+El objeto de este proyecto es el desarrollo de una plataforma web que utiliza Inteligencia Artificial local para analizar los movimientos de los practicantes de Jiu-Jitsu Brasileño. El sistema compara el video del alumno con el video de referencia grabado por su profesor, detecta las diferencias físicas cuadro por cuadro y genera consejos personalizados respaldados por documentos técnicos.
 
 ### 1.1.4. Alcance
-El proyecto abarca la creación de una plataforma web completa para la red de academias "Corpo e Mente".
+El proyecto abarca la creación de una plataforma web completa y lista para operar en la red de academias **Corpo e Mente**:
 
-* **Para los alumnos:** Permite subir videos, elegir a su profesor y la técnica a evaluar, y recibir el análisis.
-* **Para los profesores:** Permite subir sus propios videos de referencia (el "patrón de oro"), escribir recomendaciones directas y agregar manuales o teorías que la Inteligencia Artificial usará para dar los consejos.
-* **Para los administradores:** Permite gestionar las distintas sucursales de la academia a nivel internacional.
+* **Para los alumnos:** Permite crear su cuenta en una sucursal, subir videos de práctica, confirmar su silueta en la escena, cancelar un análisis en curso si decide interrumpirlo, recibir su porcentaje de similitud con retroalimentación biomecánica y citas interactivas, consultar su historial de progreso y explorar la biblioteca técnica con buscador inteligente.
+* **Para los profesores:** Permite crear, editar y eliminar técnicas del catálogo; subir sus videos de referencia (con respaldo persistente para evitar pérdidas de archivos); redactar indicaciones directas por técnica; subir, previsualizar y eliminar manuales teóricos en múltiples formatos (PDF, Word `.docx`, texto `.txt` e imágenes); revisar el historial de sus alumnos; y activar o renovar el "Pase de Tatami" por 30 días.
+* **Para los administradores:** Permite gestionar las sucursales de la academia en un mapa interactivo, administrar cuentas de usuarios (incluyendo la baja segura de cuentas con reasignación automática del material docente) y entrar temporalmente como otro usuario para brindar soporte técnico.
 
-**Aclaración importante:** El sistema no busca reemplazar al profesor humano, sino ser una herramienta de apoyo para acelerar el aprendizaje. Su enfoque es 100% deportivo y pedagógico.
+**Aclaración importante:** El sistema no busca reemplazar al profesor humano, sino ser una herramienta de apoyo pedagógico disponible en todo momento para acelerar el aprendizaje en el tatami.
 
 ### 1.1.5. Justificación
-Este proyecto es de gran utilidad porque:
+Este proyecto aporta valor práctico y técnico por cuatro razones principales:
 
-* **Acelera el aprendizaje:** El alumno recibe retroalimentación inmediata fuera del horario de clase.
-* **Previene lesiones:** Al corregir malas posturas a tiempo, se protege la integridad física del practicante.
-* **Estandariza la enseñanza:** Permite que la academia "Corpo e Mente" mantenga un mismo nivel de calidad técnica en todas sus sucursales alrededor del mundo.
-* **Uso inteligente de recursos:** Aprovecha modelos de Inteligencia Artificial optimizados para funcionar de manera local y eficiente, lo que significa que la academia no necesita pagar suscripciones mensuales costosas en la nube ni licencias por uso para tener un sistema de análisis de movimiento de primer nivel.
+* **Acelera el aprendizaje:** El alumno recibe retroalimentación inmediata y objetiva incluso fuera del horario de clase.
+* **Previene lesiones:** Al señalar malas posturas articulares a tiempo, protege la integridad física del practicante.
+* **Estandariza la enseñanza:** Permite que la academia "Corpo e Mente" comparta un mismo criterio técnico y bibliográfico en todas sus sucursales.
+* **Cero costos mensuales en la nube:** Al ejecutarse con modelos de Inteligencia Artificial optimizados localmente en Apple Silicon, la academia no paga licencias por consulta ni suscripciones costosas en servidores externos, y los videos de los alumnos nunca salen de la computadora de la academia.
 
 ## 1.2. Objetivos
 
 ### 1.2.1. Objetivo General
-Desarrollar una plataforma web basada en Inteligencia Artificial que permita a los alumnos de la academia "Corpo e Mente" analizar sus técnicas de Jiu-Jitsu Brasileño, comparándolas con un modelo de referencia para recibir retroalimentación biomecánica clara, objetiva y personalizada.
+Desarrollar una plataforma web basada en Inteligencia Artificial local que permita a los alumnos de la academia "Corpo e Mente" analizar sus técnicas de Jiu-Jitsu Brasileño frente a los modelos de referencia de sus profesores, generando retroalimentación biomecánica clara, objetiva y personalizada.
 
 ### 1.2.2. Objetivos Específicos
-* Crear una plataforma fácil de usar donde los alumnos puedan subir sus videos y los profesores puedan guardar sus técnicas de referencia y manuales de ayuda.
-* Implementar inteligencia artificial que pueda "leer" el video del alumno, identificar las partes de su cuerpo (esqueleto en 3D) y detectar en qué momento exacto comete un error en comparación con el profesor.
-* Lograr que el sistema lea y comprenda los manuales, imágenes técnicas y consejos subidos por los profesores para dar retroalimentación que suene como un verdadero maestro, adaptada al idioma del alumno (español o portugués).
-* Asegurar que el sistema pueda manejar varias sucursales de la academia al mismo tiempo, manteniendo la privacidad de los datos y el control de los roles (alumno, profesor, administrador).
+* Construir una interfaz web sencilla y pensada para teléfonos celulares donde los alumnos suban y gestionen sus evaluaciones y los profesores administren su catálogo de técnicas, videos patrón y biblioteca de manuales.
+* Implementar un pipeline de visión por computadora y comparación biomecánica que extraiga el esqueleto en 3D del alumno, lo alinee con la ejecución del profesor y ubique el segundo exacto y las articulaciones con mayor error.
+* Integrar un motor de recuperación y generación de consejos (RAG multimodal) que consulte los manuales y notas del profesor para redactar explicaciones claras y verificadas en el idioma del alumno (español, portugués o inglés), evitando invenciones o alucinaciones.
+* Garantizar la seguridad, privacidad y operación multi-sucursal mediante control de acceso por roles, aislamiento de datos por sede y el modelo de membresía presencial "Pase de Tatami".
 
-## 1.3. Metodología
-Para construir este sistema, no se utilizará el método tradicional de pasar meses diseñando en papel antes de escribir una sola línea de código. En su lugar, se aplicará el **Proceso Unificado Ágil (basado en la metodología de Craig Larman)**.
+## 1.3. Metodología (Proceso ICONIX)
+Para documentar y estructurar de manera clara el análisis y diseño de la plataforma se adoptó la **Metodología ICONIX**, propuesta por Doug Rosenberg y Matt Stephens (2007). ICONIX es un proceso práctico y guiado por casos de uso que ocupa un punto intermedio ideal: ofrece la claridad suficiente para no programar a ciegas, pero evita la burocracia pesada de llenar decenas de diagramas que nadie lee.
 
-En palabras simples, esto significa que el proyecto se construye en "ciclos" o "entregas cortas" llamadas iteraciones. En lugar de intentar hacer todo el sistema de una vez, se divide el trabajo en partes pequeñas y funcionales guiadas por pruebas reales (evidencia empírica). Por ejemplo:
+En palabras sencillas, ICONIX parte siempre de **lo que el usuario quiere hacer** (sus intenciones reales en los casos de uso) y lo conecta paso a paso hasta llegar a las **clases y módulos reales del software**, organizando el trabajo en cuatro fases claras:
 
-* **Primer ciclo:** Crear el sistema de inicio de sesión, seguridad y registro de usuarios.
-* **Segundo ciclo:** Lograr que el sistema permita subir y guardar videos de técnicas.
-* **Tercer ciclo:** Conectar la Inteligencia Artificial para que analice los videos, mida la profundidad y genere consejos basados en los libros del profesor.
-* **Cuarto ciclo:** Optimizar la seguridad para internet (Cloudflare), perfeccionar el diseño para teléfonos celulares y asegurar que el sistema mejore continuamente.
+1. **Fase 1 — Análisis de Requisitos y Dominio:** Se identifican los conceptos reales del negocio en un **Modelo de Dominio** sencillo (sucursales, alumnos, profesores, técnicas, evaluaciones, biblioteca), se diseñan las pantallas principales y se listan los **Casos de Uso** enfocados únicamente en la intención del usuario, sin mezclar todavía detalles técnicos internos.
+2. **Fase 2 — Análisis y Diseño Preliminar (Patrón ECB):** Cada caso de uso se describe paso a paso (intención del actor y respuesta del sistema) y se analiza cómo colaboran sus participantes usando tres roles simples: **Boundary** (pantallas y puertas de entrada), **Control** (coordinadores de reglas) y **Entity** (datos del negocio).
+3. **Fase 3 — Diseño Detallado:** Se dibujan los **Diagramas de Secuencia** siguiendo esa estructura Boundary-Control-Entity y se definen los **únicos dos artefactos a nivel de componentes**: el **Diagrama de Clases** (qué clases y métodos concretos existen en el código) y el **Diagrama de Paquetes** (cómo se agrupan en capas ordenadas).
+4. **Fase 4 — Implementación y Pruebas:** Se construye el sistema de manera incremental, verificando cada caso de uso mediante pruebas automatizadas con Pytest y pruebas de interfaz web para confirmar que todo lo documentado funciona exactamente igual en el sistema real.
 
-Al final de cada ciclo, se tiene una parte del sistema que ya funciona y se puede probar con datos reales. Esto permite detectar errores rápidamente, descartar tecnologías que fallan en la práctica y asegurar que el producto final sea exactamente lo que los usuarios necesitan en el tatami, minimizando el riesgo de fracaso del proyecto.
+*Figura 1: Flujo de las cuatro fases de la Metodología ICONIX aplicadas al proyecto.*
 
-*Figura 1: Distribución de esfuerzos en las fases e iteraciones del Proceso Unificado Ágil.*
+```mermaid
+flowchart LR
+    classDef fase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+    classDef artefacto fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:1.5px
+
+    subgraph F1["Fase 1: Requisitos y Dominio"]
+        F1A["Modelo de Dominio\n(Entidades del Tatami)"]:::fase
+        F1B["Prototipado de Pantallas\n(React Mobile-First)"]:::artefacto
+        F1C["Casos de Uso\n(Intenciones del Usuario)"]:::fase
+    end
+
+    subgraph F2["Fase 2: Analisis y Diseno Preliminar"]
+        F2A["Especificacion de\nCasos de Uso"]:::fase
+        F2B["Diagramas de Secuencia ECB\n(Boundary - Control - Entity)"]:::artefacto
+    end
+
+    subgraph F3["Fase 3: Diseno Detallado"]
+        F3A["Diagrama de Clases\n(Componentes y Metodos)"]:::fase
+        F3B["Diagrama de Paquetes\n(Capas y Dependencias DIP)"]:::artefacto
+    end
+
+    subgraph F4["Fase 4: Implementacion y Pruebas"]
+        F4A["Codigo Modular\n(FastAPI, React, IA Local)"]:::fase
+        F4B["Verificacion Automatizada\n(Pytest e Integracion)"]:::artefacto
+    end
+
+    F1A --> F1C --> F2A --> F2B --> F3A --> F3B --> F4A --> F4B
+    F1B --> F2A
+```
 
 ---
 
@@ -274,38 +312,63 @@ Al final de cada ciclo, se tiene una parte del sistema que ya funciona y se pued
 ## 2.1. Identidad y Estructura Operativa
 La empresa objeto de estudio es **Corpo e Mente**, una organización internacional dedicada a la enseñanza y difusión del Jiu-Jitsu Brasileño. Para el desarrollo de este proyecto, la entidad legal y operativa que avala la investigación es **Corpo e Mente Bolivia**.
 
-Es fundamental aclarar que Corpo e Mente opera bajo un modelo de infraestructura compartida. La academia física que alberga las instalaciones, gestiona la cobranza a los alumnos y administra los pagos al personal docente es **Knock Out Training Center** (ver Figura 2). Sin embargo, Knock Out actúa exclusivamente como proveedor de infraestructura y servicios administrativos básicos; no tiene participación en la toma de decisiones técnicas, pedagógicas ni estratégicas de Corpo e Mente.
+Es importante aclarar que Corpo e Mente opera bajo un modelo de infraestructura compartida. La academia física que alberga las instalaciones, gestiona la cobranza a los alumnos y administra los pagos al personal docente es **Knock Out Training Center** (ver Figura 2). Sin embargo, Knock Out actúa exclusivamente como proveedor de infraestructura y servicios administrativos básicos; no participa en la toma de decisiones técnicas, pedagógicas ni estratégicas de Corpo e Mente.
 
-La dirección técnica y académica recae totalmente en **Miguel Baigorria**, cinturón negro de Jiu-Jitsu Brasileño, quien es el responsable de la sucursal y quien firmó la carta de autorización para este proyecto de grado. Su liderazgo garantiza que, aunque la ubicación física sea compartida, la identidad y los estándares de Corpo e Mente se mantengan intactos e independientes (ver Figura 3).
+La dirección técnica y académica recae totalmente en **Miguel Baigorria**, cinturón negro de Jiu-Jitsu Brasileño, quien es el responsable de la sucursal y quien firmó la carta de autorización para este proyecto de grado. Su liderazgo garantiza que, aunque la ubicación física sea compartida, la identidad y los estándares técnicos de Corpo e Mente se mantengan intactos e independientes (ver Figura 3).
+
+A nivel de gobierno de la plataforma, la figura de **Administrador** corresponde al **dueño y director general de la marca Corpo e Mente**, quien es propietario de las distintas sucursales de la red, habilita y supervisa a los profesores de cada sede, gobierna la Biblioteca Global compartida y brinda soporte técnico a las cuentas de usuarios.
 
 *Figura 2: Logotipo oficial de Knock Out Training Center, sede física de operaciones.*  
 *Figura 3: Logotipo oficial de Corpo e Mente Jiu-Jitsu.*
 
 ## 2.2. Servicios Ofrecidos
-Corpo e Mente Bolivia ofrece un portafolio de servicios orientados tanto al practicante recreativo como al competidor de alto rendimiento. Los principales servicios son:
+Corpo e Mente Bolivia ofrece un portafolio de servicios orientados tanto al practicante recreativo como al competidor de alto rendimiento:
 
-* **Clases Grupales:** Entrenamientos regulares dirigidos por instructores certificados, enfocados en la técnica, la condición física y la defensa personal. Las clases están estructuradas según el nivel de cinturón del alumno.
-* **Entrenamiento para Campeonatos:** Sesiones especializadas de sparring (combate de entrenamiento) y preparación táctica para alumnos que desean competir a nivel regional o nacional.
-* **Exámenes de Grado:** Evaluaciones formales donde los alumnos demuestran su dominio técnico y físico para ascender en el sistema de cinturones. Estas evaluaciones son supervisadas directamente por el Maestro Miguel Baigorria.
-* **Organización de Torneos:** Corpo e Mente Bolivia planifica y ejecuta torneos internos y abiertos, fomentando la competencia sana y el intercambio técnico entre academias.
+* **Clases Grupales:** Entrenamientos regulares dirigidos por instructores certificados, enfocados en la técnica, la condición física y la defensa personal. Las clases se organizan según el nivel de cinturón del alumno.
+* **Entrenamiento para Campeonatos:** Sesiones especializadas de *sparring* (combate de entrenamiento) y preparación táctica para alumnos que compiten a nivel regional, nacional o internacional.
+* **Exámenes de Grado:** Evaluaciones formales donde los alumnos demuestran su dominio técnico para ascender en el sistema de cinturones, supervisadas directamente por el Maestro Miguel Baigorria.
+* **Organización de Torneos:** Planificación y ejecución de torneos internos y abiertos que fomentan la competencia sana y el intercambio técnico entre academias.
 
 ## 2.3. Sistema de Grados y Progreso del Alumno
 El núcleo del servicio educativo de Corpo e Mente es el sistema de graduación del Jiu-Jitsu Brasileño. Este sistema no solo mide el tiempo de práctica, sino el dominio técnico, la capacidad de aplicación en combate y la madurez del practicante.
 
-Como se observa en la Figura 4, el progreso se divide en cinco niveles principales para adultos, cada uno con objetivos claros y tiempos estimados de permanencia:
+Como se ilustra en la Figura 4, el progreso para adultos se divide en cinco niveles principales:
 
-* **Cinturón Blanco (1-2 años):** Fase de supervivencia y fundamentos. El objetivo es aprender a escapar de posiciones dominantes y entender la mecánica básica.
-* **Cinturón Azul (2-4 años):** Dominio de técnicas básicas y comienzo de encadenamiento de movimientos. El alumno comienza a desarrollar su propio estilo de juego.
-* **Cinturón Morado (4-7 años):** Nivel avanzado. Se espera un gran repertorio técnico y la capacidad de enseñar a blancos y azules. Es la fase de refinamiento estratégico.
-* **Cinturón Marrón (7-10 años):** Nivel experto. Preparación final para la maestría, con un dominio casi completo de los detalles técnicos y transiciones.
-* **Cinturón Negro (10+ años):** Maestría y liderazgo. Representa un profundo conocimiento del arte y la responsabilidad de contribuir a la comunidad y formar nuevos instructores.
+* **Cinturón Blanco (1-2 años):** Fase de supervivencia y fundamentos. El objetivo es aprender a escapar de posiciones dominantes y entender la mecánica básica del cuerpo.
+* **Cinturón Azul (2-4 años):** Dominio de técnicas básicas y comienzo del encadenamiento de movimientos. El alumno empieza a construir su propio estilo de juego.
+* **Cinturón Morado (4-7 años):** Nivel avanzado. Se espera un amplio repertorio técnico y la capacidad de orientar a cinturones blancos y azules.
+* **Cinturón Marrón (7-10 años):** Nivel experto. Preparación final hacia la maestría, puliendo detalles finos de palancas y transiciones.
+* **Cinturón Negro (10+ años):** Maestría y liderazgo. Representa un conocimiento profundo del arte marcial y la responsabilidad de formar nuevos practicantes.
 
-Adicionalmente, el sistema incluye rayas (grados) en la punta del cinturón para marcar el progreso dentro de cada nivel, y una escala específica de colores (blanco, gris, amarillo, naranja, verde) para menores de 16 años, adaptada a su desarrollo físico y cognitivo.
+Adicionalmente, el sistema contempla grados (rayas) en la punta del cinturón para marcar el avance dentro de cada nivel, y una escala de colores específica (blanco, gris, amarillo, naranja y verde) para menores de 16 años.
 
 *Figura 4: Guía oficial de Cinturones en Jiu-Jitsu Brasileño: Rango, Tiempo y Significado.*
 
 ## 2.4. Flujo Operativo Actual y Problemática Detectada
-*Figura 5: Diagrama de flujo operativo actual de la academia.*
+En el día a día de la academia, la enseñanza ocurre principalmente de forma presencial: el profesor explica una técnica frente al grupo, realiza la demostración paso a paso y luego los alumnos practican en parejas sobre el tatami. Debido a que en una sola clase pueden entrenar decenas de alumnos al mismo tiempo, el instructor solo logra observar y corregir brevemente a unos pocos practicantes por sesión.
+
+Cuando el alumno regresa a casa o entrena por su cuenta en horarios libres, carece de una referencia objetiva para revisar si su cadera, sus codos o sus rodillas quedaron bien ubicados. Si repite un movimiento mal ejecutado sin recibir corrección oportuna, consolida malos hábitos musculares y aumenta el riesgo de sufrir una lesión. La plataforma desarrollada interviene precisamente en este punto, conectando la grabación casera del alumno con el criterio oficial del profesor y los manuales de la academia.
+
+*Figura 5: Flujo operativo actual de la academia y punto de intervención del sistema.*
+
+```mermaid
+flowchart TD
+    classDef problema fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef proceso fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+    classDef solucion fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+
+    A["Clase grupal en tatami\n(1 profesor para muchos alumnos)"]:::proceso
+    B["Practica autonoma fuera de clase\no en horarios libres"]:::proceso
+    C["Cuello de botella actual:\nel profesor no puede corregir\na cada alumno uno por uno"]:::problema
+    D["Riesgo de fijar malos habitos\no sufrir lesiones articulares"]:::problema
+    E["Solucion Corpo e Mente AI:\nAlumno sube su video desde el celular"]:::solucion
+    F["IA local compara postura contra\nel patron oficial del profesor\ny cita manuales tecnicos"]:::solucion
+    G["Alumno recibe correccion clara\nen su idioma y mejora antes\nde la siguiente clase"]:::solucion
+
+    A --> C --> D
+    B --> C
+    D -.->|"Resuelto con plataforma"| E --> F --> G
+```
 
 ---
 
@@ -314,26 +377,26 @@ Adicionalmente, el sistema incluye rayas (grados) en la punta del cinturón para
 ## 3.1. Estimación de Pose, Profundidad y Segmentación con YOLOv26
 
 ### 3.1.1. ¿Qué es YOLOv26?
-YOLO (acrónimo en inglés de *You Only Look Once*, que significa "Solo miras una vez") es una familia de algoritmos de inteligencia artificial de vanguardia, desarrollada y mantenida por Ultralytics (Ultralytics, 2026), especializada en la detección de objetos y el análisis de imágenes en tiempo real.
+YOLO (acrónimo en inglés de *You Only Look Once*, que significa "Solo miras una vez") es una familia de algoritmos de Inteligencia Artificial desarrollada por Ultralytics (2026) para detectar personas y analizar imágenes en tiempo real.
 
-A diferencia de los sistemas tradicionales que analizan una imagen múltiples veces por partes, la arquitectura YOLO procesa toda la imagen en un solo paso, lo que la convierte en una de las tecnologías más rápidas y eficientes del mercado. La versión 26 representa la evolución más reciente de este ecosistema, incorporando en un mismo paquete capacidades avanzadas como la estimación de pose humana (esqueleto), la estimación de profundidad (3D) y la segmentación de siluetas a nivel de píxel.
+A diferencia de métodos antiguos que revisan una foto por partes varias veces, YOLO procesa cada imagen en un solo paso, lo que lo hace muy veloz. La familia YOLOv26 reúne en un mismo ecosistema la detección de pose humana (esqueleto), la estimación de profundidad (3D) y el recorte de siluetas a nivel de píxel (segmentación).
 
 ### 3.1.2. Modelos Seleccionados: YOLOv26-pose, YOLOv26-depth y YOLOv26-seg
-Para este proyecto, se utilizan cuatro modelos complementarios dentro del ecosistema YOLOv26 (almacenados de forma organizada en la carpeta `storage/models/` del sistema):
+En la plataforma (`backend/corpocmente/infrastructure/ai/adapters.py`) trabajan varios modelos complementarios almacenados localmente en `backend/storage/models/` y `backend/`:
 
-* **`yolo26n-pose.pt` (Modelo Principal de Pose):** En su versión "nano" (la más ligera y rápida), está entrenado para identificar y rastrear 17 puntos clave anatómicos (articulaciones como hombros, codos, muñecas, caderas, rodillas y tobillos) en cada fotograma de un video, generando un "esqueleto" digital del practicante en los ejes X e Y.
-* **`yolo26n-depth.pt` (Modelo de Profundidad 3D):** Mientras que el modelo de pose dice dónde está una articulación a lo ancho y alto de la pantalla (ejes X e Y), este modelo calcula qué tan lejos o cerca está cada parte del cuerpo respecto a la cámara (eje Z). Esto permite saber quién está encima o debajo durante una llave en el suelo, resolviendo cuando un brazo o pierna tapa a otro (oclusiones).
-* **`yolo26n-seg.pt` (Modelo Opcional de Segmentación):** Recorta la silueta exacta de cada luchador píxel por píxel antes de buscar sus articulaciones. Se incorporó en el código mediante un interruptor configurable (`USE_SEGMENTATION`) para evaluar si ayudaba a separar cuerpos muy entrelazados.
-* **`yolo26x-pose.pt` (Modelo Maestro para Aprendizaje Continuo):** Es la versión "extra grande" y más potente de la familia. No se usa durante la consulta normal del alumno porque es más pesada, sino que trabaja en segundo plano como un "maestro revisor" que enseña automáticamente al modelo ligero cuando aparece un video difícil.
+* **`yolo26m-pose.pt` / `yolo26n-pose.pt` (Modelo Principal de Pose):** Localiza y rastrea 17 puntos anatómicos clave del cuerpo humano (hombros, codos, muñecas, caderas, rodillas, tobillos y rostro) cuadro por cuadro, generando un esqueleto digital. En el servidor actual se utiliza `yolo26m-pose.pt` como modelo base de alta precisión y se soporta la carga dinámica de `yolo26n_autonomous.pt` cuando el módulo autónomo valida mejoras.
+* **`yolo26n-depth.pt` (Modelo de Profundidad 3D):** Calcula qué tan cerca o lejos de la cámara se encuentra cada extremidad (eje Z). Esto ayuda a distinguir quién está arriba y quién está abajo cuando dos cuerpos se cruzan en el suelo.
+* **`yolo26n-seg.pt` (Modelo de Segmentación de Respaldo):** Recorta la silueta exacta de cada luchador píxel por píxel. Se mantiene desactivado por defecto en la pasada general (`USE_SEGMENTATION=False`), pero se activa de forma puntual en el primer fotograma cuando dos atletas aparecen tan pegados que YOLO Pose los agrupa en una sola caja ancha (`_split_candidate_via_segmentation`), con clustering K-Means como respaldo adicional.
+* **`yolo26x-pose.pt` / `yolo26l-pose.pt` (Modelos Mayores para Re-etiquetado y Aprendizaje Continuo):** Versiones más grandes empleadas fuera de la consulta en vivo para generar etiquetas de referencia de alta calidad en escenas difíciles con kimono.
 
 ### 3.1.3. Justificación de la Elección y Prueba Empírica de Segmentación
-La selección de YOLOv26 se fundamenta en cinco pilares clave validados con pruebas reales siguiendo la metodología de Craig Larman:
+La elección de YOLOv26 se validó mediante pruebas experimentales reales sobre videos de la academia, priorizando precisión en el suelo y velocidad de respuesta para el alumno:
 
-1. **Velocidad y Eficiencia:** La versión "nano" está optimizada para ejecutarse con un consumo mínimo de recursos, alcanzando **95.2 fotogramas por segundo (FPS)** en la computadora local. Procesar un video completo de 15 segundos toma apenas 9.4 segundos.
-2. **Precisión en el Suelo (Tatami):** A diferencia de otras alternativas (como MediaPipe de Google, que asume que la persona está de pie), YOLOv26 mantiene una alta precisión cuando los cuerpos están en el suelo, invertidos o usando kimono (*gi*).
-3. **Desambiguación en 3D con Profundidad:** En las pruebas con videos reales de la academia, la combinación de pose + profundidad (`yolo26n-depth.pt`) logró resolver **163 oclusiones severas** (cruces de extremidades en el suelo) manteniendo la velocidad por encima de los 92 FPS.
-4. **Decisión Basada en Evidencia sobre la Segmentación (`USE_SEGMENTATION=False`):** Siguiendo el rigor de Larman, se probó si recortar la silueta con `yolo26n-seg.pt` antes de detectar el esqueleto mejoraba un video real de guardia cerrada (897 fotogramas). La prueba demostró que la mejora al detectar dos personas fue de apenas **+1.78%** (16 fotogramas), sin superar la meta mínima del 5%, pero haciendo el sistema **3.5 veces más lento** (bajando de 95.2 FPS a 27.1 FPS). Por ello, se dejó desactivada por defecto en producción, priorizando la velocidad para el alumno.
-5. **Costo Cero:** Los modelos de Ultralytics son de código abierto y gratuitos para uso académico y de investigación, sin cobros por API ni licencias.
+1. **Velocidad y Eficiencia:** La variante nano alcanzó **95.2 fotogramas por segundo (FPS)** en la MacBook local, procesando un video de 15 segundos en menos de 10 segundos.
+2. **Precisión en el Suelo (Tatami):** A diferencia de soluciones pensadas para personas de pie (como MediaPipe), YOLOv26 sigue detectando articulaciones cuando los atletas están acostados, invertidos o vistiendo kimono (*gi*).
+3. **Desambiguación en 3D con Profundidad:** La combinación de pose más profundidad (`yolo26n-depth.pt`) permitió resolver **163 oclusiones severas** de extremidades cruzadas manteniendo velocidades superiores a 92 FPS.
+4. **Decisión Basada en Evidencia sobre la Segmentación (`USE_SEGMENTATION=False`):** Se comparó usar pose directa frente a recortar primero todas las siluetas con `yolo26n-seg.pt` sobre un video real de guardia cerrada (897 fotogramas). La mejora de detección simultánea de 2 personas fue de apenas **+1.78%** (16 fotogramas), sin alcanzar la meta del 5%, pero redujo la velocidad **3.5 veces** (de 95.2 FPS a 27.1 FPS). Por ello se desactivó como paso obligatorio en todo el video y se reservó únicamente para separar cajas fusionadas en el encuadre inicial.
+5. **Costo Cero:** Software de código abierto sin cobros por API.
 
 Tabla 1
 *Prueba experimental entre Pose Directa vs. Segmentación + Pose*
@@ -348,26 +411,24 @@ Tabla 1
 
 *Nota.* Elaboración propia (2026).
 
-### 3.1.4. Aprendizaje Continuo Autónomo (Autonomous MLOps Flywheel) con YOLOv26x-pose y FINCH
-Para que la Inteligencia Artificial sea cada vez más inteligente con los videos propios de la academia sin tener que etiquetar fotos a mano ni intervenir manualmente en consola, se implementó una arquitectura de **Aprendizaje Continuo Autónomo (*Autonomous MLOps Flywheel*)** alineada con los principios de sistemas autónomos de bucle cerrado (Autonomous Systems Authority, 2026):
+### 3.1.4. Aprendizaje Continuo Autónomo (Data Flywheel) y Hot-Swap
+Para mejorar progresivamente la detección en posiciones complejas del tatami sin etiquetar imágenes a mano durante la operación diaria, `YOLOPoseAdapter` incorpora un mecanismo de recolección y reemplazo en caliente:
 
-1. **Captura de Casos Difíciles y Disparo Asíncrono:** Si durante el análisis de un video el modelo rápido (`yolo26n-pose.pt`) tiene dudas en algún fotograma (confianza menor a 0.65), guarda esa imagen automáticamente en una carpeta especial (`uncertainty_frames/`). Asimismo, cada vez que un profesor sube el video de referencia de una técnica nueva al catálogo (`POST /api/v1/tecnicas/{id}/patron`), el backend dispara en segundo plano un subproceso desacoplado (`subprocess.Popen` ejecutando `backend/scripts/autonomous_flywheel.py`) gobernado por una cola de bloqueo POSIX (`.autonomous_flywheel.lock`) para no saturar los 24 GB de Memoria Unificada.
-2. **Auto-enseñanza (Maestro-Estudiante):** El orquestador extrae los fotogramas de la nueva técnica y el modelo gigante y experto (`yolo26x-pose.pt`) genera pseudo-etiquetas de alta precisión indicando dónde están realmente las 17 articulaciones de los dos atletas entrelazados.
-3. **Memoria Equilibrada (Replay Buffer 70/30) y Fine-Tuning con FINCH:** Para que el modelo no sufra olvido catastrófico (*Catastrophic Forgetting*) de las posiciones básicas al aprender técnicas nuevas como la *Americana desde la montada*, se entrena mezclando un **70% de poses clásicas (Gold Standard)** con un **30% de poses nuevas (Flywheel)**, congelando las primeras 10 capas del backbone (`freeze=10`) y ajustando dinámicamente la tasa de aprendizaje lote a lote mediante el planificador adaptativo **FINCH** (`scripts/finch_callback.py`).
-4. **Filtro de Calidad Automático (Gatekeeper) y Hot-Swap en Caliente:** Al concluir el entrenamiento en segundo plano, el **Gatekeeper Automático** evalúa el nuevo modelo contra el conjunto histórico de validación (`continuous_dataset`). Solo si la variación de precisión cumple $\Delta\text{mAP} \ge -0.02$ (garantizando ausencia de olvido catastrófico), el sistema promueve atómicamente los pesos a `yolo26n_autonomous.pt` y el adaptador `YOLOPoseAdapter` realiza un **Hot-Swap en memoria** en la siguiente petición sin reiniciar el servidor FastAPI. Si el modelo se degrada ($\Delta\text{mAP} < -0.02$), el Gatekeeper descarta automáticamente los pesos nuevos y preserva intacto el modelo en producción.
+1. **Captura de Casos Difíciles:** Cuando durante el análisis de un video la confianza de detección cae por debajo de `0.65`, el adaptador guarda automáticamente el fotograma en `backend/storage/uncertainty_frames/` junto con su registro en `log.csv` para su posterior revisión o reentrenamiento.
+2. **Entrenamiento con Memoria Equilibrada (Replay Buffer 70/30 y FINCH):** En las pruebas de reentrenamiento sobre técnicas con oclusión severa como la *Americana desde la montada*, mezclar 70% de poses base (Gold Standard) con 30% de poses nuevas y congelar las primeras 10 capas (`freeze=10`) bajo el planificador adaptativo FINCH evitó el olvido catastrófico de técnicas anteriores.
+3. **Hot-Swap en Caliente (`_get_model()`):** Cada vez que el adaptador solicita el modelo en memoria, verifica si existe un archivo de pesos validado (`yolo26n_autonomous.pt`) y compara su fecha de modificación (`st_mtime`). Si detecta una versión nueva aprobada, la carga automáticamente sin necesidad de reiniciar el servidor FastAPI.
 
 ### 3.1.5. Comparativa frente a otras opciones
-Para garantizar que el sistema funcione de manera óptima en el entorno específico del Jiu-Jitsu Brasileño, se evaluaron varias tecnologías de estimación de pose disponibles en el mercado.
 
 Tabla 2
 *Comparativa de tecnologías de estimación de pose humana*
 
-| Tecnología | Velocidad y Eficiencia | Resistencia a Oclusiones (Kimono / Cuerpos superpuestos) | Desempeño en Suelo (Jiu-Jitsu) | Profundidad 3D Nativa | Costo y Accesibilidad |
+| Tecnología | Velocidad y Eficiencia | Resistencia a Oclusiones (Kimono / Contacto) | Desempeño en Suelo (Jiu-Jitsu) | Profundidad 3D | Costo y Accesibilidad |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Ultralytics YOLO26 (Seleccionada)** | **Muy alta (95+ FPS en equipo local)** | **Excelente (Entrenada para ropa deportiva y contacto estrecho)** | **Excelente (Funciona en cualquier orientación o ángulo)** | **Sí (`yolo26n-depth` integrado)** | **Gratuita (Código abierto, sin licencias de pago)** |
-| Google MediaPipe | Alta (60+ FPS) | Media (Pierde el rastreo con telas holgadas o cuerpos entrelazados) | Baja (Optimizada principalmente para personas de pie) | Parcial (Aproximada, sin mapa denso) | Gratuita, pero limitada para este contexto |
-| OpenPose (CMU) | Baja (15 FPS en GPU, muy lenta en CPU) | Alta | Buena, pero demasiado lenta para un análisis ágil | No (Requiere cámaras especiales) | Gratuita (uso académico), pero exige hardware muy costoso |
-| AlphaPose | Media (20 FPS en GPU) | Alta | Media (Requiere configuración compleja de servidores) | No nativa | Gratuita, pero difícil de implementar y mantener |
+| **Ultralytics YOLO26 (Seleccionada)** | **Muy alta (95+ FPS en versión nano local)** | **Excelente (Ropa deportiva y contacto estrecho)** | **Excelente (Cualquier ángulo)** | **Sí (`yolo26n-depth` integrado)** | **Gratuita (Sin licencias de pago)** |
+| Google MediaPipe | Alta (60+ FPS) | Media (Falla con telas holgadas o cuerpos cruzados) | Baja (Pensada para personas de pie) | Parcial (Aproximada) | Gratuita, pero limitada en suelo |
+| OpenPose (CMU) | Baja (15 FPS en GPU, muy lenta en CPU) | Alta | Buena, pero lenta | No | Gratuita académica, exige hardware costoso |
+| AlphaPose | Media (20 FPS en GPU) | Alta | Media | No nativa | Gratuita, configuración compleja |
 
 *Nota.* Elaboración propia (2026).
 
@@ -376,41 +437,39 @@ Tabla 2
 ## 3.2. Infraestructura de Cómputo Acelerado Local: Apple Silicon (MLX y MPS)
 
 ### 3.2.1. ¿Qué es Apple Silicon y la Memoria Unificada (MLX / MPS)?
-Apple Silicon es la arquitectura de procesadores de alto rendimiento (serie M) que integra en un mismo chip el procesador principal (CPU), la tarjeta gráfica aceleradora (GPU) y el motor neuronal de Inteligencia Artificial, compartiendo un único bloque de **Memoria Unificada (24 GB de RAM)**.
+Apple Silicon es la familia de procesadores de Apple (serie M) que integra en un mismo chip la CPU, la tarjeta gráfica (GPU) y el motor neuronal compartiendo un único bloque de **Memoria Unificada (24 GB de RAM)**.
 
-A diferencia de las computadoras tradicionales donde la tarjeta gráfica tiene poca memoria propia y pierde tiempo copiando datos de un lado a otro, en Apple Silicon todos los modelos de IA leen los videos y textos directamente desde el mismo lugar de la memoria a altísima velocidad, utilizando dos tecnologías gratuitas:
+En las computadoras tradicionales, la tarjeta gráfica tiene su propia memoria separada y pierde tiempo copiando datos de un lado a otro. Con la memoria unificada, los modelos de Inteligencia Artificial leen directamente los videos y textos desde el mismo espacio mediante dos herramientas gratuitas:
 
-* **MPS (Metal Performance Shaders):** Acelera el análisis de video de YOLOv26 directamente en los núcleos gráficos del equipo.
-* **Apple MLX:** Es el motor oficial creado por Apple para ejecutar modelos de lenguaje y visión (como Qwen3-VL) a máxima velocidad y con bajo consumo de memoria.
+* **MPS (Metal Performance Shaders):** Acelera el procesamiento de visión por computadora de YOLOv26 sobre los núcleos gráficos de la Mac.
+* **Apple MLX:** Motor oficial de Apple para ejecutar modelos de lenguaje y visión (como Qwen3-VL) con gran velocidad y bajo consumo de memoria.
 
-### 3.2.2. Modelo de Acceso y Costos (Frente a Google Colab)
-Al ejecutar toda la Inteligencia Artificial directamente en el equipo local de la academia mediante Apple Silicon, el **costo operativo mensual es de $0 USD**:
+### 3.2.2. Modelo de Acceso y Costos (Local frente a Nube y GPUs Tradicionales)
+Ejecutar toda la Inteligencia Artificial en la MacBook Air M5 local de la academia tiene un **costo operativo mensual de \$0 USD** una vez adquirido el equipo portátil:
 
-* **Inferencia Local en Apple Silicon (Seleccionada):**
-  * **Costo mensual:** $0 (sin suscripciones, sin cobros por minuto ni por cantidad de videos).
-  * **Disponibilidad:** 24/7 sin cortes de sesión ni límites de horario.
-* **Alternativa Evaluada en Fases Iniciales (Google Colab en la Nube):**
-  * Aunque Google Colab ofrece una capa gratuita con tarjetas NVIDIA T4, impone desconexiones automáticas por inactividad, límites diarios de uso y bloqueos cuando se intenta usar como servidor continuo para una aplicación web, obligando en la práctica a pagar planes mensuales (Colab Pro de $9.99 a $49.99 USD/mes).
+* **Inferencia Local en Apple Silicon M5 (Seleccionada):** Costo mensual de \$0 USD, disponibilidad 24/7 sin desconexiones ni límites de tokens y bajo consumo eléctrico (~15 a 30 W).
+* **Alternativas en la Nube Evaluadas y Descartadas:** Contratar servidores con GPU dedicados (AWS, GCP o Azure) implica pagos recurrentes de **\$150 a \$400+ USD mensuales**, mientras que opciones gratuitas como Google Colab cortan las sesiones por inactividad (obligando a pagar Colab Pro entre \$9.99 y \$49.99 USD/mes) y exigen subir cada video dos veces por red.
 
-### 3.2.3. Justificación de la Elección y Descarte de Google Colab
-En las primeras iteraciones del proyecto se probó Google Colab como motor remoto, pero siguiendo la metodología de Craig Larman fue descartado y reemplazado por la ejecución 100% local en Apple Silicon por cuatro razones contundentes:
+### 3.2.3. Justificación Técnica: ¿Por qué Apple Silicon en lugar de NVIDIA, AMD o Nube?
+La elección de **Apple Silicon (M5 con 24 GB de Memoria Unificada — UMA)** frente a tarjetas **NVIDIA**, **AMD** o servidores en la **Nube** responde a cuatro restricciones reales de memoria, portabilidad, ecosistema de software y costos en Bolivia:
 
-1. **Sin Desconexiones en Media Clase:** Google Colab cierra la sesión si se apaga la pestaña o tras pocas horas de uso. Con el procesamiento local en Apple Silicon, el sistema está siempre listo cuando el alumno o el profesor lo necesitan.
-2. **Velocidad Inmediata (Sin Doble Subida de Video):** Con Colab, el video tenía que subir primero al servidor y luego enviarse por internet hasta los centros de datos de Google, tardando más de un minuto. Al procesar localmente, la lectura del video es instantánea.
-3. **Privacidad Total de los Alumnos:** Los videos de los practicantes (incluyendo niños y jóvenes de la academia) se analizan dentro de la computadora de la academia y nunca se suben a servidores externos de terceros.
-4. **Convivencia de Todos los Modelos en 24 GB:** Gracias a la memoria unificada y la compresión a 4 bits de MLX, los modelos de YOLO, el buscador de manuales y el generador de consejos funcionan juntos consumiendo aproximadamente ~9 GB de memoria unificada en pico (Qwen consume ~8.55 GB y YOLO nano una fracción mínima).
+1. **Memoria Unificada de 24 GB (*Zero-Copy*) frente a VRAM limitada de NVIDIA:** En una arquitectura de PC tradicional (NVIDIA o AMD), la RAM del sistema y la VRAM de la tarjeta gráfica están separadas y los datos deben copiarse constantemente por el bus PCIe. Una laptop común con **NVIDIA RTX 3050 o 4060** apenas dispone de **6 a 8 GB de VRAM**, capacidad insuficiente para mantener cargados en memoria al mismo tiempo los 4 modelos que necesita esta plataforma (`YOLOv26-pose`, `Qwen3-VL-Embedding-2B`, `Qwen3-VL-Reranker-2B` y `Qwen3-VL-Instruct-4B`), generando fallos por falta de memoria (*Out-Of-Memory*). Para igualar los 24 GB dedicados en NVIDIA se requiere una **RTX 3090 o RTX 4090 de escritorio**, cuyo precio supera los **\$2,000 USD**, consume **350 a 450 W**, genera calor y ruido excesivo, y obliga a usar un gabinete pesado imposible de llevar cómodamente al tatami. En cambio, en la MacBook Air M5 los 24 GB unificados permiten que CPU, GPU (`MPS`) y `Apple MLX` accedan directamente al mismo bloque de memoria sin copias ni pausas en un portátil silencioso de ~1.2 kg.
+2. **Ecosistema Nativo `Apple MLX` frente a las limitaciones de AMD (`ROCm`):** Aunque AMD ofrece tarjetas gráficas competitivas para videojuegos, su plataforma de cómputo para IA (**ROCm**) tiene soporte restringido en tarjetas de consumo y portátiles, carece de soporte nativo en macOS y no ofrece un equivalente optimizado como **Apple MLX** para ejecutar los modelos multimodales `Qwen3-VL` cuantizados a 4 y 8 bits con inferencia fluida en ~22 segundos.
+3. **Privacidad Total, Cero Costos Recurrentes y Baja Latencia frente a la Nube:** En una solución 100 % en la Nube (AWS/GCP/APIs externas de pago como Gemini o GPT-4o), los alumnos tendrían que subir videos de 20 a 100 MB por conexiones domésticas de internet hacia servidores extranjeros y asumir un gasto mensual constante en alquiler de GPU o por cada video evaluado. Además, los videos del gimnasio (que incluyen menores de edad) abandonarían el control físico de la academia. En local, el procesamiento ocurre dentro del propio gimnasio, a \$0 USD por análisis y con privacidad absoluta.
+4. **Convivencia Simultánea de Modelos sin Desbordamiento:** Gracias a la cuantización de 4 y 8 bits en Apple MLX y a la aceleración MPS para YOLOv26, todo el pipeline de visión, búsqueda vectorial y generación de correcciones convive en los 24 GB unificados sin saturar la memoria.
 
 ### 3.2.4. Comparativa frente a otras opciones
 
 Tabla 3
-*Comparativa de Infraestructuras de Cómputo para Inferencia de IA*
+*Comparativa de Infraestructuras de Cómputo: Apple Silicon frente a NVIDIA, AMD y la Nube*
 
-| Plataforma / Opción | Hardware Utilizado | Costo Operativo Mensual | Estabilidad y Disponibilidad | Privacidad de los Videos | Idoneidad para el Proyecto |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Apple Silicon Local con MLX y MPS (Seleccionada)** | **Chip serie M (24 GB Memoria Unificada)** | **$0 USD (Gratuito / Sin pagos recurrentes)** | **Total (24/7 sin cierres de sesión ni bloqueos)** | **Máxima (Los videos no salen de la academia)** | **Excelente (Rápido, privado y sin costos mensuales)** |
-| Google Colab (Descartada tras pruebas) | NVIDIA Tesla T4 en la nube | Gratuito con cortes o $10-$50 USD/mes | Baja (Se desconecta sola y caduca el enlace) | Baja (Videos subidos a servidores externos) | Regular (Útil para prototipos, inviable en uso real diario) |
-| Servidor Cloud Dedicado (AWS / Google Cloud) | Instancias GPU alquiladas | Alto ($150 - $400 USD al mes continuo) | Alta | Media | Baja (Fuera del presupuesto de una academia deportiva) |
-| PC de Escritorio con GPU Gamer (RTX 4090) | Tarjeta dedicada de alto consumo | Alto costo inicial ($2,000+ USD) y eléctrico | Alta | Máxima | Media (Demasiado ruidoso, grande y costoso) |
+| Plataforma / Opción | Memoria Disponible para IA | Costo Inicial / Mensual | Consumo y Portabilidad | Ecosistema Software para Qwen3-VL + YOLO | Privacidad y Latencia de Red | Idoneidad para la Academia |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Apple Silicon M5 (Seleccionada)** | **24 GB Memoria Unificada (UMA) compartida** | **~\$1,500 USD único / \$0 al mes** | **~15–30 W, portátil ligero para tatami** | **Excelente (Apple MLX 4/8 bits + PyTorch MPS nativo)** | **Máxima (100% local, sin subir videos a terceros)** | **Óptima (Sostenible, portátil y potente)** |
+| NVIDIA Gama Media Laptop (ej. RTX 4060) | Solo 8 GB VRAM dedicados (insuficiente para 4 modelos) | ~\$1,300–\$1,800 USD / \$0 al mes | ~115–140 W, ventiladores ruidosos | Bueno (CUDA), pero sufre *Out-Of-Memory* con varios modelos VLM | Máxima (Local) | Limitada por poca VRAM |
+| NVIDIA Gama Alta Escritorio (ej. RTX 4090) | 24 GB VRAM dedicados | >\$2,000–\$3,500 USD / alto gasto eléctrico | 350–450 W, PC torre pesada no portátil | Excelente (CUDA + vLLM) | Máxima (Local) | Costo y tamaño excesivos para el gimnasio |
+| AMD Radeon (ROCm) | 8–16 GB VRAM (24 GB solo en tope de gama) | ~\$1,200–\$2,200 USD / \$0 al mes | 200–350 W | Limitado (ROCm sin equivalencia directa a MLX 4-bit en portátiles) | Máxima (Local) | Baja compatibilidad práctica con el stack VLM |
+| Solución en la Nube (AWS / GCP / Colab / APIs) | Variable (16–40 GB GPU alquilada) | **\$150 – \$400+ USD/mes** (o Colab con cortes) | No aplica | Bueno, pero atado a cuotas, conexión e internet | Baja (Videos salen a terceros y demoran en subir) | Inviable económicamente y menor privacidad |
 
 *Nota.* Elaboración propia (2026).
 
@@ -419,36 +478,34 @@ Tabla 3
 ## 3.3. Vectorización Multimodal y Reordenamiento: Qwen3-VL-Embedding y Qwen3-VL-Reranker
 
 ### 3.3.1. ¿Qué son Qwen3-VL-Embedding y Qwen3-VL-Reranker?
-La familia **Qwen3-VL** (desarrollada por Alibaba Cloud Qwen Team, 2025) es una tecnología de Inteligencia Artificial de última generación que entiende al mismo tiempo texto e imágenes (Visión y Lenguaje). En este sistema se utilizan dos herramientas hermanas que trabajan en equipo para buscar información dentro de los manuales PDF subidos por los profesores:
+La familia **Qwen3-VL** (Alibaba Cloud Qwen Team, 2025) agrupa modelos capaces de comprender al mismo tiempo texto escrito e imágenes. En la plataforma trabajan en pareja para buscar la teoría exacta dentro de los manuales y notas de la academia:
 
-* **Qwen3-VL-Embedding:** Convierte tanto los párrafos de los libros de Jiu-Jitsu como las fotografías y diagramas de las técnicas en listas de números llamadas "vectores" (de 2048 dimensiones), ubicando los conceptos parecidos cerca unos de otros.
-* **Qwen3-VL-Reranker (Reordenador de Precisión):** Es un segundo filtro experto que toma los resultados encontrados por el primer modelo, compara a fondo la foto del error del alumno contra cada página del manual y las ordena de la más útil a la menos útil.
+* **Qwen3-VL-Embedding:** Convierte los párrafos de los libros, las imágenes extraídas y la foto del error del alumno en listas numéricas llamadas "vectores" de **2048 dimensiones**, agrupando conceptos técnicos parecidos.
+* **Qwen3-VL-Reranker:** Actúa como un segundo filtro experto (*Cross-Encoder*) que compara de cerca la consulta y el error del alumno frente a cada candidato recuperado y los ordena del más pertinente al menos pertinente.
 
 ### 3.3.2. Modelos Seleccionados (Búsqueda en Dos Etapas)
-Para lograr que los consejos teóricos sean exactos sin hacer lento el sistema, se implementaron ambos modelos de 2 mil millones de parámetros (`2B`) optimizados en **Apple MLX** trabajando en dos etapas:
+El sistema ejecuta localmente en **Apple MLX** una búsqueda en dos etapas:
 
-1. **Etapa 1 - Búsqueda Rápida (`Qwen3-VL-Embedding-2B`):** Busca en milisegundos dentro de la base de datos vectorial los 10 fragmentos o páginas de manuales que más se parecen a la técnica y al error del alumno.
-2. **Etapa 2 - Filtro Experto (`Qwen3-VL-Reranker-2B`):** Revisa con lupa esos 10 candidatos comparando imagen y texto al mismo tiempo, y selecciona únicamente los **3 fragmentos más exactos** para entregárselos al redactor de consejos.
+1. **Etapa 1 — Recuperación Rápida (`Qwen3-VL-Embedding-2B-8bit`):** Encuentra en la base vectorial los fragmentos candidatos que coinciden en significado con la técnica y las fallas detectadas, combinándose con búsqueda léxica BM25 y un glosario multilingüe (`HybridRetriever`).
+2. **Etapa 2 — Reordenamiento Experto (`Qwen3-VL-Reranker-2B-4bit`):** Evalúa los candidatos con *Think Mode* desactivado (`enable_thinking=False`) para mantener baja latencia y selecciona únicamente los fragmentos que superan el umbral mínimo de relevancia (`UMBRAL_RELEVANCIA_RAG = 0.65`).
 
 ### 3.3.3. Justificación de la Elección
-La decisión de utilizar esta dupla de modelos Qwen3-VL se basa en cuatro pilares fundamentales:
-
-1. **Capacidad Multimodal Real (Texto + Foto):** Los manuales de Jiu-Jitsu están llenos de fotografías paso a paso. Estos modelos entienden tanto las explicaciones escritas como las fotos de los libros, relacionándolas directamente con el fotograma donde el alumno falló.
-2. **Eliminación de Confusiones entre Técnicas Parecidas:** En Jiu-Jitsu muchas posiciones se ven similares por el kimono. El segundo filtro (*Reranker*) evita que el sistema confunda, por ejemplo, un "escape de 100 kilos" con un "pasaje de guardia", garantizando consejos 100% pertinentes.
-3. **Excelente Dominio de Español y Portugués:** Reconoce con total naturalidad los términos técnicos del arte marcial en ambos idiomas (*guardia cerrada / guarda fechada*, *raspado / raspagem*, *pasaje / passagem*).
-4. **Costo Cero y Ejecución Local:** Ambos modelos son de código abierto y corren gratuitamente dentro de la memoria del equipo local sin pagar por uso.
+1. **Comprensión Real de Texto y Fotos:** Los manuales de Jiu-Jitsu contienen secuencias ilustradas; Qwen3-VL indexa y consulta tanto texto como páginas e imágenes visuales.
+2. **Menos Confusión entre Posiciones Similares:** El segundo filtro evita confundir técnicas visualmente parecidas (como un escape de 100 kilos frente a un pasaje de guardia).
+3. **Manejo Natural de Español, Portugués e Inglés:** Comprende la terminología propia del arte marcial (*guardia cerrada / guarda fechada*, *raspado / raspagem*, *americana*).
+4. **Costo Cero y Privacidad Local:** Ambos modelos corren localmente en MLX sin pagos por consulta.
 
 ### 3.3.4. Comparativa frente a otras opciones
 
 Tabla 4
 *Comparativa de Modelos de Búsqueda y Vectorización Multimodal*
 
-| Tecnología | Capacidad Multimodal (Texto + Imagen) | Incluye Segundo Filtro (Reranker) | Soporte Español / Portugués | Costo de Uso | Ejecución Local en Mac |
+| Tecnología | Capacidad Multimodal (Texto + Imagen) | Segundo Filtro (Reranker) | Soporte Español / Portugués | Costo de Uso | Ejecución Local en Mac |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Qwen3-VL Embedding + Reranker (Seleccionada)** | **Sí (Nativo y de alta precisión)** | **Sí (Doble etapa para máxima exactitud)** | **Excelente (Entiende jerga de BJJ)** | **Gratuito (Open Source)** | **Nativa y ultrarrápida en MLX** |
-| OpenAI text-embedding-3 | No (Solo entiende texto, ignora fotos) | No nativo | Excelente | De pago (por millón de palabras) | No (Requiere internet y pago) |
-| BGE-M3 (BAAI) | Limitado (Enfocado en texto) | Sí (Solo para texto) | Bueno | Gratuito (Open Source) | Media (Más pesado) |
-| CLIP (OpenAI) | Sí (Básico) | No | Regular (Sesgado al inglés) | Gratuito (Open Source) | Sí, pero impreciso en artes marciales |
+| **Qwen3-VL Embedding + Reranker (Seleccionada)** | **Sí (Nativo y preciso)** | **Sí (Doble etapa)** | **Excelente (Jerga de BJJ)** | **Gratuito (Open Source)** | **Nativa y rápida en MLX** |
+| OpenAI text-embedding-3 | No (Solo texto) | No nativo | Excelente | De pago | No (Solo nube) |
+| BGE-M3 (BAAI) | Limitado (Enfoque en texto) | Sí (Solo texto) | Bueno | Gratuito (Open Source) | Media |
+| CLIP (OpenAI) | Sí (Básico) | No | Regular (Sesgo al inglés) | Gratuito (Open Source) | Sí, pero impreciso en BJJ |
 
 *Nota.* Elaboración propia (2026).
 
@@ -457,22 +514,20 @@ Tabla 4
 ## 3.4. Base de Datos Vectorial: Qdrant
 
 ### 3.4.1. ¿Qué es Qdrant?
-Qdrant es un motor de búsqueda por similitud de vectores y una base de datos vectorial de código abierto basada en grafos HNSW (Malkov & Yashunin, 2018; Qdrant, 2026). A diferencia de una base de datos tradicional (como PostgreSQL) que busca coincidencias exactas de nombres o fechas, Qdrant está diseñada para buscar "significados" o patrones matemáticos parecidos.
+Qdrant es una base de datos vectorial de código abierto basada en grafos HNSW (Malkov & Yashunin, 2018; Qdrant, 2026). A diferencia de una base relacional que busca coincidencias exactas por palabra o identificador, Qdrant compara similitud entre vectores numéricos.
 
-En el contexto de este proyecto, Qdrant almacena dos cosas fundamentales: los "vectores biomecánicos" que representan el movimiento de referencia del profesor y los "vectores de conocimiento" extraídos de los manuales PDF y las enseñanzas de la academia. Además, permite adjuntar etiquetas o metadatos (llamados *payloads*) a cada vector, como el ID de la técnica o el cinturón, para afinar las búsquedas.
+En el sistema organiza dos colecciones separadas y validadas en configuración (`backend/corpocmente/config.py`):
+* **`vectores_poses_jiujitsu` (133 dimensiones):** Almacena los patrones posturales de referencia grabados por los profesores.
+* **`rag_knowledge` (2048 dimensiones):** Almacena los fragmentos de manuales (PDF, DOCX, TXT), páginas visuales, imágenes, fotogramas muestreados y notas del profesor (`instructor_message`).
 
 ### 3.4.2. Modelo de Acceso y Costos
-Qdrant opera bajo un modelo de código abierto (licencia Apache 2.0), lo que lo hace completamente gratuito para su auto-alojamiento (*self-hosting*).
-
-Para este proyecto, Qdrant se ejecuta de forma local utilizando un contenedor Docker (`corpocmente_qdrant`), lo que elimina por completo cualquier costo de licencia, suscripción o pago por uso. Sus datos quedan guardados de forma segura en la carpeta local `data/qdrant`.
+Qdrant cuenta con licencia Apache 2.0 y corre localmente de forma gratuita en el contenedor Docker `corpocmente_qdrant` (`infrastructure/docker-compose.yml`), persistiendo sus datos en el volumen Docker nombrado `corpocmente_qdrant_data` (`/qdrant/storage`).
 
 ### 3.4.3. Justificación de la Elección
-La decisión de utilizar Qdrant como el motor de almacenamiento y búsqueda vectorial se basa en cuatro ventajas técnicas decisivas:
-
-1. **Filtrado Inteligente por Metadatos (Payload-Aware Filtering):** Permite aplicar filtros (por ejemplo, "buscar solo fragmentos que pertenezcan a la técnica X") durante el recorrido mismo de la búsqueda. Esto garantiza respuestas en menos de 5 milisegundos sin perder precisión.
-2. **Búsqueda Híbrida (Significado + Palabras Clave):** Combina la búsqueda por significado visual/conceptual con palabras exactas del Jiu-Jitsu, asegurando encontrar siempre la página correcta del manual.
-3. **Eficiencia y Rendimiento en Rust:** Qdrant está escrito en el lenguaje de programación Rust, lo que le otorga un manejo de memoria sumamente ligero y estable, consumiendo mucha menos memoria RAM que otras alternativas.
-4. **Costo Operativo Cero:** Se ejecuta en la misma máquina local que el backend sin costo alguno.
+1. **Filtrado por Metadatos Durante la Búsqueda:** Permite restringir resultados por `tecnica_id`, `alcance` (`tecnica` o `global`) o `fuente_tipo` en escasos milisegundos.
+2. **Soporte de Limpieza Híbrida:** Facilita eliminar puntos por `tecnica_id`, por `patron_id`, por lista de IDs o por nombre de manual (`eliminar_por_manual`), manteniendo la base libre de datos huérfanos.
+3. **Bajo Consumo en Rust:** Escrito en Rust, ofrece estabilidad y bajo consumo de RAM en la máquina local.
+4. **Costo Operativo Cero:** Auto-alojado sin restricciones de tamaño ni tarifas mensuales.
 
 ### 3.4.4. Comparativa frente a otras opciones
 
@@ -482,10 +537,10 @@ Tabla 5
 | Tecnología | Lenguaje Base | Filtrado por Metadatos | Complejidad de Instalación | Consumo de Memoria | Costo Operativo |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Qdrant (Seleccionada)** | **Rust** | **Nativo en el índice (HNSW)** | **Baja (Un solo contenedor Docker)** | **Muy Bajo** | **Gratuito (Open Source)** |
-| Milvus | Go / C++ | Pre-filtrado o Post-filtrado | Alta (Requiere múltiples microservicios) | Alto | Gratuito, pero exige mucho hardware |
+| Milvus | Go / C++ | Pre-filtrado o Post-filtrado | Alta (Múltiples servicios) | Alto | Gratuito, exige más hardware |
 | Weaviate | Go | Filtrado invertido | Media | Medio-Alto | Gratuito (Open Source) |
-| Pinecone | Propietario | Nativo | Nula (En la nube) | Nulo localmente | De pago mensual según uso |
-| FAISS (Meta) | C++ / Python | No tiene (Es solo una librería sin base de datos) | Media (Obliga a programar el guardado desde cero) | Bajo | Gratuito (Open Source) |
+| Pinecone | Propietario | Nativo | Nula (En la nube) | Nulo localmente | De pago mensual |
+| FAISS (Meta) | C++ / Python | No tiene (Solo librería) | Media | Bajo | Gratuito (Open Source) |
 
 *Nota.* Elaboración propia (2026).
 
@@ -494,29 +549,27 @@ Tabla 5
 ## 3.5. Lenguaje de Programación: Python
 
 ### 3.5.1. ¿Qué es Python?
-Python es un lenguaje de programación de alto nivel, interpretado y de propósito general (Python Software Foundation, 2026). Se caracteriza por tener una sintaxis muy limpia y legible, lo que permite a los desarrolladores escribir código que se asemeja al lenguaje humano, facilitando su comprensión, auditoría y mantenimiento.
+Python es un lenguaje de programación de alto nivel, interpretado y muy legible (Python Software Foundation, 2026). Su sintaxis clara facilita leer, revisar y mantener la lógica del servidor y de la Inteligencia Artificial.
 
 ### 3.5.2. Costo
-Python es 100% gratuito y de código abierto (*Open Source*). No existen licencias de uso, costos de suscripción ni limitaciones para su uso en proyectos académicos o comerciales.
+Es 100% gratuito y de código abierto (*Open Source*), sin licencias comerciales.
 
 ### 3.5.3. Justificación de la Elección
-La elección de Python como lenguaje principal del backend y de todo el pipeline de Inteligencia Artificial se basa en tres pilares fundamentales:
-
-1. **Ecosistema Líder en Inteligencia Artificial:** Es el lenguaje estándar indiscutible en el mundo de la IA y la visión por computadora. Todas las herramientas centrales del proyecto (Ultralytics YOLO26, Apple MLX, PyTorch, OpenCV y Qdrant Client) tienen su soporte nativo y directo en Python.
-2. **Desarrollo Ágil e Iterativo:** Permite construir, probar y mejorar funcionalidades complejas en ciclos cortos, alineándose perfectamente con la metodología ágil de Craig Larman.
-3. **Legibilidad y Mantenibilidad:** Su sintaxis clara y organizada en capas facilita que el código del proyecto de grado sea limpio, modular y fácil de mantener en el futuro.
+1. **Ecosistema Líder en IA:** Las librerías centrales del proyecto (Ultralytics YOLO26, Apple MLX, PyTorch, OpenCV, `dtaidistance`, `PyMuPDF`, Qdrant Client) funcionan de manera nativa en Python.
+2. **Construcción Ágil Guiada por Casos de Uso:** Permite traducir con limpieza la estructura ICONIX (rutas de frontera, servicios de aplicación, entidades de dominio y adaptadores de infraestructura) en módulos claros.
+3. **Mantenibilidad:** Facilita pruebas unitarias rápidas y evolución continua sin reescrituras complejas.
 
 ### 3.5.4. Comparativa frente a otras opciones
 
 Tabla 6
 *Comparativa de Lenguajes de Programación para el Proyecto*
 
-| Lenguaje | Curva de Aprendizaje | Ecosistema de IA / Visión por Computadora | Integración con Apple MLX y YOLO | Velocidad de Desarrollo |
+| Lenguaje | Curva de Aprendizaje | Ecosistema de IA / Visión | Integración con Apple MLX y YOLO | Velocidad de Desarrollo |
 | :--- | :--- | :--- | :--- | :--- |
-| **Python (Seleccionado)** | **Baja (Muy legible)** | **Nativo y Líder indiscutible** | **Directa y oficial** | **Muy Alta** |
-| Node.js (JavaScript) | Media | Limitado (Requiere puentes externos a Python) | Inexistente de forma nativa | Alta |
-| Java | Alta (Verboso) | Bueno para empresas, rezagado en IA moderna | Muy compleja | Media |
-| C++ | Muy Alta (Complejo) | Excelente velocidad, pero muy lento de programar | Baja productividad para web | Baja |
+| **Python (Seleccionado)** | **Baja (Muy legible)** | **Nativo y líder** | **Directa y oficial** | **Muy Alta** |
+| Node.js (JavaScript) | Media | Limitado (Requiere puentes externos) | Inexistente de forma nativa | Alta |
+| Java | Alta (Verboso) | Rezagado en IA local moderna | Muy compleja | Media |
+| C++ | Muy Alta | Excelente velocidad, lento de programar | Baja productividad web | Baja |
 
 *Nota.* Elaboración propia (2026).
 
@@ -525,15 +578,15 @@ Tabla 6
 ## 3.6. Contenerización y Despliegue: Docker
 
 ### 3.6.1. ¿Qué es Docker?
-Docker es una plataforma de software que utiliza "contenedores" para empaquetar los servicios (Docker Inc., 2026) de una aplicación junto con todas sus dependencias (librerías, configuraciones y sistema base) en una sola unidad estandarizada. Esto garantiza que las bases de datos y servicios se ejecuten de manera rápida, confiable e idéntica sin importar en qué computadora se instalen.
+Docker empaqueta los servicios auxiliares de la aplicación en contenedores estandarizados con todas sus dependencias (Docker Inc., 2026), garantizando que funcionen igual en cualquier equipo.
 
 ### 3.6.2. Costo
-El motor de Docker (*Docker Engine*) y *Docker Compose* son 100% gratuitos y de código abierto. Docker Desktop cuenta con licencia gratuita para uso personal, educativo y proyectos de investigación, cubriendo perfectamente el alcance de esta tesis.
+Docker Engine y Docker Compose son gratuitos para uso personal, educativo y de investigación.
 
 ### 3.6.3. Justificación de la Elección
-1. **Eliminación del "En mi máquina sí funcionaba":** Garantiza que la base de datos relacional (`corpocmente_postgres`), la capa de seguridad API (`corpocmente_postgrest`) y la base de datos vectorial (`corpocmente_qdrant`) funcionen exactamente igual en cualquier equipo sin configuraciones manuales propensas a errores.
-2. **Persistencia Segura de Datos:** Mediante volúmenes conectados a la carpeta local `data/`, Docker asegura que aunque los contenedores se apaguen o reinicien, ningún usuario, técnica ni evaluación se pierda jamás.
-3. **Arranque Automatizado en Segundos:** Combinado con el script de inicio del proyecto (`./scripts/start.sh`), toda la infraestructura se verifica y levanta automáticamente con un solo comando.
+1. **Entorno Predecible:** Levanta de forma ordenada PostgreSQL (`corpocmente_postgres`), PostgREST (`corpocmente_postgrest`) y Qdrant (`corpocmente_qdrant`) mediante `infrastructure/docker-compose.yml`.
+2. **Persistencia Segura:** Sus volúmenes nombrados (`corpocmente_postgres_data` y `corpocmente_qdrant_data`) conservan usuarios, técnicas, manuales y evaluaciones entre reinicios.
+3. **Arranque Sencillo:** Con el script `./scripts/start.sh`, toda la plataforma se inicia y verifica de forma automática.
 
 ### 3.6.4. Comparativa frente a otras opciones
 
@@ -542,9 +595,9 @@ Tabla 7
 
 | Tecnología | Consumo de Recursos | Nivel de Aislamiento | Facilidad de Configuración |
 | :--- | :--- | :--- | :--- |
-| **Docker + Docker Compose (Seleccionado)** | **Bajo (Comparte el núcleo del sistema)** | **Alto (Procesos aislados y seguros)** | **Muy Alta (Un solo archivo `docker-compose.yml`)** |
-| Máquina Virtual (VM) | Muy Alto (Duplica todo el sistema operativo) | Muy Alto | Baja (Lenta y pesada de iniciar) |
-| Instalación Manual Directa | Nulo (Nativo) | Nulo (Riesgo de mezclar versiones y dañar el sistema) | Muy Baja (Difícil de replicar en otra computadora) |
+| **Docker + Docker Compose (Seleccionado)** | **Bajo (Comparte el núcleo)** | **Alto (Servicios aislados)** | **Muy Alta (`docker-compose.yml`)** |
+| Máquina Virtual (VM) | Muy Alto (Duplica el sistema operativo) | Muy Alto | Baja (Lenta de iniciar) |
+| Instalación Manual Directa | Nulo | Nulo (Riesgo de conflictos) | Muy Baja |
 
 *Nota.* Elaboración propia (2026).
 
@@ -553,26 +606,26 @@ Tabla 7
 ## 3.7. Capa de API Automática: PostgREST
 
 ### 3.7.1. ¿Qué es PostgREST?
-PostgREST es un servidor web independiente y de código abierto (PostgREST, 2026) que se conecta directamente a una base de datos PostgreSQL y la convierte automáticamente en una API RESTful completa, rápida y segura. En lugar de escribir código manual repetitivo para cada consulta básica a las tablas, PostgREST expone las operaciones autorizadas de la base de datos a través de HTTP.
+PostgREST es un servidor ligero compilado en Haskell que convierte el esquema y los procedimientos almacenados de PostgreSQL en una API REST rápida y segura (PostgREST, 2026).
 
 ### 3.7.2. Costo
-PostgREST es 100% gratuito y de código abierto (desarrollado en el lenguaje Haskell). No tiene costos de licencia ni modelos de suscripción.
+100% gratuito y de código abierto (licencia MIT).
 
 ### 3.7.3. Justificación de la Elección
-1. **Seguridad por Diseño (Row Level Security):** PostgREST trabaja de la mano con el motor de PostgreSQL verificando los tokens de seguridad JWT. Esto garantiza que las reglas de acceso por rol y sucursal se cumplan directamente en la base de datos.
-2. **Ejecución de Funciones Seguras (RPC):** Permite invocar procedimientos almacenados en la base de datos (como el cambio de sucursal o el registro seguro de evaluaciones) con validación estricta de permisos.
-3. **Rendimiento Ultrarrápido:** Al estar compilado en Haskell y comunicarse directamente con PostgreSQL, responde en escasos milisegundos consumiendo menos de 30 MB de memoria RAM.
+1. **Ejecución Segura mediante RPC (`SECURITY DEFINER`):** Las operaciones críticas (autenticación, registro de alumnos, cambio de sucursal, activación de pase, cancelación de evaluación, eliminación de manuales y eliminación administrativa de usuarios) se ejecutan a través de funciones SQL controladas sin exponer directamente las tablas sensibles.
+2. **Consistencia Relacional y Vectorial:** Al combinar procedimientos almacenados (como `admin_delete_manual_teoria`, `admin_delete_tecnica` o `admin_delete_user`) con los adaptadores de Qdrant desde FastAPI, se evita dejar datos huérfanos entre ambas bases.
+3. **Consumo Mínimo:** Responde en milisegundos consumiendo poca memoria RAM.
 
 ### 3.7.4. Comparativa frente a otras opciones
 
 Tabla 8
 *Comparativa de Tecnologías para Capa de Datos REST*
 
-| Tecnología | Cantidad de Código Repetitivo | Gestión de Seguridad (RLS) | Rendimiento y Consumo |
+| Tecnología | Código Repetitivo | Seguridad y Control de Acceso | Rendimiento y Consumo |
 | :--- | :--- | :--- | :--- |
-| **PostgREST (Seleccionado)** | **Mínimo (Automatiza el acceso a tablas y vistas)** | **Nativa y robusta (Delegada a PostgreSQL)** | **Muy Alto y muy ligero en RAM** |
-| Consultas SQL Manuales en Todo el Backend | Alto (Se debe programar cada lectura y filtro a mano) | Manual (Mayor riesgo de olvidos o errores humanos) | Medio |
-| Hasura (Alternativa GraphQL) | Bajo | Bueno, pero añade complejidad GraphQL innecesaria | Alto, pero consume mucha más memoria RAM |
+| **PostgREST (Seleccionado)** | **Mínimo (Expone RPCs y vistas)** | **Nativa con RLS y roles SQL** | **Muy Alto y muy ligero en RAM** |
+| Consultas SQL Manuales en todo el Backend | Alto | Manual (Mayor riesgo de descuidos) | Medio |
+| Hasura (GraphQL) | Bajo | Bueno, añade complejidad innecesaria | Mayor consumo de RAM |
 
 *Nota.* Elaboración propia (2026).
 
@@ -581,27 +634,27 @@ Tabla 8
 ## 3.8. Framework de Backend: FastAPI
 
 ### 3.8.1. ¿Qué es FastAPI?
-FastAPI es un framework moderno y de alto rendimiento para construir APIs en Python (Ramírez, 2026). Se destaca por ser asíncrono (puede atender múltiples peticiones al mismo tiempo sin bloquearse) y por utilizar la librería **Pydantic** para validar automáticamente que todos los datos que entran y salen del sistema tengan el formato correcto y seguro.
+FastAPI es un framework moderno de Python para construir APIs rápidas y asíncronas (Ramírez, 2026), apoyado en **Pydantic** para validar automáticamente todos los datos que entran y salen del servidor.
 
 ### 3.8.2. Costo
-Es 100% gratuito y de código abierto (licencia MIT). No tiene costos de licencia ni restricciones de uso.
+100% gratuito y de código abierto (licencia MIT).
 
 ### 3.8.3. Justificación de la Elección
-1. **Integración Nativa con la IA Local:** Al estar escrito en Python, se conecta directamente y sin fricción con los modelos de YOLOv26, Apple MLX y Qdrant dentro del mismo servidor.
-2. **Validación Estricta de Datos y Seguridad:** Gracias a Pydantic y a sus filtros de seguridad integrados, bloquea automáticamente nombres de usuario mal formados (con espacios o símbolos prohibidos) y protege al servidor contra excesos de peticiones (*Rate Limiting*).
-3. **Transmisión Fluida de Videos:** Sirve de forma directa y rápida tanto los videos de referencia de los profesores como los videos grabados por los alumnos para su reproducción inmediata en el navegador.
+1. **Conexión Directa con IA Local:** Ejecuta en el mismo ecosistema Python los modelos de YOLO26, MLX y Qdrant.
+2. **Validación Estricta y Seguridad:** Valida formatos de usuario, tipos de archivos permitidos y protege contra fuerza bruta (`AuthRateLimitMiddleware`) y acceso cruzado entre usuarios.
+3. **Gestión de Archivos, Videos y Cancelaciones:** Sirve los videos de referencia con respaldo persistente y auto-curación automática (`video_storage.py`), además de soportar tareas en segundo plano con cancelación transaccional (`POST /api/v1/evaluaciones/{id}/cancelar`).
 
 ### 3.8.4. Comparativa frente a otras opciones
 
 Tabla 9
 *Comparativa de Frameworks de Backend*
 
-| Framework | Lenguaje | Rendimiento (Asincronía) | Validación Automática de Datos | Integración con IA |
+| Framework | Lenguaje | Rendimiento (Asincronía) | Validación Automática | Integración con IA |
 | :--- | :--- | :--- | :--- | :--- |
-| **FastAPI (Seleccionado)** | **Python** | **Nativa y Muy Alta** | **Sí (Integrada con Pydantic)** | **Directa y nativa** |
-| Django | Python | Tradicional (Más pesado y rígido) | Parcial (Mediante formularios propios) | Directa, pero con demasiada carga extra |
-| Express.js | JavaScript | Alta | Manual (Requiere librerías externas) | Indirecta (Difícil de conectar con YOLO/MLX) |
-| Flask | Python | Básica (Síncrona por defecto) | Manual | Directa, pero requiere armar todo desde cero |
+| **FastAPI (Seleccionado)** | **Python** | **Nativa y Muy Alta** | **Sí (Pydantic)** | **Directa y nativa** |
+| Django | Python | Tradicional (Más pesado) | Parcial (Formularios propios) | Directa con carga extra |
+| Express.js | JavaScript | Alta | Manual | Indirecta |
+| Flask | Python | Básica (Síncrona por defecto) | Manual | Directa pero sin tipado nativo |
 
 *Nota.* Elaboración propia (2026).
 
@@ -610,17 +663,15 @@ Tabla 9
 ## 3.9. Base de Datos Relacional: PostgreSQL con Row Level Security (RLS)
 
 ### 3.9.1. ¿Qué es PostgreSQL y RLS?
-PostgreSQL es un sistema de gestión de bases de datos relacional de nivel empresarial con soporte avanzado para Row Level Security (The PostgreSQL Global Development Group, 2026), reconocido mundialmente por su estabilidad y cumplimiento estricto de las reglas ACID (garantizando que los registros de usuarios, técnicas y evaluaciones nunca se pierdan ni se corrompan).
-
-**Row Level Security (RLS)** es una función de seguridad avanzada de PostgreSQL que permite restringir el acceso a filas específicas de una tabla según quién sea el usuario que consulta. Por ejemplo, asegura que un alumno solo pueda ver sus propias evaluaciones y un profesor gestione únicamente a los alumnos de su propia sucursal.
+PostgreSQL es un sistema gestor de bases de datos relacional robusto con cumplimiento ACID y soporte nativo de **Row Level Security (RLS)** (The PostgreSQL Global Development Group, 2026), que restringe qué filas puede consultar o modificar cada rol de usuario.
 
 ### 3.9.2. Costo
-Es 100% gratuito y de código abierto (licencia PostgreSQL).
+100% gratuito y de código abierto (licencia PostgreSQL).
 
 ### 3.9.3. Justificación de la Elección
-1. **Aislamiento Multi-Sucursal e Historial Inmutable:** Gracias al diseño de la base de datos, múltiples sucursales de "Corpo e Mente" conviven de forma ordenada. Además, cuando se registra una evaluación, la sucursal del alumno queda congelada históricamente en ese registro: si en el futuro el alumno se muda a otra sede, sus evaluaciones pasadas siguen perteneciendo al historial estadístico de la sede donde las realizó.
-2. **Diseño de Datos Limpio y Normalizado (3NF):** Siguiendo las buenas prácticas de ingeniería de bases de datos (Mannino, 2018), la información se organiza sin duplicados en tablas bien relacionadas (`usuarios`, `sucursales`, `tecnicas`, `patrones_referencia`, `evaluaciones_alumnos`).
-3. **Seguridad Criptográfica:** Utiliza funciones seguras de encriptación (`bcrypt` / `pgcrypto`) para proteger las contraseñas de todos los usuarios.
+1. **Aislamiento Multi-Sucursal e Historial Congelado:** Múltiples academias conviven en la misma base de datos. Al registrar una evaluación (`create_evaluacion`), la sucursal del alumno queda congelada en ese registro histórico: si luego cambia de sede, su historial anterior sigue perteneciendo a la sucursal donde realizó la práctica.
+2. **Integridad Referencial y Bajas Seguras:** Organizada en Tercera Forma Normal (Mannino, 2018), la base protege la integridad mediante claves foráneas y procedimientos dedicados como `admin_delete_user` (impide auto-eliminación del administrador y exige o ejecuta reasignación cuando un profesor tiene videos, patrones o teoría asociados) y `admin_delete_manual_teoria`.
+3. **Cifrado de Contraseñas:** Usa la extensión `pgcrypto` con algoritmo `bcrypt` para nunca almacenar claves en texto claro.
 
 ### 3.9.4. Comparativa frente a otras opciones
 
@@ -630,9 +681,9 @@ Tabla 10
 | Base de Datos | Tipo | Seguridad por Fila (RLS) | Integridad de Datos (ACID) |
 | :--- | :--- | :--- | :--- |
 | **PostgreSQL 16 (Seleccionada)** | **Relacional** | **Nativa y Robusta (RLS)** | **Total** |
-| MySQL / MariaDB | Relacional | Limitada (Requiere programarla manualmente en la aplicación) | Total |
-| MongoDB | No Relacional (Documentos) | Básica | Parcial (Menos estricta en relaciones complejas) |
-| SQLite | Relacional (Archivo simple) | No tiene | Baja cuando varios usuarios entran al mismo tiempo |
+| MySQL / MariaDB | Relacional | Limitada (Manual en código) | Total |
+| MongoDB | No Relacional | Básica | Parcial en relaciones complejas |
+| SQLite | Relacional (Archivo) | No tiene | Baja bajo alta concurrencia |
 
 *Nota.* Elaboración propia (2026).
 
@@ -641,28 +692,28 @@ Tabla 10
 ## 3.10. Frontend: React 19 + Vite (Mobile-First y Proxy Inverso)
 
 ### 3.10.1. ¿Qué es React y Vite?
-**React** es la biblioteca de JavaScript desarrollada por Meta Open Source (2026) líder en el mundo para construir interfaces de usuario modernas, rápidas y basadas en componentes reutilizables (botones, reproductores de video, modales y tablas). **Vite** es la herramienta de construcción y servidor web de última generación que carga y actualiza la aplicación de manera casi instantánea.
+**React** es la biblioteca de interfaz de usuario basada en componentes reutilizables (Meta Open Source, 2026), y **Vite** es el entorno de compilación y servidor web de carga rápida que además actúa como proxy inverso en `frontend/vite.config.js`.
 
 ### 3.10.2. Costo
-Ambas son tecnologías 100% gratuitas y de código abierto (licencia MIT).
+Ambas tecnologías son gratuitas y de código abierto (licencia MIT).
 
 ### 3.10.3. Justificación de la Elección
-1. **Diseño Pensado para el Celular en el Tatami (Mobile-First):** En una clase real de Jiu-Jitsu nadie camina con una computadora portátil sobre la colchoneta; tanto el profesor como los alumnos usan su celular. Por ello, toda la interfaz fue construida con botones amplios y fáciles de tocar (mínimo de 44 píxeles), menú adaptable y pantallas que se ajustan perfectamente a cualquier teléfono móvil, tablet o computadora.
-2. **Reproducción de Video e Iconografía Profesional:** Permite ver el video de la técnica, pausar en el momento del error, leer la teoría del profesor en ventanas claras y utilizar íconos vectoriales limpios (SVG) de alta nitidez.
-3. **Proxy Inverso Integrado (Sin Errores de Red):** Vite fue configurado como una "puerta única de entrada" (*Proxy Inverso*). Todas las consultas de datos (`/api`) y los videos (`/static`) pasan por el mismo canal del frontend, evitando bloqueos de seguridad del navegador (conocidos como errores de CORS) tanto en la red local como al conectarse desde internet.
-4. **Cambio de Idioma Instantáneo y Persistente (Español / Portugués):** El usuario puede elegir su idioma preferido en cualquier momento y el sistema recuerda su elección tanto en su navegador como en su perfil de base de datos, incluso si recarga la página.
+1. **Diseño Mobile-First para el Tatami:** Botones táctiles amplios (mínimo 44 px), menú adaptable y pantallas pensadas para usarse desde el celular al lado de la colchoneta.
+2. **Experiencia Interactiva Completa:** Permite cancelar un análisis en espera mediante `AbortController` (`App.jsx`), seleccionar visualmente al practicante en el primer fotograma (`SelectorPersonaVideo.jsx`), saltar al segundo exacto del error (`FeedbackView.jsx`), previsualizar manuales y distinguir citas de libros (`📚`) frente a notas del profesor (`🥋`) en `LibraryView.jsx`.
+3. **Proxy Inverso Integrado:** Reenvía `/api`, `/static` y `/health` hacia el backend FastAPI evitando errores de CORS tanto en red local como tras el túnel de internet.
+4. **Internacionalización Persistente (ES / PT / EN):** Guarda el idioma preferido en `localStorage` y en la base de datos.
 
 ### 3.10.4. Comparativa frente a otras opciones
 
 Tabla 11
 *Comparativa de Tecnologías de Frontend*
 
-| Tecnología | Velocidad de Carga y Desarrollo | Adaptación a Móviles (Mobile-First) | Facilidad para Manejo de Video y Proxy | Ecosistema y Comunidad |
+| Tecnología | Velocidad de Carga | Adaptación a Móviles | Manejo de Video y Proxy | Ecosistema |
 | :--- | :--- | :--- | :--- | :--- |
-| **React 19 + Vite (Seleccionado)** | **Ultrarrápida** | **Excelente y flexible** | **Muy Alta (Proxy inverso nativo en `vite.config.js`)** | **Líder indiscutible de la industria** |
-| Angular | Lenta / Pesada | Media (Más rígida) | Media | Amplia pero compleja |
-| Vue.js + Vite | Ultrarrápida | Buena | Alta | Creciente, pero menor que React |
-| Next.js | Media | Buena | Compleja para servidores locales de IA | Amplio, pero innecesariamente pesado para este caso |
+| **React 19 + Vite (Seleccionado)** | **Ultrarrápida** | **Excelente** | **Muy Alta (`vite.config.js`)** | **Líder de la industria** |
+| Angular | Más pesada | Media | Media | Amplia pero compleja |
+| Vue.js + Vite | Ultrarrápida | Buena | Alta | Menor que React |
+| Next.js | Media | Buena | Compleja para IA local | Pesado para este caso |
 
 *Nota.* Elaboración propia (2026).
 
@@ -671,58 +722,56 @@ Tabla 11
 ## 3.11. Geolocalización y Mapas: Leaflet.js + OpenStreetMap (Nominatim)
 
 ### 3.11.1. ¿Qué son Leaflet y OpenStreetMap?
-**Leaflet.js** es una biblioteca de JavaScript ligera y de código abierto para mostrar mapas interactivos en la web. **OpenStreetMap (OSM)** es el "Wikipedia de los mapas", una base de datos geográfica mundial, colaborativa y libre. **Nominatim** es su servicio gratuito de búsqueda que convierte coordenadas (latitud y longitud) en nombres de calles, ciudades y países legibles.
+**Leaflet.js** es una biblioteca ligera de JavaScript para mostrar mapas interactivos, **OpenStreetMap (OSM)** es la base cartográfica abierta y colaborativa mundial, y **Nominatim** convierte coordenadas en direcciones legibles (país, ciudad, calle).
 
 ### 3.11.2. Costo
-100% gratuitos. No requieren claves secretas de pago (*API Keys*) ni exigen registrar una tarjeta de crédito, a diferencia de las soluciones comerciales.
+100% gratuitos, sin API Keys de pago ni tarjeta de crédito requerida.
 
 ### 3.11.3. Justificación de la Elección
-1. **Cero Costo Operativo:** Permiten que el administrador de "Corpo e Mente" registre sucursales en cualquier ciudad o país pegando un enlace de ubicación o haciendo clic en el mapa, obteniendo la dirección automáticamente sin pagar un solo centavo a Google Maps.
-2. **Privacidad y Soberanía:** Al no depender de un proveedor publicitario comercial, no se rastrea la ubicación de los alumnos ni de las sedes.
-3. **Ligereza en Celulares:** Leaflet pesa apenas 42 KB, por lo que el mapa de sucursales carga al instante incluso con datos móviles lentos.
+1. **Cero Costo:** El administrador puede registrar sedes pegando un enlace de Google Maps o ubicando el punto en el mapa sin generar cargos por consultas.
+2. **Privacidad:** No rastrea a los alumnos ni comparte métricas comerciales de ubicación.
+3. **Ligereza:** Carga rápidamente en teléfonos con datos móviles.
 
 ### 3.11.4. Comparativa frente a otras opciones
 
 Tabla 12
 *Comparativa de Servicios de Mapas Digitales*
 
-| Servicio de Mapas | Costo | Requiere Tarjeta de Crédito / API Key | Facilidad de Integración |
+| Servicio de Mapas | Costo | Requiere Tarjeta / API Key | Facilidad de Integración |
 | :--- | :--- | :--- | :--- |
-| **Leaflet + OpenStreetMap (Seleccionado)** | **Gratuito ($0)** | **No** | **Alta y muy ligera** |
-| Google Maps Platform | De pago por cantidad de visitas | Sí (Obligatoria para activar el mapa) | Alta, pero con riesgo de cobros inesperados |
-| Mapbox | Freemium (Con límites gratuitos bajos) | Sí | Alta |
+| **Leaflet + OpenStreetMap (Seleccionado)** | **Gratuito (\$0)** | **No** | **Alta y muy ligera** |
+| Google Maps Platform | De pago según visitas | Sí (Obligatoria) | Alta, con riesgo de cobros |
+| Mapbox | Freemium con límites | Sí | Alta |
 
 *Nota.* Elaboración propia (2026).
 
 ---
 
-## 3.12. Pruebas de Software: Pytest y Playwright
+## 3.12. Pruebas de Software: Pytest y Verificación Web
 
-### 3.12.1. ¿Qué son Pytest y Playwright?
-Para garantizar que el sistema no tenga fallos ocultos (siguiendo la regla de "Cero Falsos Positivos" de Craig Larman), se utilizan dos herramientas complementarias de pruebas automáticas:
+### 3.12.1. ¿Qué son Pytest y la Verificación E2E?
+Siguiendo el principio de verificación empírica de ICONIX (asegurar que cada caso de uso funcione en el código real sin supuestos ni falsos positivos), el proyecto combina dos niveles de prueba:
 
-* **Pytest:** Es la herramienta estándar en Python para probar la lógica interna del servidor (cálculos matemáticos del esqueleto, seguridad de contraseñas, bases de datos y filtros de IA).
-* **Playwright:** Es una tecnología moderna creada por Microsoft que abre un navegador web real de forma automática, hace clic en los botones como si fuera un usuario humano, sube videos, cambia el idioma y toma capturas de pantalla para comprobar que la página se vea y funcione perfectamente.
+* **Pytest:** Suite automatizada en Python (`backend/tests/`) que prueba lógica biomecánica, jerarquías RAG, seguridad JWT/RBAC, limpieza híbrida PostgreSQL-Qdrant, cancelación transaccional, respaldo de videos y endpoints HTTP.
+* **Verificación Web E2E (Playwright / Navegador):** Durante las fases de construcción se validaron los flujos completos en navegador real (inicio de sesión, carga de videos, cambio de idioma, diseño responsivo sin desbordamiento horizontal y acceso mediante túnel HTTPS).
 
 ### 3.12.2. Costo
-Ambas herramientas son 100% gratuitas y de código abierto (licencias MIT y Apache 2.0).
+Ambas herramientas son gratuitas y de código abierto (licencias MIT y Apache 2.0).
 
 ### 3.12.3. Justificación de la Elección
-1. **Verificación Real de Punta a Punta (132 Pruebas Superadas + Navegador Real):** Pytest comprueba en pocos segundos 132 escenarios unitarios y de integración del backend (`docs/PlanEvaluacionIteraciones.md`), mientras que Playwright certifica que los videos realmente se reproduzcan en pantalla y que los formularios bloqueen datos inválidos.
-2. **Pruebas en Pantallas de Celular, Tablet y Computadora:** Playwright simula automáticamente distintos tamaños de pantalla para asegurar que ningún botón quede cortado o inaccesible en los teléfonos de los alumnos.
-3. **Prevención de Errores al Actualizar (Regresión):** Cada vez que se mejora una parte del sistema, las pruebas automáticas verifican que nada de lo que ya funcionaba se haya roto.
+1. **Cobertura Amplia del Núcleo:** La suite actual en `backend/tests/` consta de **30 archivos de prueba** que reúnen **181 casos de prueba recolectados** (incluyendo 6 casos marcados como omitidos por migración heredada).
+2. **Control de Integridad Híbrida y Regresiones:** Permite verificar automáticamente invariantes críticos (por ejemplo, que borrar una técnica o un manual limpie Qdrant, PostgreSQL y disco, o que un alumno no pueda registrarse como profesor).
 
 ### 3.12.4. Comparativa frente a otras opciones
 
 Tabla 13
 *Comparativa de Herramientas de Pruebas de Software*
 
-| Herramienta | Qué Prueba | Comprueba Videos y Pantalla Real | Facilidad y Velocidad |
+| Herramienta | Qué Verifica | Comprueba Pantalla Real | Automatización y Velocidad |
 | :--- | :--- | :--- | :--- |
-| **Pytest + Playwright (Seleccionadas)** | **Todo el sistema (Servidor + Pantalla web real)** | **Sí (Toma fotos reales de la pantalla y verifica videos)** | **Muy Alta y 100% automatizada** |
-| Unittest (Nativo de Python) | Solo código interno del servidor | No (No abre navegadores) | Media (Código más largo y tedioso) |
-| Cypress | Solo la parte visual del navegador | Sí, pero más pesado en memoria | Media |
-| Pruebas Manuales a Mano | Todo el sistema | Sí, pero depende del cansancio humano | Baja (Lenta y propensa a olvidar detalles) |
+| **Pytest + Verificación E2E (Seleccionadas)** | **Lógica interna, APIs, BD y flujos web** | **Sí (Multi-resolución y video)** | **Muy Alta y automatizada** |
+| Unittest (Nativo Python) | Solo código interno | No | Media (Más verboso) |
+| Pruebas Manuales Exclusivas | Todo el sistema | Sí, pero depende de revisión humana | Baja y propensa a olvidos |
 
 *Nota.* Elaboración propia (2026).
 
@@ -731,47 +780,43 @@ Tabla 13
 ## 3.13. Inteligencia Artificial: Conceptos Básicos
 
 ### 3.13.1. ¿Qué es la Inteligencia Artificial y la Visión por Computadora?
-La **Inteligencia Artificial (IA)** es la rama de la ingeniería que permite a las computadoras realizar tareas que normalmente requieren cognición e inteligencia humana (Russell & Norvig, 2021), tales como ver, comprender el lenguaje y analizar movimientos. A diferencia de un programa tradicional que solo sigue reglas fijas, la IA identifica patrones complejos a partir de la experiencia.
-
-Dentro de la IA, la **Visión por Computadora** es la especialidad que le permite a la máquina "ver" un video cuadro por cuadro y localizar dónde están las articulaciones del cuerpo humano, mientras que los **Modelos de Visión y Lenguaje (VLM)** son capaces de observar una imagen deportiva y redactar una explicación clara en español o portugués como lo haría un instructor.
+La **Inteligencia Artificial (IA)** permite que una computadora realice tareas que requieren percepción y razonamiento, como reconocer movimientos y explicar errores técnicos (Russell & Norvig, 2021). Dentro de ella, la **Visión por Computadora** localiza las articulaciones del cuerpo humano en cada cuadro de video, mientras que los **Modelos de Visión y Lenguaje (VLM)** observan la imagen del error y redactan una guía comprensible para el practicante.
 
 ### 3.13.2. ¿Qué es RAG (Generación Aumentada por Recuperación)?
-Cuando un modelo de Inteligencia Artificial responde solo de memoria, corre el riesgo de "alucinar" (inventar datos o consejos falsos que en un deporte de contacto podrían causar una lesión).
-
-**RAG** (por sus siglas en inglés *Retrieval-Augmented Generation*) es la técnica que soluciona este problema: antes de que la IA escriba un consejo para el alumno, el sistema busca primero las páginas exactas de los manuales PDF y los apuntes oficiales subidos por el profesor de la academia, y obliga a la IA a redactar su consejo basándose únicamente en esa teoría verificada.
+Cuando un modelo generativo responde solo de memoria, puede inventar consejos erróneos ("alucinar"), algo riesgoso en un deporte de contacto. **RAG** (*Retrieval-Augmented Generation*; Lewis et al., 2020) resuelve este problema buscando primero los pasajes reales dentro de los manuales y notas del profesor de la academia para que el consejo se base únicamente en esa fuente verificada.
 
 ---
 
 ## 3.14. Motor de Inferencia Generativa: Qwen3-VL-Instruct-4B (Local en MLX)
 
 ### 3.14.1. ¿Qué es Qwen3-VL-Instruct?
-Qwen3-VL-Instruct es un modelo avanzado de Inteligencia Artificial multimodal (Visión y Lenguaje) creado por Alibaba Cloud Qwen Team (2025). Su función es actuar como el "redactor pedagógico" del sistema: puede mirar simultáneamente el fotograma donde el alumno cometió el error, leer las páginas del manual de Jiu-Jitsu y redactar un informe claro, respetuoso y preciso explicando cómo mejorar la postura.
+Es el modelo multimodal de Visión y Lenguaje que actúa como "redactor pedagógico": observa el fotograma crítico donde el alumno falló, lee los pasajes teóricos recuperados y redacta una explicación concreta, respetuosa y en el idioma del alumno.
 
-### 3.14.2. Modelo Seleccionado: Qwen3-VL-Instruct-4B (4 bits) e Ingesta Multimodal Triple
-Para este proyecto se seleccionó el modelo **`Qwen3-VL-Instruct-4B`** comprimido a 4 bits para correr localmente sobre **Apple MLX**.
+### 3.14.2. Modelo Seleccionado: Qwen3-VL-Instruct-4B (4 bits), Ingesta Triple y Biblioteca Global
+Se seleccionó **`mlx-community/Qwen3-VL-4B-Instruct-4bit`** corriendo localmente en Apple MLX (`backend/corpocmente/infrastructure/ai/local_vlm_adapter.py`). En `IntelligenceAnalysisFacade` combina tres insumos bajo una **jerarquía estricta**:
 
-Su mayor fortaleza en nuestra plataforma es que realiza una **Ingesta Multimodal Triple** (combina tres fuentes de información al mismo tiempo para dar su respuesta):
+1. **Evidencia Visual y Biomecánica:** Fotograma crítico anotado y nombres de las articulaciones comprometidas traducidos al idioma del alumno.
+2. **Manuales Técnicos y Biblioteca Global (Prioridad 1):** Busca evidencias asociadas a la técnica; si la técnica no posee manual propio (o solo tiene fotogramas de video), consulta automáticamente la **Biblioteca Global** de la academia (`tecnica_id=None`). Solo si el mejor fragmento supera `UMBRAL_RELEVANCIA_RAG = 0.65` se activa la Prioridad 1.
+3. **Nota del Profesor (Prioridad 2):** Si no hay manual relevante que supere el umbral, utiliza la nota técnica o consejo práctico escrito por el profesor en la técnica (`mensaje_profesor`, también persistida en Qdrant bajo `fuente_tipo='instructor_message'`). En la interfaz de Biblioteca (`LibraryView.jsx`), las fuentes se distinguen claramente con `📚` para manuales y `🥋` para notas del profesor.
 
-1. **La Evidencia Visual y Biomecánica:** Recibe la imagen del momento exacto del error junto con los nombres de las articulaciones fallidas traducidas al idioma del alumno (por ejemplo, *"Rodilla Izquierda"* o *"Joelho Esquerdo"*, nunca en inglés).
-2. **La Teoría de los Manuales (RAG):** Recibe los 3 fragmentos más importantes de los libros PDF seleccionados por el Reranker.
-3. **El Mensaje Directo del Profesor (`mensaje_profesor`):** Recibe las indicaciones o secretos técnicos que el propio profesor escribió para esa técnica en la plataforma, dándole máxima prioridad pedagógica. Dicho texto se persiste además en Qdrant bajo el metadato formal `fuente_tipo='instructor_message'` mediante el servicio `instructor_message_ingestion.py`.
+Si no existe ni manual relevante ni nota del profesor, el sistema aplica **Prioridad 3 (Respaldo Cuantitativo Seguro)** sin invocar al modelo generativo, evitando cualquier invención.
 
 ### 3.14.3. Costo, Accesibilidad y Control contra Alucinaciones (Juez de IA)
-* **Costo Cero y Sin Límites:** Al ejecutarse en la propia computadora de la academia con Apple MLX, no cobra por palabra generada ni tiene límites de consultas diarias.
-* **Control de Calidad Automático (*LLM-as-a-Judge*):** Antes de mostrarle el consejo al alumno, un "Juez Interno" revisa automáticamente que la respuesta no invente páginas inexistentes y sea fiel a la teoría del profesor (exigiendo una fidelidad mayor al 85%). Si detecta cualquier invención o si el modelo tarda demasiado, el sistema activa un **respaldo seguro (*Graceful Fallback*)**, entregando al instante el reporte biomecánico exacto con las articulaciones a corregir sin fallar jamás frente al usuario.
+* **Costo Cero:** Inferencia local en MLX sin límites ni tarifas por token.
+* **Control de Calidad (*LLM-as-a-Judge*):** Antes de mostrar una corrección generada (Prioridades 1 o 2), el método `evaluar_fidelidad_grounding()` verifica que el texto no invente datos fuera de las fuentes (exigiendo `faithfulness_score >= 0.85` y cero afirmaciones no respaldadas). Si falla, activa un respaldo seguro (la nota directa del profesor si existe, o el aviso determinístico de información insuficiente).
 
 ### 3.14.4. Comparativa frente a otras opciones (y descarte de Google Gemini)
-En las primeras etapas del documento se consideró usar la API en la nube de *Google Gemini 2.5 Flash Lite*. Sin embargo, fue reemplazada definitivamente por **Qwen3-VL-Instruct-4B Local** porque las APIs gratuitas en la nube imponían límites de uso, enviaban las fotos de los alumnos fuera de la academia y en ocasiones mezclaban palabras en inglés en medio de las correcciones.
+Aunque inicialmente se contempló usar Google Gemini en la nube, fue reemplazado por **Qwen3-VL-4B-Instruct** local para eliminar límites de cuota gratuita, evitar que las imágenes de los alumnos salieran a servidores externos y asegurar consistencia idiomática total.
 
 Tabla 14
 *Comparativa de Motores Generativos para Retroalimentación Deportiva*
 
-| Modelo / Proveedor | Dónde se Ejecuta | Privacidad de Fotos y Videos | Costo Operativo | Control de Idioma (ES/PT) y Citas | Ideal para... |
+| Modelo / Proveedor | Dónde se Ejecuta | Privacidad de Fotos y Videos | Costo Operativo | Control de Idioma y Fidelidad | Ideal para... |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Qwen3-VL-Instruct-4B en MLX (Seleccionado)** | **100% Local en la Academia** | **Total (Nada sale a internet)** | **Gratuito ($0 y sin límites)** | **Excelente (Con Juez de IA y traducción articular)** | **Producción real, privada y sostenible en la academia** |
-| Google Gemini 2.5 Flash Lite (Descartado) | Nube externa de Google | Baja (Envía fotos a servidores externos) | Capa gratuita con bloqueos / Pago por uso | Regular (A veces respondía partes del cuerpo en inglés) | Prototipos rápidos que dependen de internet |
-| GPT-4o (OpenAI) | Nube externa de OpenAI | Baja | Alto (Pago obligatorio por cada consulta) | Excelente | Empresas con alto presupuesto mensual |
-| Llama 3 Texto (Meta) | Local | Total | Gratuito | Bueno, pero no ve imágenes en su versión simple | Chatbots de solo texto sin análisis visual |
+| **Qwen3-VL-Instruct-4B en MLX (Seleccionado)** | **100% Local en la Academia** | **Total (Nada sale a internet)** | **Gratuito (\$0)** | **Alto (Juez de IA + traducción articular)** | **Producción real, privada y sostenible** |
+| Google Gemini 2.5 Flash Lite (Descartado) | Nube externa de Google | Baja | Límites gratuitos / Pago por uso | Regular | Prototipos iniciales |
+| GPT-4o (OpenAI) | Nube externa | Baja | Alto (Pago obligatorio) | Excelente | Empresas con alto presupuesto cloud |
+| Llama 3 Texto (Meta) | Local | Total | Gratuito | No procesa imágenes en versión texto | Chatbots sin análisis visual |
 
 *Nota.* Elaboración propia (2026).
 
@@ -780,29 +825,27 @@ Tabla 14
 ## 3.15. Exposición Segura a Internet: Cloudflare Tunnel (`cloudflared`)
 
 ### 3.15.1. ¿Qué es Cloudflare Tunnel?
-Cloudflare Tunnel (mediante su herramienta oficial `cloudflared`) es una tecnología de red que permite conectar de forma segura el servidor local de la academia con internet sin necesidad de abrir puertos peligrosos en el router del gimnasio ni contratar direcciones IP fijas costosas.
-
-Funciona creando un "túnel cifrado saliente" desde la computadora local hacia la red mundial de Cloudflare, generando un enlace web seguro con candado `https://` (por ejemplo, mediante dominios temporales gratuitos `*.trycloudflare.com` o dominios propios) para que los alumnos puedan entrar desde sus celulares usando sus datos móviles o desde sus casas.
+Es una herramienta (`cloudflared`) que crea un túnel cifrado saliente desde el servidor local de la academia hacia la red de Cloudflare (Cloudflare Inc., 2026), generando una dirección web segura con HTTPS para acceder desde celulares o fuera del gimnasio sin abrir puertos peligrosos en el router.
 
 ### 3.15.2. Costo
-El uso de Cloudflare Tunnel en su modalidad *Quick Tunnels* (`trycloudflare.com`) es **100% gratuito**, sin necesidad de comprar un dominio web ni registrar tarjetas de crédito.
+El uso mediante *Quick Tunnels* (`trycloudflare.com`) es gratuito y no requiere tarjeta de crédito.
 
 ### 3.15.3. Justificación de la Elección y Mitigación del Límite de 100 MB
-1. **Seguridad Total sin Abrir Puertos:** El router de la academia permanece cerrado frente a ataques externos; nadie puede escanear ni atacar directamente la red del gimnasio.
-2. **Candado HTTPS Automático:** Protege las contraseñas y los videos que suben los alumnos desde su celular mediante cifrado SSL/TLS de nivel bancario.
-3. **Control Inteligente del Límite de 100 MB:** La capa gratuita de Cloudflare permite subir archivos de hasta 100 MB por envío. Para que ningún alumno sufra un error al subir un video muy pesado, la plataforma revisa el peso del video en el celular antes de enviarlo (alertando si supera el límite permitido) y, si el alumno está conectado al Wi-Fi interno de la academia, permite comunicación local directa a máxima velocidad.
+1. **Router Cerrado sin Port Forwarding:** Evita exponer la red interna de la academia y sortea el bloqueo CGNAT de los operadores de internet locales.
+2. **Cifrado HTTPS Automático:** Protege contraseñas, sesiones y videos en tránsito mediante TLS.
+3. **Control del Límite de 100 MB:** En `frontend/vite.config.js` se restringen los dominios permitidos (`allowedHosts: ['.trycloudflare.com', 'localhost', '127.0.0.1']`) y el backend limita el peso máximo permitido de manuales a 100 MB (`MAX_MANUAL_BYTES`), evitando errores silenciosos por archivos excesivos.
 
 ### 3.15.4. Comparativa frente a otras opciones
 
 Tabla 15
 *Comparativa de Tecnologías para Acceso Remoto desde Internet*
 
-| Tecnología | Requiere Abrir Puertos en el Router | Protección HTTPS Automática | Límites en Versión Gratuita | Costo |
+| Tecnología | Requiere Abrir Puertos | HTTPS Automático | Límites en Versión Gratuita | Costo |
 | :--- | :--- | :--- | :--- | :--- |
-| **Cloudflare Tunnel (Seleccionada)** | **No (100% seguro)** | **Sí (Incluida)** | **Amplio (Hasta 100 MB por subida de video)** | **Gratuito ($0)** |
-| Ngrok (Versión Gratuita) | No | Sí | Muy restrictivo (Pocas conexiones por minuto y avisos molestos) | Gratuito muy limitado / Pago mensual |
-| Tailscale / VPN | No | Sí | Obliga a cada alumno a instalar y configurar una App VPN en su celular | Gratuito hasta pocos usuarios |
-| Abrir Puertos en el Router (Port Forwarding) | Sí (Alto riesgo de hackeo a la academia) | No (Complejo de configurar) | Bloqueado por la mayoría de empresas de internet en Bolivia (CGNAT) | Exige pagar IP pública fija al proveedor |
+| **Cloudflare Tunnel (Seleccionada)** | **No (100% seguro)** | **Sí (Incluida)** | **Hasta 100 MB por petición** | **Gratuito (\$0)** |
+| Ngrok (Gratuita) | No | Sí | Muy restrictivo | Gratuito limitado / Pago |
+| Tailscale / VPN | No | Sí | Exige instalar app VPN en cada alumno | Gratuito limitado |
+| Abrir Puertos en Router | Sí (Alto riesgo) | No | Bloqueado por CGNAT local | Exige IP pública fija |
 
 *Nota.* Elaboración propia (2026).
 
@@ -811,36 +854,31 @@ Tabla 15
 ## 3.16. Seguridad y Control de Acceso: Modelo "Pase de Tatami"
 
 ### 3.16.1. ¿Qué es el Modelo "Pase de Tatami"?
-En Bolivia y Latinoamérica, la mayoría de los alumnos de una academia deportiva pagan su mensualidad en efectivo en recepción, por transferencia bancaria local o mediante código QR (y no poniendo una tarjeta de crédito internacional en internet).
+En Bolivia y gran parte de Latinoamérica, los alumnos pagan su mensualidad presencialmente en recepción (efectivo, transferencia local o QR), sin usar tarjeta de crédito internacional. El **"Pase de Tatami"** adapta el control de acceso digital a esa realidad:
 
-El **"Pase de Tatami"** es el sistema de control de acceso creado específicamente para la realidad de "Corpo e Mente":
-
-1. Cuando un alumno nuevo se registra en la aplicación, su cuenta nace en estado **`pendiente`** (puede entrar a ver la plataforma, pero aún no puede gastar recursos de Inteligencia Artificial).
-2. Cuando el alumno paga su mensualidad en la academia, el profesor o administrador toca un botón desde su celular y activa su **"Pase de Tatami"**, pasando su estado a **`activo`** por **30 días exactos**.
-3. Al cumplirse los 30 días, el sistema cambia automáticamente su estado a **`expirado`**, conservando todo su historial de progreso intacto pero solicitando la renovación de su mensualidad para volver a analizar nuevos videos.
+1. Todo alumno nuevo que se registra públicamente nace en estado **`pendiente`** (puede navegar y consultar su perfil o biblioteca pública autenticada, pero no consumir inferencia de video).
+2. Tras verificar su pago presencial, el profesor de su misma sede o un administrador activa su pase desde el celular pasando su cuenta a estado **`activo`** por **30 días**.
+3. Al vencer el plazo, el sistema bloquea automáticamente nuevos análisis marcando el pase como **`expirado`**, preservando todo su historial previo intacto.
 
 ### 3.16.2. Costo
-Tiene un costo de **$0 en comisiones bancarias**. Al no depender de pasarelas extranjeras como Stripe o PayPal, la academia recibe el 100% del pago de sus alumnos sin descuentos por transacción.
+Tiene **\$0 en comisiones bancarias**, a diferencia de pasarelas internacionales.
 
 ### 3.16.3. Justificación de la Elección y Ciberseguridad Defensiva
-Además del control de membresías mediante el Pase de Tatami, el sistema fue blindado siguiendo estándares profesionales de ciberseguridad defensiva (OWASP Foundation, 2025):
-
-1. **Adaptación Real al Gimnasio:** Permite cobrar en efectivo o QR sin excluir a los alumnos que no tienen tarjeta de crédito internacional.
-2. **Protección contra Ataques de Fuerza Bruta (Rate Limiting):** Si alguien intenta adivinar contraseñas o saturar el servidor enviando muchas peticiones seguidas, el sistema lo bloquea automáticamente devolviendo el código de seguridad `HTTP 429`.
-3. **Secretos y Credenciales Protegidas:** Las llaves criptográficas de sesión (JWT) se manejan mediante variables de entorno seguras y nunca quedan expuestas en el código fuente.
-4. **Cero Datos Basura en Producción:** La base de datos y el catálogo operan limpios de cuentas de prueba mediante la ejecución controlada del script `reset_production.sql` (que ejecuta `TRUNCATE` en tablas transaccionales y preserva únicamente las cuentas oficiales de staff y las tres sucursales), verificado empíricamente por la suite `verify_iter_4h.py` al constatar un catálogo inicial vacío `[]`.
+1. **Adaptación Real al Gimnasio:** Cero fricción para alumnos sin tarjeta internacional.
+2. **Protección contra Fuerza Bruta y Uso Indebido:** `AuthRateLimitMiddleware` limita intentos repetidos en `/auth/login` devolviendo `HTTP 429`, y `require_active_subscription` bloquea con `HTTP 403` el análisis a alumnos con pase pendiente o vencido.
+3. **Secretos Protegidos y Estado Limpio de Producción:** Los secretos criptográficos se cargan desde variables de entorno (`.env`) y el script `infrastructure/initdb/reset_production.sql` permite sanear tablas transaccionales dejando únicamente el personal oficial y las tres sedes autorizadas, verificado durante las pruebas de endurecimiento e integración.
 
 ### 3.16.4. Comparativa frente a otras opciones
 
 Tabla 16
 *Comparativa de Modelos de Control de Suscripción para la Academia*
 
-| Modelo de Control | Acepta Efectivo y QR Local | Comisiones por Cobro | Bloqueo Automático a los 30 Días | Facilidad para el Profesor |
+| Modelo de Control | Acepta Efectivo y QR Local | Comisiones | Bloqueo Automático a los 30 Días | Facilidad para el Profesor |
 | :--- | :--- | :--- | :--- | :--- |
-| **Modelo "Pase de Tatami" (Seleccionado)** | **Sí (Totalmente adaptado a Bolivia y Brasil)** | **0% (Sin intermediarios)** | **Sí (Automático en la base de datos)** | **Muy Alta (Se activa con un toque desde el celular)** |
-| Pasarela Internacional (Stripe / PayPal) | No (Exige tarjeta internacional) | 3.5% a 5% de descuento por cada pago | Sí | Compleja (Trámites bancarios e impuestos externos) |
-| Plataforma Abierta sin Control | No aplica | 0% | No (Cualquier persona externa usaría la IA gratis) | Mala (Injusto para los alumnos que sí pagan su mes) |
-| Cuaderno o Planilla de Papel | Sí | 0% | No (No conecta con el sistema de Inteligencia Artificial) | Baja (Fácil de olvidar quién tiene acceso activo) |
+| **Modelo "Pase de Tatami" (Seleccionado)** | **Sí** | **0%** | **Sí (Automático en BD)** | **Muy Alta (Un toque en celular)** |
+| Pasarela Internacional (Stripe / PayPal) | No | 3.5% a 5% por cobro | Sí | Compleja (Trámites externos) |
+| Plataforma Abierta sin Control | No aplica | 0% | No | Mala (Abuso de recursos) |
+| Cuaderno o Planilla Física | Sí | 0% | No conecta con la IA | Baja |
 
 *Nota.* Elaboración propia (2026).
 
@@ -849,1148 +887,3291 @@ Tabla 16
 # Capítulo IV: Especificación de Requisitos de Software (IEEE 830)
 
 ## 4.1. Introducción
-Este capítulo presenta la Especificación de Requisitos de Software (ERS) del Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño. Su estructura sigue las directrices del estándar IEEE 830 (IEEE, 1998), garantizando que los requisitos sean completos, consistentes y verificables.
+Este capítulo presenta la Especificación de Requisitos de Software (ERS) del Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño siguiendo los lineamientos del estándar IEEE 830 (IEEE, 1998), redactada de forma clara y verificable.
 
 ### 4.1.1. Propósito
-El propósito de este documento es definir de manera clara y sencilla los requisitos funcionales y no funcionales del sistema de análisis biomecánico para la academia "Corpo e Mente". Este documento sirve como acuerdo formal entre los desarrolladores del proyecto y las partes interesadas, y servirá como base para el diseño, la implementación y las pruebas del software.
+Definir con claridad las funciones, restricciones y reglas que cumple la plataforma para la academia "Corpo e Mente", sirviendo como puente entre las necesidades de alumnos, profesores y administradores y el diseño orientado a objetos bajo ICONIX del Capítulo V.
 
 ### 4.1.2. Alcance
-El sistema a desarrollar es una plataforma web que permite a los alumnos de Jiu-Jitsu Brasileño subir videos de sus ejecuciones técnicas. El sistema utiliza Inteligencia Artificial (ejecutada de forma local y privada en la computadora de la academia) para comparar el movimiento del alumno con un video de referencia de su profesor, calculando un porcentaje de similitud y generando consejos de corrección automáticos en español o portugués. El sistema soporta múltiples sucursales y gestiona los perfiles de alumnos, profesores y administradores.
+El sistema es una plataforma web independiente que permite a los alumnos de Jiu-Jitsu Brasileño subir videos de práctica (con opción de cancelar análisis en curso), compararse con el patrón oficial de su profesor mediante IA local y recibir correcciones en español, portugués o inglés respaldadas en manuales técnicos y notas del instructor. Asimismo, permite a los profesores administrar técnicas, videos de referencia, biblioteca de conocimiento y pases mensuales, y a los administradores gestionar sucursales y cuentas de usuario.
 
 ### 4.1.3. Definiciones, Acrónimos y Abreviaturas
-* **RAG:** Técnica de Inteligencia Artificial que permite a la computadora buscar respuestas exactas dentro de los libros y manuales PDF antes de responder, evitando que invente información.
-* **YOLO:** Tecnología de visión por computadora que permite "ver" y ubicar las articulaciones del cuerpo humano (esqueleto) en un video.
-* **Qdrant:** Base de datos especializada que guarda la información de los libros y videos para que la computadora los encuentre rápidamente por su significado.
-* **JWT:** Un sistema de seguridad (token) que asegura que la persona que entra a la plataforma es realmente quien dice ser.
-* **Pase de Tatami:** Sistema de control de acceso donde el profesor activa la cuenta del alumno por 30 días tras verificar su pago en la recepción de la academia.
-* **Apple MLX:** Motor de Apple que permite que los modelos de Inteligencia Artificial funcionen de forma ultrarrápida en las computadoras Mac.
+* **ICONIX:** Metodología de desarrollo orientada a objetos guiada por casos de uso y análisis de robustez Boundary-Control-Entity (ECB).
+* **RAG:** Técnica que busca pasajes reales en manuales e indicaciones del profesor antes de redactar un consejo, evitando invenciones.
+* **YOLO:** Tecnología de visión por computadora que detecta a las personas y ubica las 17 articulaciones de su esqueleto en cada cuadro del video.
+* **Qdrant:** Base de datos vectorial que almacena secuencias posturales y fragmentos de conocimiento multimodal.
+* **JWT:** Token firmado digitalmente que identifica de manera segura la sesión y el rol de cada usuario.
+* **Pase de Tatami:** Habilitación de 30 días otorgada por el profesor o administrador luego de comprobar el pago presencial del alumno.
+* **Apple MLX:** Motor de cómputo de Apple para ejecutar modelos de IA localmente en procesadores serie M.
 
 ### 4.1.4. Referencias
 * IEEE Std 830-1998. IEEE Recommended Practice for Software Requirements Specifications.
-* Larman, C. (2004). Applying UML and Patterns: An Introduction to Object-Oriented Analysis and Design and Iterative Development.
-* Mannino, M. V. (2004). Database Design, Application Development, and Administration.
+* Rosenberg, D., & Stephens, M. (2007). *Use Case Driven Object Modeling with UML: Theory and Practice* (ICONIX Process). Apress.
+* Mannino, M. V. (2018). *Database Design, Application Development, and Administration* (7th ed.). McGraw-Hill Education.
 
 ### 4.1.5. Visión General
-El resto de este documento se organiza de la siguiente manera: la Sección 4.2 describe el contexto general del producto, sus usuarios y restricciones. La Sección 4.3 detalla los requisitos específicos. La Sección 4.4 presenta los casos de uso, y la Sección 4.5 muestra el Modelo de Dominio del sistema.
+La Sección 4.2 resume el contexto general, usuarios y restricciones del producto. La Sección 4.3 detalla los requisitos funcionales, no funcionales, de interfaz y de datos. La Sección 4.4 presenta la matriz de trazabilidad hacia los casos de uso, y la Sección 4.5 muestra el Modelo de Dominio.
 
 ## 4.2. Descripción General
 
 ### 4.2.1. Perspectiva del Producto
-El sistema es una plataforma web nueva e independiente. No reemplaza al profesor, sino que actúa como una herramienta de apoyo disponible las 24 horas.
-
-A diferencia de otros sistemas que envían los videos a internet para ser analizados, este sistema realiza todo el procesamiento de Inteligencia Artificial de forma local (dentro de la computadora de la academia), garantizando la máxima privacidad de los alumnos. Para que los usuarios puedan conectarse desde sus casas o celulares con datos móviles, el sistema se apoya en un túnel de internet seguro (Cloudflare Tunnel) que no requiere abrir puertas peligrosas en el router del gimnasio.
+Es una plataforma web nueva y autónoma que complementa la enseñanza presencial en el tatami. Todo el análisis pesado de video y lenguaje se ejecuta localmente en la computadora de la academia, protegiendo la privacidad de los practicantes, y se expone de forma segura a celulares externos mediante Cloudflare Tunnel.
 
 ### 4.2.2. Funciones del Producto
-El sistema proporcionará las siguientes funciones:
-* **Inicio de Sesión y Control de Roles:** Acceso seguro para Alumnos, Profesores y Administradores.
-* **Gestión del Catálogo de Técnicas:** Los profesores pueden crear, editar y eliminar técnicas de Jiu-Jitsu.
-* **Carga de Videos y Filtro Anti-SPAM:** Los alumnos suben un video y la Inteligencia Artificial verifica que realmente sea una técnica de Jiu-Jitsu.
-* **Análisis Biomecánico:** La computadora compara el esqueleto del alumno con el del profesor para detectar el error exacto en el movimiento.
-* **Consejos Inteligentes:** Generación de explicaciones y correcciones personalizadas basadas en los manuales subidos por la academia (RAG).
-* **Control de Suscripciones (Pase de Tatami):** Los profesores activan la cuenta de los alumnos por 30 días luego de verificar su pago en la academia.
-* **Administración de Sucursales:** Los administradores gestionan las distintas sedes de la academia en el mapa.
+* **Autenticación y Registro de Alumnos:** Inicio de sesión con control de intentos y registro público exclusivo para nuevos alumnos en una sucursal.
+* **Administración de Usuarios y Soporte:** Cambio de sucursal, edición de perfil, eliminación segura de cuentas con reasignación de recursos docentes e impersonación temporal para soporte.
+* **Gestión de Técnicas y Videos Patrón:** Alta, edición, baja en cascada híbrida y registro de video de referencia con respaldo persistente y auto-curación.
+* **Gestión de Biblioteca y Notas del Profesor (RAG):** Subida multi-formato (PDF, DOCX, TXT, imágenes), previsualización, búsqueda semántica multimodal, consejos y notas prácticas del profesor y eliminación atómica de manuales.
+* **Análisis Biomecánico y Cancelación:** Validación anti-spam, selección de silueta, comparación 3D con DTW, cálculo de similitud, identificación del frame crítico y cancelación en curso por parte del usuario.
+* **Generación de Feedback Verificado:** Jerarquía estricta de fuentes (Manual específico o Biblioteca Global > Nota del profesor > Respaldo numérico) con auditoría de fidelidad y salto al segundo exacto del error.
+* **Progreso y Pase de Tatami:** Consulta de historial por sucursal y habilitación de membresías por 30 días.
+* **Gestión de Sucursales:** Alta, edición, baja y geocodificación en mapa interactivo.
 
 ### 4.2.3. Características de los Usuarios
-* **Alumno:** Persona que practica Jiu-Jitsu. Su objetivo es recibir consejos claros para mejorar. Necesita una pantalla muy sencilla y fácil de usar desde su celular.
-* **Profesor:** Instructor de la academia. Es quien sube los videos perfectos de las técnicas (patrón de oro), escribe consejos en la plataforma y activa el "Pase de Tatami" a sus alumnos tras verificar su pago.
-* **Administrador:** Dueño o gerente de la academia. Se encarga de configurar el sistema, registrar las sucursales en el mapa y dar soporte técnico a los usuarios.
+* **Alumno:** Practicante que utiliza la plataforma principalmente desde su celular para evaluar sus técnicas, cancelar envíos si se equivocó, revisar sus errores y consultar manuales.
+* **Profesor:** Instructor de una sucursal que graba técnicas de referencia, redacta consejos y notas técnicas, sube o depura manuales teóricos, revisa el avance de sus alumnos y activa Pases de Tatami.
+* **Administrador (Dueño de la Marca Corpo e Mente):** Dueño y director general de la marca Corpo e Mente. Es la autoridad máxima del negocio que crea y gestiona las sucursales, habilita y supervisa a los profesores de cada sede, gobierna la Biblioteca Global compartida, administra las cuentas de usuarios (incluyendo cambio de sede o eliminación con reasignación) y brinda soporte ingresando temporalmente como otro usuario.
 
 ### 4.2.4. Restricciones
-* **Restricción de Hardware:** El sistema está diseñado para funcionar en una computadora Apple Mac con chip M-series (24 GB de memoria). Todo el procesamiento pesado recae en esta máquina, sin necesidad de servidores en la nube de pago.
-* **Restricción de Presupuesto:** El uso de herramientas e Inteligencia Artificial es 100% gratuito (código abierto), eliminando los costos mensuales de licencias o cobros por uso de API.
-* **Restricción de Conexión:** Para que los alumnos accedan desde sus teléfonos, el sistema depende de un enlace de internet seguro a través de Cloudflare Tunnel.
+* **Hardware Local:** Optimizado para operar localmente en Apple Silicon (24 GB de Memoria Unificada) sin servidores GPU externos de pago.
+* **Presupuesto de Software:** Basado íntegramente en herramientas gratuitas de código abierto.
+* **Límite de Subida por Túnel:** Al acceder remotamente vía Cloudflare Tunnel gratuito, las cargas de video o manuales están acotadas a un límite máximo de 100 MB por petición.
 
 ### 4.2.5. Suposiciones y Dependencias
-* Se asume que los videos subidos tienen buena luz y el alumno se ve completo para que la Inteligencia Artificial pueda reconocer sus articulaciones.
-* Se asume que la computadora local de la academia (Mac) está encendida y conectada a internet durante el horario de funcionamiento.
-* Se asume que la academia proporcionará los videos de los profesores y los libros en PDF para alimentar el conocimiento del sistema.
+* Los videos grabados cuentan con iluminación suficiente y encuadre visible del practicante.
+* El equipo local de la academia y sus contenedores Docker permanecen encendidos durante el horario de servicio.
+* Los profesores aportan las ejecuciones modelo y los manuales técnicos oficiales para alimentar la base de conocimiento.
 
 ## 4.3. Requisitos Específicos
 
 ### 4.3.1. Requisitos Funcionales (RF)
-Los requisitos funcionales se agrupan por módulo y se identifican con un código único para su trazabilidad.
 
-**Módulo de Autenticación y Usuarios**
-* **RF-01:** El sistema debe permitir a los usuarios iniciar sesión con su nombre de usuario (sin espacios) o correo electrónico, y su contraseña.
-* **RF-02:** El sistema debe permitir el registro de nuevos usuarios seleccionando su perfil de "Alumno" o "Profesor", asociándolos a una sucursal.
-* **RF-03:** El sistema debe permitir al Administrador "entrar como" cualquier otro usuario para soporte técnico, mostrando un banner defensivo en pantalla (*Nota de trazabilidad: La emisión del token JWT con claim `impersonator_admin_id` y el frontend están implementados; la re-autenticación obligatoria por contraseña y la tabla física de auditoría quedan registradas como deuda técnica priorizada*).
+**Módulo de Autenticación y Administración de Cuentas**
+* **RF-01:** El sistema debe permitir a Alumnos, Profesores y Administradores iniciar sesión usando su nombre de usuario o correo electrónico y su contraseña, protegiendo el acceso frente a intentos masivos repetidos.
+* **RF-02:** El sistema debe permitir el registro público de nuevas cuentas exclusivamente con el rol de **Alumno**, validando un identificador sin espacios, asociándolo a una sucursal oficial e inicializando su Pase de Tatami en estado pendiente (rechazando intentos de auto-registro como profesor o administrador con `HTTP 403`).
+* **RF-03:** El sistema debe permitir a cada usuario editar su perfil e idioma, y al Administrador: listar usuarios, cambiar la sucursal de un usuario preservando sus evaluaciones históricas, **eliminar cuentas de usuario** impidiendo su auto-eliminación y reasignando el contenido docente si es un profesor, y **entrar temporalmente como otro usuario** para soporte técnico mostrando un aviso rojo permanente en pantalla.
 
 **Módulo de Gestión de Técnicas y Conocimiento**
-* **RF-04:** El sistema debe permitir a los Profesores crear, editar y eliminar técnicas del catálogo.
-* **RF-05:** El sistema debe permitir a los Profesores subir un video de referencia (patrón de oro) para cada técnica.
-* **RF-06:** El sistema debe permitir a los Profesores escribir un mensaje personalizado para sus alumnos y subir manuales en PDF (con texto e imágenes) para que la Inteligencia Artificial los lea y los use al dar consejos.
+* **RF-04:** El sistema debe permitir a los Profesores (y Administradores) crear, editar y eliminar técnicas del catálogo; al eliminar una técnica se deben purgar en cascada sus registros en PostgreSQL y sus vectores biomecánicos y teóricos en Qdrant.
+* **RF-05:** El sistema debe permitir a los Profesores subir un video de referencia (patrón de oro) identificando su silueta en la escena inicial, respaldando el video en almacenamiento persistente y auto-curando enlaces rotos al iniciar el servidor.
+* **RF-06:** El sistema debe permitir a los Profesores escribir una nota o consejo práctico en cada técnica y subir, buscar, previsualizar y **eliminar** manuales de estudio de la biblioteca (en formato PDF, DOCX, TXT o imagen), ejecutando una limpieza atómica en Qdrant, PostgreSQL y almacenamiento físico al borrar un manual.
 
-**Módulo de Análisis Biomecánico**
-* **RF-07:** El sistema debe permitir al Alumno seleccionar un profesor de su sucursal y la técnica que desea evaluar.
-* **RF-08:** El sistema debe permitir subir un video en formatos comunes (MP4, MOV, WebM).
-* **RF-09:** El sistema debe validar que el video sea de Jiu-Jitsu (filtro anti-spam), rechazando videos de otros deportes.
-* **RF-10:** El sistema debe extraer el esqueleto en 3D del alumno y compararlo con el esqueleto del profesor.
-* **RF-11:** El sistema debe calcular un porcentaje de similitud de 0 a 100% entre el alumno y el profesor.
-* **RF-12:** Si el porcentaje es menor al 85%, el sistema debe generar una corrección escrita por la IA, citando la página exacta del libro del profesor. Si es mayor o igual a 85%, mostrará un mensaje de felicitación (sin gastar recursos de IA).
+**Módulo de Análisis Biomecánico y Feedback**
+* **RF-07:** El sistema debe permitir al Alumno con Pase de Tatami activo seleccionar a su profesor y la técnica a evaluar.
+* **RF-08:** El sistema debe permitir subir un video de práctica (MP4, MOV, AVI, WebM) y ofrecer al Alumno la opción de **cancelar un análisis en curso** en cualquier momento, deteniendo la petición en pantalla, marcando la evaluación como `cancelado` y borrando el video temporal.
+* **RF-09:** El sistema debe validar automáticamente que el video corresponda a Jiu-Jitsu Brasileño (filtro anti-spam) antes de iniciar el análisis completo.
+* **RF-10:** El sistema debe solicitar al Alumno confirmar su silueta en el encuadre inicial, extraer su secuencia postural 3D y compararla dinámicamente (DTW) contra los patrones activos del profesor.
+* **RF-11:** El sistema debe calcular el porcentaje de similitud (0 a 100%), ubicar el instante exacto del error (segundo y fotograma crítico) y detectar las articulaciones corporales con mayor desviación.
+* **RF-12:** Si la similitud es menor al 85%, el sistema debe generar una corrección en el idioma del alumno aplicando jerarquía estricta de fuentes (1° Manual específico o Biblioteca Global con relevancia $\ge 0.65$; 2° Nota del profesor; 3° Respaldo numérico seguro), auditando su fidelidad ($\ge 0.85$) y mostrando citas diferenciadas (`📚` para manuales y `🥋` para notas del instructor). Si es mayor o igual al 85%, debe felicitar al alumno sin invocar al modelo generativo.
 
-**Módulo de Progreso y Administración (Pase de Tatami)**
-* **RF-13:** El sistema debe permitir al Profesor ver la lista de alumnos de su sucursal y su historial de evaluaciones.
-* **RF-14:** El sistema debe permitir al Profesor activar el "Pase de Tatami" de un alumno por 30 días. Si el alumno no es renovado a tiempo, su cuenta se marcará como "expirada" y no podrá analizar nuevos videos hasta que el profesor vuelva a activarlo.
-* **RF-15:** El sistema debe permitir al Administrador crear, editar y eliminar sucursales usando un mapa interactivo para capturar la ubicación.
+**Módulo de Progreso y Administración de Sedes**
+* **RF-13:** El sistema debe permitir al Profesor ver el listado de alumnos de su sucursal con su historial de evaluaciones, y al Alumno consultar su propio historial personal.
+* **RF-14:** El sistema debe permitir al Profesor (o Administrador) activar o renovar el "Pase de Tatami" de un alumno de su sucursal por 30 días; al vencer el plazo, la cuenta pasa a estado expirado e impide nuevos análisis hasta su renovación.
+* **RF-15:** El sistema debe permitir al Administrador crear, editar y eliminar sucursales (siempre que no tengan usuarios vinculados), capturando coordenadas mediante mapa interactivo o enlace de Google Maps con geocodificación inversa.
 
 ### 4.3.2. Requisitos No Funcionales (RNF)
 
 **Rendimiento**
-* **RNF-01:** La plataforma web debe cargar en menos de 2 segundos.
-* **RNF-02:** El análisis de Inteligencia Artificial debe completarse en un máximo de 30 segundos usando el procesamiento local (Apple Silicon).
-* **RNF-03:** Las búsquedas en los libros y manuales deben ser casi instantáneas (menos de 5 milisegundos).
+* **RNF-01:** La interfaz web debe cargar en menos de 2 segundos en condiciones normales de red.
+* **RNF-02:** El análisis completo de un video de práctica debe completarse en un máximo de 30 segundos sobre Apple Silicon local.
+* **RNF-03:** La recuperación vectorial en Qdrant debe ejecutarse en pocos milisegundos.
 
 **Seguridad y Privacidad**
-* **RNF-04:** Todas las contraseñas deben guardarse encriptadas para que nadie pueda leerlas.
-* **RNF-05:** Ningún video o imagen de los alumnos debe ser enviado a servidores externos (como Google o OpenAI). Todo el análisis ocurre en la computadora de la academia.
-* **RNF-06:** El sistema debe bloquear a cualquier persona que intente adivinar contraseñas enviando demasiados intentos de inicio de sesión seguidos.
+* **RNF-04:** Todas las contraseñas deben almacenarse encriptadas con `bcrypt` (`pgcrypto`) y las sesiones protegerse con tokens JWT firmados (`HS256`).
+* **RNF-05:** Ningún video o imagen de los alumnos debe enviarse a servicios de IA externos en la nube; todo el procesamiento se realiza localmente.
+* **RNF-06:** El servidor debe bloquear con `HTTP 429` los intentos excesivos de inicio de sesión sobre `/auth/login`.
 
 **Usabilidad y Compatibilidad**
-* **RNF-07:** La plataforma debe ser "Mobile-First", es decir, debe verse perfectamente en teléfonos celulares (Android/iOS), tablets y computadoras. Los botones deben ser grandes y fáciles de tocar con el dedo.
-* **RNF-08:** El sistema debe recordar el idioma elegido por el usuario (Español o Portugués) para mostrar toda la información y los consejos de la IA en ese idioma, incluso si recarga la página.
+* **RNF-07:** La aplicación debe ser *Mobile-First*, legible sin desplazamiento horizontal y con controles táctiles amplios (mínimo 44 px) en teléfonos, tabletas y computadoras.
+* **RNF-08:** El idioma elegido (Español, Portugués o Inglés) debe persistir en el navegador y en el perfil del usuario, traduciendo interfaz, articulaciones anatómicas y feedback.
 
 **Mantenibilidad**
-* **RNF-09:** El código debe estar organizado en capas (Frontend, Backend, Base de Datos) para que sea fácil de actualizar o mejorar en el futuro.
+* **RNF-09:** El software debe organizarse en capas desacopladas (`Presentacion`, `Aplicacion`, `Dominio`, `Infraestructura`) para facilitar pruebas y mejoras.
 
 ### 4.3.3. Requisitos de Interfaz
-* **Interfaz de Usuario:** Pantallas con un diseño moderno y oscuro (colores rojo institucional y negro), con botones grandes, íconos claros y textos legibles.
-* **Interfaz de Software:**
-  * Comunicación interna con la IA local (Apple MLX y YOLO).
-  * Comunicación con OpenStreetMap para mostrar los mapas de las sucursales.
-  * Uso de Cloudflare Tunnel para conectar la web con internet de forma segura.
-* **Interfaz de Comunicaciones:** Toda la información viaja de forma segura y encriptada (HTTPS).
+* **Interfaz de Usuario:** Diseño moderno oscuro (rojo institucional `#d01118` sobre fondo oscuro), con reproductores de video comparativos, salto directo al segundo del error y modales claros de biblioteca.
+* **Interfaz de Software:** Integración local con YOLO26 (MPS), Qwen3-VL (Apple MLX), Qdrant, PostgREST y servicios externos cartográficos (OpenStreetMap / Nominatim).
+* **Interfaz de Comunicaciones:** Tráfico cifrado mediante HTTPS a través de Cloudflare Tunnel.
 
 ### 4.3.4. Requisitos de Datos
-* **RD-01:** Los datos de usuarios, sucursales y técnicas se guardan en una base de datos relacional PostgreSQL, sin duplicar información.
-* **RD-02:** Los movimientos (esqueletos) y el conocimiento de los libros se guardan como vectores matemáticos en la base de datos Qdrant.
-* **RD-03:** Los videos e imágenes de los libros se guardan de forma segura en el disco duro de la computadora local de la academia.
-* **RD-04:** El sistema debe guardar un registro de auditoría (quién entró como quién) cuando el Administrador use la función de soporte.
+* **RD-01:** Usuarios, sucursales, técnicas, videos de referencia, evaluaciones y metadatos de teoría se almacenan en PostgreSQL 16 normalizado en 3NF.
+* **RD-02:** Patrones de pose (133 dimensiones) y conocimiento multimodal (2048 dimensiones) se almacenan en Qdrant en colecciones separadas.
+* **RD-03:** Los archivos de manuales, imágenes extraídas y respaldos persistentes de videos de referencia se almacenan en el directorio de datos configurado (`storage_root()`, por defecto `/tmp/corpocmente_data` o la ruta definida en `CORPOCMENTE_DATA_DIR`).
+* **RD-04:** Los tokens de impersonación y las rutas administrativas deben preservar la trazabilidad del usuario operador y las políticas de acceso por rol y sede.
 
 ## 4.4. Identificación de Casos de Uso y Trazabilidad
-Para que el sistema sea fácil de entender por cualquier persona (sin importar su edad o conocimiento técnico), los requisitos se han organizado en **Historias de Usuario** (explicaciones sencillas de lo que el usuario necesita) y **Casos de Uso** (la acción técnica que el sistema ejecuta para lograrlo).
-
-Un mismo Requisito puede agrupar varias Historias de Usuario, y una Historia de Usuario se compone de uno o más Casos de Uso.
+En congruencia con la metodología **ICONIX**, cada requisito funcional se traduce en intenciones claras del usuario agrupadas en diez Casos de Uso (`UC-01` a `UC-10`), tal como resume la Matriz de Trazabilidad siguiente.
 
 Tabla 17
-*Matriz de Trazabilidad (Requisitos, Historias y Casos de Uso)*
+*Matriz de Trazabilidad (Requisitos, Intenciones del Usuario y Casos de Uso)*
 
-| Nro | Historia de Usuario (Lo que el usuario quiere) | #Req | #CU | Descripción del Caso de Uso |
+| Nro | Intención del Usuario (Historia de Usuario) | #Req | #CU | Descripción del Caso de Uso |
 | :--- | :--- | :--- | :--- | :--- |
-| **1** | Como Alumno, Profesor o Admin, quiero entrar a mi cuenta con mi nombre y contraseña para usar la plataforma. | RF-01 | UC-01 | **Iniciar Sesión:** El sistema valida las credenciales, controla intentos fallidos y entrega un acceso seguro según el tipo de cuenta. |
-| **2** | Como nuevo interesado, quiero crear una cuenta eligiendo si soy Alumno o Profesor para unirme a una sucursal. | RF-02 | UC-02 | **Registrar Nuevo Usuario:** El sistema valida formato único sin espacios, crea el perfil con membresía inicial y lo asocia a la sucursal. |
-| **3** | Como Administrador, quiero tomar el control de la cuenta de un Alumno o Profesor para ayudarlo a resolver un problema técnico. | RF-03 | UC-10 | **Entrar como Otro Usuario:** El Admin asume la identidad temporal de otra persona mostrando un aviso permanente de soporte en pantalla. |
-| **4** | Como Profesor, quiero crear o editar las técnicas del catálogo para mantener actualizada a mi academia. | RF-04 | UC-05 | **Gestionar Técnicas y Referencias:** El profesor añade, modifica o elimina los nombres de las técnicas y sus niveles de cinturón. |
-| **5** | Como Profesor, quiero subir el video de mi ejecución perfecta (patrón de oro) para que el sistema lo use como referencia. | RF-05 | UC-05 | **Gestionar Técnicas y Referencias:** El sistema extrae y cataloga la secuencia postural del profesor como patrón oficial de referencia. |
-| **6** | Como Profesor, quiero subir manuales en PDF y escribir mis propios consejos para que la Inteligencia Artificial enseñe a los alumnos con mis palabras. | RF-06 | UC-06 | **Gestionar Teoría RAG:** El sistema lee el texto y las ilustraciones del documento, y guarda las directrices del profesor para consulta semántica. |
-| **7** | Como Alumno, quiero seleccionar a mi profesor y la técnica que voy a practicar para estar seguro de compararme con el video correcto. | RF-07 | UC-03 | **Analizar Técnica:** El sistema verifica la vigencia del Pase de Tatami y muestra la lista de profesores y técnicas disponibles en su sucursal. |
-| **8** | Como Alumno, quiero subir mi video de práctica para que la Inteligencia Artificial analice mis movimientos. | RF-08, RF-09 | UC-03 | **Analizar Técnica:** El sistema recibe el video, verifica que sea Jiu-Jitsu (filtro anti-spam) e identifica a los practicantes en el encuadre inicial. |
-| **9** | Como Alumno, quiero saber qué porcentaje de similitud tengo con mi profesor y ver cuál fue el error exacto en mi esqueleto. | RF-10, RF-11 | UC-03 | **Analizar Técnica:** El sistema extrae los esqueletos 3D, los compara cinemáticamente, calcula un porcentaje de similitud (0 a 100%) e identifica el fotograma crítico. |
-| **10** | Como Alumno, quiero que el sistema me explique cómo corregir mi error (citando el libro del profesor) si mi nota fue menor al 85%. | RF-12 | UC-04 | **Generar Feedback Biomecánico:** Aplicando jerarquía estricta de fuentes doctrinales y auditoría de fidelidad, el sistema redacta un consejo pedagógico citado en el idioma del alumno (o felicita si supera el 85%). |
-| **11** | Como Profesor, quiero ver un historial de las notas y errores de mis alumnos para saber en qué están fallando. | RF-13 | UC-07 | **Ver Progreso de Alumnos:** El sistema muestra un panel con la lista de alumnos de su sucursal y sus evaluaciones pasadas. |
-| **12** | Como Profesor, quiero activar la cuenta de un alumno por 30 días (Pase de Tatami) después de verificar que pagó en la academia. | RF-14 | UC-08 | **Activar Pase de Tatami:** El profesor otorga acceso al alumno por 30 días; el sistema bloquea la cuenta automáticamente al cumplirse el plazo. |
-| **13** | Como Administrador, quiero registrar las sucursales de mi academia en un mapa para mostrar dónde entrenamos. | RF-15 | UC-09 | **Gestionar Sucursales:** El sistema captura las coordenadas de latitud y longitud en un mapa interactivo y guarda la dirección. |
+| **1** | Como Alumno, Profesor o Admin, quiero iniciar sesión con mi usuario o correo y contraseña para acceder a mi entorno de trabajo. | RF-01 | UC-01 | **Iniciar Sesión:** El sistema verifica límites de intentos y credenciales para abrir la sesión según rol, sede e idioma. |
+| **2** | Como nuevo practicante, quiero crear mi cuenta de Alumno en una sucursal para empezar a usar la plataforma. | RF-02 | UC-02 | **Crear Cuenta de Alumno:** El sistema valida formato sin espacios, restringe el auto-registro a `alumno` e inicializa el Pase de Tatami pendiente. |
+| **3** | Como Alumno, quiero subir mi video, indicar quién soy en la escena (o cancelar si me equivoqué) y obtener la comparación contra mi profesor. | RF-07, RF-08, RF-09, RF-10, RF-11 | UC-03 | **Analizar Técnica:** Valida pase y contenido BJJ, permite confirmar silueta, alinea posturas 3D con DTW, calcula similitud y permite cancelación transaccional en curso. |
+| **4** | Como Alumno, quiero ver mi porcentaje de acierto, saltar al segundo exacto de mi falla y recibir una explicación clara respaldada en manuales o notas de mi profesor. | RF-12 | UC-04 | **Generar Feedback Biomecánico:** Aplica jerarquía de fuentes (Manual específico o Biblioteca Global > Nota del Profesor > Respaldo seguro), audita fidelidad y presenta citas diferenciadas. |
+| **5** | Como Profesor, quiero crear, editar o eliminar técnicas y subir mis videos patrón con respaldo seguro para evaluar a mis alumnos. | RF-04, RF-05 | UC-05 | **Gestionar Técnicas y Videos de Referencia:** Administra el catálogo, extrae el patrón oficial 3D, respalda/autocura el video y limpia Qdrant y PostgreSQL al eliminar. |
+| **6** | Como Profesor, quiero subir o eliminar manuales de estudio y escribir consejos en mis técnicas, y como usuario quiero consultar y previsualizar la biblioteca. | RF-06 | UC-06 | **Gestionar Manuales de Estudio y Notas del Profesor:** Indexa PDF, DOCX, TXT e imágenes, registra consejos del instructor en cada técnica, permite búsqueda/previsualización y borra manuales atómicamente. |
+| **7** | Como Profesor o Alumno, quiero consultar el historial de evaluaciones y ver los videos y correcciones registradas. | RF-13 | UC-07 | **Ver Progreso de Alumnos:** Muestra al profesor los alumnos de su sede y al alumno su propio historial cronológico con videos y notas. |
+| **8** | Como Profesor o Admin, quiero activar o renovar el Pase de Tatami de un alumno por 30 días tras confirmar su pago presencial. | RF-14 | UC-08 | **Activar Pase de Tatami:** Lista alumnos pendientes o expirados de la sucursal y habilita su acceso por 30 días calendario. |
+| **9** | Como Administrador, quiero registrar, editar o eliminar sucursales ubicándolas en un mapa interactivo o mediante un enlace. | RF-15 | UC-09 | **Gestionar Sucursales y Coordenadas:** Captura latitud/longitud con Leaflet y Nominatim, valida ausencia de usuarios al eliminar y actualiza el directorio. |
+| **10** | Como Administrador, quiero entrar como otro usuario para darle soporte o administrar y dar de baja cuentas reasignando su contenido; y como usuario editar mi perfil. | RF-03 | UC-10 | **Soporte Técnico y Administración de Cuentas:** Permite impersonación con aviso rojo, cambio de sucursal, edición de perfil y baja segura con `admin_delete_user`. |
 
 *Nota.* Elaboración propia (2026).
 
 ## 4.5. Modelo de Dominio
-El siguiente diagrama muestra las entidades principales del sistema (las "cosas" o conceptos del mundo real que el sistema necesita recordar) y cómo se relacionan entre sí.
+El Modelo de Dominio representa, en el vocabulario propio del Jiu-Jitsu Brasileño y de la academia, los conceptos clave del negocio y sus relaciones reales antes de pasar al diseño técnico de software. En la cima organizacional se ubica el **Dueño** de la marca Corpo e Mente (quien en el sistema técnico opera con permisos de administrador), propietario de todas las sucursales, responsable de habilitar y supervisar a los profesores, administrar cuentas de alumnos y gobernar la Biblioteca Global de la marca.
 
-Para mantener un vocabulario simple y fácil de entender, se han separado claramente a los Alumnos, Profesores y Administradores (en lugar de tener un "usuario" genérico). No se muestran tipos de datos técnicos, solo los nombres de los atributos que componen cada entidad, junto con la cardinalidad de sus relaciones (por ejemplo, "Una Sucursal tiene muchos Alumnos").
+*Figura 6: Diagrama de Modelo de Dominio del Sistema (Metodología ICONIX).*
 
-*Figura 6: Diagrama de Modelo de Dominio del Sistema.*
+```mermaid
+classDiagram
+    class Sucursal {
+        nombre
+        ciudad
+        pais
+        direccion
+        latitud
+        longitud
+    }
 
-![Diagrama de Modelo de Dominio del Sistema](diagramas/modelo_dominio.png)
+    class Profesor {
+        nombre_completo
+        correo
+        idioma_preferido
+    }
+
+    class Alumno {
+        nombre_completo
+        correo
+        idioma_preferido
+    }
+
+    class Dueno["Dueño"] {
+        nombre_completo
+        correo
+        idioma_preferido
+    }
+
+    class Tecnica {
+        nombre
+        nivel_cinturon
+        nota_profesor
+    }
+
+    class VideoReferencia {
+        archivo_video
+        fecha_subida
+    }
+
+    class BibliotecaTecnica {
+        fuente_nombre
+        fuente_tipo
+        alcance
+        contenido_texto
+        pagina
+    }
+
+    class Evaluacion {
+        fecha
+        porcentaje_similitud
+        retroalimentacion
+        estado
+        sucursal_congelada
+    }
+
+    class ActivacionCuenta["Activación de Cuenta"] {
+        fecha_inicio
+        fecha_expiracion
+        estado
+    }
+
+    class EsqueletoBiomecanico {
+        puntos_articulaciones
+        angulos_corporales
+    }
+
+    Dueno "1" *-- "1..*" Sucursal : es_dueno_y_dirige_sedes
+    Dueno "1" -- "0..*" Profesor : habilita_y_supervisa
+    Dueno "1" -- "0..*" Alumno : supervisa_y_da_soporte
+    Dueno "1" -- "0..*" BibliotecaTecnica : gobierna_biblioteca_global
+
+    Sucursal "1" *-- "0..*" Profesor : adscribe
+    Sucursal "1" *-- "0..*" Alumno : adscribe
+
+    Profesor "1" -- "0..*" Tecnica : ensena
+    Profesor "1" -- "0..*" VideoReferencia : graba
+    Profesor "1" -- "0..*" BibliotecaTecnica : aporta
+
+    Alumno "1" -- "0..*" Evaluacion : realiza
+    Alumno "1" -- "1" ActivacionCuenta : posee
+
+    Tecnica "1" *-- "0..*" VideoReferencia : usa_patron
+    Tecnica "1" -- "0..*" BibliotecaTecnica : respaldada_por
+    Tecnica "1" -- "0..*" Evaluacion : es_evaluada_en
+    Sucursal "1" -- "0..*" Evaluacion : registra_historia
+
+    Evaluacion "1" *-- "0..1" EsqueletoBiomecanico : genera
+```
+
+Tabla 17B
+*Descripción de Conceptos y Relaciones del Modelo de Dominio*
+
+| Concepto del Dominio | Significado en el Negocio (Academia Corpo e Mente) | Relaciones Clave |
+| :--- | :--- | :--- |
+| **Dueño** | Propietario y director general de la marca Corpo e Mente. | Es dueño y dirige `1..*` sucursales; habilita y supervisa profesores y alumnos; gobierna la biblioteca global y realiza soporte técnico. |
+| **Sucursal** | Sede física o filial perteneciente a la marca Corpo e Mente (por ejemplo, Santa Cruz Central). | Pertenece al Dueño; adscribe a profesores y alumnos; registra históricamente dónde se realizó cada evaluación. |
+| **Profesor** | Instructor certificado adscrito a una sucursal. | Enseña técnicas, graba sus videos patrón de referencia, aporta manuales o notas técnicas, revisa el progreso de alumnos de su sede y realiza la activación de cuenta de los alumnos. |
+| **Alumno** | Practicante inscrito en una sucursal que entrena y evalúa sus técnicas. | Posee una única `Activación de Cuenta` renovable y realiza múltiples evaluaciones en video. |
+| **Activación de Cuenta** | Habilitación presencial de acceso por 30 días calendario tras verificar el pago del alumno en recepción (conocida operativamente en la academia como *Pase de Tatami*). | Pertenece exactamente a un alumno (`pendiente`, `activo` o `expirado`). |
+| **Tecnica** | Movimiento oficial de Jiu-Jitsu Brasileño del catálogo (por ejemplo, *Armlock desde la Guardia*), con nivel de cinturón y nota práctica del profesor. | Enseñada por un profesor; compuesta por videos patrón de referencia; respaldada por documentos de biblioteca; objeto de evaluaciones. |
+| **VideoReferencia** | Video modelo grabado por el profesor que sirve como patrón oficial de comparación biomecánica. | Pertenece a una técnica y es grabado por un profesor. |
+| **BibliotecaTecnica** | Acervo teórico de la academia: manuales PDF/DOCX/TXT, imágenes o notas técnicas de instructores. | Aportada por profesores o por el Dueño (alcance específico por técnica o Biblioteca Global). |
+| **Evaluacion** | Práctica grabada en video por un alumno y comparada contra el patrón oficial, conservando la sucursal histórica donde se realizó (`sucursal_congelada`). | Realizada por un alumno sobre una técnica en una sucursal determinada. |
+| **EsqueletoBiomecanico** | Representación numérica tridimensional de las articulaciones y ángulos corporales extraídos de la evaluación. | Composición generada durante la ejecución de una evaluación para calcular similitud y ubicar el fallo articular. |
+
+*Nota.* Elaboración propia (2026).
 
 ---
 
+# Capítulo V: Análisis y Diseño Orientado a Objetos (Metodología ICONIX)
 
-# Capítulo V: Análisis y Diseño Orientado a Objetos
+El presente capítulo presenta el análisis y diseño orientado a objetos del sistema aplicando la **Metodología ICONIX** (Rosenberg & Stephens, 2007). A diferencia de enfoques pesados con exceso de documentación, ICONIX mantiene un camino directo y fácil de seguir desde la necesidad del usuario hasta el código real del sistema.
 
-El presente capítulo desarrolla el análisis y el diseño orientado a objetos del Sistema de Análisis Biomecánico de Jiu-Jitsu Brasileño para la academia "Corpo e Mente", aplicando rigurosamente los principios de Craig Larman (2004, *Applying UML and Patterns*) mediante la separación estricta entre el **Nivel de Análisis (Esencial)** y el **Nivel de Diseño (Concreto)**, junto con la aplicación del patrón arquitectónico **Entity-Control-Boundary (ECB)**.
+Para lograr total claridad y trazabilidad entre lo que el usuario quiere y cómo está programado el software, cada uno de los diez casos de uso identificados en el Capítulo IV (`UC-01` a `UC-10`) se documenta mediante cinco artefactos complementarios:
 
-Para cada caso de uso identificado en la matriz de trazabilidad del Capítulo IV, se construyen cinco artefactos complementarios y trazables entre sí:
-1. **Caso de Uso Detallado (Nivel de Análisis — Esencial):** Especificación textual libre de interfaz de usuario (*UI-free*) y de detalles de implementación, expresada íntegramente en el vocabulario del negocio del Jiu-Jitsu Brasileño para describir *qué* hace el sistema en respuesta a las intenciones de los actores.
-2. **Diagrama de Caso de Uso (Nivel de Análisis):** Delimitación de la frontera conceptual del sistema, los roles de negocio (`Alumno`, `Profesor`, `Administrador`), los objetivos de valor y los sistemas de apoyo conceptuales, sin acoplarse a motores tecnológicos específicos.
-3. **Diagrama de Clases de Diseño (Participantes — Nivel de Diseño):** Modelado estructural concreto que especifica *cómo* se materializan las responsabilidades mediante clases reales de software, adaptadores técnicos, atributos tipados y firmas de métodos.
-4. **Diagrama de Secuencia de Análisis (Nivel de Análisis — Patrón ECB):** Modelado dinámico de colaboraciones entre objetos conceptuales clasificados bajo los tres estereotipos de análisis **Entity-Control-Boundary (ECB)**: objetos de frontera (`boundary`) a la izquierda para la interacción con el actor, objetos de control (`control`) en el centro para coordinar la lógica del caso de uso y objetos de entidad (`entity`) a la derecha como custodios del estado y las reglas de negocio, prescindiendo de motores de bases de datos o protocolos técnicos.
-5. **Diagrama de Paquetes (Nivel de Diseño):** Organización modular en capas (`Presentacion`, `Aplicacion`, `Dominio`, `Infraestructura`) regida por el **Principio de Inversión de Dependencias (DIP)**, donde las capas externas dependen de las abstracciones de las capas internas y el núcleo de `Dominio` permanece libre de dependencias hacia `Infraestructura`.
+1. **Especificación del Caso de Uso (Enfocado en la Intención del Usuario):** Explica en lenguaje sencillo *qué* quiere lograr el usuario (Alumno, Profesor o Administrador) y *cómo responde* el sistema, sin mezclar detalles internos de código o bases de datos.
+2. **Diagrama de Caso de Uso:** Muestra visualmente únicamente a los actores humanos y las intenciones reales de uso dentro de ese módulo, manteniendo la frontera conceptual limpia de pasos internos técnicos.
+3. **Diagrama de Clases:** Traduce los participantes del análisis de robustez **Boundary – Control – Entity (ECB)** a las clases reales implementadas en el frontend React y el backend FastAPI.
+4. **Diagrama de Secuencia ECB:** Muestra paso a paso cómo interactúan en el tiempo el objeto de frontera (`Boundary`), el coordinador lógico (`Control`) y las entidades del negocio (`Entity`).
+5. **Diagrama de Paquetes:** Muestra en qué capas reales (`Presentacion`, `Aplicacion`, `Dominio`, `Infraestructura`) viven esos archivos y cómo respetan el **Principio de Inversión de Dependencias (DIP)** para mantener el núcleo del negocio protegido.
 
 ---
 
 ## 5.1. Caso de Uso 1: Iniciar Sesión (UC-01)
 
-### 5.1.1. Caso de Uso 1: Iniciar Sesión (UC-01) — Nivel de Análisis
-
+### 5.1.1. Caso de Uso 1: Iniciar Sesión (UC-01) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-01** |
 | **Nombre** | Iniciar Sesión |
-| **Actores** | **Principal:** Alumno, Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Identidad y Acceso. |
-| **Descripción** | Permite a un practicante, instructor o administrador ya registrado acreditarse mediante sus credenciales personales para acceder al entorno operativo correspondiente a su rol y sede de adscripción. |
-| **Precondiciones** | El usuario cuenta previamente con una cuenta registrada en la plataforma de la academia. |
-| **Postcondiciones** | 1. Se constituye una sesión de trabajo activa asociada al rol, al idioma preferido y a la sede del usuario.<br>2. El usuario queda habilitado para operar las funcionalidades autorizadas de su perfil. |
+| **Actores** | **Principal:** Alumno, Profesor, Administrador. |
+| **Intención del Usuario** | Ingresar de forma segura a su cuenta personal usando su usuario o correo electrónico y contraseña para acceder a las herramientas de su rol y sucursal. |
+| **Precondiciones** | El usuario cuenta previamente con una cuenta registrada en la academia. |
+| **Postcondiciones** | 1. Se abre una sesión activa asociada al rol, sucursal, idioma preferido y estado de membresía del usuario.<br>2. La interfaz dirige al usuario a su pantalla principal (carga de videos para el alumno, panel docente para el profesor o gestión global para el administrador). |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Usuario solicita ingresar al sistema aportando su identificador personal (nombre de usuario o correo electrónico) y su clave secreta. | El Sistema comprueba que el solicitante no haya superado el umbral máximo de intentos fallidos permitidos en la ventana de tiempo vigente. |
-| 2 | | El Sistema valida la correspondencia de las credenciales aportadas frente al registro del usuario y consulta su rol, sede de adscripción, idioma preferido y vigencia de membresía. |
-| 3 | | El Sistema constituye una sesión de trabajo activa y habilita al usuario el entorno propio de su perfil: práctica para el alumno, instrucción para el profesor o gestión global para el administrador. |
+| 1 | El Usuario abre la ventana de acceso, escribe su nombre de usuario o correo electrónico junto con su contraseña y solicita ingresar. | El Sistema comprueba que no se haya superado el límite temporal de intentos fallidos desde ese origen. |
+| 2 | | El Sistema valida que las credenciales coincidan con una cuenta registrada y recupera su rol, sucursal, idioma preferido y estado del Pase de Tatami. |
+| 3 | | El Sistema inicia la sesión activa, recuerda el idioma elegido por el usuario y habilita la pantalla correspondiente a su perfil. |
 
-#### Secuencias Alternativas
-* **1a. Umbral de intentos fallidos superado:**
-  * El Sistema bloquea temporalmente nuevas solicitudes de identificación provenientes del solicitante conforme a la política de protección de cuentas.
-* **2a. Credenciales incorrectas o cuenta inexistente:**
-  * El Sistema rechaza el acceso mediante un aviso unificado sin revelar si la discrepancia radica en el identificador o en la clave secreta, previniendo la enumeración de cuentas.
+#### Cursos Alternativos
+* **1a. Límite de intentos fallidos superado:**
+  * El Sistema bloquea temporalmente nuevos intentos de ingreso (`HTTP 429`) para proteger las cuentas frente a ataques de fuerza bruta.
+* **2a. Credenciales incorrectas o usuario inexistente:**
+  * El Sistema rechaza el acceso con un mensaje único de credenciales inválidas sin revelar si el fallo estuvo en el usuario o en la clave.
 
 #### Excepciones
-* **E1. Servicio de identidad no disponible:** El Sistema informa que la acreditación se encuentra temporalmente fuera de servicio y conserva intacto el estado previo.
+* **E1. Servicio de acceso temporalmente no disponible:** El Sistema informa que no se pudo conectar con el servidor y mantiene al usuario en la pantalla de acceso sin abrir sesión.
 
 ---
 
 ### 5.1.2. Diagrama de Caso de Uso UC-01
 
-![Diagrama de Caso de Uso UC-01](diagramas/cu01_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Acceso"]
+        UC01(["UC-01: Iniciar Sesión en la Plataforma"]):::usecase
+    end
+
+    AL --> UC01
+    PR --> UC01
+    AD --> UC01
+```
 
 ---
 
-### 5.1.3. Diagrama de Clases de Diseño (Participantes) UC-01
-El siguiente diagrama de nivel de diseño concreta los participantes conceptuales del análisis ECB en clases de implementación reales:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeAcceso` se materializa en el componente visual de autenticación (`LoginView`) y en el controlador de rutas (`AuthRoutes`).
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeAcceso` se implementa mediante los servicios de aplicación y seguridad (`AuthService`, `SessionManager`, `RateLimiter`).
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `Sucursal` y `SesiónDeUsuario` se implementan en las clases de dominio y transferencia (`Usuario`, `Sucursal`, `TokenJWT`).
+### 5.1.3. Diagrama de Clases UC-01
+Correspondencia de los estereotipos ECB de ICONIX con las clases reales del sistema:
+* **Boundary:** `LoginModal` (componente React), `AuthRateLimitMiddleware` (`main.py`) y `AuthRoutes` (`auth_routes.py`).
+* **Control:** `PostgrestClient` (ejecución segura del procedimiento `authenticate` y consulta de perfil).
+* **Entity:** `Usuario`, `Sucursal` y `LoginResponse` (contrato de sesión con token JWT firmado).
 
-![Diagrama de Clases de Diseño UC-01](diagramas/cu01_clases.png)
+```mermaid
+classDiagram
+    class LoginModal {
+        <<Boundary>>
+        +loginUserOrEmail: String
+        +loginPassword: String
+        +showLoginPassword: Boolean
+        +handleLoginSubmit()
+    }
+
+    class AuthRateLimitMiddleware {
+        <<Boundary>>
+        +max_attempts: Int
+        +window_seconds: Int
+        +dispatch(request, call_next)
+    }
+
+    class AuthRoutes {
+        <<Boundary>>
+        +login(req: LoginRequest) LoginResponse
+        +get_mi_perfil(authorization: String) LoginResponse
+        +_sign_token(payload: Dict) String
+        +_decode_jwt(authorization: String) Dict
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+        +get(table: String, params: Dict) List
+    }
+
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +nombre_completo: String
+        +username: String
+        +email: String
+        +password_hash: String
+        +rol: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +fecha_expiracion: DateTime
+        +idioma_preferido: String
+    }
+
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +ciudad: String
+        +pais: String
+    }
+
+    class LoginResponse {
+        <<Entity>>
+        +token: String
+        +user_id: UUID
+        +rol: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +idioma_preferido: String
+    }
+
+    LoginModal ..> AuthRateLimitMiddleware : HTTP POST
+    AuthRateLimitMiddleware --> AuthRoutes : reenvia
+    AuthRoutes --> PostgrestClient : consulta authenticate y perfil
+    PostgrestClient --> Usuario : valida credenciales
+    Usuario "1" --> "1" Sucursal : adscrito_a
+    AuthRoutes ..> LoginResponse : retorna sesion y token
+```
 
 ---
 
-### 5.1.4. Diagrama de Secuencia UC-01
+### 5.1.4. Diagrama de Secuencia ECB UC-01
 
-![Diagrama de Secuencia UC-01](diagramas/cu01_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant B1 as «Boundary» PantallaDeAcceso
+    participant C1 as «Control» CoordinadorDeAcceso
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» Sucursal
+    participant E3 as «Entity» SesionDeUsuario
+
+    U->>B1: solicitarAcceso(identificador, clave)
+    B1->>C1: autenticarUsuario(identificador, clave)
+    C1->>C1: verificarIntentosPermitidos(solicitante)
+    alt Umbral de intentos superado
+        C1-->>B1: bloqueoTemporal()
+        B1-->>U: informarBloqueoTemporal()
+    else Dentro del limite permitido
+        C1->>E1: validarCredenciales(identificador, clave)
+        alt Credenciales validas
+            E1-->>C1: datosUsuario(rol, sedeId, idioma, estadoMembresia)
+            C1->>E2: consultarNombreSede(sedeId)
+            E2-->>C1: nombreDeSucursal
+            C1->>E3: abrirSesionActiva(datosUsuario, nombreDeSucursal)
+            E3-->>C1: sesionActiva
+            C1-->>B1: accesoAutorizado(sesionActiva)
+            B1-->>U: mostrarPanelSegunRol(rol, idioma)
+        else Credenciales incorrectas
+            E1-->>C1: accesoDenegado
+            C1-->>B1: errorUnificado()
+            B1-->>U: mostrarCredencialesInvalidas()
+        end
+    end
+```
 
 ---
 
 ### 5.1.5. Diagrama de Paquetes UC-01
-El diagrama de paquetes refleja el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las abstracciones de las capas internas (`Aplicacion` y `Dominio`), mientras que el núcleo de `Dominio` permanece libre de dependencias hacia `Infraestructura`.
+Las dependencias avanzan de las capas externas hacia las internas (`Presentacion` hacia `Aplicacion` y `Dominio`, e `Infraestructura` implementando los contratos hacia `Aplicacion` y `Dominio`).
 
-![Diagrama de Paquetes UC-01](diagramas/cu01_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        UI_Login["LoginModal.jsx"]
+        UI_App["App.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Control)"]
+        API_Main["main.py (AuthRateLimitMiddleware)"]
+        API_Auth["auth_routes.py"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
+        Ent_User["Usuario"]
+        Ent_Sucursal["Sucursal"]
+        Ent_Resp["LoginRequest / LoginResponse"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
+        Infra_PG["PostgrestClient / PostgreSQL (pgcrypto)"]
+        Infra_JWT["PyJWT (HS256)"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
-## 5.2. Caso de Uso 2: Registrar Nuevo Usuario (UC-02)
+## 5.2. Caso de Uso 2: Crear Cuenta de Alumno (UC-02)
 
-### 5.2.1. Caso de Uso 2: Registrar Nuevo Usuario (UC-02) — Nivel de Análisis
-
+### 5.2.1. Caso de Uso 2: Crear Cuenta de Alumno (UC-02) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-02** |
-| **Nombre** | Registrar Nuevo Usuario |
-| **Actores** | **Principal:** Alumno, Profesor (como nuevo solicitante).<br>**Secundario (Sistemas de Apoyo):** Servicio de Identidad y Acceso. |
-| **Descripción** | Permite a un nuevo practicante o instructor dar de alta una cuenta personal vinculada a una sede oficial de la academia, validando las reglas de unicidad de identidad e inicializando su perfil y membresía. |
-| **Precondiciones** | 1. El solicitante no posee aún una cuenta registrada con el mismo identificador ni correo electrónico.<br>2. Existe al menos una sede oficial activa en el directorio de la academia. |
-| **Postcondiciones** | 1. La nueva cuenta queda incorporada al registro oficial de la sede elegida.<br>2. Todo perfil nuevo de alumno se inicializa con su Pase de Tatami en estado pendiente de habilitación hasta verificar su pago presencial.<br>3. Se constituye una sesión de trabajo inicial para el usuario registrado. |
+| **Nombre** | Crear Cuenta de Alumno |
+| **Actores** | **Principal:** Nuevo Practicante (Alumno). |
+| **Intención del Usuario** | Registrarse por primera vez en la plataforma eligiendo la sucursal donde entrena para empezar a usar la academia virtual. |
+| **Precondiciones** | 1. El solicitante aún no tiene una cuenta con el mismo nombre de usuario.<br>2. Existe al menos una sucursal oficial activa en el sistema. |
+| **Postcondiciones** | 1. Se crea la cuenta estrictamente con rol `alumno` asociada a la sucursal elegida.<br>2. Su Pase de Tatami se inicializa en estado `pendiente` hasta que el profesor confirme su pago presencial en la academia.<br>3. Se inicia su sesión de trabajo mostrando el aviso de activación pendiente. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El solicitante manifiesta su intención de registrar una nueva cuenta en la plataforma. | El Sistema consulta el directorio de sedes oficiales activas y presenta las opciones de rol permitidas (alumno o profesor) junto con los datos requeridos. |
-| 2 | El solicitante ingresa su nombre completo, identificador personal deseado, correo electrónico, clave secreta, rol solicitado y sede de adscripción. | El Sistema valida que el identificador cumpla las reglas de formato permitidas (sin espacios en blanco ni caracteres inválidos) y comprueba la unicidad del identificador y del correo. |
-| 3 | | El Sistema crea el perfil asignando el estado inicial de membresía correspondiente al rol, constituye la sesión inicial de trabajo y presenta el entorno de bienvenida en su sede. |
+| 1 | El Nuevo Practicante abre la pestaña de registro de alumno. | El Sistema consulta y muestra la lista de sucursales oficiales disponibles para seleccionar. |
+| 2 | El solicitante ingresa su nombre completo, nombre de usuario deseado (sin espacios), contraseña y elige su sucursal. | El Sistema verifica que el formato del usuario contenga únicamente letras, números o guion bajo, confirma el rol estricto de `alumno` y comprueba que el nombre no esté repetido. |
+| 3 | | El Sistema guarda la cuenta cifrando la contraseña, inicializa el Pase de Tatami en estado `pendiente` y abre la sesión inicial en la pantalla principal del alumno. |
 
-#### Secuencias Alternativas
-* **2a. Formato de identificador inválido (presencia de espacios o longitud insuficiente):**
-  * El Sistema rechaza el registro de forma inmediata e indica al solicitante los criterios válidos para su identificador.
-* **2b. Identificador o correo electrónico previamente registrado:**
-  * El Sistema informa que las credenciales de identificación ingresadas ya pertenecen a una cuenta existente e invita a iniciar sesión.
+#### Cursos Alternativos
+* **2a. Formato de usuario inválido (con espacios o símbolos no permitidos):**
+  * El Sistema rechaza el envío de inmediato e indica que el nombre de usuario solo admite letras, números y guion bajo.
+* **2b. Intento de registro público con rol diferente a alumno:**
+  * Por seguridad, el backend bloquea cualquier solicitud pública que intente registrarse como profesor o administrador (`HTTP 403`), indicando que esas cuentas se gestionan administrativamente.
+* **2c. Nombre de usuario ya existente:**
+  * El Sistema informa que ese nombre ya está ocupado y sugiere iniciar sesión o elegir otro identificador.
 
 #### Excepciones
-* **E1. Servicio de identidad o directorio de sedes no disponible:** El Sistema informa que el registro de nuevas cuentas se encuentra temporalmente fuera de servicio y no persiste registros parciales.
+* **E1. No hay sucursales registradas o fallo de comunicación:** El Sistema informa que no se pudo completar el registro y no crea cuentas incompletas.
 
 ---
 
 ### 5.2.2. Diagrama de Caso de Uso UC-02
 
-![Diagrama de Caso de Uso UC-02](diagramas/cu02_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Nuevo Practicante (Alumno)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Registro"]
+        UC02(["UC-02: Crear Cuenta de Alumno"]):::usecase
+        UC02_Sede(["Elegir Sucursal de Entrenamiento"]):::usecase
+    end
+
+    AL --> UC02
+    UC02 -.->|"«include»"| UC02_Sede
+```
 
 ---
 
-### 5.2.3. Diagrama de Clases de Diseño (Participantes) UC-02
-El diagrama de clases de diseño traduce los participantes del análisis ECB en componentes dedicados al alta de usuarios:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeRegistro` se implementa mediante `SignupView` y las operaciones de registro y consulta de sedes de `AuthRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeRegistro` se materializa en `AuthService`, validando los contratos `SignupRequest` y delegando la emisión inicial a `SessionManager`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `Sucursal` y `SesiónDeUsuario` se concretan en `Usuario`, `Sucursal` y `TokenJWT`.
+### 5.2.3. Diagrama de Clases UC-02
+Participantes reales del módulo de registro:
+* **Boundary:** `LoginModal` (pestaña de registro) y `AuthRoutes` (`signup`, `listar_sucursales`).
+* **Control:** `PostgrestClient` (ejecución del procedimiento `public_signup` y validación de sucursal).
+* **Entity:** `SignupRequest` (regla de validación de username), `Usuario`, `Sucursal` y `LoginResponse`.
 
-![Diagrama de Clases de Diseño UC-02](diagramas/cu02_clases.png)
+```mermaid
+classDiagram
+    class LoginModal {
+        <<Boundary>>
+        +signupNombre: String
+        +signupUsername: String
+        +signupPassword: String
+        +signupSucursalId: UUID
+        +handleSignupSubmit()
+    }
+
+    class AuthRoutes {
+        <<Boundary>>
+        +signup(req: SignupRequest) LoginResponse
+        +listar_sucursales() List~SucursalResponse~
+        +_sign_token(payload: Dict) String
+    }
+
+    class SignupRequest {
+        <<Entity>>
+        +nombre_completo: String
+        +username: String
+        +password: String
+        +rol: String
+        +sucursal_id: UUID
+        +validate_username(v: String) String
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+        +get(table: String, params: Dict) List
+    }
+
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +nombre_completo: String
+        +username: String
+        +email: String
+        +rol: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +idioma_preferido: String
+    }
+
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +ciudad: String
+        +pais: String
+    }
+
+    class LoginResponse {
+        <<Entity>>
+        +token: String
+        +user_id: UUID
+        +estado_suscripcion: String
+    }
+
+    LoginModal ..> AuthRoutes : HTTP POST /auth/signup
+    AuthRoutes ..> SignupRequest : valida formato y rol alumno
+    AuthRoutes --> PostgrestClient : ejecuta public_signup
+    PostgrestClient --> Sucursal : verifica sucursal activa
+    PostgrestClient --> Usuario : crea alumno en estado pendiente
+    Usuario "1" --> "1" Sucursal : adscrito_a
+    AuthRoutes ..> LoginResponse : retorna sesion inicial
+```
 
 ---
 
-### 5.2.4. Diagrama de Secuencia UC-02
+### 5.2.4. Diagrama de Secuencia ECB UC-02
 
-![Diagrama de Secuencia UC-02](diagramas/cu02_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AL as NuevoAlumno
+    participant B1 as «Boundary» PantallaDeRegistro
+    participant C1 as «Control» CoordinadorDeRegistro
+    participant E1 as «Entity» Sucursal
+    participant E2 as «Entity» Usuario
+    participant E3 as «Entity» SesionDeUsuario
+
+    AL->>B1: solicitarCrearCuenta()
+    B1->>C1: consultarSucursalesDisponibles()
+    C1->>E1: listarSucursales()
+    E1-->>C1: listaDeSucursales
+    C1-->>B1: sucursalesDisponibles
+    B1-->>AL: mostrarFormularioAlumno(sucursalesDisponibles)
+    AL->>B1: enviarDatos(nombreCompleto, usuario, clave, sucursalId)
+    B1->>C1: registrarAlumno(datosRegistro)
+    C1->>C1: validarFormatoUsuarioYRolAlumno(datosRegistro)
+    alt Formato invalido o rol no permitido
+        C1-->>B1: rechazarSolicitud()
+        B1-->>AL: mostrarMensajeDeValidacion()
+    else Datos validos
+        C1->>E2: crearCuentaPendiente(datosRegistro)
+        alt Usuario ya registrado
+            E2-->>C1: conflictoUnicidad
+            C1-->>B1: informarUsuarioExistente()
+            B1-->>AL: invitarAIniciarSesion()
+        else Cuenta creada
+            E2-->>C1: usuarioPendiente
+            C1->>E3: abrirSesionInicial(usuarioPendiente)
+            E3-->>C1: sesionActiva
+            C1-->>B1: registroExitoso(sesionActiva)
+            B1-->>AL: mostrarBienvenidaConPasePendiente()
+        end
+    end
+```
 
 ---
 
 ### 5.2.5. Diagrama de Paquetes UC-02
-Las dependencias entre paquetes observan estrictamente el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen hacia adentro de `Aplicacion` y `Dominio`, preservando las reglas de validación de identidad aisladas de la infraestructura criptográfica y relacional.
+Mantiene el esquema limpio en cuatro capas cumpliendo el principio DIP.
 
-![Diagrama de Paquetes UC-02](diagramas/cu02_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        UI_Signup["LoginModal.jsx (Registro de Alumno)"]
+        UI_App["App.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Control)"]
+        API_Auth["auth_routes.py (signup / listar_sucursales)"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
+        Ent_DTO["SignupRequest / LoginResponse"]
+        Ent_User["Usuario (Membresía Pendiente)"]
+        Ent_Sucursal["Sucursal"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
+        Infra_PG["PostgrestClient / PostgreSQL (pgcrypto)"]
+        Infra_JWT["PyJWT (HS256)"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.3. Caso de Uso 3: Analizar Técnica (UC-03)
 
-### 5.3.1. Caso de Uso 3: Analizar Técnica (UC-03) — Nivel de Análisis
-
+### 5.3.1. Caso de Uso 3: Analizar Técnica (UC-03) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-03** |
 | **Nombre** | Analizar Técnica |
-| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (detección y reconocimiento de secuencia postural). |
-| **Descripción** | El alumno aporta la grabación de su ejecución de una técnica de Jiu-Jitsu; el sistema valida su membresía y la elegibilidad deportiva del video, confirma la identidad del practicante en escena, extrae su secuencia postural 3D y la compara cinemáticamente frente al patrón oficial del profesor para cuantificar el grado de similitud e identificar el fotograma crítico de mayor desviación. |
-| **Precondiciones** | 1. El alumno mantiene una sesión activa y su Pase de Tatami se encuentra vigente.<br>2. Existe un patrón biomecánico oficial registrado por el profesor seleccionado para la técnica evaluada. |
-| **Postcondiciones** | 1. La evaluación queda registrada en el historial personal del alumno asociada inmutablemente a su sede de entrenamiento actual.<br>2. Se determinan el porcentaje de similitud global (0 a 100%), el instante del fotograma crítico y las articulaciones con mayor desviación.<br>3. Queda preparado el diagnóstico cinemático para invocar el caso de uso de retroalimentación pedagógica (**UC-04**). |
+| **Actores** | **Principal:** Alumno. |
+| **Intención del Usuario** | Subir el video de una práctica de Jiu-Jitsu, elegir a su profesor y la técnica practicada, confirmar quién es dentro del video (o cancelar la espera si cambió de opinión) y obtener la comparación biomecánica frente al patrón oficial. |
+| **Precondiciones** | 1. El alumno tiene una sesión activa y su Pase de Tatami está en estado `activo` y vigente.<br>2. La técnica elegida cuenta con un patrón de referencia registrado por el profesor. |
+| **Postcondiciones** | 1. Si el análisis finaliza, la evaluación queda guardada en el historial del alumno congelando la sucursal donde entrena actualmente.<br>2. Se calcula el porcentaje de similitud (0 a 100%), el segundo del error y las articulaciones con mayor desviación, dando paso a **UC-04 (Generar Feedback Biomecánico)**.<br>3. Si el alumno cancela en curso, la evaluación queda marcada como `cancelado` y se elimina el video temporal del servidor. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Alumno solicita analizar su ejecución seleccionando a su instructor, la técnica practicada y adjuntando el video de práctica. | El Sistema comprueba la vigencia del Pase de Tatami del alumno y verifica mediante análisis visual que la grabación corresponda efectivamente a una práctica válida de Jiu-Jitsu. |
-| 2 | | El Sistema inspecciona la escena inicial del video, detecta a los practicantes presentes sin duplicidades y solicita al alumno confirmar cuál silueta corresponde a su persona. |
-| 3 | El Alumno confirma su identidad seleccionando su silueta en escena. | El Sistema registra la evaluación en curso congelando la sede histórica del alumno y realiza el seguimiento continuo de su secuencia postural 3D a lo largo de todo el movimiento. |
-| 4 | | El Sistema recupera el patrón biomecánico oficial registrado por el profesor para la técnica seleccionada y ejecuta la alineación cinemática temporal entre ambas ejecuciones. |
-| 5 | | El Sistema calcula el porcentaje global de similitud, localiza el fotograma crítico donde ocurre la máxima discrepancia y determina las articulaciones corporales comprometidas, dando paso al caso de uso **UC-04: Generar Feedback Biomecánico**. |
+| 1 | El Alumno elige a su profesor y la técnica que practicó, y selecciona o arrastra su archivo de video (MP4, MOV, AVI o WebM). | El Sistema verifica que su Pase de Tatami esté vigente y revisa mediante visión artificial que el video corresponda efectivamente a una práctica de Jiu-Jitsu (filtro anti-spam). |
+| 2 | | El Sistema extrae el fotograma inicial, detecta y depura las siluetas presentes (eliminando duplicados o reflejos pequeños) y pide al alumno confirmar cuál silueta corresponde a su cuerpo. |
+| 3 | El Alumno selecciona su silueta y presiona enviar para analizar. | El Sistema registra la evaluación en estado `procesando` congelando su sucursal actual, muestra el indicador de progreso junto con el botón de cancelar, y extrae su secuencia postural 3D cuadro por cuadro. |
+| 4 | | El Sistema recupera los patrones activos de referencia del profesor, alinea ambos movimientos en el tiempo y calcula el porcentaje de similitud global, el fotograma crítico y las articulaciones desviadas, dando paso a **UC-04**. |
 
-#### Secuencias Alternativas
-* **1a. Pase de Tatami vencido o pendiente:** El Sistema bloquea el análisis e indica al alumno que debe gestionar la activación o renovación de su membresía con su instructor.
-* **1b. Grabación no elegible (no corresponde a Jiu-Jitsu o excede límites admitidos):** El Sistema rechaza el archivo de manera temprana sin iniciar el procesamiento biomecánico e instruye subir una práctica válida.
-* **2a. Presencia de múltiples practicantes o reflejos:** El Sistema depura falsos detecciones y exige la confirmación explícita del atleta objetivo para evitar saltos de identidad durante el agarre en suelo.
+#### Cursos Alternativos
+* **1a. Pase de Tatami pendiente o expirado:** El Sistema bloquea la carga de análisis y muestra un aviso claro para renovar el pase con su profesor en la academia.
+* **1b. Video ajeno al Jiu-Jitsu o formato no soportado:** El Sistema rechaza el archivo antes de procesarlo e invita al alumno a subir una grabación válida de entrenamiento.
+* **3a. El Alumno cancela el análisis en curso:**
+  * Mientras el video se está subiendo o analizando, el Alumno presiona **Cancelar Análisis**. El navegador aborta la espera (`AbortController`), el servidor marca la evaluación como `cancelado`, limpia la sesión, borra el video temporal del alumno y garantiza que el proceso en segundo plano no sobrescriba el estado cancelado.
 
 #### Excepciones
-* **E1. Técnica sin patrón oficial de referencia:** El Sistema impide ejecutar la comparación e informa que el instructor aún no ha registrado su video patrón para dicha técnica.
-* **E2. Procesamiento prolongado:** El Sistema informa que la extracción y alineación prosiguen en segundo plano y mantiene consultable el estado en el historial del alumno.
+* **E1. Técnica sin patrón de referencia del profesor:** El Sistema informa que el instructor aún no ha subido el video patrón para esa técnica.
+* **E2. Baja visibilidad en el video (cobertura menor al 40%):** El Sistema detiene la comparación y pide grabar en un ángulo donde el cuerpo sea claramente visible.
 
 ---
 
 ### 5.3.2. Diagrama de Caso de Uso UC-03
 
-![Diagrama de Caso de Uso UC-03](diagramas/cu03_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Analisis de Tecnica"]
+        UC03(["UC-03: Evaluar Ejecucion en Video"]):::usecase
+        UC03_Sel(["Seleccionar Profesor y Tecnica"]):::usecase
+        UC03_Sil(["Confirmar Silueta Propia en Escena"]):::usecase
+        UC03_Can(["Cancelar Analisis en Curso"]):::usecase
+        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
+    end
+
+    AL --> UC03
+    UC03 -.->|"«include»"| UC03_Sel
+    UC03 -.->|"«include»"| UC03_Sil
+    UC03_Can -.->|"«extend»"| UC03
+    UC04 -.->|"«extend»"| UC03
+```
 
 ---
 
-### 5.3.3. Diagrama de Clases de Diseño (Participantes) UC-03
-El diagrama de clases de diseño concreta los participantes conceptuales de la fase de evaluación cinemática:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeEvaluación` se materializa en `VideoUploadView`, `SelectorPersonaVideo` y los endpoints de captura y análisis de `EvaluacionesRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeAnálisisTécnico` se descompone en `SessionStateManager`, `LocalSpamFilter`, `IntelligenceAnalysisFacade`, `YOLOPoseAdapter`, `PoseNormalizer` y `DTWComparator`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Evaluación`, `PatrónDeReferencia` y `EsqueletoBiomecánico` se representan en `Evaluacion`, `PatronReferencia` y `EsqueletoBiomecanico`.
+### 5.3.3. Diagrama de Clases UC-03
+Participantes reales del análisis biomecánico y su cancelación:
+* **Boundary:** `App` (estado de carga y `handleCancelAnalysis` con `AbortController`), `VideoUpload`, `SelectorPersonaVideo` y `EvaluacionesRoutes` (`routes.py`).
+* **Control:** `SessionStateManager`, `LocalSpamFilter`, `IntelligenceAnalysisFacade`, `YOLOPoseAdapter`, `PoseNormalizer` y `DTWComparator`.
+* **Entity:** `Evaluacion`, `PatronReferencia` y `EsqueletoBiomecanico`.
 
-![Diagrama de Clases de Diseño UC-03](diagramas/cu03_clases.png)
+```mermaid
+classDiagram
+    class App {
+        <<Boundary>>
+        +appState: String
+        +currentEvaluacionId: UUID
+        +cancellingAnalysis: Boolean
+        +handleUploadStart(uploadData)
+        +handleCancelAnalysis()
+    }
+
+    class VideoUpload {
+        <<Boundary>>
+        +profesores: List
+        +tecnicas: List
+        +selectedFile: File
+        +handleFile(file)
+        +handleSubmit()
+    }
+
+    class SelectorPersonaVideo {
+        <<Boundary>>
+        +sessionData: Dict
+        +selectedPersonaIdx: Int
+        +onSelect(idx)
+    }
+
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +validar_spam(video) Dict
+        +obtener_primer_frame(video) Dict
+        +confirmar_seleccion_persona(session_id, idx) Dict
+        +analizar_video(background_tasks, tecnica_id, alumno_id) Dict
+        +cancelar_evaluacion_endpoint(evaluacion_id) Dict
+    }
+
+    class SessionStateManager {
+        <<Control>>
+        +crear_sesion(session_id, video_path, personas, frame_idx) Dict
+        +seleccionar_persona(session_id, persona_idx) Dict
+        +iniciar_operacion(session_id, tecnica_id) Dict
+        +finalizar_operacion(session_id, exito, error) Dict
+    }
+
+    class LocalSpamFilter {
+        <<Adapter>>
+        +validar_es_jiujitsu(video_path: String) Boolean
+    }
+
+    class IntelligenceAnalysisFacade {
+        <<Control>>
+        +ejecutar_analisis_completo(video_path, tecnica_id, idioma) AnalisisResultDTO
+    }
+
+    class YOLOPoseAdapter {
+        <<Adapter>>
+        +extraer_secuencia(video_path, persona_idx_inicial) Dict
+        +extraer_frame_y_dibujar_error(video_path, frame_idx, keypoints133) String
+    }
+
+    class PoseNormalizer {
+        <<Control>>
+        +normalizar(kpts_flat) Dict
+        +similitud_esqueletos(a, b) Dict
+    }
+
+    class DTWComparator {
+        <<Control>>
+        +comparar_secuencias_con_dtw(seq_ref, seq_alumno) Dict
+        +detectar_articulaciones_criticas(vec_m, vec_a) List
+    }
+
+    class Evaluacion {
+        <<Entity>>
+        +id: UUID
+        +alumno_id: UUID
+        +tecnica_id: UUID
+        +sucursal_id: UUID
+        +porcentaje_similitud: Float
+        +estado: String
+    }
+
+    class PatronReferencia {
+        <<Entity>>
+        +tecnica_id: UUID
+        +profesor_id: UUID
+        +secuencia_3d: List
+    }
+
+    class EsqueletoBiomecanico {
+        <<Entity>>
+        +frame_idx: Int
+        +keypoints133: List
+        +angulos_articulares: Dict
+    }
+
+    App ..> VideoUpload : renderiza flujo
+    App ..> EvaluacionesRoutes : POST analizar y cancelar
+    VideoUpload ..> SelectorPersonaVideo : muestra siluetas
+    VideoUpload ..> EvaluacionesRoutes : validar_spam y primer-frame
+    EvaluacionesRoutes --> SessionStateManager : controla estados
+    EvaluacionesRoutes --> LocalSpamFilter : filtra no-BJJ
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : delega analisis
+    IntelligenceAnalysisFacade --> YOLOPoseAdapter : extrae poses
+    IntelligenceAnalysisFacade --> DTWComparator : alinea secuencias
+    DTWComparator --> PoseNormalizer : normaliza 46 dims
+    IntelligenceAnalysisFacade --> PatronReferencia : consulta patron activo
+    IntelligenceAnalysisFacade --> Evaluacion : guarda similitud
+    YOLOPoseAdapter ..> EsqueletoBiomecanico : construye
+```
 
 ---
 
-### 5.3.4. Diagrama de Secuencia UC-03
+### 5.3.4. Diagrama de Secuencia ECB UC-03
 
-![Diagrama de Secuencia UC-03](diagramas/cu03_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AL as Alumno
+    participant B1 as «Boundary» PantallaDeEvaluacion
+    participant C1 as «Control» CoordinadorDeAnalisis
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» PatronDeReferencia
+    participant E3 as «Entity» Evaluacion
+
+    AL->>B1: seleccionarVideoYTecnica(profesor, tecnica, video)
+    B1->>C1: validarPaseYElegibilidad(alumno, video)
+    C1->>E1: verificarPaseDeTatami(alumno)
+    E1-->>C1: paseVigente
+    C1->>C1: verificarEsJiuJitsu(video)
+    C1->>C1: detectarPracticantesIniciales(video)
+    C1-->>B1: candidatosEnEscena
+    B1-->>AL: mostrarSiluetasParaSeleccion(candidatos)
+    AL->>B1: confirmarMiSilueta(personaSeleccionada)
+    B1->>C1: iniciarEvaluacion(alumno, tecnica, video, personaSeleccionada)
+    C1->>E3: crearEvaluacionEnCurso(alumno, tecnica, sucursalCongelada)
+    E3-->>C1: evaluacionId
+
+    alt Alumno decide cancelar durante la espera
+        AL->>B1: cancelarAnalisis()
+        B1->>C1: cancelarEvaluacion(evaluacionId, alumno)
+        C1->>E3: marcarEstadoCancelado(evaluacionId)
+        C1->>C1: eliminarVideoTemporalYLiberarSesion()
+        C1-->>B1: cancelacionConfirmada()
+        B1-->>AL: volverAPantallaDeCarga()
+    else Analisis continua hasta finalizar
+        C1->>C1: extraerSecuenciaPostural(video, personaSeleccionada)
+        C1->>E2: recuperarPatronesActivos(tecnica)
+        E2-->>C1: secuenciasDeReferencia
+        C1->>C1: alinearYCalcularSimilitud(secuenciaAlumno, secuenciasDeReferencia)
+        C1->>C1: detectarFrameCriticoYArticulaciones()
+        C1->>E3: guardarResultadoCinematico(evaluacionId, similitud)
+        E3-->>C1: resultadoConfirmado
+        C1-->>B1: analisisCompletado(evaluacionId, similitud)
+        B1-->>AL: habilitarVistaDeFeedback(UC04)
+    end
+```
 
 ---
 
 ### 5.3.5. Diagrama de Paquetes UC-03
-Las dependencias entre paquetes respetan el **Principio de Inversión de Dependencias (DIP)**: los adaptadores de visión (`YOLOPoseAdapter`, `LocalSpamFilter`) y persistencia residen en `Infraestructura` y dependen de las abstracciones y algoritmos biomecánicos puros (`DTWComparator`, `PoseNormalizer`) encapsulados en `Dominio`.
+Los cálculos matemáticos puros (`dtw_comparator.py`, `pose_normalizer.py`) y las entidades permanecen aislados en `Dominio`, independientes de YOLO, FastAPI o Qdrant.
 
-![Diagrama de Paquetes UC-03](diagramas/cu03_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_App["App.jsx (AbortController y Cancelación)"]
+        P_Upload["VideoUpload.jsx"]
+        P_Selector["SelectorPersonaVideo.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Sesiones)"]
+        A_Routes["routes.py (analizar, primer-frame, cancelar)"]
+        A_Session["session_manager.py"]
+        A_Facade["intelligence_facade.py"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Biomecánica y Entidades)"]
+        D_DTW["dtw_comparator.py"]
+        D_Norm["pose_normalizer.py"]
+        D_Eval["Evaluacion"]
+        D_Esq["EsqueletoBiomecanico"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Visión y Persistencia)"]
+        I_YOLO["adapters.py (YOLOPoseAdapter)"]
+        I_Spam["local_spam_filter.py"]
+        I_DB["PostgrestClient / QdrantVectorAdapter"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.4. Caso de Uso 4: Generar Feedback Biomecánico (UC-04)
 
-### 5.4.1. Caso de Uso 4: Generar Feedback Biomecánico (UC-04) — Nivel de Análisis
-
+### 5.4.1. Caso de Uso 4: Generar Feedback Biomecánico (UC-04) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-04** |
 | **Nombre** | Generar Feedback Biomecánico |
-| **Actores** | **Principal:** Alumno.<br>**Secundario (Sistemas de Apoyo):** Base de Conocimiento Técnica (obras bibliográficas y directrices del profesor), Servicio de Redacción Pedagógica (elaboración y auditoría del consejo). |
-| **Descripción** | A partir del diagnóstico cinemático obtenido en **UC-03** (porcentaje de similitud, fotograma crítico y articulaciones comprometidas), el sistema determina la estrategia pedagógica adecuada aplicando una jerarquía determinística de fuentes doctrinales, elabora la explicación correctiva en el idioma del alumno y audita su fidelidad antes de presentar el reporte visual definitivo. |
-| **Precondiciones** | 1. Se ha completado exitosamente la comparación postural del caso de uso **UC-03** con similitud calculada y fotograma crítico identificado.<br>2. El alumno tiene configurado un idioma preferido (español, portugués o inglés). |
-| **Postcondiciones** | 1. El reporte final queda consolidado en la evaluación del alumno con el fotograma crítico anotado visualmente y los nombres anatómicos traducidos a su idioma.<br>2. Si correspondía corrección y existió respaldo confiable, el alumno recibe la explicación pedagógica con citas bibliográficas o directrices del profesor.<br>3. Se garantiza cero invención doctrinal mediante validación de fidelidad y respaldo seguro. |
+| **Actores** | **Principal:** Alumno. |
+| **Intención del Usuario** | Ver de manera visual y clara qué tan parecida fue su técnica a la del profesor, saltar al segundo exacto del error, entender qué articulación falló y leer una corrección confiable en su idioma con citas consultables. |
+| **Precondiciones** | 1. Se completó el cálculo de similitud y detección de fotograma crítico en **UC-03**.<br>2. El alumno tiene configurado un idioma preferido (`es`, `pt` o `en`). |
+| **Postcondiciones** | 1. El reporte final queda guardado con la nota, el segundo exacto del error, la imagen anotada con las articulaciones en rojo y el consejo adaptado al idioma del alumno.<br>2. Si la similitud fue menor al 85%, el consejo está respaldado exclusivamente por manuales de alta relevancia o por la nota directa del profesor (o entrega un aviso cuantitativo seguro sin inventar texto). |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | Al concluir el análisis cinemático (**UC-03**), el Alumno solicita visualizar la retroalimentación biomecánica de su ejecución en su idioma preferido. | El Sistema evalúa el porcentaje de similitud obtenido frente al umbral de dominio técnico (85%) para decidir si corresponde redactar una corrección o emitir un reconocimiento. |
-| 2 | | Cuando existen discrepancias significativas (similitud inferior al 85%), el Sistema consulta en dos etapas la base bibliográfica de la técnica (texto e ilustraciones) junto con las articulaciones comprometidas. |
-| 3 | | El Sistema aplica la jerarquía estricta de contexto: prioriza los pasajes bibliográficos de alta relevancia (Prioridad 1); si no existen pasajes pertinentes, recurre a la directriz escrita por el instructor (Prioridad 2). |
-| 4 | | Con base en el fotograma crítico y la fuente doctrinal prioritaria, el Sistema redacta una corrección pedagógica clara en el idioma del alumno citando la obra y página de respaldo cuando corresponde. |
-| 5 | | El Sistema somete la corrección generada a una auditoría automática de fidelidad frente al material consultado para descartar cualquier instrucción no fundamentada. |
-| 6 | | El Sistema anota visualmente las articulaciones erróneas sobre el fotograma crítico, traduce los términos anatómicos al idioma del alumno, actualiza el registro definitivo de la evaluación y despliega el reporte interactivo completo. |
+| 1 | Al terminar **UC-03**, el Alumno visualiza automáticamente su pantalla de resultados. | El Sistema evalúa si la similitud alcanzó el umbral de dominio técnico (`85.0%`). |
+| 2 | | Si es menor al 85%, el Sistema busca evidencias relevantes primero en los manuales de la técnica y, si no tiene manuales propios, amplía la búsqueda a la **Biblioteca Global** de la academia. |
+| 3 | | El Sistema aplica la jerarquía determinística de fuentes: **Prioridad 1** (pasajes de manual con relevancia $\ge 0.65$), **Prioridad 2** (nota o consejo práctico escrito por el profesor para esa técnica) o **Prioridad 3** (respaldo numérico seguro sin invocar al modelo generativo). |
+| 4 | | Cuando hay respaldo válido (Prioridad 1 o 2), el modelo local redacta la corrección en el idioma del alumno y un juez interno verifica su fidelidad ($\ge 0.85$) antes de aprobarla. |
+| 5 | | El Sistema dibuja las articulaciones críticas sobre el fotograma del error, traduce sus nombres al idioma del alumno y muestra lado a lado el video del profesor y el video del alumno con el botón **"Ir al momento del error"**. |
+| 6 | El Alumno puede presionar el botón del segundo del error para inspeccionar el fotograma ampliado, o abrir la Biblioteca para profundizar en las citas. | El Sistema posiciona el video en el segundo exacto del fallo, abre la vista detallada de articulaciones o muestra las citas diferenciando manuales (`📚`) de notas del instructor (`🥋`). |
 
-#### Secuencias Alternativas
-* **1a. Ejecución satisfactoria (similitud igual o superior al 85%):**
-  * El Sistema omite la corrección extensa y emite un mensaje de reconocimiento al desempeño correcto junto con el resumen comparativo en el idioma del alumno.
-* **3a. Ausencia de bibliografía pertinente y de directriz del instructor (Prioridad 3 — Respaldo Seguro):**
-  * El Sistema no invoca al redactor pedagógico y entrega de forma determinística el diagnóstico numérico, el fotograma crítico y un aviso estandarizado indicando que no existe material doctrinal suficiente para emitir consejo textual adicional.
-* **5a. Fidelidad pedagógica inferior al umbral exigido (Degradación Elegante):**
-  * Si la auditoría detecta desviaciones respecto a las fuentes consultadas, el Sistema descarta el texto redactado y presenta únicamente los datos biomecánicos objetivos y las articulaciones afectadas.
+#### Cursos Alternativos
+* **1a. Ejecución satisfactoria (similitud $\ge 85.0\%$):** El Sistema muestra un mensaje de felicitación en el idioma del alumno sin gastar cómputo generativo adicional.
+* **3a. Sin manuales pertinentes ni nota del profesor (Prioridad 3):** El Sistema no invoca al modelo de lenguaje y entrega directamente el porcentaje, el fotograma crítico, las articulaciones afectadas y un mensaje claro indicando que no hay material teórico suficiente.
+* **4a. Respuesta rechazada por el juez de fidelidad (`faithfulness < 0.85`):** Si se detectan afirmaciones sin respaldo en las fuentes, el Sistema descarta el texto generado y muestra únicamente la nota literal escrita por el profesor (si existe) o el respaldo cuantitativo seguro.
 
 #### Excepciones
-* **E1. Servicio de redacción pedagógica o base documental temporalmente no disponible:** El Sistema preserva intacta la evaluación cuantitativa con su porcentaje de similitud y fotograma crítico anotado para consulta inmediata del alumno.
+* **E1. Video de referencia temporalmente faltante en `/tmp`:** El servicio `VideoStorage` intenta restaurarlo automáticamente desde su respaldo persistente o desde la raíz del proyecto; si no existe archivo recuperable, muestra la tarjeta comparativa con el patrón numérico y el fotograma crítico del alumno.
 
 ---
 
 ### 5.4.2. Diagrama de Caso de Uso UC-04
 
-![Diagrama de Caso de Uso UC-04](diagramas/cu04_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Feedback Biomecanico"]
+        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
+        UC04_Rep(["Reproducir Momento Exacto del Error"]):::usecase
+        UC04_Frame(["Inspeccionar Fotograma Critico y Articulaciones"]):::usecase
+        UC04_Bib(["Consultar Citas y Manuales en Biblioteca"]):::usecase
+    end
+
+    AL --> UC04
+    UC04_Rep -.->|"«extend»"| UC04
+    UC04_Frame -.->|"«extend»"| UC04
+    UC04_Bib -.->|"«extend»"| UC04
+```
 
 ---
 
-### 5.4.3. Diagrama de Clases de Diseño (Participantes) UC-04
-El diagrama de clases de nivel de diseño desacopla el pipeline de recuperación multimodal y generación auditada bajo los estereotipos ECB:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeResultados` se materializa en `FeedbackView` y en la consulta de reporte de `EvaluacionesRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeFeedbackPedagógico` se implementa en `IntelligenceAnalysisFacade`, `MultimodalRAGService`, `HybridRetriever` (RRF + `GlossaryService`), `Qwen3VLRerankerCrossEncoder`, la familia de estrategias `PromptStrategy` y `LocalVLMAdapter` (incluyendo la auditoría `evaluarFidelidadGrounding`).
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Evaluación`, `BibliotecaTécnica` y el objeto de transferencia resultante corresponden a `Evaluacion`, `TeoriaRAG` y `AnalisisResultDTO`.
+### 5.4.3. Diagrama de Clases UC-04
+Participantes reales del pipeline de retroalimentación y consulta de citas:
+* **Boundary:** `FeedbackView`, `LibraryView` y `EvaluacionesRoutes` (`consultar_evaluacion`, `buscar_en_biblioteca`).
+* **Control:** `IntelligenceAnalysisFacade`, `MultimodalRAGService`, `HybridRetriever`, `Qwen3VLRerankerCrossEncoder`, `GlossaryService`, `IPromptStrategy` y `LocalVLMAdapter`.
+* **Entity:** `Evaluacion`, `TeoriaRAG` y `AnalisisResultDTO`.
 
-![Diagrama de Clases de Diseño UC-04](diagramas/cu04_clases.png)
+```mermaid
+classDiagram
+    class FeedbackView {
+        <<Boundary>>
+        +result: AnalisisResultDTO
+        +showFrameModal: Boolean
+        +jumpToError(timestamp)
+        +openFrameModal()
+    }
+
+    class LibraryView {
+        <<Boundary>>
+        +messages: List
+        +handleSearch()
+        +handleCitationClick(src)
+    }
+
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +consultar_evaluacion(evaluacion_id: UUID) Dict
+        +buscar_en_biblioteca(req: BibliotecaBuscarRequest) Dict
+    }
+
+    class IntelligenceAnalysisFacade {
+        <<Control>>
+        +UMBRAL_RELEVANCIA_RAG: Float
+        +ejecutar_analisis_completo(video_path, tecnica_id, idioma) AnalisisResultDTO
+    }
+
+    class MultimodalRAGService {
+        <<Control>>
+        +obtener_evidencias_rag_multimodal(qwen, qdrant, tecnica_id) List
+        +formatear_evidencias_texto(evidencias) String
+    }
+
+    class HybridRetriever {
+        <<Control>>
+        +DEFAULT_K_RRF: Int
+        +fusionar_rrf(densos, bm25, top_k) List
+        +recuperar(query_texto, qdrant, qwen) List
+    }
+
+    class Qwen3VLRerankerCrossEncoder {
+        <<Control>>
+        +rerank_pairs(query, documents) List
+    }
+
+    class GlossaryService {
+        <<Control>>
+        +expandir_query_con_glosario(query) String
+    }
+
+    class IPromptStrategy {
+        <<Interface>>
+        +construir_prompt_evaluacion(tecnica, discrepancias, mensaje) String
+        +obtener_mensaje_sin_contexto() Dict
+    }
+
+    class LocalVLMAdapter {
+        <<Adapter>>
+        +generar_texto_feedback(prompt, frame, evidencias, idioma) Dict
+        +evaluar_fidelidad_grounding(respuesta, contexto, mensaje) Dict
+        +generar_respuesta_rag_chat(query, chunks, idioma) String
+    }
+
+    class Evaluacion {
+        <<Entity>>
+        +id: UUID
+        +porcentaje_similitud: Float
+        +feedback_gemini_es: String
+        +feedback_summary: String
+    }
+
+    class TeoriaRAG {
+        <<Entity>>
+        +id: UUID
+        +contenido_texto: String
+        +fuente_tipo: String
+        +fuente_nombre: String
+        +alcance: String
+    }
+
+    class AnalisisResultDTO {
+        <<Entity>>
+        +similitud: Float
+        +feedback: String
+        +feedback_summary: String
+        +frame_critico_path: String
+        +timestamp_error_segundos: Float
+        +nombres_articulaciones_criticas: List
+    }
+
+    FeedbackView ..> EvaluacionesRoutes : HTTP GET evaluacion
+    LibraryView ..> EvaluacionesRoutes : HTTP POST biblioteca/buscar
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : consulta resultados
+    IntelligenceAnalysisFacade --> MultimodalRAGService : aplica jerarquia y fallback global
+    MultimodalRAGService --> HybridRetriever : recupera candidatos
+    HybridRetriever --> GlossaryService : expande terminos
+    IntelligenceAnalysisFacade --> Qwen3VLRerankerCrossEncoder : reordena top candidatos
+    IntelligenceAnalysisFacade --> IPromptStrategy : selecciona idioma
+    IntelligenceAnalysisFacade --> LocalVLMAdapter : redacta y audita fidelidad
+    MultimodalRAGService ..> TeoriaRAG : consulta
+    IntelligenceAnalysisFacade --> Evaluacion : actualiza reporte
+    EvaluacionesRoutes ..> AnalisisResultDTO : retorna
+```
 
 ---
 
-### 5.4.4. Diagrama de Secuencia UC-04
+### 5.4.4. Diagrama de Secuencia ECB UC-04
 
-![Diagrama de Secuencia UC-04](diagramas/cu04_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AL as Alumno
+    participant B1 as «Boundary» PantallaDeResultados
+    participant C1 as «Control» CoordinadorDeFeedback
+    participant E1 as «Entity» Evaluacion
+    participant E2 as «Entity» BibliotecaTecnica
+    participant E3 as «Entity» Tecnica
+
+    AL->>B1: consultarFeedbackEnIdioma(evaluacionId, idioma)
+    B1->>C1: generarFeedbackPedagogico(evaluacionId, idioma)
+    C1->>E1: obtenerDiagnosticoCinematico(evaluacionId)
+    E1-->>C1: similitud, frameCritico, articulaciones
+
+    alt Similitud >= 85%
+        C1->>C1: emitirReconocimientoEnIdioma(idioma)
+    else Similitud < 85%
+        C1->>E2: buscarEvidenciaEspecificaOGlobal(tecnica, frameCritico)
+        E2-->>C1: pasajesYRelevancia
+        C1->>E3: obtenerMensajeDelProfesor(tecnica)
+        E3-->>C1: notaDelProfesor
+        C1->>C1: aplicarJerarquia(Manual >= 0.65 > NotaDelProfesor > Fallback)
+        alt Existe respaldo en Manual o Nota del Profesor
+            C1->>C1: redactarCorreccion(frameCritico, contexto, idioma)
+            C1->>C1: auditarFidelidad(correccion, contexto)
+            alt Fidelidad < 0.85
+                C1->>C1: activarFallbackSeguro()
+            end
+        else Sin manuales ni nota del profesor
+            C1->>C1: retornarAvisoSinContextoSuficiente()
+        end
+    end
+
+    C1->>C1: anotarFrameYTraducirArticulaciones(idioma)
+    C1->>E1: guardarReporteDefinitivo(evaluacionId, feedback)
+    E1-->>C1: reporteGuardado
+    C1-->>B1: entregarReporteCompleto(similitud, feedback, frame, timestamp)
+    B1-->>AL: mostrarVideosComparadosYCorreccion()
+```
 
 ---
 
 ### 5.4.5. Diagrama de Paquetes UC-04
-Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: las estrategias de idioma (`Spanish/Portuguese/English`), la fusión híbrida (`HybridRetriever`) y las entidades residen en `Dominio`, mientras que los adaptadores concretos de inferencia (`MLX Qwen3-VL`), embeddings y base vectorial (`Qdrant`) permanecen aislados en `Infraestructura`.
+Las estrategias de idioma (`prompt_strategies.py`), el glosario y el recuperador híbrido residen en `Dominio` e interactúan con `local_vlm_adapter.py`, `qwen_adapter.py` y Qdrant en `Infraestructura`.
 
-![Diagrama de Paquetes UC-04](diagramas/cu04_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Feedback["FeedbackView.jsx"]
+        P_Library["LibraryView.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Orquestación RAG y Reportes)"]
+        A_Routes["routes.py (consultar_evaluacion / buscar_en_biblioteca)"]
+        A_Facade["intelligence_facade.py"]
+        A_RAG["multimodal_rag_service.py"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Recuperación, Estrategias y Entidades)"]
+        D_Rerank["rag_reranker.py"]
+        D_Hybrid["hybrid_retriever.py"]
+        D_Glossary["glossary_service.py"]
+        D_Prompt["prompt_strategies.py"]
+        D_Models["Evaluacion / AnalisisResultDTO / TeoriaRAG"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (VLM Local, Embeddings y BD)"]
+        I_VLM["local_vlm_adapter.py (MLX)"]
+        I_Qwen["qwen_adapter.py (MLX)"]
+        I_Qdrant["qdrant_adapter.py / qdrant_rag_adapter.py"]
+        I_PG["PostgrestClient / VideoStorage"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.5. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05)
 
-### 5.5.1. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05) — Nivel de Análisis
-
+### 5.5.1. Caso de Uso 5: Gestionar Técnicas y Videos de Referencia (UC-05) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-05** |
 | **Nombre** | Gestionar Técnicas y Videos de Referencia |
-| **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Visión por Computadora (reconocimiento de la secuencia postural). |
-| **Descripción** | El instructor administra el catálogo técnico de la academia y registra su propia ejecución ejemplar como patrón biomecánico oficial de referencia para cada técnica. |
-| **Precondiciones** | El usuario cuenta con una sesión activa con facultades de instrucción o administración. |
-| **Postcondiciones** | 1. La técnica queda disponible en el catálogo oficial de la academia.<br>2. Su patrón postural de referencia queda asociado al profesor y habilitado para evaluar a los alumnos. |
+| **Actores** | **Principal:** Profesor, Administrador. |
+| **Intención del Usuario** | Crear, editar o eliminar técnicas de Jiu-Jitsu en el catálogo oficial de la academia y subir su video demostrativo señalando quién es el instructor en la escena para que sirva como referencia a los alumnos. |
+| **Precondiciones** | El usuario ha iniciado sesión con rol `profesor` o `admin`. |
+| **Postcondiciones** | 1. Al crear o actualizar con video, la técnica queda registrada con su patrón biomecánico activo en Qdrant y su video respaldado de forma persistente (`storage_root()/reference_videos`).<br>2. Al eliminar una técnica, se borran de forma coordinada sus filas en PostgreSQL, sus vectores de poses y sus fragmentos asociados en Qdrant. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Profesor solicita incorporar una nueva técnica al catálogo de la academia aportando su nombre, el grado de cinturón requerido, las indicaciones opcionales y la demostración en video. | El Sistema verifica la validez del material aportado e identifica a las personas presentes en el inicio de la demostración. |
-| 2 | | El Sistema solicita al profesor confirmar cuál de las siluetas reconocidas corresponde al instructor que ejecuta la técnica. |
-| 3 | El Profesor confirma su identidad dentro de la demostración. | El Sistema da de alta la técnica en el catálogo y extrae la secuencia postural completa del instructor a lo largo del movimiento. |
-| 4 | | El Sistema cataloga la secuencia postural como patrón oficial de referencia del profesor y confirma que la técnica se encuentra lista para evaluar ejecuciones de alumnos. |
-| 5 | El Profesor puede actualizar los datos descriptivos o dar de baja una técnica existente. | El Sistema actualiza el catálogo oficial y, en caso de baja, retira la disponibilidad de la técnica para nuevas evaluaciones. |
+| 1 | El Profesor abre su panel de técnicas, solicita crear o editar una técnica e ingresa su nombre, cinturón, indicaciones opcionales y video demostrativo. | El Sistema procesa el fotograma inicial del video y muestra las personas detectadas en la escena. |
+| 2 | El Profesor confirma qué silueta corresponde al instructor que ejecuta la técnica. | El Sistema crea o actualiza la técnica, extrae la secuencia postural completa del instructor verificando una cobertura mínima del 40%, registra el patrón en Qdrant y lo activa en PostgreSQL. |
+| 3 | | El Sistema guarda una copia persistente del video demostrativo (`persistir_video_referencia`), dispara en segundo plano la indexación visual de fotogramas para RAG y deja la técnica lista para que los alumnos se evalúen. |
+| 4 | El Profesor puede editar solo el texto/cinturón de una técnica o solicitar eliminarla del catálogo. | Al editar texto se conserva el patrón vigente; al eliminar, el Sistema purga primero los vectores de pose y RAG en Qdrant y luego borra el registro de la técnica en PostgreSQL. |
 
-#### Secuencias Alternativas
-* **1a. Demostración con visibilidad insuficiente del instructor:** El Sistema rechaza el registro e informa al profesor que debe aportar una grabación donde la ejecución completa sea claramente distinguible.
-* **5a. Modificación descriptiva sin cambio de demostración:** Si el profesor actualiza únicamente el nombre, el grado de cinturón o las indicaciones pedagógicas, el Sistema conserva intacto el patrón de referencia vigente.
-* **5b. Sustitución de la demostración de referencia:** Si el profesor aporta una nueva grabación para una técnica existente, el Sistema reemplaza el patrón postural anterior por la nueva secuencia confirmada.
+#### Cursos Alternativos
+* **2a. Cobertura postural insuficiente (menor al 40%) o falla al guardar patrón:** El Sistema rechaza el registro con error claro (`HTTP 422`), revierte cualquier dato parcial creado para no dejar técnicas vacías y solicita grabar un video más claro.
+* **4a. Eliminación con datos en ambas bases:** El Sistema ejecuta la limpieza híbrida en `vectores_poses_jiujitsu`, `rag_knowledge` y PostgreSQL para no dejar vectores huérfanos.
 
 #### Excepciones
-* **E1. Nombre de técnica duplicado en el catálogo:** El Sistema advierte la coincidencia y solicita confirmación antes de actualizar o crear el registro.
+* **E1. Pérdida de archivos temporales en `/tmp` tras reinicio:** Al arrancar FastAPI o consultar el catálogo, `VideoStorage` restaura automáticamente los videos faltantes desde su carpeta de respaldo persistente (`autocurar_videos_referencia_en_arranque`).
 
 ---
 
 ### 5.5.2. Diagrama de Caso de Uso UC-05
 
-![Diagrama de Caso de Uso UC-05](diagramas/cu05_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Gestion de Tecnicas"]
+        UC05(["UC-05: Gestionar Tecnicas y Videos de Referencia"]):::usecase
+        UC05_Alta(["Registrar o Editar Tecnica"]):::usecase
+        UC05_Vid(["Subir Video Patron de Referencia"]):::usecase
+        UC05_Del(["Eliminar Tecnica del Catalogo"]):::usecase
+    end
+
+    PR --> UC05
+    AD --> UC05
+    UC05 -.->|"«include»"| UC05_Alta
+    UC05_Vid -.->|"«extend»"| UC05
+    UC05_Del -.->|"«extend»"| UC05
+```
 
 ---
 
-### 5.5.3. Diagrama de Clases de Diseño (Participantes) UC-05
-Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeCatálogoTécnico` se implementa en `ProfesorTecnicasView` y `TecnicasRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeTécnicas` se materializa en `TecnicasService` y el adaptador `YOLOPoseAdapter`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Técnica` y `PatrónDeReferencia` corresponden a las clases `Tecnica` y `PatronReferencia`.
+### 5.5.3. Diagrama de Clases UC-05
+Participantes reales del catálogo técnico y persistencia de videos:
+* **Boundary:** `ProfesorTecnicas`, `SelectorPersonaVideo` y `TecnicasRoutes` (`tecnicas_routes.py`).
+* **Control:** `VideoStorage` (`video_storage.py`) y `PostgrestClient`.
+* **Adapter / Entity:** `YOLOPoseAdapter`, `QdrantVectorAdapter`, `QdrantRAGAdapter`, `Tecnica` y `PatronReferencia`.
 
-![Diagrama de Clases de Diseño UC-05](diagramas/cu05_clases.png)
+```mermaid
+classDiagram
+    class ProfesorTecnicas {
+        <<Boundary>>
+        +tecnicas: List
+        +selectedFile: File
+        +handleSave()
+        +handleConfirmPersona()
+        +handleDelete(id)
+    }
+
+    class SelectorPersonaVideo {
+        <<Boundary>>
+        +sessionData: Dict
+        +selectedIdx: Int
+        +onSelect(idx)
+    }
+
+    class TecnicasRoutes {
+        <<Boundary>>
+        +listar_tecnicas(profesor_id) List~TecnicaResponse~
+        +crear_tecnica(req: TecnicaCreate) TecnicaResponse
+        +actualizar_tecnica(tecnica_id, req) TecnicaResponse
+        +eliminar_tecnica(tecnica_id) Void
+        +registrar_patron_tecnica(tecnica_id, session_id, persona_idx) Dict
+    }
+
+    class VideoStorage {
+        <<Control>>
+        +persistir_video_referencia(source_path) String
+        +resolver_video_estatico(raw_path, es_referencia) String
+        +autocurar_videos_referencia_en_arranque() Void
+    }
+
+    class YOLOPoseAdapter {
+        <<Adapter>>
+        +extraer_secuencia(video_path, persona_idx_inicial) Dict
+    }
+
+    class QdrantVectorAdapter {
+        <<Adapter>>
+        +guardar_patron_secuencia(tecnica_id, patron_id, secuencia_kpts) Int
+        +eliminar_por_tecnica(tecnica_id) Int
+    }
+
+    class QdrantRAGAdapter {
+        <<Adapter>>
+        +eliminar_por_tecnica(tecnica_id) Int
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+    }
+
+    class Tecnica {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +nivel_cinturon: String
+        +mensaje_profesor: String
+        +patron_activo_id: UUID
+    }
+
+    class PatronReferencia {
+        <<Entity>>
+        +id: UUID
+        +tecnica_id: UUID
+        +profesor_id: UUID
+        +url_video: String
+        +secuencia_3d: List
+    }
+
+    ProfesorTecnicas ..> SelectorPersonaVideo : selecciona instructor en video
+    ProfesorTecnicas ..> TecnicasRoutes : HTTP GET/POST/PUT/DELETE
+    TecnicasRoutes --> VideoStorage : respalda y autocura videos
+    TecnicasRoutes --> YOLOPoseAdapter : extrae patron 3D
+    TecnicasRoutes --> QdrantVectorAdapter : guarda o limpia poses
+    TecnicasRoutes --> QdrantRAGAdapter : limpia fragmentos al eliminar
+    TecnicasRoutes --> PostgrestClient : persiste en PostgreSQL
+    PostgrestClient --> Tecnica : administra
+    QdrantVectorAdapter --> PatronReferencia : almacena
+```
 
 ---
 
-### 5.5.4. Diagrama de Secuencia UC-05
+### 5.5.4. Diagrama de Secuencia ECB UC-05
 
-![Diagrama de Secuencia UC-05](diagramas/cu05_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PR as Profesor
+    participant B1 as «Boundary» PantallaCatalogoTecnico
+    participant C1 as «Control» CoordinadorDeTecnicas
+    participant E1 as «Entity» Tecnica
+    participant E2 as «Entity» PatronDeReferencia
+
+    alt Registrar o actualizar tecnica con video patron
+        PR->>B1: ingresarDatosTecnicaYVideo(nombre, cinturon, notaProfesor, video)
+        B1->>C1: procesarVideoInicial(video)
+        C1-->>B1: siluetasEnEscena
+        B1-->>PR: solicitarConfirmacionDeInstructor(siluetas)
+        PR->>B1: confirmarInstructorYGuardar(personaSeleccionada)
+        B1->>C1: registrarTecnicaYPatron(datos, video, personaSeleccionada)
+        C1->>E1: guardarDatosTecnica(nombre, cinturon, notaProfesor)
+        E1-->>C1: tecnicaId
+        C1->>C1: extraerSecuenciaPosturalYRespaldarVideo(video, personaSeleccionada)
+        C1->>E2: registrarPatronYVideoPersistente(tecnicaId, secuencia, videoRespaldo)
+        E2-->>C1: patronActivo
+        C1-->>B1: confirmacionDeRegistro(tecnicaId, patronActivo)
+        B1-->>PR: mostrarTecnicaListaParaEvaluar()
+    else Eliminar tecnica del catalogo
+        PR->>B1: solicitarEliminarTecnica(tecnicaId)
+        B1->>C1: eliminarTecnicaEnCascada(tecnicaId)
+        C1->>E2: limpiarPatronesYTeoriaAsociada(tecnicaId)
+        C1->>E1: eliminarRegistroDeCatalogo(tecnicaId)
+        E1-->>C1: eliminacionConfirmada
+        C1-->>B1: catalogoActualizado()
+        B1-->>PR: confirmarEliminacionDeTecnica()
+    end
+```
 
 ---
 
 ### 5.5.5. Diagrama de Paquetes UC-05
-Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: las capas externas (`Presentacion` e `Infraestructura`) dependen de las capas internas (`Aplicacion` y `Dominio`).
 
-![Diagrama de Paquetes UC-05](diagramas/cu05_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Prof["ProfesorTecnicas.jsx"]
+        P_Sel["SelectorPersonaVideo.jsx"]
+        P_Api["api/tecnicas.js"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Servicios)"]
+        A_Routes["tecnicas_routes.py"]
+        A_Msg["instructor_message_ingestion.py"]
+        A_VidRag["rag_video_ingestion.py"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
+        D_Tecnica["Tecnica"]
+        D_Patron["PatronReferencia"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Visión, Almacenamiento y BD)"]
+        I_YOLO["adapters.py (YOLOPoseAdapter)"]
+        I_Vid["video_storage.py (Respaldo y Auto-curación)"]
+        I_Qdrant["qdrant_adapter.py / qdrant_rag_adapter.py"]
+        I_PG["PostgrestClient / PostgreSQL"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
-## 5.6. Caso de Uso 6: Gestionar Teoría RAG (UC-06)
+## 5.6. Caso de Uso 6: Gestionar Manuales de Estudio y Notas del Profesor (UC-06)
 
-### 5.6.1. Caso de Uso 6: Gestionar Conocimiento Técnico y Directrices del Profesor (UC-06) — Nivel de Análisis
-
+### 5.6.1. Caso de Uso 6: Gestionar Manuales de Estudio y Notas del Profesor (UC-06) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-06** |
-| **Nombre** | Gestionar Conocimiento Técnico y Directrices del Profesor |
-| **Actores** | **Principal:** Profesor.<br>**Secundario (Sistemas de Apoyo):** Servicio de Catalogación de Conocimiento, Base de Conocimiento Técnica. |
-| **Descripción** | El instructor nutre el acervo doctrinal de la academia incorporando obras bibliográficas de referencia y registrando directrices pedagógicas propias para orientar la corrección de cada técnica. |
-| **Precondiciones** | El profesor cuenta con una sesión activa y dispone de facultades de instrucción en su sede. |
-| **Postcondiciones** | 1. Los pasajes e ilustraciones de las obras aportadas quedan catalogados en la biblioteca técnica para consulta semántica y fundamentación de evaluaciones.<br>2. Las directrices del instructor quedan vinculadas a la técnica correspondiente. |
+| **Nombre** | Gestionar Manuales de Estudio y Notas del Profesor |
+| **Actores** | **Principal:** Profesor, Administrador (Dueño de la Marca) en tareas de gestión; Alumno en consulta de Biblioteca. |
+| **Intención del Usuario** | Subir libros o manuales de estudio en distintos formatos (PDF, Word, texto o imágenes), escribir notas o consejos prácticos propios en cada técnica (para guiar al alumno y servir de respaldo al análisis), eliminar manuales obsoletos y buscar o leer el material en la Biblioteca Técnica. |
+| **Precondiciones** | El usuario ha iniciado sesión; solo `profesor` y `admin` pueden subir o eliminar material teórico y editar notas técnicas. |
+| **Postcondiciones** | 1. El manual subido queda guardado, segmentado e indexado multimodalmente (texto e imágenes/páginas) en Qdrant y PostgreSQL.<br>2. La nota o consejo del profesor (`mensaje_profesor`) queda guardada tanto en PostgreSQL dentro de la técnica como en Qdrant (`instructor_message`).<br>3. Al eliminar un manual, se limpian atómicamente sus vectores en Qdrant, sus filas en PostgreSQL y su archivo físico e imágenes asociadas en disco. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Profesor solicita enriquecer el respaldo teórico de la academia o de una técnica específica. | El Sistema habilita el registro de directrices pedagógicas del instructor y la incorporación de obras bibliográficas. |
-| 2 | El Profesor redacta una directriz pedagógica dirigida a sus alumnos para una técnica. | El Sistema asocia la directriz a la técnica seleccionada para emplearla cuando no exista bibliografía específica de mayor relevancia. |
-| 3 | El Profesor aporta un documento o ilustración técnica para la biblioteca global de la academia. | El Sistema recibe el documento, segmenta sus pasajes textuales e ilustraciones y los cataloga en la biblioteca técnica. |
-| 4 | | El Sistema informa al profesor la cantidad de fragmentos catalogados y deja la obra disponible en el catálogo y en el buscador de la biblioteca. |
-| 5 | El Profesor puede consultar o retirar una fuente bibliográfica o directriz previamente registrada. | El Sistema actualiza la biblioteca técnica retirando los fragmentos indicados sin afectar las contribuciones de otros instructores. |
+| 1 | El Profesor abre la Biblioteca Global o la sección de teoría de una técnica específica. | El Sistema muestra el formulario para subir archivos, el cuadro de texto para escribir la **nota o consejo práctico del profesor** y la lista de manuales ya registrados. |
+| 2 | El Profesor redacta una nota práctica para la técnica (por ejemplo: *"Mantén la rodilla pegada a la cadera antes de girar"*) o sube un manual de estudio (`.pdf`, `.docx`, `.txt` o imagen) indicando su título. | El Sistema guarda la nota del profesor o procesa el archivo en segundo plano mostrando su porcentaje de avance (con opción de cancelar), extrae texto e imágenes/páginas visuales y los indexa en Qdrant y PostgreSQL. |
+| 3 | Cualquier usuario autenticado abre la pestaña de Biblioteca para buscar una duda técnica o abrir el catálogo de manuales. | El Sistema ejecuta búsqueda semántica multimodal, responde citando las fuentes con etiquetas claras (`📚` para manuales y `🥋` para notas del profesor) y permite previsualizar PDFs, textos o imágenes. |
+| 4 | El Profesor o Administrador presiona eliminar junto a un manual obsoleto (o limpia la teoría de una técnica). | El Sistema elimina simultáneamente los puntos vectoriales en Qdrant, las filas en `teoria_referencia` (`admin_delete_manual_teoria`) y los archivos físicos en disco, actualizando el catálogo al instante. |
 
-#### Secuencias Alternativas
-* **3a. Documento ilegible o sin contenido técnico extraíble:** El Sistema informa la imposibilidad de extraer fragmentos útiles y solicita aportar un documento con texto o ilustraciones legibles.
-* **3b. Obra bibliográfica extensa:** El Sistema procesa la catalogación de forma progresiva e informa el avance porcentual hasta concluir la incorporación completa.
-* **5a. Retiro de directriz del instructor:** Si el profesor deja vacía su directriz en una técnica, el Sistema elimina la indicación previa sin alterar el patrón biomecánico de la técnica.
+#### Cursos Alternativos
+* **2a. Formato no compatible o archivo mayor a 100 MB:** El Sistema rechaza el documento (`HTTP 415` o `HTTP 413`) explicando los formatos admitidos y el límite de tamaño.
+* **2b. Documento sin contenido extraíble:** El Sistema informa (`HTTP 422`) que el archivo no contiene texto ni páginas válidas para indexar.
+* **4a. Alumno intenta eliminar un manual o subir material:** El Sistema deniega la operación (`HTTP 403`) y oculta las acciones de edición en pantalla.
 
 #### Excepciones
-* **E1. Servicio de catalogación temporalmente no disponible:** El Sistema conserva el documento original y notifica al profesor para reintentar su catalogación cuando el servicio se restablezca.
+* **E1. Cancelación de la carga de un manual desde el modal:** El cliente aborta la petición y el monitoreo de progreso, devolviendo el modal a estado listo sin bloquear la interfaz.
 
 ---
 
 ### 5.6.2. Diagrama de Caso de Uso UC-06
 
-![Diagrama de Caso de Uso UC-06](diagramas/cu06_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Biblioteca y Conocimiento"]
+        UC06(["UC-06: Gestionar Manuales de Estudio y Notas del Profesor"]):::usecase
+        UC06_Up(["Subir Manual a Biblioteca PDF/DOCX/TXT/Imagen"]):::usecase
+        UC06_Msg(["Escribir Nota o Consejo del Profesor en la Tecnica"]):::usecase
+        UC06_Del(["Eliminar Manual o Teoria Obsoleta"]):::usecase
+        UC06_Read(["Buscar y Previsualizar Biblioteca"]):::usecase
+    end
+
+    PR --> UC06
+    AD --> UC06
+    PR --> UC06_Read
+    AD --> UC06_Read
+    AL --> UC06_Read
+
+    UC06_Up -.->|"«extend»"| UC06
+    UC06_Msg -.->|"«extend»"| UC06
+    UC06_Del -.->|"«extend»"| UC06
+```
 
 ---
 
-### 5.6.3. Diagrama de Clases de Diseño (Participantes) UC-06
-Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeConocimientoTécnico` se implementa mediante `TheoryManagerModal`, `GlobalKnowledgeModal` y `ConocimientoRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeConocimiento` se materializa en `KnowledgeController` (`IngestKnowledgeUseCase`) y `QwenEmbeddingAdapter`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Técnica` y `BibliotecaTécnica` corresponden a las entidades `Tecnica` y `TeoriaRAG`.
+### 5.6.3. Diagrama de Clases UC-06
+Participantes reales del módulo de conocimiento:
+* **Boundary:** `GlobalKnowledgeModal`, `TheoryManagerModal`, `LibraryView` y `EvaluacionesRoutes` (`routes.py`).
+* **Control:** `IngestKnowledgeUseCase`, `DeleteTheoryUseCase`, `ListTheoryUseCase`, `InstructorMessageIngestion` y `PostgrestClient`.
+* **Adapter / Entity:** `QwenEmbeddingAdapter`, `QdrantRAGAdapter`, `TeoriaRAG` y `Tecnica`.
 
-![Diagrama de Clases de Diseño UC-06](diagramas/cu06_clases.png)
+```mermaid
+classDiagram
+    class GlobalKnowledgeModal {
+        <<Boundary>>
+        +file: File
+        +sourceName: String
+        +sources: List
+        +handleUpload()
+        +handleCancelUpload()
+        +handleDeleteSource(filename)
+    }
+
+    class TheoryManagerModal {
+        <<Boundary>>
+        +tecnica: Tecnica
+        +chunks: List
+        +handleDeleteAll()
+    }
+
+    class LibraryView {
+        <<Boundary>>
+        +manuales: List
+        +fetchManuales()
+        +handleDeleteManual(filename)
+    }
+
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +ingerir_archivo_teoria(archivo, alcance, tecnica_id) Dict
+        +listar_manuales_pdf() List
+        +servir_manual_pdf(filename) FileResponse
+        +eliminar_manual_conocimiento(filename) Dict
+        +eliminar_teoria(tecnica_id) Dict
+    }
+
+    class IngestKnowledgeUseCase {
+        <<Control>>
+        +execute(tecnica_id, contenido_texto, alcance) IngestionResponse
+    }
+
+    class DeleteTheoryUseCase {
+        <<Control>>
+        +execute(tecnica_id, profesor_id) Dict
+    }
+
+    class InstructorMessageIngestion {
+        <<Control>>
+        +sincronizar_mensaje_profesor(tecnica_id, mensaje) Int
+    }
+
+    class QwenEmbeddingAdapter {
+        <<Adapter>>
+        +generar_embedding_texto(texto) List
+        +generar_embedding_imagen(image, prompt) List
+    }
+
+    class QdrantRAGAdapter {
+        <<Adapter>>
+        +ingestar_desde_respuesta(data, tecnica_id, alcance) Dict
+        +eliminar_por_manual(filename) Int
+        +eliminar_puntos(point_ids) Int
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+    }
+
+    class TeoriaRAG {
+        <<Entity>>
+        +id: UUID
+        +tecnica_id: UUID
+        +fuente_tipo: String
+        +fuente_nombre: String
+        +alcance: String
+        +qdrant_point_id: UUID
+    }
+
+    GlobalKnowledgeModal ..> EvaluacionesRoutes : sube o elimina manuales
+    TheoryManagerModal ..> EvaluacionesRoutes : consulta o limpia teoria
+    LibraryView ..> EvaluacionesRoutes : previsualiza o elimina manual
+    EvaluacionesRoutes --> IngestKnowledgeUseCase : indexa texto e imagenes
+    EvaluacionesRoutes --> DeleteTheoryUseCase : elimina teoria de tecnica
+    EvaluacionesRoutes --> QdrantRAGAdapter : limpia vectores de manual
+    EvaluacionesRoutes --> PostgrestClient : ejecuta admin_delete_manual_teoria
+    IngestKnowledgeUseCase --> QwenEmbeddingAdapter : vectoriza 2048 dims
+    IngestKnowledgeUseCase --> QdrantRAGAdapter : guarda puntos
+    IngestKnowledgeUseCase --> TeoriaRAG : registra metadata
+    DeleteTheoryUseCase --> QdrantRAGAdapter : purga puntos
+    InstructorMessageIngestion --> QdrantRAGAdapter : sincroniza nota
+```
 
 ---
 
-### 5.6.4. Diagrama de Secuencia UC-06
+### 5.6.4. Diagrama de Secuencia ECB UC-06
 
-![Diagrama de Secuencia UC-06](diagramas/cu06_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PR as Profesor
+    participant B1 as «Boundary» PantallaDeBiblioteca
+    participant C1 as «Control» CoordinadorDeConocimiento
+    participant E1 as «Entity» Tecnica
+    participant E2 as «Entity» BibliotecaTecnica
+
+    alt Subir manual o actualizar nota del profesor
+        PR->>B1: cargarDocumentoOAgregarNota(archivo, alcance, notaProfesor)
+        B1->>C1: procesarConocimiento(archivo, alcance, notaProfesor)
+        opt Incluye nota del profesor en tecnica
+            C1->>E1: guardarNotaDelProfesor(tecnica, notaProfesor)
+            E1-->>C1: notaGuardada
+        end
+        opt Incluye documento PDF, DOCX, TXT o Imagen
+            C1->>C1: extraerTextoEIlustraciones(archivo)
+            C1->>E2: catalogarFragmentosEImagenes(fuente, fragmentos)
+            E2-->>C1: totalCatalogado
+        end
+        C1-->>B1: confirmacionDeCarga(totalCatalogado)
+        B1-->>PR: mostrarFuenteDisponibleEnBiblioteca()
+    else Eliminar manual obsoleto de la biblioteca
+        PR->>B1: solicitarEliminarManual(nombreArchivo)
+        B1->>C1: eliminarManualDeFormaAtomica(nombreArchivo)
+        C1->>E2: purgarVectoresYRegistros(nombreArchivo)
+        C1->>C1: eliminarArchivoFisicoEImagenes(nombreArchivo)
+        E2-->>C1: limpiezaConfirmada
+        C1-->>B1: manualEliminado()
+        B1-->>PR: actualizarCatalogoDeBiblioteca()
+    end
+```
 
 ---
 
 ### 5.6.5. Diagrama de Paquetes UC-06
-Las dependencias entre paquetes siguen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-![Diagrama de Paquetes UC-06](diagramas/cu06_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Global["GlobalKnowledgeModal.jsx"]
+        P_Theory["TheoryManagerModal.jsx"]
+        P_Lib["LibraryView.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Casos de Uso y Rutas)"]
+        A_Routes["routes.py (ingesta, descarga, borrado de manuales)"]
+        A_Ingest["ingest_knowledge_use_case.py"]
+        A_Del["delete_theory_use_case.py"]
+        A_List["list_theory_use_case.py"]
+        A_Msg["instructor_message_ingestion.py"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_Teoria["TeoriaRAG"]
+        D_Tecnica["Tecnica"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Embeddings, Vector DB y Almacenamiento)"]
+        I_Qwen["qwen_adapter.py (MLX)"]
+        I_Qdrant["qdrant_rag_adapter.py"]
+        I_PG["PostgrestClient / PostgreSQL"]
+        I_FS["Almacenamiento de Manuales (Disco)"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.7. Caso de Uso 7: Ver Progreso de Alumnos (UC-07)
 
-### 5.7.1. Caso de Uso 7: Ver Progreso de Alumnos (UC-07) — Nivel de Análisis
-
+### 5.7.1. Caso de Uso 7: Ver Progreso de Alumnos (UC-07) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-07** |
 | **Nombre** | Ver Progreso de Alumnos |
-| **Actores** | **Principal:** Profesor, Alumno.<br>**Secundario (Sistemas de Apoyo):** Ninguno. |
-| **Descripción** | El profesor supervisa la evolución biomecánica de los practicantes adscritos a su sede a partir de su historial cronológico de evaluaciones; el alumno consulta su propia evolución técnica. |
-| **Precondiciones** | El usuario cuenta con una sesión activa bajo el rol de profesor o de alumno. |
-| **Postcondiciones** | El usuario conoce el historial de evaluaciones, el grado de similitud alcanzado en cada intento y las correcciones pedagógicas emitidas dentro de su ámbito de autorización. |
+| **Actores** | **Principal:** Profesor, Alumno. |
+| **Intención del Usuario** | Consultar la evolución técnica a lo largo del tiempo: el profesor revisa las calificaciones y videos de los alumnos de su propia sede, y el alumno consulta su propio historial de prácticas. |
+| **Precondiciones** | El usuario tiene una sesión activa como `profesor`, `alumno` o `admin`. |
+| **Postcondiciones** | El usuario visualiza el historial de evaluaciones autorizado, incluyendo la sucursal histórica donde se realizó cada evaluación, el porcentaje de similitud, los videos comparativos y la corrección emitida. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Profesor solicita supervisar el avance técnico de los alumnos de su academia. | El Sistema identifica la sede del profesor y recupera la nómina de alumnos adscritos junto con su historial de evaluaciones. |
-| 2 | | El Sistema consolida los indicadores de evolución de cada practicante y presenta la lista de alumnos con el estado de su Pase de Tatami y el resumen de sus evaluaciones. |
-| 3 | El Profesor selecciona a un alumno y una evaluación específica para examinarla en detalle. | El Sistema presenta la ejecución registrada, el grado de similitud, las articulaciones comprometidas y la corrección pedagógica asociada. |
-| 4 | Cuando quien consulta es un Alumno, solicita revisar su propio avance. | El Sistema presenta exclusivamente el historial personal del alumno con el detalle de cada evaluación realizada. |
+| 1 | El Profesor ingresa a la pestaña de Alumnos en su panel (o el Alumno abre la vista **"Mi Progreso"**). | El Sistema identifica el rol y la sucursal del solicitante y recupera únicamente los alumnos de esa sede (o únicamente el historial propio si es alumno). |
+| 2 | | El Sistema consolida las evaluaciones con su puntaje, fecha, sucursal histórica congelada, estado del Pase de Tatami y enlaces de video validados/auto-curados. |
+| 3 | El usuario selecciona una evaluación para revisar el detalle, reproducir los videos o consultar la teoría asociada. | El Sistema reproduce el video del alumno y el video del profesor, permite saltar al segundo del error y enlaza con la Biblioteca pasando la técnica y la imagen crítica. |
 
-#### Secuencias Alternativas
-* **2a. Practicante sin evaluaciones previas:** El Sistema indica que el alumno aún no registra análisis biomecánicos y conserva visible el estado de su membresía.
-* **2b. Sede sin alumnos registrados:** El Sistema informa al profesor que todavía no existen practicantes dados de alta en su sucursal.
-* **3a. Solicitud sobre un alumno de otra sede:** El Sistema impide la consulta por regla de aislamiento entre sucursales de la academia.
+#### Cursos Alternativos
+* **1a. Alumno sin evaluaciones previas:** El Sistema muestra el estado vacío amigable indicando que aún no ha subido prácticas.
+* **2a. Profesor intenta consultar a un alumno de otra sucursal:** El Sistema bloquea el acceso (`HTTP 403`) manteniendo la privacidad entre sedes.
 
 #### Excepciones
-* **E1. Información histórica temporalmente inaccesible:** El Sistema informa la indisponibilidad momentánea del registro de progreso.
+* **E1. Error temporal al cargar el historial:** El Sistema muestra un aviso claro de error de conexión sin cerrar la sesión del usuario.
 
 ---
 
 ### 5.7.2. Diagrama de Caso de Uso UC-07
 
-![Diagrama de Caso de Uso UC-07](diagramas/cu07_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    PR["👤 Profesor"]:::actor
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Progreso y Evaluaciones"]
+        UC07(["UC-07: Consultar Progreso y Evaluaciones"]):::usecase
+        UC07_Det(["Revisar Videos y Correccion de Evaluacion"]):::usecase
+    end
+
+    PR --> UC07
+    AL --> UC07
+    UC07 -.->|"«include»"| UC07_Det
+```
 
 ---
 
-### 5.7.3. Diagrama de Clases de Diseño (Participantes) UC-07
-Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeProgreso` se implementa en `StudentProgressView` y `ProgressRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeProgreso` se materializa en `ProgressController`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario` y `Evaluación` corresponden a las clases de dominio `Usuario` y `Evaluacion`.
+### 5.7.3. Diagrama de Clases UC-07
+* **Boundary:** `StudentProgress`, `ProfesorTecnicas`, `AuthRoutes` (`listar_alumnos`, `listar_evaluaciones_alumno`) y `EvaluacionesRoutes` (`consultar_evaluacion`).
+* **Control:** `PostgrestClient` y `VideoStorage`.
+* **Entity:** `Usuario` y `Evaluacion`.
 
-![Diagrama de Clases de Diseño UC-07](diagramas/cu07_clases.png)
+```mermaid
+classDiagram
+    class StudentProgress {
+        <<Boundary>>
+        +evaluaciones: List
+        +loading: Boolean
+        +renderStudentVideo()
+    }
+
+    class ProfesorTecnicas {
+        <<Boundary>>
+        +alumnos: List
+        +evaluacionesPorAlumno: Dict
+        +fetchAlumnos()
+        +fetchEvaluacionesAlumno(alumno_id)
+    }
+
+    class AuthRoutes {
+        <<Boundary>>
+        +listar_alumnos(p_sucursal_id) List~LoginResponse~
+        +listar_evaluaciones_alumno(alumno_id) List
+    }
+
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +consultar_evaluacion(evaluacion_id) Dict
+    }
+
+    class VideoStorage {
+        <<Control>>
+        +resolver_video_estatico(raw_path, es_referencia) String
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+    }
+
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +nombre_completo: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+    }
+
+    class Evaluacion {
+        <<Entity>>
+        +id: UUID
+        +alumno_id: UUID
+        +tecnica_id: UUID
+        +sucursal_id: UUID
+        +porcentaje_similitud: Float
+        +feedback_gemini_es: String
+        +fecha_evaluacion: DateTime
+    }
+
+    StudentProgress ..> AuthRoutes : HTTP GET historial propio
+    ProfesorTecnicas ..> AuthRoutes : HTTP GET alumnos y evaluaciones
+    AuthRoutes --> PostgrestClient : ejecuta RPC con aislamiento de sede
+    AuthRoutes --> VideoStorage : resuelve y autocura videos
+    EvaluacionesRoutes --> PostgrestClient : consulta detalle
+    PostgrestClient --> Usuario : valida sede y rol
+    PostgrestClient --> Evaluacion : recupera historial
+```
 
 ---
 
-### 5.7.4. Diagrama de Secuencia UC-07
+### 5.7.4. Diagrama de Secuencia ECB UC-07
 
-![Diagrama de Secuencia UC-07](diagramas/cu07_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Profesor o Alumno
+    participant B1 as «Boundary» PantallaDeProgreso
+    participant C1 as «Control» CoordinadorDeProgreso
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» Evaluacion
+
+    alt Profesor supervisa alumnos de su sucursal
+        U->>B1: abrirPanelDeAlumnos()
+        B1->>C1: obtenerAlumnosDeSede(profesor)
+        C1->>E1: listarAlumnosPorSucursal(sucursalId)
+        E1-->>C1: listaDeAlumnos
+        C1-->>B1: listaConEstadoDePase(listaDeAlumnos)
+        B1-->>U: mostrarAlumnosDeAcademia()
+        U->>B1: seleccionarAlumno(alumnoId)
+        B1->>C1: consultarHistorial(profesor, alumnoId)
+        C1->>E1: verificarMismaSucursal(profesor, alumnoId)
+        E1-->>C1: accesoAutorizado
+        C1->>E2: listarEvaluaciones(alumnoId)
+        E2-->>C1: evaluacionesConVideos
+        C1-->>B1: resumenDeProgreso(evaluacionesConVideos)
+        B1-->>U: mostrarEvolucionYVideos()
+    else Alumno consulta su propio historial
+        U->>B1: abrirMiProgreso()
+        B1->>C1: consultarMiHistorial(alumnoId)
+        C1->>E2: listarEvaluaciones(alumnoId)
+        E2-->>C1: misEvaluaciones
+        C1-->>B1: historialPersonal(misEvaluaciones)
+        B1-->>U: mostrarNotasYVideosPropios()
+    end
+```
 
 ---
 
 ### 5.7.5. Diagrama de Paquetes UC-07
-Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-![Diagrama de Paquetes UC-07](diagramas/cu07_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Prog["StudentProgress.jsx"]
+        P_Prof["ProfesorTecnicas.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
+        A_Auth["auth_routes.py (listar_alumnos / listar_evaluaciones_alumno)"]
+        A_Routes["routes.py (consultar_evaluacion)"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_User["Usuario"]
+        D_Eval["Evaluacion"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Videos)"]
+        I_PG["PostgrestClient / PostgreSQL (RLS)"]
+        I_Vid["video_storage.py"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.8. Caso de Uso 8: Activar Pase de Tatami (UC-08)
 
-### 5.8.1. Caso de Uso 8: Activar Pase de Tatami (UC-08) — Nivel de Análisis
-
+### 5.8.1. Caso de Uso 8: Activar Pase de Tatami (UC-08) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-08** |
-| **Nombre** | Activar Pase de Tatami (Control de Membresías) |
-| **Actores** | **Principal:** Profesor, Administrador.<br>**Secundario (Sistemas de Apoyo):** Ninguno. |
-| **Descripción** | El instructor o administrador habilita la membresía de tatami de un alumno durante un periodo de treinta días, tras constatar de forma presencial el pago de su mensualidad en la sede de la academia. |
-| **Precondiciones** | 1. El profesor o administrador mantiene una sesión activa.<br>2. El alumno pertenece a la misma sede del profesor (o es gestionado globalmente por un administrador) y su membresía se encuentra pendiente o vencida. |
-| **Postcondiciones** | 1. El Pase de Tatami del alumno queda en estado activo por treinta días.<br>2. La nueva fecha de vencimiento queda registrada y el alumno queda habilitado para solicitar evaluaciones biomecánicas. |
+| **Nombre** | Activar Pase de Tatami |
+| **Actores** | **Principal:** Profesor, Administrador. |
+| **Intención del Usuario** | Habilitar o renovar por 30 días el acceso de un alumno al análisis con IA después de confirmar que pagó su mensualidad en la recepción de la academia. |
+| **Precondiciones** | 1. El profesor o administrador tiene sesión activa.<br>2. Si es profesor, el alumno pertenece a su misma sucursal. |
+| **Postcondiciones** | 1. El estado de suscripción del alumno cambia a `activo` con fecha de expiración a 30 días.<br>2. El alumno queda habilitado de inmediato para subir videos y recibir evaluaciones. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Profesor solicita revisar la situación de membresía de los alumnos de su academia. | El Sistema presenta la nómina de practicantes adscritos a la sede indicando cuáles mantienen su Pase de Tatami pendiente o expirado. |
-| 2 | El Profesor selecciona al alumno cuyo pago presencial ha sido verificado y solicita habilitar su Pase de Tatami. | El Sistema comprueba que el profesor y el alumno pertenezcan a la misma sede de la academia. |
-| 3 | | El Sistema habilita la vigencia del Pase de Tatami del alumno por un periodo de treinta días a partir de la fecha actual y registra su fecha de vencimiento. |
-| 4 | | El Sistema informa al profesor la confirmación de la membresía activa y la fecha exacta de expiración otorgada al alumno. |
+| 1 | El Profesor abre la pestaña de **Pases Pendientes** en su panel. | El Sistema lista los alumnos de su sucursal que tienen el pase en estado `pendiente` o `expirado`. |
+| 2 | Tras verificar el pago presencial, el Profesor presiona **Activar Pase** junto al alumno. | El Sistema verifica que el profesor y el alumno pertenezcan a la misma sede, actualiza el estado del alumno a `activo` por 30 días y registra la nueva fecha de vencimiento. |
+| 3 | | El Sistema confirma la activación en pantalla y actualiza el listado de pases pendientes. |
 
-#### Secuencias Alternativas
-* **2a. Alumno adscrito a otra sede:** El Sistema rechaza la operación cuando un profesor intenta habilitar la membresía de un alumno perteneciente a una sucursal distinta.
-* **3a. Renovación anticipada de membresía vigente:** Si el alumno aún cuenta con días activos, el Sistema extiende el vencimiento por treinta días desde la fecha de aprobación.
-* **3b. Expiración automática por cumplimiento del plazo:** Al superarse la fecha de vencimiento sin haberse registrado una nueva habilitación, el Sistema suspende el acceso del alumno a nuevas evaluaciones hasta su próxima renovación.
+#### Cursos Alternativos
+* **2a. Profesor intenta activar a un alumno de otra sucursal:** El Sistema bloquea la operación (`HTTP 403`) respetando la regla de aislamiento por sede.
+* **2b. Vencimiento automático de los 30 días:** Si la fecha de expiración ya pasó, `check_student_subscription` detecta el vencimiento automáticamente y bloquea nuevos análisis hasta la próxima renovación.
 
 #### Excepciones
-* **E1. Registro de membresías temporalmente inaccesible:** El Sistema informa la imposibilidad momentánea de actualizar la vigencia y preserva el estado anterior del alumno.
+* **E1. Alumno no encontrado:** El Sistema responde `HTTP 404` y no modifica ningún registro.
 
 ---
 
 ### 5.8.2. Diagrama de Caso de Uso UC-08
 
-![Diagrama de Caso de Uso UC-08](diagramas/cu08_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Pase de Tatami"]
+        UC08(["UC-08: Activar Pase de Tatami por 30 Dias"]):::usecase
+        UC08_List(["Consultar Alumnos Pendientes o Expirados"]):::usecase
+    end
+
+    PR --> UC08
+    AD --> UC08
+    UC08 -.->|"«include»"| UC08_List
+```
 
 ---
 
-### 5.8.3. Diagrama de Clases de Diseño (Participantes) UC-08
-Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeMembresías` se implementa en `StudentProgressView` y `AuthRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeMembresías` se materializa en `SubscriptionManager`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario` y `PaseDeTatami` corresponden a la entidad de dominio `Usuario` y sus atributos de suscripción.
+### 5.8.3. Diagrama de Clases UC-08
+* **Boundary:** `ProfesorTecnicas`, `VideoUpload` (muro visual de pase) y `AuthRoutes` (`listar_alumnos_pendientes`, `activar_pase_tatami`, `require_active_subscription`).
+* **Control:** `PostgrestClient` (`rpc("activar_pase_alumno")`).
+* **Entity:** `Usuario` (atributos `estado_suscripcion` y `fecha_expiracion`).
 
-![Diagrama de Clases de Diseño UC-08](diagramas/cu08_clases.png)
+```mermaid
+classDiagram
+    class ProfesorTecnicas {
+        <<Boundary>>
+        +pendientes: List
+        +activandoId: UUID
+        +fetchPendientes()
+        +handleActivarPase(alumnoId, alumnoNombre)
+    }
+
+    class VideoUpload {
+        <<Boundary>>
+        +isPassActive: Boolean
+        +isExpired: Boolean
+        +isPending: Boolean
+    }
+
+    class AuthRoutes {
+        <<Boundary>>
+        +listar_alumnos_pendientes() List~AlumnoPendienteResponse~
+        +activar_pase_tatami(alumno_id, req) ActivarPaseResponse
+        +check_student_subscription(user_id) Dict
+        +require_active_subscription(authorization) Dict
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+    }
+
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +fecha_expiracion: DateTime
+    }
+
+    ProfesorTecnicas ..> AuthRoutes : HTTP GET/POST pases
+    VideoUpload ..> AuthRoutes : valida vigencia de suscripcion
+    AuthRoutes --> PostgrestClient : ejecuta activar_pase_alumno
+    PostgrestClient --> Usuario : actualiza estado activo y +30 dias
+```
 
 ---
 
-### 5.8.4. Diagrama de Secuencia UC-08
+### 5.8.4. Diagrama de Secuencia ECB UC-08
 
-![Diagrama de Secuencia UC-08](diagramas/cu08_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PR as Profesor
+    participant B1 as «Boundary» PantallaDeMembresias
+    participant C1 as «Control» CoordinadorDeMembresias
+    participant E1 as «Entity» Usuario
+
+    PR->>B1: consultarPasesPendientes()
+    B1->>C1: listarAlumnosPendientesOExpirados(profesor)
+    C1->>E1: obtenerPendientesDeSucursal(profesor)
+    E1-->>C1: alumnosPendientes
+    C1-->>B1: nominaPendientes
+    B1-->>PR: mostrarAlumnosPendientes()
+    PR->>B1: activarPase30Dias(alumnoId)
+    B1->>C1: aprobarPaseDeTatami(profesor, alumnoId, 30)
+    C1->>E1: validarPertenenciaMismaSede(profesor, alumnoId)
+    alt Alumno de otra sucursal
+        E1-->>C1: accesoDenegado
+        C1-->>B1: rechazarOperacion()
+        B1-->>PR: informarRestriccionDeSucursal()
+    else Misma sucursal
+        C1->>E1: activarMembresiaPorTreintaDias(alumnoId)
+        E1-->>C1: estadoActivoYFechaExpiracion
+        C1-->>B1: paseActivado(fechaExpiracion)
+        B1-->>PR: confirmarActivacionExitosa()
+    end
+```
 
 ---
 
 ### 5.8.5. Diagrama de Paquetes UC-08
-Las dependencias entre paquetes obedecen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-![Diagrama de Paquetes UC-08](diagramas/cu08_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Prof["ProfesorTecnicas.jsx (Pestaña Pases)"]
+        P_Upload["VideoUpload.jsx (Muro Pase de Tatami)"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Guardas)"]
+        A_Auth["auth_routes.py (activar_pase_tatami / require_active_subscription)"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_User["Usuario (estado_suscripcion y fecha_expiracion)"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia)"]
+        I_PG["PostgrestClient / PostgreSQL"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.9. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09)
 
-### 5.9.1. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09) — Nivel de Análisis
-
+### 5.9.1. Caso de Uso 9: Gestionar Sucursales y Coordenadas Geográficas (UC-09) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-09** |
 | **Nombre** | Gestionar Sucursales y Coordenadas Geográficas |
-| **Actores** | **Principal:** Administrador.<br>**Secundario (Sistemas de Apoyo):** Servicio de Cartografía y Localización (determinación geográfica de direcciones). |
-| **Descripción** | El administrador administra el directorio oficial de sedes físicas de la academia, registrando su localización geográfica exacta para la adscripción de alumnos e instructores. |
-| **Precondiciones** | El administrador mantiene una sesión activa con facultades de administración global. |
-| **Postcondiciones** | 1. La sede queda incorporada al directorio oficial de la academia y disponible para adscribir practicantes e instructores.<br>2. Sus datos administrativos (país, ciudad, dirección) y coordenadas geográficas quedan registrados. |
+| **Actores** | **Principal:** Administrador (Dueño de la Marca) en gestión; Profesor y Alumno en consulta del mapa de sedes. |
+| **Intención del Usuario** | Registrar nuevas sedes de la academia, editar su ubicación en el mapa o pegando un enlace de Google Maps, y eliminar sucursales que ya no tengan usuarios asignados. |
+| **Precondiciones** | Para crear, modificar o eliminar se requiere sesión activa de `admin`. |
+| **Postcondiciones** | 1. La sucursal queda guardada en el directorio oficial con país, ciudad, dirección y coordenadas.<br>2. La sucursal solo se elimina si no posee alumnos, profesores o administradores vinculados. |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Administrador solicita dar de alta una nueva sede e indica su ubicación geográfica mediante coordenadas de latitud y longitud. | El Sistema consulta la división administrativa correspondiente a las coordenadas indicadas y propone el país, la ciudad y la dirección aproximada. |
-| 2 | El Administrador verifica o ajusta los datos propuestos, asigna el nombre oficial de la sede y confirma su registro. | El Sistema valida la completitud de los datos, incorpora la nueva sucursal al directorio oficial de la academia y confirma su disponibilidad. |
-| 3 | El Administrador puede actualizar los datos de localización o solicitar el retiro de una sede existente. | El Sistema actualiza el directorio de sedes o, si se solicita el retiro, comprueba previamente que no existan practicantes ni instructores vinculados a ella. |
+| 1 | El Administrador abre la gestión de sucursales y pega un enlace de Google Maps o ubica el punto en el mapa interactivo. | El Sistema extrae latitud y longitud, consulta a OpenStreetMap (Nominatim) y rellena automáticamente el país, la ciudad y la dirección aproximada. |
+| 2 | El Administrador verifica o edita el nombre de la sede y guarda los cambios. | El Sistema guarda o actualiza la sucursal en PostgreSQL y refresca el listado junto con el mapa embebido de cada sede. |
+| 3 | El Administrador puede solicitar eliminar una sucursal que ya no opera. | El Sistema comprueba que no tenga usuarios vinculados y elimina la sede del directorio. |
 
-#### Secuencias Alternativas
-* **1a. Indicación de ubicación mediante referencia externa:** Si el administrador aporta una referencia geográfica en lugar de coordenadas directas, el Sistema determina la latitud y longitud asociadas y propone los datos administrativos correspondientes.
-* **3a. Sede con usuarios adscritos:** Si el administrador solicita retirar una sucursal que aún cuenta con alumnos o profesores vinculados, el Sistema impide la baja e informa que primero deben ser reasignados a otra sede activa.
-* **3b. Actualización de coordenadas de una sede existente:** El Sistema actualiza la ubicación geográfica de la sucursal conservando intacta la nómina de usuarios adscritos.
+#### Cursos Alternativos
+* **1a. Enlace sin coordenadas reconocibles:** El Sistema avisa que no se detectó la ubicación en el enlace y permite completar los campos manualmente o moviendo el marcador del mapa.
+* **3a. Sucursal con usuarios vinculados:** El Sistema impide la eliminación (`HTTP 400`) e indica que primero deben reasignarse o darse de baja los usuarios adscritos a esa sede.
 
 #### Excepciones
-* **E1. Servicio de cartografía no disponible:** El Sistema permite completar el registro de la sede ingresando manualmente el país, la ciudad, la dirección y las coordenadas geográficas.
+* **E1. Servicio externo Nominatim temporalmente sin respuesta:** El Sistema conserva las coordenadas extraídas y permite al administrador escribir manualmente la ciudad, país y dirección.
 
 ---
 
 ### 5.9.2. Diagrama de Caso de Uso UC-09
 
-![Diagrama de Caso de Uso UC-09](diagramas/cu09_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    PR["👤 Profesor"]:::actor
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Sucursales"]
+        UC09(["UC-09: Gestionar Sucursales de la Academia"]):::usecase
+        UC09_Map(["Ubicar Sede en Mapa o Enlace"]):::usecase
+        UC09_Del(["Eliminar Sucursal sin Usuarios"]):::usecase
+        UC09_Ver(["Consultar Directorio y Mapa de Sedes"]):::usecase
+    end
+
+    AD --> UC09
+    PR --> UC09_Ver
+    AL --> UC09_Ver
+    UC09 -.->|"«include»"| UC09_Map
+    UC09_Del -.->|"«extend»"| UC09
+```
 
 ---
 
-### 5.9.3. Diagrama de Clases de Diseño (Participantes) UC-09
-Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeGestiónDeSedes` se implementa en `BranchManagerView` y `SucursalesRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeSucursales` se materializa en `BranchController` y el cliente `NominatimClient`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Sucursal` corresponde a la entidad de dominio `Sucursal`.
+### 5.9.3. Diagrama de Clases UC-09
+* **Boundary:** `AdminSucursales` (mapa Leaflet) y `AuthRoutes` (`listar_sucursales`, `crear_sucursal`, `actualizar_sucursal`, `eliminar_sucursal`, `parse_gmaps_link`).
+* **Control:** `PostgrestClient`.
+* **Entity:** `Sucursal`.
 
-![Diagrama de Clases de Diseño UC-09](diagramas/cu09_clases.png)
+```mermaid
+classDiagram
+    class AdminSucursales {
+        <<Boundary>>
+        +sucursales: List
+        +latitud: Float
+        +longitud: Float
+        +googleMapsUrl: String
+        +handleGoogleMapsUrlChange(url)
+        +handleSubmit()
+        +handleDelete(sucursalId)
+    }
+
+    class AuthRoutes {
+        <<Boundary>>
+        +listar_sucursales() List~SucursalResponse~
+        +crear_sucursal(nueva: SucursalCreate) SucursalResponse
+        +actualizar_sucursal(sucursal_id, req) SucursalResponse
+        +eliminar_sucursal(sucursal_id) Void
+        +parse_gmaps_link(req: ParseGmapsRequest) ParseGmapsResponse
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +get(table: String) List
+        +rpc(function_name: String, params: Dict) Any
+    }
+
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +pais: String
+        +ciudad: String
+        +direccion: String
+        +latitud: Float
+        +longitud: Float
+    }
+
+    AdminSucursales ..> AuthRoutes : HTTP GET/POST/PUT/DELETE
+    AuthRoutes --> PostgrestClient : ejecuta RPCs de sucursal
+    PostgrestClient --> Sucursal : crea, actualiza o elimina
+```
 
 ---
 
-### 5.9.4. Diagrama de Secuencia UC-09
+### 5.9.4. Diagrama de Secuencia ECB UC-09
 
-![Diagrama de Secuencia UC-09](diagramas/cu09_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AD as Administrador
+    participant B1 as «Boundary» PantallaDeSucursales
+    participant C1 as «Control» CoordinadorDeSucursales
+    participant E1 as «Entity» Sucursal
+
+    alt Registrar o editar sucursal
+        AD->>B1: indicarUbicacionOEnlace(coordenadasOUrl)
+        B1->>C1: obtenerDatosGeograficos(coordenadasOUrl)
+        C1-->>B1: propuestaPaisCiudadDireccion
+        B1-->>AD: mostrarDatosYMapa(propuesta)
+        AD->>B1: confirmarGuardarSucursal(nombre, pais, ciudad, direccion, lat, lng)
+        B1->>C1: guardarSucursal(datosSucursal)
+        C1->>E1: persistirSucursal(datosSucursal)
+        E1-->>C1: sucursalGuardada
+        C1-->>B1: confirmacion(sucursalGuardada)
+        B1-->>AD: actualizarListaYMapa()
+    else Eliminar sucursal existente
+        AD->>B1: solicitarEliminarSucursal(sucursalId)
+        B1->>C1: eliminarSucursal(sucursalId)
+        C1->>E1: verificarSinUsuariosYBorrar(sucursalId)
+        alt Tiene usuarios adscritos
+            E1-->>C1: rechazoPorIntegridad
+            C1-->>B1: informarUsuariosVinculados()
+            B1-->>AD: mostrarAdvertenciaDeReasignacion()
+        else Sucursal vacia
+            E1-->>C1: sucursalEliminada
+            C1-->>B1: bajaConfirmada()
+            B1-->>AD: actualizarListaDeSedes()
+        end
+    end
+```
 
 ---
 
 ### 5.9.5. Diagrama de Paquetes UC-09
-Las dependencias entre paquetes siguen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-![Diagrama de Paquetes UC-09](diagramas/cu09_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Branch["AdminSucursales.jsx (Leaflet.js)"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
+        A_Auth["auth_routes.py (sucursales y parse-gmaps-link)"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_Suc["Sucursal"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Cartografía y Persistencia)"]
+        I_OSM["OpenStreetMap / Nominatim"]
+        I_PG["PostgrestClient / PostgreSQL"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
-## 5.10. Caso de Uso 10: Entrar como Otro Usuario / Impersonificación (UC-10)
+## 5.10. Caso de Uso 10: Soporte Técnico y Administración de Cuentas de Usuario (UC-10)
 
-### 5.10.1. Caso de Uso 10: Entrar como Otro Usuario / Impersonificación (UC-10) — Nivel de Análisis
-
+### 5.10.1. Caso de Uso 10: Soporte Técnico y Administración de Cuentas de Usuario (UC-10) — Especificación
 | Campo | Especificación |
 | :--- | :--- |
 | **Identificador** | **UC-10** |
-| **Nombre** | Entrar como Otro Usuario (Impersonificación de Soporte) |
-| **Actores** | **Principal:** Administrador.<br>**Secundario:** Usuario Asistido (alumno o profesor) como beneficiario de la operación. |
-| **Descripción** | El administrador asume temporalmente la identidad de un usuario afectado por una incidencia operativa con el propósito de reproducir y diagnosticar el problema desde la perspectiva real del usuario. La sesión delegada es acotada y mantiene una advertencia permanente de modo soporte. |
-| **Precondiciones** | El administrador mantiene una sesión activa con facultades de administración global. |
-| **Postcondiciones** | 1. El administrador opera temporalmente bajo la vista y el alcance del usuario asistido, quedando constancia del inicio de la asistencia.<br>2. Al concluir el diagnóstico, el Sistema restituye íntegramente la sesión original del administrador. |
+| **Nombre** | Soporte Técnico y Administración de Cuentas de Usuario |
+| **Actores** | **Principal:** Administrador (Dueño de la Marca); **Secundario:** Usuario (Alumno o Profesor en edición de perfil propio o como usuario asistido). |
+| **Intención del Usuario** | Permitir al Administrador entrar temporalmente como otro usuario para darle soporte técnico, cambiar la sucursal de un practicante o eliminar cuentas protegiendo la integridad del contenido docente; y permitir a cada usuario actualizar su propio perfil e idioma. |
+| **Precondiciones** | El operador cuenta con sesión activa (`admin` para impersonar, cambiar sucursales de terceros o eliminar cuentas; cualquier usuario autenticado para editar su propio perfil). |
+| **Postcondiciones** | 1. En modo soporte, el administrador ve exactamente la interfaz del usuario asistido bajo un banner rojo permanente y puede volver a su sesión original en un clic.<br>2. Al eliminar un usuario, nunca se permite que el administrador borre su propia cuenta; si es un alumno se borran en cascada sus evaluaciones y pases, y si es un profesor con videos/patrones/teoría se exige o ejecuta su reasignación previa (`admin_delete_user`). |
 
-#### Secuencia Normal
+#### Curso Normal
 | Paso | Intención del Actor | Respuesta Observable del Sistema |
 | :---: | :--- | :--- |
-| 1 | El Administrador selecciona al usuario que reportó una incidencia y solicita asumir temporalmente su identidad para fines de soporte. | El Sistema verifica la autorización del administrador y comprueba que el usuario objetivo no sea otro administrador. |
-| 2 | El Administrador confirma la apertura de la asistencia. | El Sistema registra la constancia de inicio de soporte indicando el administrador responsable, el usuario asistido y el instante de la operación. |
-| 3 | | El Sistema constituye una sesión temporal de diagnóstico y presenta el entorno propio del usuario asistido junto con un aviso permanente de modo soporte. |
-| 4 | El Administrador reproduce la incidencia dentro del entorno del usuario asistido. | El Sistema permite realizar las consultas propias del rol del usuario asistido preservando la integridad de sus datos personales. |
-| 5 | El Administrador solicita finalizar el modo de soporte. | El Sistema cierra la sesión temporal de diagnóstico y restituye de inmediato el entorno de administración global. |
+| 1 | El Administrador entra a la pestaña de **Usuarios** en el panel administrativo. | El Sistema lista las cuentas registradas mostrando nombre, usuario, rol y sucursal actual. |
+| 2 | Para brindar soporte, el Administrador presiona **Entrar como este usuario**. | El Sistema emite una sesión temporal con los datos del usuario asistido, guarda la sesión original del administrador en memoria y muestra un banner rojo permanente en la parte superior para volver cuando termine. |
+| 3 | Para dar de baja una cuenta, el Administrador presiona **Eliminar usuario** y confirma la acción. | El Sistema verifica que no sea su propia cuenta y ejecuta `admin_delete_user` en PostgreSQL: si es alumno elimina sus registros en cascada; si es profesor sin contenido lo elimina directamente. |
+| 4 | Cada usuario autenticado (o el Administrador) puede abrir **Mi Perfil** para cambiar su nombre, foto, contraseña o idioma preferido (`es`, `pt`, `en`). | El Sistema guarda los cambios sin alterar jamás el estado de su Pase de Tatami ni su fecha de vencimiento. |
 
-#### Secuencias Alternativas
-* **2a. Cancelación previa a la confirmación:** Si el administrador desiste antes de confirmar la operación, el Sistema mantiene sin cambios la sesión actual y no genera constancia de asistencia.
-* **4a. Intento de alterar credenciales o datos sensibles del usuario asistido:** El Sistema restringe las operaciones que comprometan la titularidad de la cuenta asistida.
-* **4b. Intento de asumir la identidad de otro administrador:** El Sistema rechaza la solicitud por regla de jerarquía entre cuentas de administración.
+#### Cursos Alternativos
+* **3a. Profesor con videos, patrones o teoría asociados:** El Sistema devuelve un conflicto controlado (`HTTP 409`) informando cuántos recursos tiene vinculados y pide confirmación al Administrador para reasignarlos automáticamente a su cuenta (`auto_reasignar=true`) antes de completar la eliminación.
+* **3b. Intento de auto-eliminación del administrador:** El Sistema rechaza la petición (`HTTP 400`) protegiendo el acceso administrativo.
+* **4a. Cambio de sucursal de un usuario (`PUT /auth/usuarios/{id}/cambiar-sucursal`):** El Sistema actualiza la sede activa del alumno preservando intacta la sucursal original de sus evaluaciones históricas pasadas.
 
 #### Excepciones
-* **E1. Expiración de la sesión durante el diagnóstico:** El Sistema finaliza el modo de soporte y solicita al administrador acreditarse nuevamente.
+* **E1. Usuario objetivo no encontrado:** El Sistema responde `HTTP 404` sin modificar el directorio de cuentas.
+
+> **Nota de transparencia:** La emisión de sesión delegada y el banner visual de retorno funcionan en producción; la re-autenticación obligatoria por contraseña para impersonar y una tabla física dedicada de auditoría (`auditoria_impersonacion`) se mantienen como mejoras planificadas (§6.7 y §8.6).
 
 ---
 
 ### 5.10.2. Diagrama de Caso de Uso UC-10
 
-![Diagrama de Caso de Uso UC-10](diagramas/cu10_caso_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    US["👤 Usuario (Alumno o Profesor)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Soporte y Cuentas"]
+        UC10(["UC-10: Soporte Tecnico y Administracion de Cuentas"]):::usecase
+        UC10_Imp(["Entrar como Otro Usuario para Soporte"]):::usecase
+        UC10_Del(["Eliminar Cuenta con Reasignacion"]):::usecase
+        UC10_Suc(["Cambiar Sucursal de Usuario"]):::usecase
+        UC10_Perf(["Editar Perfil e Idioma Propio"]):::usecase
+    end
+
+    AD --> UC10
+    US --> UC10_Perf
+    UC10_Imp -.->|"«extend»"| UC10
+    UC10_Del -.->|"«extend»"| UC10
+    UC10_Suc -.->|"«extend»"| UC10
+```
 
 ---
 
-### 5.10.3. Diagrama de Clases de Diseño (Participantes) UC-10
-Correspondencia entre los participantes conceptuales del análisis ECB y las clases concretas de diseño:
-* **Frontera (`boundary` $\rightarrow$ Diseño):** `PantallaDeSoporteTécnico` se implementa en `AdminUsersModal`, `ImpersonationBanner` y `AuthRoutes`.
-* **Control (`control` $\rightarrow$ Diseño):** `CoordinadorDeSoporte` se materializa en `SessionManager` y `AuditoriaService`.
-* **Entidad (`entity` $\rightarrow$ Diseño):** `Usuario`, `RegistroDeAuditoría` y `SesiónDeSoporte` corresponden a `Usuario`, `RegistroAuditoria` y el token firmado de sesión delegada.
+### 5.10.3. Diagrama de Clases UC-10
+* **Boundary:** `AdminSucursales` (pestaña Usuarios), `App` (banner rojo y retorno de sesión), `UserProfileModal` y `AuthRoutes` (`impersonate_user`, `eliminar_usuario`, `update_usuario`, `cambiar_sucursal_usuario`).
+* **Control:** `PostgrestClient` (`admin_delete_user`, `admin_cambiar_sucursal_usuario`, `admin_update_user`).
+* **Entity:** `Usuario`, `Sucursal` y `LoginResponse`.
 
-> **Nota de trazabilidad de diseño:** la re-autenticación por contraseña y la persistencia dedicada en la tabla `auditoria_impersonacion` se registran como deuda técnica para iteración futura (§6.7 y §8.6), mientras que la emisión del token JWT con el claim `impersonator_admin_id` y la activación de `ImpersonationBanner` se encuentran operativas en producción.
+```mermaid
+classDiagram
+    class AdminSucursales {
+        <<Boundary>>
+        +usuarios: List
+        +fetchUsuarios()
+        +handleImpersonate(targetUserId)
+        +handleDeleteUser(targetUser)
+    }
 
-![Diagrama de Clases de Diseño UC-10](diagramas/cu10_clases.png)
+    class App {
+        <<Boundary>>
+        +user: LoginResponse
+        +originalAdminUser: LoginResponse
+        +onImpersonate(newUser, currentAdmin)
+    }
+
+    class UserProfileModal {
+        <<Boundary>>
+        +nombre: String
+        +selectedIdioma: String
+        +handleUpdate()
+    }
+
+    class AuthRoutes {
+        <<Boundary>>
+        +listar_usuarios() List~LoginResponse~
+        +impersonate_user(user_id) LoginResponse
+        +update_usuario(user_id, req) LoginResponse
+        +cambiar_sucursal_usuario(user_id, req) CambiarSucursalResponse
+        +eliminar_usuario(user_id, reasignar_a, auto_reasignar) Void
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+    }
+
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +nombre_completo: String
+        +rol: String
+        +sucursal_id: UUID
+        +idioma_preferido: String
+    }
+
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+    }
+
+    class LoginResponse {
+        <<Entity>>
+        +token: String
+        +user_id: UUID
+        +rol: String
+        +sucursal_id: UUID
+    }
+
+    AdminSucursales ..> AuthRoutes : impersonate y delete usuario
+    AdminSucursales ..> App : activa banner de soporte
+    UserProfileModal ..> AuthRoutes : PUT perfil e idioma
+    AuthRoutes --> PostgrestClient : ejecuta RPCs admin_delete_user y soporte
+    PostgrestClient --> Usuario : consulta, actualiza o elimina
+    Usuario "1" --> "1" Sucursal : adscrito_a
+    AuthRoutes ..> LoginResponse : emite token de sesion
+```
 
 ---
 
-### 5.10.4. Diagrama de Secuencia UC-10
+### 5.10.4. Diagrama de Secuencia ECB UC-10
 
-![Diagrama de Secuencia UC-10](diagramas/cu10_secuencia.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AD as Administrador
+    participant B1 as «Boundary» PantallaDeSoporteYUsuarios
+    participant C1 as «Control» CoordinadorDeCuentas
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» SesionDeSoporte
+
+    alt Asumir identidad temporal para soporte
+        AD->>B1: seleccionarUsuarioYEntrarComo(usuarioId)
+        B1->>C1: iniciarImpersonacion(admin, usuarioId)
+        C1->>E1: consultarPerfilDestino(usuarioId)
+        E1-->>C1: datosUsuarioDestino
+        C1->>E2: emitirSesionDelegada(datosUsuarioDestino)
+        E2-->>C1: sesionDelegada
+        C1-->>B1: vistaUsuarioConBannerRojo(sesionDelegada)
+        B1-->>AD: mostrarEntornoDelUsuarioConAviso()
+        AD->>B1: volverAMiCuentaAdmin()
+        B1-->>AD: restaurarSesionOriginal()
+    else Eliminar cuenta de usuario
+        AD->>B1: solicitarEliminarUsuario(usuarioId)
+        B1->>C1: eliminarUsuario(adminId, usuarioId)
+        C1->>E1: ejecutarBajaConIntegridad(usuarioId, adminId)
+        alt Es profesor con contenido y sin reasignacion
+            E1-->>C1: conflictoContenidoAsociado
+            C1-->>B1: solicitarConfirmacionDeReasignacion()
+            B1-->>AD: confirmarReasignarRecursos()
+            AD->>B1: confirmarAutoReasignacion()
+            B1->>C1: eliminarConReasignacion(usuarioId, adminId)
+            C1->>E1: reasignarYEliminar(usuarioId, adminId)
+        end
+        E1-->>C1: usuarioEliminado
+        C1-->>B1: confirmarBaja()
+        B1-->>AD: actualizarListaDeUsuarios()
+    end
+```
 
 ---
 
 ### 5.10.5. Diagrama de Paquetes UC-10
-Las dependencias entre paquetes cumplen el **Principio de Inversión de Dependencias (DIP)**: `Presentacion` e `Infraestructura` dependen de `Aplicacion` y `Dominio`.
 
-![Diagrama de Paquetes UC-10](diagramas/cu10_paquetes.png)
+```mermaid
+graph TD
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Admin["AdminSucursales.jsx (Pestaña Usuarios)"]
+        P_App["App.jsx (Banner de Soporte)"]
+        P_Prof["UserProfileModal.jsx"]
+    end
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
+        A_Auth["auth_routes.py (impersonate, update, cambiar-sucursal, delete)"]
+    end
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_User["Usuario"]
+        D_Suc["Sucursal"]
+        D_Resp["LoginResponse / Token"]
+    end
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
+        I_PG["PostgrestClient / PostgreSQL (admin_delete_user)"]
+        I_JWT["PyJWT (HS256)"]
+    end
+
+    Presentacion --> Aplicacion
+    Aplicacion --> Dominio
+    Infraestructura --> Aplicacion
+    Infraestructura --> Dominio
+```
 
 ---
 
 ## 5.11. Diagramas de Arquitectura Consolidada del Sistema Completo
-Como culminación de la fase de análisis y diseño orientado a objetos, se presentan los tres modelos arquitectónicos globales que consolidan la totalidad de las interacciones, componentes y casos de uso de la plataforma web de la academia "Corpo e Mente". Estos diagramas integran de forma coherente la interacción entre los actores humanos (Alumno, Profesor y Administrador), los motores de inteligencia artificial local (YOLOv26 y Qwen3-VL), la capa de servicios desacoplados en FastAPI y la persistencia híbrida (PostgreSQL y Qdrant).
+Como cierre del capítulo de análisis y diseño bajo ICONIX, los tres diagramas globales consolidan la visión completa de la plataforma: primero desde las intenciones de los actores, luego el flujo de actividad extremo a extremo de la función central (evaluar y recibir consejo) y finalmente el mapa general de clases del software.
 
 ### 5.11.1. Diagrama de Casos de Uso del Sistema Completo
-El diagrama de casos de uso consolidado agrupa los diez casos de uso funcionales (`UC-01` a `UC-10`) estructurados por subsistemas temáticos (Identificación y Acceso, Análisis y Feedback Biomecánico, Gestión de Técnicas, Conocimiento RAG, Progreso, Pase de Tatami, Sucursales y Soporte Técnico), explicitando la separación de responsabilidades entre inicio de sesión (`UC-01`) y registro (`UC-02`), así como entre análisis cinemático (`UC-03`) y generación de feedback pedagógico (`UC-04`), junto con sus dependencias `<<include>>`, `<<extend>>` y servicios de apoyo externos (Cloudflare Tunnel y OpenStreetMap Nominatim):
+Agrupa los diez casos de uso organizados por subsistemas, enfocándose exclusivamente en lo que hacen `Alumno`, `Profesor` y `Administrador` en la plataforma.
 
-![Diagrama de Casos de Uso del Sistema Completo](diagramas/sistema_completo_casos_uso.png)
+```mermaid
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph S1["Subsistema de Identificacion y Acceso"]
+        UC01(["UC-01: Iniciar Sesion"]):::usecase
+        UC02(["UC-02: Crear Cuenta de Alumno"]):::usecase
+    end
+
+    subgraph S2["Subsistema de Analisis y Feedback Biomecanico"]
+        UC03(["UC-03: Analizar Video de Tecnica"]):::usecase
+        UC03_Sil(["Confirmar Silueta en Escena"]):::usecase
+        UC03_Can(["Cancelar Analisis en Curso"]):::usecase
+        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
+        UC04_Rep(["Reproducir Segundo del Error y Frame Critico"]):::usecase
+    end
+
+    subgraph S3["Subsistema de Catalogo y Conocimiento"]
+        UC05(["UC-05: Gestionar Tecnicas y Videos Patron"]):::usecase
+        UC06(["UC-06: Gestionar Manuales y Notas del Profesor"]):::usecase
+        UC06_Lib(["Buscar y Previsualizar Biblioteca"]):::usecase
+    end
+
+    subgraph S4["Subsistema Academico y Administrativo"]
+        UC07(["UC-07: Consultar Progreso y Evaluaciones"]):::usecase
+        UC08(["UC-08: Activar Pase de Tatami 30 Dias"]):::usecase
+        UC09(["UC-09: Gestionar Sucursales en Mapa"]):::usecase
+        UC10(["UC-10: Soporte Tecnico y Cuentas de Usuario"]):::usecase
+    end
+
+    AL --> UC01
+    PR --> UC01
+    AD --> UC01
+
+    AL --> UC02
+
+    AL --> UC03
+    UC03 -.->|"«include»"| UC03_Sil
+    UC03_Can -.->|"«extend»"| UC03
+    UC04 -.->|"«extend»"| UC03
+    UC04_Rep -.->|"«extend»"| UC04
+
+    AL --> UC04
+    AL --> UC06_Lib
+    AL --> UC07
+
+    PR --> UC05
+    PR --> UC06
+    PR --> UC06_Lib
+    PR --> UC07
+    PR --> UC08
+
+    AD --> UC05
+    AD --> UC06
+    AD --> UC06_Lib
+    AD --> UC08
+    AD --> UC09
+    AD --> UC10
+```
 
 ---
 
 ### 5.11.2. Diagrama de Actividad con Carriles del Sistema Completo (Flujo Principal UC-03 y UC-04)
-El diagrama de actividad con carriles (*Swimlanes Activity Diagram*) detalla la dinámica operativa completa del flujo central compuesto por **UC-03 (Analizar Técnica)** y **UC-04 (Generar Feedback Biomecánico)**, cruzando las seis capas de ejecución del sistema: Alumno (Cliente), Frontend (React 19 + Vite Proxy), Backend (FastAPI), IA de Visión (YOLOv26 + ViCoS), IA de Conocimiento (DTW + Qwen3-VL en MLX) y Persistencia (PostgreSQL + Qdrant). Este flujo modela con rigor las bifurcaciones condicionales de validación de membresía, filtrado anti-spam, selección interactiva de silueta, alineación DTW, jerarquía estricta de contexto doctrinal en dos etapas (Manual RAG > Directriz del Profesor > Fallback Seguro) y auditoría de fidelidad con degradación elegante (*Graceful Fallback*):
+Describe paso a paso la dinámica completa desde que el alumno sube su video (con opción de cancelarlo en curso) hasta que visualiza su reporte comparativo con citas verificadas, atravesando las seis capas del sistema.
 
-![Diagrama de Actividad con Carriles del Sistema Completo](diagramas/sistema_completo_actividad.png)
+```mermaid
+flowchart TD
+    classDef paso fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D
+    classDef decision fill:#FFF5F5,stroke:#C53030,color:#742A2A
+    classDef exito fill:#F0FFF4,stroke:#2F855A,color:#22543D
+
+    subgraph L_Alumno["Alumno (Cliente)"]
+        A1["Iniciar sesion y elegir Profesor y Tecnica"]:::paso
+        A2["Seleccionar video de practica en celular"]:::paso
+        A3["Confirmar silueta propia en primer fotograma"]:::paso
+        A4{"Desea cancelar durante\nel procesamiento?"}:::decision
+        A5["Volver a pantalla inicial"]:::paso
+        A6["Revisar feedback, saltar al segundo del error\ny abrir citas o Biblioteca"]:::exito
+    end
+
+    subgraph L_Frontend["Frontend (React 19 + Vite Proxy)"]
+        F1["Validar tamano de archivo y enviar a validar-spam"]:::paso
+        F2["Ejecutar AbortController y POST cancelar"]:::paso
+        F3["Polling a GET /evaluaciones/id cada 3s"]:::paso
+        F4["Renderizar FeedbackView (Videos + Tarjeta IA)"]:::paso
+    end
+
+    subgraph L_Backend["Backend (FastAPI)"]
+        B1{"Pase de Tatami activo\ny formato valido?"}:::decision
+        B2["Rechazar HTTP 403 / 422"]:::decision
+        B3["Crear sesion (CREATED -> PERSONA_SELECTED)"]:::paso
+        B4["Crear Evaluacion (procesando) y congelar sucursal_id"]:::paso
+        B5["Marcar estado cancelado y borrar video temporal"]:::paso
+        B6["Anotar frame critico y traducir articulaciones"]:::paso
+    end
+
+    subgraph L_Vision["IA de Vision (YOLO26 + ViCoS)"]
+        V1{"Clasificador ViCoS\nratio BJJ >= 0.60?"}:::decision
+        V2["Detectar personas y deduplicar siluetas"]:::paso
+        V3["Extraer secuencia postural 3D y tracking IoU"]:::paso
+    end
+
+    subgraph L_Conocimiento["IA Biomecanica y RAG (DTW + Qwen3-VL MLX)"]
+        K1["Normalizar 46 dims y alinear DTW contra patrones"]:::paso
+        K2{"Similitud < 85.0%?"}:::decision
+        K3["Emitir felicitacion deterministica"]:::exito
+        K4["Buscar en manual de tecnica o Biblioteca Global\ny reordenar con Cross-Encoder"]:::paso
+        K5{"Manual >= 0.65\no Nota del Profesor?"}:::decision
+        K6["Qwen3-VL-Instruct-4B genera correccion\ny Juez audita fidelidad >= 0.85"]:::paso
+        K7["Activar Respaldo Cuantitativo Seguro"]:::paso
+    end
+
+    subgraph L_Persistencia["Persistencia (PostgreSQL + Qdrant)"]
+        P1["Obtener patrones activos en Qdrant"]:::paso
+        P2["Guardar estado completado si no fue cancelado"]:::paso
+    end
+
+    A1 --> A2 --> F1 --> B1
+    B1 -->|"No"| B2
+    B1 -->|"Si"| V1
+    V1 -->|"No"| B2
+    V1 -->|"Si"| V2 --> B3 --> A3 --> B4 --> A4
+    A4 -->|"Si"| F2 --> B5 --> A5
+    A4 -->|"No"| V3 --> P1 --> K1 --> K2
+    K2 -->|"No (>= 85%)"| K3 --> B6
+    K2 -->|"Si (< 85%)"| K4 --> K5
+    K5 -->|"Si"| K6 --> B6
+    K5 -->|"No"| K7 --> B6
+    B6 --> P2 --> F3 --> F4 --> A6
+```
 
 ---
 
 ### 5.11.3. Diagrama de Clases del Sistema Completo
-El diagrama de clases estructural del sistema completo modela todas las clases participantes organizadas rigurosamente según sus responsabilidades por capas: Frontera de Presentación (*Boundary Frontend*), Frontera de API (*Boundary Backend*), Control de Aplicación (*Control Application*), Servicios de Dominio (*Domain Services*), Biomecánica, Entidades de Dominio (*Domain Entities*) y Adaptadores de Infraestructura (*Infrastructure AI, Persistencia y Video*):
+Consolida las clases principales reales del código en Frontend (React 19), Frontera HTTP (FastAPI), Aplicación y Dominio (casos de uso, biomecánica, recuperación híbrida y entidades) e Infraestructura (YOLO26, MLX, Qdrant, PostgREST y `VideoStorage`).
 
-![Diagrama de Clases del Sistema Completo](diagramas/sistema_completo_clases.png)
+```mermaid
+classDiagram
+    %% Capa de Presentacion (Frontend React 19)
+    class App {
+        <<Boundary>>
+        +user: LoginResponse
+        +idioma: String
+        +appState: String
+        +currentEvaluacionId: UUID
+        +handleUploadStart(uploadData)
+        +handleCancelAnalysis()
+        +handleLanguageChange(lang)
+    }
+
+    class LoginModal {
+        <<Boundary>>
+        +loginUserOrEmail: String
+        +signupUsername: String
+        +handleLoginSubmit()
+        +handleSignupSubmit()
+    }
+
+    class UserProfileModal {
+        <<Boundary>>
+        +nombre: String
+        +selectedIdioma: String
+        +handleUpdate()
+    }
+
+    class VideoUpload {
+        <<Boundary>>
+        +profesores: List
+        +tecnicas: List
+        +selectedFile: File
+        +handleFile(file)
+        +handleSubmit()
+    }
+
+    class SelectorPersonaVideo {
+        <<Boundary>>
+        +sessionData: Dict
+        +selectedPersonaIdx: Int
+        +onSelect(idx)
+    }
+
+    class FeedbackView {
+        <<Boundary>>
+        +result: AnalisisResultDTO
+        +showFrameModal: Boolean
+        +jumpToError(timestamp)
+    }
+
+    class StudentProgress {
+        <<Boundary>>
+        +evaluaciones: List
+    }
+
+    class LibraryView {
+        <<Boundary>>
+        +query: String
+        +manuales: List
+        +handleSearch()
+        +handleDeleteManual(filename)
+    }
+
+    class ProfesorTecnicas {
+        <<Boundary>>
+        +alumnos: List
+        +tecnicas: List
+        +pendientes: List
+        +handleActivarPase(alumno_id)
+        +handleSave()
+    }
+
+    class AdminSucursales {
+        <<Boundary>>
+        +sucursales: List
+        +usuarios: List
+        +handleImpersonate(user_id)
+        +handleDeleteUser(targetUser)
+    }
+
+    class TheoryManagerModal {
+        <<Boundary>>
+        +chunks: List
+        +handleDeleteAll()
+    }
+
+    class GlobalKnowledgeModal {
+        <<Boundary>>
+        +sources: List
+        +handleUpload()
+        +handleDeleteSource(filename)
+    }
+
+    %% Capa de Frontera API (FastAPI)
+    class AuthRoutes {
+        <<Boundary>>
+        +login(req) LoginResponse
+        +signup(req) LoginResponse
+        +impersonate_user(user_id) LoginResponse
+        +eliminar_usuario(user_id, auto_reasignar) Void
+        +activar_pase_tatami(alumno_id) ActivarPaseResponse
+        +crear_sucursal(nueva) SucursalResponse
+        +eliminar_sucursal(sucursal_id) Void
+    }
+
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +validar_spam(video) Dict
+        +obtener_primer_frame(video) Dict
+        +analizar_video(background_tasks, tecnica_id) Dict
+        +cancelar_evaluacion_endpoint(evaluacion_id) Dict
+        +consultar_evaluacion(evaluacion_id) Dict
+        +buscar_en_biblioteca(req) Dict
+        +ingerir_archivo_teoria(archivo, alcance) Dict
+        +eliminar_manual_conocimiento(filename) Dict
+    }
+
+    class TecnicasRoutes {
+        <<Boundary>>
+        +listar_tecnicas(profesor_id) List
+        +crear_tecnica(req) TecnicaResponse
+        +eliminar_tecnica(tecnica_id) Void
+        +registrar_patron_tecnica(tecnica_id, session_id) Dict
+    }
+
+    %% Capa de Aplicacion y Dominio
+    class IntelligenceAnalysisFacade {
+        <<Control>>
+        +UMBRAL_RELEVANCIA_RAG: Float
+        +ejecutar_analisis_completo(video_path, tecnica_id, idioma) AnalisisResultDTO
+    }
+
+    class IngestKnowledgeUseCase {
+        <<Control>>
+        +execute(tecnica_id, contenido_texto, alcance) IngestionResponse
+    }
+
+    class DeleteTheoryUseCase {
+        <<Control>>
+        +execute(tecnica_id, profesor_id) Dict
+    }
+
+    class SessionStateManager {
+        <<Control>>
+        +crear_sesion(session_id, video_path, personas) Dict
+        +seleccionar_persona(session_id, persona_idx) Dict
+        +iniciar_operacion(session_id, tecnica_id) Dict
+        +finalizar_operacion(session_id, exito, error) Dict
+    }
+
+    class HybridRetriever {
+        <<Control>>
+        +fusionar_rrf(densos, bm25, top_k) List
+        +recuperar(query_texto, qdrant, qwen) List
+    }
+
+    class Qwen3VLRerankerCrossEncoder {
+        <<Control>>
+        +rerank_pairs(query, documents) List
+    }
+
+    class DTWComparator {
+        <<Control>>
+        +comparar_secuencias_con_dtw(seq_m, seq_a) Dict
+    }
+
+    class PoseNormalizer {
+        <<Control>>
+        +normalizar(kpts_flat) Dict
+    }
+
+    class IPromptStrategy {
+        <<Interface>>
+        +construir_prompt_evaluacion(tecnica, discrepancias, mensaje) String
+    }
+
+    %% Entidades de Dominio
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +username: String
+        +rol: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+    }
+
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +latitud: Float
+        +longitud: Float
+    }
+
+    class Tecnica {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +nivel_cinturon: String
+        +mensaje_profesor: String
+    }
+
+    class Evaluacion {
+        <<Entity>>
+        +id: UUID
+        +alumno_id: UUID
+        +tecnica_id: UUID
+        +sucursal_id: UUID
+        +porcentaje_similitud: Float
+        +estado: String
+    }
+
+    class PatronReferencia {
+        <<Entity>>
+        +patron_id: UUID
+        +tecnica_id: UUID
+        +secuencia_3d: List
+    }
+
+    class TeoriaRAG {
+        <<Entity>>
+        +id: UUID
+        +tecnica_id: UUID
+        +fuente_nombre: String
+        +alcance: String
+    }
+
+    class AnalisisResultDTO {
+        <<Entity>>
+        +similitud: Float
+        +feedback: String
+        +frame_critico_path: String
+        +timestamp_error_segundos: Float
+    }
+
+    %% Capa de Infraestructura
+    class YOLOPoseAdapter {
+        <<Adapter>>
+        +extraer_secuencia(video_path, idx) Dict
+        +extraer_frame_y_dibujar_error(video_path, frame_idx, kpts) String
+    }
+
+    class LocalSpamFilter {
+        <<Adapter>>
+        +validar_es_jiujitsu(video_path) Boolean
+    }
+
+    class QwenEmbeddingAdapter {
+        <<Adapter>>
+        +generar_embedding_texto(texto) List
+        +generar_embedding_imagen(image, prompt) List
+    }
+
+    class LocalVLMAdapter {
+        <<Adapter>>
+        +generar_texto_feedback(prompt, frame, idioma) Dict
+        +evaluar_fidelidad_grounding(respuesta, contexto, mensaje) Dict
+    }
+
+    class PostgrestClient {
+        <<Adapter>>
+        +rpc(function_name, params) Any
+    }
+
+    class QdrantVectorAdapter {
+        <<Adapter>>
+        +guardar_patron_secuencia(tecnica_id, patron_id, secuencia) Int
+        +eliminar_por_tecnica(tecnica_id) Int
+    }
+
+    class QdrantRAGAdapter {
+        <<Adapter>>
+        +eliminar_por_manual(filename) Int
+        +eliminar_por_tecnica(tecnica_id) Int
+    }
+
+    class VideoStorage {
+        <<Adapter>>
+        +persistir_video_referencia(src) String
+        +resolver_video_estatico(raw_path) String
+        +autocurar_videos_referencia_en_arranque() Void
+    }
+
+    App ..> LoginModal : abre
+    App ..> UserProfileModal : abre
+    App ..> VideoUpload : renderiza
+    App ..> FeedbackView : renderiza
+    App ..> StudentProgress : renderiza
+    App ..> LibraryView : renderiza
+    App ..> ProfesorTecnicas : renderiza
+    App ..> AdminSucursales : renderiza
+
+    VideoUpload ..> SelectorPersonaVideo : usa
+    ProfesorTecnicas ..> TheoryManagerModal : abre
+    ProfesorTecnicas ..> GlobalKnowledgeModal : abre
+
+    AuthRoutes --> PostgrestClient : usa
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : invoca
+    EvaluacionesRoutes --> IngestKnowledgeUseCase : invoca
+    EvaluacionesRoutes --> DeleteTheoryUseCase : invoca
+    EvaluacionesRoutes --> SessionStateManager : controla
+    EvaluacionesRoutes --> LocalSpamFilter : filtra
+    EvaluacionesRoutes --> VideoStorage : resuelve videos
+    TecnicasRoutes --> PostgrestClient : usa
+    TecnicasRoutes --> VideoStorage : persiste y autocura
+    TecnicasRoutes --> QdrantVectorAdapter : guarda o purga
+    TecnicasRoutes --> QdrantRAGAdapter : purga fragmentos
+
+    IntelligenceAnalysisFacade --> YOLOPoseAdapter : usa
+    IntelligenceAnalysisFacade --> QdrantVectorAdapter : consulta
+    IntelligenceAnalysisFacade --> LocalVLMAdapter : genera y audita
+    IntelligenceAnalysisFacade --> QwenEmbeddingAdapter : vectoriza
+    IntelligenceAnalysisFacade --> DTWComparator : alinea
+    IntelligenceAnalysisFacade --> HybridRetriever : recupera
+    IntelligenceAnalysisFacade --> Qwen3VLRerankerCrossEncoder : rerank
+    IntelligenceAnalysisFacade --> IPromptStrategy : selecciona idioma
+    IntelligenceAnalysisFacade ..> AnalisisResultDTO : retorna
+
+    DTWComparator ..> PoseNormalizer : usa
+    IngestKnowledgeUseCase --> QdrantRAGAdapter : indexa
+    DeleteTheoryUseCase --> QdrantRAGAdapter : borra
+
+    Usuario "1" --> "1" Sucursal : pertenece_a
+    Usuario "1" --> "*" Evaluacion : realiza
+    Tecnica "1" --> "*" Evaluacion : evaluada_en
+    Tecnica "1" --> "*" PatronReferencia : tiene
+    Tecnica "1" --> "*" TeoriaRAG : referencia
+```
 
 ---
 
 # Capítulo VI: Desarrollo
 
 ## 6.1. Introducción al Proceso de Construcción
-El desarrollo del Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño para la academia "Corpo e Mente" se rigió bajo los postulados del Proceso Unificado Ágil promovido por Craig Larman (2004), estructurado en ciclos iterativos, incrementales y acotados en el tiempo (*timeboxed*). A diferencia de los enfoques tradicionales en cascada, la construcción del software no postergó la integración de los componentes críticos; por el contrario, desde las primeras iteraciones se atacaron los riesgos arquitectónicos de mayor impacto, tales como la coexistencia de modelos de Inteligencia Artificial en memoria unificada, la latencia de inferencia en video y el aislamiento multi-tenant en bases de datos relacionales.
+La construcción del Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño para la academia "Corpo e Mente" se organizó de manera incremental guiada por los casos de uso y los artefactos de la **Metodología ICONIX** (Rosenberg & Stephens, 2007). Partiendo de las intenciones del usuario definidas en los diez casos de uso (`UC-01` a `UC-10`) y de sus participantes Boundary–Control–Entity (ECB), el código se estructuró en ciclos cortos orientados a validar primero los riesgos técnicos de mayor impacto: la convivencia de los modelos de IA en memoria unificada, la velocidad de análisis en video, la privacidad multi-sucursal y la integridad entre las bases de datos relacional y vectorial.
 
-El ciclo de vida del proyecto transitó por cuatro fases disciplinares documentadas exhaustivamente en la bitácora de ingeniería (`docs/PlanEvaluacionIteraciones.md`): Incepción (definición de alcance y viabilidad técnica), Elaboración (establecimiento de la línea base arquitectónica con FastAPI, PostgreSQL, Qdrant y YOLO), Construcción (desarrollo evolutivo de los diez casos de uso, refinamiento del algoritmo DTW y pipelines RAG multimodales) y Transición (endurecimiento de seguridad en producción, pruebas E2E, internacionalización y auditoría de ciberseguridad). La totalidad del código fuente, configuraciones y scripts de automatización residen en un repositorio Git versionado, asegurando trazabilidad bidireccional y capacidad de reversión (*rollback*) ante cualquier regresión funcional.
+El historial de construcción, las decisiones experimentales descartadas y las métricas registradas se encuentran documentados en `docs/PlanEvaluacionIteraciones.md` y `docs/Auditoria_CRUD.md`, respaldados en un repositorio Git versionado con puntos de restauración (*tags*) para garantizar trazabilidad y reversión controlada ante cualquier fallo.
 
 ## 6.2. Herramientas de Desarrollo, Licencias y Software Utilizado
 
 ### 6.2.1. Entorno de Desarrollo e IA Asistida
-Durante el ciclo de construcción se adoptó un flujo de ingeniería asistido por modelos de lenguaje de última generación, actuando como herramientas de productividad y revisión técnica bajo estricta supervisión humana.
+Durante el desarrollo se emplearon herramientas de asistencia inteligente bajo revisión humana constante para acelerar la codificación, la depuración y la auditoría técnica.
 
 Tabla 18
 *Herramientas de desarrollo y codificación asistida por Inteligencia Artificial*
 
 | Herramienta | Rol en el Proyecto | Licencia / Costo | Justificación Técnica |
 | :--- | :--- | :--- | :--- |
-| **Antigravity (Google AI Pro)** | Asistente principal de codificación agéntica, refactorización multi-archivo y auditoría de seguridad | Suscripción comercial Google AI Pro (pago mensual) | Capacidad de razonamiento sobre árboles de código extensos, ejecución controlada en terminal, validación empírica con Playwright y soporte nativo para inspección de arquitecturas desacopladas. |
-| **DeepSeek (API / Chat)** | Revisión de lógica algorítmica (DTW, normalización biomecánica) y diseño de pruebas unitarias | Freemium / API de bajo costo por consumo | Modelo con sólidas capacidades de razonamiento matemático y algorítmico, fundamental para auditar las transformaciones vectoriales de `pose_normalizer.py` y `dtw_comparator.py`. |
-| **GitHub Copilot / Claude Code** | Autocompletado inteligente de sintaxis y generación de código repetitivo (*boilerplate*) | Suscripción comercial GitHub | Integración directa con el entorno de desarrollo, acelerando la tipificación de DTOs en Pydantic y componentes visuales en React. |
-| **GitHub** | Control de versiones distribuido, gestión de incidencias (*issues*) y marcado de etiquetas de iteración | Gratuito para repositorios / Plan Pro | Garantiza la trazabilidad histórica de los cambios y la posibilidad de ejecutar puntos de restauración (*rollbacks*) ante desviaciones métricas. |
+| **Antigravity (Google AI Pro)** | Asistente principal de codificación, refactorización multi-archivo y auditoría de seguridad | Suscripción comercial Google AI Pro (pago mensual) | Razonamiento sobre arquitecturas completas en Python/React, ejecución controlada de pruebas y verificación de consistencia entre código y documentación. |
+| **DeepSeek (API / Chat)** | Revisión de lógica matemática (DTW, normalización biomecánica) y diseño de pruebas unitarias | Freemium / API de bajo costo por consumo | Apoyo sólido en algoritmos numéricos para revisar `pose_normalizer.py` y `dtw_comparator.py`. |
+| **GitHub** | Control de versiones distribuido y respaldo de hitos mediante etiquetas | Gratuito para repositorios / Plan Pro | Preserva el historial completo y permite volver atrás ante cualquier degradación técnica. |
 
 *Nota.* Elaboración propia (2026).
 
 ### 6.2.2. Infraestructura de Cómputo y Hardware
-La selección de la infraestructura de cómputo respondió a criterios de autosuficiencia operativa, bajo consumo energético y preservación absoluta de la privacidad de los practicantes de la academia.
+La selección de hardware priorizó la autosuficiencia operativa en la academia, bajo consumo eléctrico y privacidad total de las grabaciones.
 
 Tabla 19
 *Infraestructura de cómputo y hardware evaluada y utilizada*
 
 | Recurso | Especificación Técnica | Costo Asociado | Justificación Técnica y Operativa |
 | :--- | :--- | :--- | :--- |
-| **MacBook Air M5 (Hardware de Producción Seleccionado)** | Chip Apple Silicon M5, GPU integrada, Neural Engine, **24 GB de Memoria Unificada** | Inversión única de hardware (~$1,500 USD) | Permite ejecutar simultáneamente la inferencia de YOLOv26 y los modelos de lenguaje visual Qwen3-VL de forma 100% local. Su consumo de apenas ~30 W (frente a los ~250 W de tarjetas dedicadas como la RTX 4090) y su arquitectura de memoria unificada eliminan el costo recurrente de servidores en la nube y garantizan que los videos jamás abandonen la red física del tatami (ver §3.2). |
-| **Google Colab (Infraestructura Experimental Descartada)** | Instancias cloud con GPU NVIDIA Tesla T4 / A100 | ~$20 USD (dos recargas puntuales de $10 USD) | Utilizado **exclusivamente** para el experimento de reentrenamiento (*fine-tuning*) del modelo ViCoS (YOLOv26s) durante la iteración 3C. Tras constatar que la segmentación directa degradaba los FPS sin mejorar la precisión de pose en oclusiones severas (memo técnico `2026-10-31-transition-3c-yolo26s-evaluation-findings.md`), fue descartado por completo para la inferencia productiva diaria. |
-| **Google AI Pro** | Acceso a modelos Gemini mediante API | Suscripción mensual | Utilizado exclusivamente en la fase de investigación y desarrollo de software como apoyo asistido; **no se utiliza en producción** para evitar costos por token y latencias de red (ver §3.14.4). |
+| **MacBook Air M5 (Hardware de Producción Seleccionado)** | Chip Apple Silicon M5, GPU integrada, Neural Engine, **24 GB de Memoria Unificada** | Inversión única de hardware (~\$1,500 USD) | Permite ejecutar localmente YOLOv26 y los modelos Qwen3-VL con bajo consumo energético (~30 W) y sin pagar alquiler mensual de servidores GPU en la nube. |
+| **Google Colab (Infraestructura Experimental Descartada)** | Instancias cloud con GPU NVIDIA Tesla T4 / A100 | ~\$20 USD (recargas puntuales) | Se utilizó únicamente durante experimentos de reentrenamiento en la iteración 3C y pruebas iniciales. Fue descartado para producción diaria por sus desconexiones automáticas y doble subida de videos. |
+| **Google AI Pro** | Acceso a modelos Gemini | Suscripción mensual | Empleada exclusivamente durante investigación y desarrollo; **no se utiliza en producción** para evitar latencias y costos por consulta. |
 
 *Nota.* Elaboración propia (2026).
 
 ### 6.2.3. Stack de Software de Producción
-Todos los componentes de software integrados en el entorno operativo final son tecnologías de código abierto o estándares de la industria libres de regalías por licencia de uso.
+Todo el stack de ejecución en producción se compone de herramientas gratuitas y de código abierto.
 
 Tabla 20
 *Stack de software de producción*
 
 | Componente | Versión | Licencia | Rol en la Arquitectura |
 | :--- | :--- | :--- | :--- |
-| **Python** | 3.12 | PSF License | Lenguaje principal del backend, lógica biomecánica y orquestación de IA. |
-| **FastAPI** | 0.115.0 | MIT | Framework asíncrono para la exposición de endpoints REST, WebSockets y streaming. |
-| **PostgreSQL** | 16 | PostgreSQL License | Base de datos relacional con políticas de seguridad por fila (RLS) y soporte `pgcrypto`. |
-| **PostgREST** | 12.x | MIT | Servidor de capa de datos declarativa directamente sobre el catálogo de PostgreSQL. |
-| **Qdrant** | 1.11.3 | Apache 2.0 | Base de datos vectorial para recuperación semántica mediante grafos HNSW y filtrado de payload. |
-| **Docker + Docker Compose** | 27.x | Apache 2.0 | Contenerización de servicios auxiliares (base de datos relacional y motor vectorial). |
-| **React** | 19.2.8 | MIT | Biblioteca frontend para interfaces interactivas y reproductor de video biomecánico. |
-| **Vite** | 5.4.11 | MIT | Herramienta de compilación frontend y servidor de desarrollo con proxy inverso seguro. |
-| **Ultralytics** | ≥ 8.4.0 | AGPL-3.0 | Framework unificado de visión por computadora para YOLOv26 Pose, Depth y Segmentation. |
-| **MLX (Apple)** | 0.32.x | MIT | Framework de computación de tensores optimizado para la memoria unificada de Apple Silicon. |
-| **Qwen3-VL** | 2B / 4B | Apache 2.0 | Modelos multimodales para embeddings de 2048 dimensiones, reranker y generación pedagógica. |
-| **Cloudflare Tunnel (`cloudflared`)** | 2026.x | Apache 2.0 | Conector Zero Trust para exponer la plataforma web a internet sin abrir puertos en el router. |
-| **Leaflet.js** | 1.9.4 | BSD-2-Clause | Renderizado de mapas interactivos para geolocalización de sucursales físicas. |
-| **pytest** | 8.3.3 | MIT | Framework de pruebas unitarias, de integración y regresión del backend. |
-| **Playwright** | 1.4x | Apache 2.0 | Framework de pruebas automatizadas de extremo a extremo (E2E) en navegadores web. |
-| **Mozilla Firefox** | 13x | MPL 2.0 | Navegador empleado para validación manual de interfaz complementario al motor Chromium de pruebas. |
+| **Python** | 3.12 | PSF License | Lenguaje del backend, lógica biomecánica y pipeline de IA. |
+| **FastAPI** | 0.115.0 | MIT | Framework asíncrono para exponer endpoints REST, archivos estáticos y tareas en segundo plano. |
+| **PostgreSQL** | 16 | PostgreSQL License | Base de datos relacional con Row Level Security (RLS), `pgcrypto` y funciones RPC. |
+| **PostgREST** | 12.x | MIT | Capa REST automática sobre PostgreSQL para invocar procedimientos almacenados seguros. |
+| **Qdrant** | 1.11.3 | Apache 2.0 | Base de datos vectorial para poses 3D (133 dims) y fragmentos RAG (2048 dims). |
+| **Docker + Docker Compose** | 27.x | Apache 2.0 | Contenerización de PostgreSQL, PostgREST y Qdrant. |
+| **React** | 19.2.8 | MIT | Biblioteca de interfaz web *Mobile-First* centrada en el usuario. |
+| **Vite** | 5.4.11 | MIT | Empaquetador frontend y proxy inverso integrado para `/api`, `/static` y `/health`. |
+| **Ultralytics** | >= 8.4.0 | AGPL-3.0 | Motor de visión por computadora para YOLOv26 Pose, Depth y Segmentation. |
+| **MLX (Apple)** | 0.32.x | MIT | Framework nativo para ejecutar modelos Qwen3-VL en la memoria unificada de Apple Silicon. |
+| **Qwen3-VL** | 2B / 4B | Apache 2.0 | Modelos multimodales para embeddings (8-bit), reranker (4-bit) y generación pedagógica (4-bit). |
+| **Cloudflare Tunnel (`cloudflared`)** | 2026.x | Apache 2.0 | Túnel cifrado saliente para acceso HTTPS desde internet sin abrir puertos en el router. |
+| **Leaflet.js** | 1.9.4 | BSD-2-Clause | Mapas interactivos con OpenStreetMap y Nominatim para sucursales. |
+| **pytest** | 8.3.3 | MIT | Suite automatizada de pruebas unitarias e integración del backend. |
+| **Playwright** | 1.4x | Apache 2.0 | Herramienta empleada en las validaciones visuales E2E en navegador real. |
+| **Mozilla Firefox** | 13x | MPL 2.0 | Navegador empleado en pruebas manuales de interfaz web. |
 
 *Nota.* Elaboración propia (2026).
 
 ### 6.2.4. Herramientas de Modelado y Documentación
-Para el análisis de requisitos y el diseño arquitectónico se emplearon estándares rigurosos de ingeniería de software orientada a objetos.
+Para mantener la documentación viva, fácil de previsualizar en cualquier editor y libre de dependencias pesadas como Java Runtime, toda la suite de diagramas del proyecto se estandarizó al 100% en **Mermaid** incrustado en Markdown y sincronizado con archivos `.mmd` en `docs/diagramas/codigo/`.
 
 Tabla 21
 *Herramientas de modelado, diseño y documentación técnica*
 
 | Herramienta | Propósito en el Proyecto | Tipo de Licencia |
 | :--- | :--- | :--- |
-| **PlantUML** | Generación de diagramas formales de Casos de Uso, Secuencia ECB y Arquitectura Consolidada con código fuente externalizado en `docs/diagramas/codigo/` (23 diagramas PNG en `docs/diagramas/`). | GPL / Servicio Kroki de código abierto |
-| **Mermaid Live Editor** | Prototipado rápido y validación sintáctica previa de diagramas de clases y paquetes antes de integrarlos al repositorio. | MIT |
-| **Mermaid** | Modelado visual de Clases de Diseño, Paquetes, Modelo de Dominio y Superficie de Ataque mediante fuentes `.mmd` externalizadas en `docs/diagramas/codigo/` y renderizadas a PNG en `docs/diagramas/` (22 diagramas PNG). | MIT |
-| **Craig Larman (2004)** | Referencia metodológica formal para el Proceso Unificado Ágil, patrones de asignación de responsabilidades GRASP y diagramas de secuencia. | Referencia bibliográfica académica |
-| **Michael V. Mannino (2018)** | Fundamento teórico para el diseño relacional de bases de datos, formas normales (3NF/BCNF) y restricciones de integridad. | Referencia bibliográfica académica |
-| **Hugging Face Hub** | Repositorio de artefactos para la descarga de modelos cuantizados a 4 bits (`mlx-community/Qwen3-VL-*`) y consulta de especificaciones técnicas. | Apache 2.0 / Model Hub |
-| **DeepSeek / Antigravity** | Asistencia en la revisión de estilo formal, verificación cruzada de consistencia entre código y documento, y auditoría de seguridad. | Herramientas de soporte de ingeniería |
+| **Mermaid** | Lenguaje único de modelado visual para los 47 diagramas del documento (Casos de Uso, Secuencia ECB, Clases, Paquetes, Modelo de Dominio, Actividad con Carriles, Flujo Operativo y Superficie de Ataque), externalizados en `docs/diagramas/codigo/*.mmd` e incrustados directamente en `ProyectoGrado.md` para previsualización nativa sin requerir Java Runtime. | MIT |
+| **Mermaid Live Editor** | Validación visual y sintáctica de los diagramas antes de su integración definitiva. | MIT |
+| **Doug Rosenberg & Matt Stephens (ICONIX, 2007)** | Marco metodológico principal para conectar los casos de uso centrados en el usuario con el análisis ECB y el diseño de clases y paquetes. | Referencia bibliográfica académica |
+| **Michael V. Mannino (2018)** | Fundamento teórico para el diseño relacional de la base de datos en 3NF y su integridad referencial. | Referencia bibliográfica académica |
+| **Hugging Face Hub** | Descarga de los pesos cuantizados (`mlx-community/Qwen3-VL-*`). | Apache 2.0 / Model Hub |
+| **DeepSeek / Antigravity** | Apoyo en revisión de consistencia entre código fuente, diagramas y redacción del proyecto de grado. | Herramientas de soporte de ingeniería |
 
 *Nota.* Elaboración propia (2026).
 
 ### 6.2.5. Repositorio de Habilidades de Ciberseguridad
-Con el objetivo de garantizar una postura de seguridad proactiva y defensiva desde las etapas iniciales de construcción, se integró el repositorio especializado **`briiirussell/cybersecurity-skills`** (GitHub), el cual provee habilidades de auditoría automatizada estructuradas por vectores de riesgo. Se ejecutaron de forma intensiva tres suites de análisis:
-1. **`api-audit`**: Evaluación de autorización a nivel de objeto (BOLA), configuración de encabezados CORS, prevención de suplantación de IP en mecanismos de limitación de tasa (*rate limiting*) y detección de falsificación de peticiones del lado del servidor (SSRF).
-2. **`cloud-audit`**: Inspección de exposición indebida de documentación de desarrollo (Swagger/OpenAPI) y validación de dominios autorizados en servidores de proxy (*allowedHosts*).
-3. **`secrets-audit`**: Búsqueda estática y dinámica de secretos criptográficos, llaves privadas y tokens quemados en archivos de configuración o manifiestos de Docker.
+Para auditar de forma preventiva la plataforma, se aplicaron tres suites del repositorio **`briiirussell/cybersecurity-skills`**:
 
-Los resultados crudos de dicha auditoría quedaron registrados en el archivo formal `findings.json` en la raíz del repositorio, documentando un total de 7 hallazgos (3 confirmados y mitigados, y 4 desestimados con contraevidencia técnica comprobada), los cuales se detallan en el Capítulo VIII.
+1. **`api-audit`:** Revisión de control de acceso por objeto (BOLA), políticas CORS, limitación de tasa en login y validación de URLs (SSRF).
+2. **`cloud-audit`:** Verificación de exposición de rutas de documentación y lista de hosts permitidos en el proxy (`allowedHosts`).
+3. **`secrets-audit`:** Búsqueda de llaves privadas o contraseñas expuestas en código y archivos Docker.
+
+El reporte completo de esta auditoría se conserva en `docs/findings.json` con **7 hallazgos** (3 rechazados con contraevidencia técnica por no ser vulnerables y 4 confirmados: 2 subsanados en código y configuración, y 2 registrados en la deuda de seguridad vigente, detallados en la Tabla 24 del Capítulo VIII).
 
 ## 6.3. Estructura del Repositorio
-El repositorio del proyecto sigue una arquitectura limpia (*Clean Architecture*) organizada en módulos con responsabilidades netamente segregadas:
+El código fuente sigue una arquitectura limpia en capas congruente con los diagramas de paquetes del Capítulo V:
 
 ```
 JiuJitsu-main/
 ├── backend/                        # Núcleo de lógica de negocio, IA y APIs
 │   ├── corpocmente/
-│   │   ├── domain/                 # Entidades puras, biomecánica (DTW) y glosario
-│   │   ├── application/            # Casos de uso, servicios de aplicación y DTOs
-│   │   ├── infrastructure/         # Adaptadores externos (YOLO, MLX, Qdrant, DB)
-│   │   └── ui/                     # Controladores y rutas HTTP (FastAPI)
-│   ├── tests/                      # Suite de 26 archivos de pruebas con pytest
-│   └── scripts/                    # Utilidades de mantenimiento y migraciones
+│   │   ├── domain/                 # Entidades, biomecánica (DTW/normalización), estrategias y glosario
+│   │   ├── application/            # Casos de uso RAG, DTOs y servicios de aplicación
+│   │   ├── infrastructure/         # Adaptadores (YOLO, MLX VLM, Qwen, Qdrant, PostgREST, VideoStorage)
+│   │   ├── ui/api/                 # Controladores HTTP FastAPI (auth_routes, routes, tecnicas_routes)
+│   │   └── api/routes/             # Rutas adicionales de comparación visual
+│   ├── tests/                      # Suite de 30 archivos de prueba en Pytest (181 tests recolectados)
+│   ├── scripts/                    # Utilidades de mantenimiento, calibración y reconciliación RAG
+│   └── storage/                    # Modelos (.pt, .pkl), manuales y frames de incertidumbre
 ├── frontend/                       # Aplicación web cliente en React 19 + Vite
 │   ├── src/
-│   │   ├── components/             # Componentes visuales reutilizables y modales
-│   │   ├── pages/                  # Vistas principales (Alumno, Profesor, Admin)
-│   │   ├── contexts/               # Estado global de autenticación e idioma
-│   │   └── i18n/                   # Traducciones internacionales (ES, PT, EN)
-├── infrastructure/                 # Orquestación de infraestructura local
-│   ├── docker-compose.yml          # Servicios contenerizados (PostgreSQL + Qdrant)
-│   └── initdb/                     # Scripts SQL ordenados (tablas, RLS, triggers)
-├── scripts/                        # Scripts de validación E2E, benchmarks y pruebas Playwright
-└── docs/                           # Documento de grado, diagramas UML y memorandos técnicos
+│   │   ├── api/                    # Configuración de endpoints y estado de patrones
+│   │   ├── components/             # Modales y selectores (Login, Perfil, Teoría, Conocimiento Global)
+│   │   ├── pages/                  # Vistas principales (VideoUpload, Feedback, Progreso, Biblioteca, Profesor, Admin)
+│   │   └── i18n/                   # Diccionario multilingüe (ES, PT, EN)
+├── infrastructure/                 # Orquestación de servicios auxiliares
+│   ├── docker-compose.yml          # Contenedores PostgreSQL 16, PostgREST y Qdrant
+│   └── initdb/                     # Migraciones SQL 01 a 18 + reset_production.sql
+├── scripts/                        # Scripts operativos vigentes (start.sh, stop.sh, status.sh, logs.sh)
+└── docs/                           # ProyectoGrado.md, Auditoria_CRUD.md, findings.json y diagramas/codigo/*.mmd
 ```
 
 ## 6.4. Gestión de Configuración y Entornos
-La reproducibilidad del entorno de desarrollo y producción se garantiza mediante artefactos declarativos:
-* **Variables de Entorno Seguras:** El archivo `.env.example` define la totalidad de las claves requeridas con valores ilustrativos, prohibiendo el rastreo de archivos `.env` en Git mediante directivas estrictas en `.gitignore`.
-* **Scripts de Orquestación del Ciclo de Vida:**
-  * `start.sh`: Valida la existencia de directorios temporales, levanta contenedores con `docker-compose`, inicializa el servidor FastAPI y arranca el entorno de Vite.
-  * `stop.sh`: Detiene ordenadamente los procesos en segundo plano y apaga los contenedores sin pérdida de datos.
-  * `status.sh`: Inspecciona la salud de los servicios HTTP, base de datos y puertos de red.
-  * `logs.sh`: Monitorea la salida en vivo de los diferentes módulos del backend.
-  * `reset-db.sh` y `reset_rag_and_storage.py`: Restablecen de forma idempotente las bases de datos para pruebas limpias.
-  * `reapply_mlx_patch.sh`: Script defensivo documentado en el memorando técnico `2026-10-28-mlx-embeddings-qwen3-vl-patch.md`, el cual valida mediante suma de verificación SHA-256 la integridad de las funciones de atención en el paquete `mlx_embeddings` tras cualquier actualización de dependencias de Python.
+La operación diaria y la reproducibilidad del entorno se gestionan mediante archivos claros:
+
+* **Variables de Entorno (`backend/.env.example`):** Define las variables requeridas (`ENVIRONMENT`, `DEBUG`, `POSTGREST_JWT_SECRET`, `JWT_SECRET_KEY`, `JWT_EXPIRATION_HOURS`, `WORKER_SERVICE_TOKEN`, `QDRANT_*`, `ALLOWED_ORIGINS`, `USE_LOCAL_QWEN`, `LOCAL_QWEN_MODEL`) manteniendo los archivos `.env` excluidos del control de versiones mediante `.gitignore`.
+* **Scripts Operativos en `scripts/`:**
+  * `start.sh`: Verifica directorios, levanta los contenedores Docker, arranca el backend FastAPI y levanta el servidor Vite.
+  * `stop.sh`: Detiene ordenadamente los procesos de frontend/backend y apaga los contenedores Docker.
+  * `status.sh`: Verifica el estado de los servicios, puertos y contenedores activos.
+  * `logs.sh`: Permite consultar en vivo los registros de ejecución del backend y los servicios.
+* **Auto-Curación al Arranque y Utilidades de Mantenimiento:** Al iniciar `backend/corpocmente/main.py`, la función `autocurar_videos_referencia_en_arranque()` verifica los videos de referencia y los restaura automáticamente desde `storage_root()/reference_videos` (configurable con `CORPOCMENTE_DATA_DIR`) o desde la raíz del proyecto si `/tmp/corpocmente_videos` se vació. Además, `backend/scripts/` conserva herramientas de administración como `reconcile_rag.py`, `wipe_system.py` y `ingest_multimodal_manuals.py`.
 
 ## 6.5. Internacionalización (i18n) y Localización
-Dado que el Jiu-Jitsu Brasileño tiene su origen histórico en Brasil y su práctica se encuentra extendida en la comunidad hispanohablante y angloparlante, el sistema implementa una arquitectura de internacionalización completa en `frontend/src/i18n/translations.js`:
-* **Cobertura Lingüística:** Soporte nativo para tres idiomas: Español (ES), Portugués (PT) e Inglés (EN), abarcando más de 200 claves semánticas que cubren mensajes de error, nombres de técnicas, terminología de arbitraje y articulaciones anatómicas.
-* **Persistencia Doble:** El idioma seleccionado por el usuario se guarda en el almacenamiento local del navegador (`localStorage.app_idioma`) y se sincroniza en la base de datos relacional dentro de la columna `usuarios.idioma_preferido`.
-* **Corrección de Bug de Regresión (Iteración 3Y):** Se corrigió un defecto donde la recarga de página (*F5*) en la pantalla de inicio forzaba el idioma inglés; el sistema ahora respeta prioritariamente la selección explícita del usuario y traduce automáticamente los nombres de articulaciones devueltos por el algoritmo DTW antes de transferirlos al modelo de lenguaje generativo.
+Debido al origen brasileño del Jiu-Jitsu y al contexto internacional de la academia, `frontend/src/i18n/translations.js` soporta de forma nativa tres idiomas: **Español (`es`)**, **Portugués (`pt`)** e **Inglés (`en`)**:
 
-## 6.6. Validación Empírica del Autonomous MLOps Flywheel (Aprendizaje Continuo Autónomo y Hot-Swap)
-**Evidencia Empírica del Data Flywheel y Ciclo Autónomo (SIN intervención humana):**
-1. **Captura de Incertidumbre en Vivo:** Durante las pruebas de validación del sistema, el mecanismo de Active Learning operó de forma autónoma, capturando **25 fotogramas únicos** de incertidumbre (confianza $< 0.65$) distribuidos en diferentes técnicas y registrando **168 eventos** en el archivo `log.csv`. Un análisis con el orquestador (`data_flywheel_orchestrator.py --dry-run`) confirmó que los 25 frames fueron deduplicados exitosamente mediante hash SHA-256, quedando listos para su pseudo-etiquetado con el modelo maestro (`yolo26x-pose.pt`).
-2. **Protocolo FINCH y Ausencia de Olvido Catastrófico (*Americana desde la montada*):** Al incorporar una técnica con oclusiones severas en el suelo (*Americana desde la montada*) mediante el Replay Buffer 70/30 (`freeze=10` y planificador adaptativo `FINCHScheduler`), la precisión sobre la nueva técnica ascendió de **18.08% a 58.65% mAP@50-95 (+40.57 pp)**, mientras que la precisión sobre el repertorio histórico aumentó de **33.95% a 68.60% Pose mAP@50-95 (+34.65 pp)**, demostrando transferencia positiva (*Forward & Backward Positive Transfer*) y cero olvido catastrófico.
-3. **Orquestación Autónoma en Segundo Plano y Hot-Swap (`autonomous_flywheel.py`):** Siguiendo la arquitectura de bucle cerrado para sistemas autónomos (Autonomous Systems Authority, 2026), la subida de un video patrón por parte del profesor (`POST /api/v1/tecnicas/{id}/patron`) lanza de manera no bloqueante un subproceso aislado (`subprocess.Popen` con `start_new_session=True`) sincronizado por un cerrojo de archivo POSIX (`.autonomous_flywheel.lock`). Al superar el **Gatekeeper Automático** ($\Delta\text{mAP} \ge -0.02$), el sistema promueve atómicamente el modelo a `yolo26n_autonomous.pt` y el adaptador `YOLOPoseAdapter._get_model()` ejecuta un **Hot-Swap en caliente** verificando la marca de tiempo (`st_mtime`) sin interrumpir ni reiniciar el servidor FastAPI.
+* **Persistencia Dual:** La preferencia se guarda localmente en `localStorage.app_idioma` y se sincroniza en PostgreSQL dentro de `usuarios.idioma_preferido` mediante `PUT /api/v1/auth/usuarios/{id}/idioma`.
+* **Traducción Integral:** Traduce tanto etiquetas de pantalla, mensajes de error y botones (como *Cancelar Análisis*, *Eliminar Manual*, *Reasignar usuario*), como los nombres de las articulaciones anatómicas antes de mostrarlas en pantalla o enviarlas al modelo generativo.
+
+## 6.6. Aprendizaje Continuo, Prevención del Olvido y Precisión del Sistema
+Para responder con evidencia técnica al funcionamiento evolutivo y a la confiabilidad del sistema sobre el tatami, esta sección explica cómo aprende la plataforma, cómo evita olvidar técnicas previas y qué precisión numérica alcanzó en las pruebas reales.
+
+### 6.6.1. ¿Cómo aprende el sistema? (Aprendizaje Continuo Visual y Teórico)
+El sistema aprende en dos niveles complementarios, sin obligar al personal de la academia a programar ni reiniciar el servidor:
+
+1. **Aprendizaje Visual Autónomo (*Data Flywheel* + *Hot-Swap*):**
+   * **Captura automática de casos difíciles:** Cada vez que el modelo `YOLOv26-pose` detecta una postura en vivo con confianza inferior a `0.65`, `YOLOPoseAdapter` guarda automáticamente el fotograma ambiguo en `backend/storage/uncertainty_frames/` (evitando repetidos mediante hash SHA-256 y registrando el evento en `log.csv`). En pruebas operativas se capturaron **25 fotogramas únicos sobre 168 eventos de baja confianza**.
+   * **Reentrenamiento sin detener el servicio:** Con esos fotogramas difíciles revisados y un nuevo conjunto de entrenamiento, se entrena un modelo actualizado (`yolo26n_autonomous.pt`). El método `_get_model()` vigila su fecha de modificación (`st_mtime`) y realiza un reemplazo en memoria en caliente (*Hot-Swap*) apenas detecta la nueva versión validada.
+2. **Aprendizaje Instantáneo de Nuevas Técnicas y Manuales (Sin Reentrenar):**
+   * **Nuevos patrones motores:** Cuando un profesor graba un nuevo video patrón en **UC-05**, su secuencia postural 3D de 133 dimensiones se vectoriza e indexa de inmediato en Qdrant, permitiendo evaluar esa técnica desde el primer segundo.
+   * **Nuevo conocimiento teórico:** Al subir manuales (PDF, DOCX, TXT, imágenes) o guardar una nota del profesor en **UC-06**, el contenido se fragmenta e indexa en la colección `rag_knowledge` (2048 dimensiones), quedando disponible al instante para consultas y correcciones futuras.
+
+### 6.6.2. ¿El sistema se olvida de lo que ya sabía? (Mitigación del Olvido Catastrófico)
+**No se olvida.** En Inteligencia Artificial, reentrenar una red neuronal solo con datos nuevos suele destruir lo aprendido antes (fenómeno conocido como *olvido catastrófico*). Para evitarlo en el aprendizaje visual de nuevas llaves y posiciones de Jiu-Jitsu, el proyecto aplica tres defensas combinadas:
+
+1. **Replay Buffer 70/30:** Cada ciclo de reentrenamiento mezcla obligatoriamente **70 % de poses históricas ya dominadas (Gold Standard)** con solo **30 % de poses de la técnica nueva**. Así la red repasa continuamente los movimientos anteriores mientras aprende los nuevos.
+2. **Congelamiento de Capas Base (`freeze=10`):** Las primeras 10 capas visuales que reconocen bordes, formas del kimono y articulaciones básicas quedan bloqueadas durante el ajuste fino, preservando la base anatómica general.
+3. **Agrupamiento FINCH con Tasa Adaptativa:** Ajusta el paso de aprendizaje agrupando automáticamente posturas similares sin sobrescribir abruptamente los pesos consolidados.
+
+**Evidencia empírica:** Al enseñar la técnica compleja con cruce de brazos *Americana desde la montada*, la precisión en la técnica nueva subió de **18.08 % a 58.65 % Pose mAP@50-95 (+40.57 puntos porcentuales)** y, lejos de olvidarse de las técnicas anteriores, el desempeño sobre el conjunto histórico también subió de **33.95 % a 68.60 % Pose mAP@50-95 (+34.65 puntos porcentuales)**, demostrando **0 % de olvido catastrófico**.
+
+### 6.6.3. ¿El sistema tiene precisión? (Métricas Reales de Exactitud y Rendimiento)
+Sí. La precisión se midió de manera integral tanto en visión por computadora como en recuperación bibliográfica y control contra alucinaciones:
+
+Tabla 21B
+*Resumen de métricas reales de precisión, aprendizaje y rendimiento del sistema*
+
+| Dimensión Evaluada | Métrica Real Observada | Qué Significa en la Práctica |
+| :--- | :--- | :--- |
+| **Precisión de Pose en Técnica Nueva (*Americana*)** | **58.65 % Pose mAP@50-95** (+40.57 pp vs. 18.08 % base) | Logra ubicar articulaciones incluso con brazos fuertemente entrelazados en el suelo. |
+| **Precisión en Conjunto Histórico (Sin Olvido)** | **68.60 % Pose mAP@50-95** (+34.65 pp vs. 33.95 % base) | Conserva y supera el reconocimiento de técnicas previas tras reentrenar. |
+| **Resolución de Oclusiones 3D (`yolo26n-depth`)** | **163 oclusiones severas resueltas** | Distingue qué atleta y extremidad está arriba o abajo en el tatami. |
+| **Velocidad de Visión por Computadora** | **95.2 FPS** sostenidos (~1.57 s para 150 cuadros) | Analiza un video corto sin hacer esperar al alumno en clase. |
+| **Precisión de Recuperación Teórica (RAGAS)** | **Recall@3 = 100 %** | Encuentra siempre el manual o pasaje pertinente dentro de las 3 mejores fuentes recuperadas. |
+| **Fidelidad sin Alucinaciones (*Faithfulness*)** | **0.9475 (94.75 %)** | El Juez de IA (`>= 0.85`) garantiza que los consejos salen del manual o nota del profesor y no de invenciones. |
+| **Relevancia de la Respuesta (*Answer Relevancy*)** | **0.8985 (89.85 %)** | Las explicaciones responden directamente al error articular detectado. |
+| **Tiempo Completo de Evaluación en Vivo** | **21.56 a 22.56 segundos** | Cumple holgadamente la meta de terminar en menos de 30 segundos (`RNF-02`). |
+
+*Nota.* Elaboración propia con mediciones sobre MacBook Air M5 de 24 GB de Memoria Unificada (2026).
 
 ## 6.7. Deuda Técnica Registrada en Desarrollo
-En concordancia con el principio de honestidad técnica y transparencia metodológica (Larman, 2004), se reconocen las siguientes deudas técnicas priorizadas para iteraciones posteriores a la defensa de grado:
-1. **Procedimiento Almacenado `admin_delete_user`:** Invocado opcionalmente dentro de la suite de pruebas `verify_iter_4h.py` mediante bloques de captura de excepción (`try/except`); su implementación formal en la capa SQL no es crítica para la operación regular pero debe estandarizarse para evitar advertencias en pruebas automáticas.
-2. **Tabla de Auditoría de Impersonación:** Aunque el frontend y el backend emiten tokens temporales que incluyen de forma inmutable el identificador del administrador (`impersonator_admin_id`), la persistencia en una tabla física denominada `auditoria_impersonacion` se mantiene como una deuda técnica registrada (ver §5.10.1).
-3. **Reconciliación Automática en Segundo Plano (Postgres ↔ Qdrant):** La verificación de consistencia entre los metadatos relacionales de las técnicas y los vectores de conocimiento almacenados en Qdrant se ejecuta actualmente mediante un script de consola administrado por el operador (`reconcile_rag.py --fix`); se planifica migrar esta rutina a una tarea programada (*cron job* o worker asíncrono).
-4. **Deduplicación por Hash de Contenido (`content_hash`):** En la ingesta de páginas de manuales PDF, la detección de duplicados opera mediante verificación de nombre de archivo y número de página; se encuentra especificada la adición de un hash criptográfico SHA-256 por fragmento de texto para optimizar el espacio vectorial en bibliotecas con múltiples ediciones del mismo libro.
+Con transparencia técnica, tras la implementación completa de la migración `18_crud_integridad_cancelacion.sql` (que resolvió `admin_delete_user`, la cancelación transaccional `cancelar_evaluacion` y el borrado atómico de manuales y técnicas entre PostgreSQL y Qdrant), quedan registradas únicamente tres mejoras pendientes para iteraciones futuras:
 
----
+1. **Tabla Física de Auditoría de Impersonación:** Aunque la sesión delegada y el aviso rojo de soporte operan en producción, falta persistir cada evento de ingreso y salida en una tabla relacional dedicada `auditoria_impersonacion` junto con la re-autenticación por contraseña.
+2. **Ejecución Programada de Reconciliación RAG:** La verificación periódica de consistencia entre PostgreSQL y Qdrant se realiza mediante el script manual `backend/scripts/reconcile_rag.py`; se planifica automatizarlo como tarea programada en segundo plano.
+3. **Deduplicación por Hash de Contenido (`content_hash`):** En la ingesta de texto de manuales PDF/DOCX/TXT, conviene añadir un hash SHA-256 por fragmento textual (como ya se hace con las imágenes) para evitar indexar párrafos repetidos si se suben distintas ediciones de un mismo libro.
 
 ---
 
 # Capítulo VII: Pruebas
 
 ## 7.1. Estrategia de Aseguramiento de Calidad
-El aseguramiento de la calidad del software se estructuró siguiendo la clásica Pirámide de Pruebas de Software, complementada por la premisa de "Cero Falsos Positivos" formulada por Craig Larman (2004). En un sistema que combina visión por computadora probabilística, modelos de lenguaje multimodal y lógica biomecánica determinística, las pruebas manuales resultan insuficientes e insostenibles. Por ello, la plataforma implementa una estrategia de verificación en tres capas:
+En concordancia con la Fase 4 de **ICONIX**, cada caso de uso y regla crítica del negocio se valida mediante pruebas automatizadas que comprueban el comportamiento real de los objetos de frontera, control, dominio y persistencia. La estrategia de verificación se organiza en tres niveles:
 
-1. **Pruebas Unitarias e Integración (Pytest):** Validan el comportamiento aislado de funciones matemáticas, transformaciones de tensores articulares, contratos de APIs REST, políticas RLS y orquestadores RAG mediante el aislamiento de dependencias.
-2. **Pruebas de Extremo a Extremo (Playwright E2E):** Ejecutan flujos de usuario completos sobre navegadores reales en entornos headless, simulando las acciones de Alumnos, Profesores y Administradores ante diversas resoluciones de pantalla.
-3. **Verificación Visual Multi-Viewport:** Garantiza el diseño responsivo sin desbordamiento horizontal (*cero scroll horizontal*) en tres anchos de pantalla canónicos: móvil estrecho (390 px), tableta (768 px) y escritorio de alta resolución (1920 px).
+1. **Pruebas Unitarias y de Integración en Backend (Pytest):** Verifican fórmulas biomecánicas (normalización y DTW), jerarquías de contexto RAG, validadores Pydantic, control de acceso JWT/RBAC, cancelación transaccional, respaldo de videos e integridad entre PostgreSQL y Qdrant.
+2. **Verificación de Contrato HTTP mediante TestClient (FastAPI):** Simula peticiones reales contra los endpoints REST de autenticación, técnicas, evaluaciones y biblioteca.
+3. **Validación Visual Web (Multi-Viewport y E2E):** Realizada con Playwright y navegadores reales durante las iteraciones de interfaz para comprobar reproducción de video, cambio de idioma y ausencia de desbordamiento horizontal en móvil (390 px), tableta (768 px) y escritorio (1920 px).
 
 ## 7.2. Pruebas Unitarias e Integración (Pytest)
-El directorio `backend/tests/` alberga un total de 26 archivos de prueba automatizados. La última ejecución integral del suite arrojó un resultado empírico de **132 pruebas superadas exitosamente (passed) y 6 omitidas (skipped)** por dependencias de servicios externos controlados.
+El directorio `backend/tests/` contiene actualmente **30 archivos de prueba** que reúnen un total de **181 casos de prueba recolectados** (`pytest --collect-only -q`), incluyendo **6 pruebas omitidas (`skipped`)** en archivos marcados para migración (`test_knowledge_controller.py`, `test_yolo_adapter.py` y `test_routes.py`).
+
+Es importante precisar el alcance de ejecución según el entorno:
+* Las pruebas unitarias aisladas (con mocks de base de datos o sin requerir GPU Metal) se ejecutan de forma directa en cualquier entorno Python.
+* Las pruebas de integración que interactúan con servicios vivos (`test_etapa_b_patron.py`, `test_etapa_cd_analisis.py`, `test_profile_security.py`, `test_mobility_security.py`) requieren los contenedores locales de PostgreSQL/PostgREST/Qdrant encendidos, y las pruebas que inicializan el modelo VLM (`test_iter_3x_features.py`, `test_biblioteca_api.py`) requieren acceso a Apple Silicon Metal GPU fuera de entornos restringidos.
 
 Tabla 22
-*Archivos de prueba unitaria e integración más representativos del sistema*
+*Archivos de prueba más representativos del sistema en `backend/tests/`*
 
-| Archivo de Prueba | Componente / Comportamiento Evaluado | Iteración de Origen |
+| Archivo de Prueba | Qué Verifica | Casos / Estado |
 | :--- | :--- | :--- |
-| `test_models_regression.py` | Verifica que `to_vector_array()` devuelva exactamente 133 dimensiones y que el campo `frame_idx` se preserve inmutable. | Iteración C12.5 |
-| `test_qdrant_maxdiff_regression.py` | Valida que la búsqueda de máxima discrepancia vectorial utilice el método optimizado `scroll` con operaciones NumPy, evitando la ejecución de consultas repetitivas de red. | Iteración C12.5 |
-| `test_threshold_prompt_regression.py` | Garantiza que el umbral de similitud aceptable sea `UMBRAL_ACEPTABLE = 85.0` (número flotante porcentual) y que el prompt generativo contenga la directiva "FOTOGRAMA CRÍTICO". | Iteración C12.5 |
-| `test_hybrid_retriever.py` | Valida la fusión de rangos recíprocos (RRF con constante $k=60$), la traducción de terminología mediante el glosario multilingüe y la asignación de bonificación a evidencias visuales. | Iteración 3S |
-| `test_rag_reranker.py` | Comprueba que el reordenador Cross-Encoder de Qwen3-VL ejecute con `enable_thinking=False` para minimizar la latencia y mantener un tiempo de respuesta menor a 3 segundos. | Iteración 3R |
-| `test_local_vlm_adapter.py` | Audita el analizador sintáctico de respuestas JSON devueltas por el VLM local, la validación del idioma del alumno y el cálculo del puntaje de fidelidad (*faithfulness*). | Iteración 3V |
-| `test_etapa_b_patron.py` | Verifica la subida del video patrón de oro por parte del profesor, el rechazo con código HTTP 422 ante videos con baja cobertura de pose y la atomicidad del rollback entre Postgres y Qdrant. | Iteración C12 |
-| `test_primer_frame_dedup.py` | Evalúa la deduplicación de cajas delimitadoras en el primer fotograma para evitar quimeras visuales o la detección errónea de reflejos menores al 10% del área del tatami. | Iteración 3J |
-| `test_multimodal_image_ingestion.py` | Valida la ingesta y extracción de imágenes de manuales en PDF, su indexación a vectores de 2048 dimensiones y el bloqueo de ataques de salto de directorio (*path traversal*). | Iteración 3V |
+| `test_crud_integridad_cancelacion.py` | Borrado atómico de manuales en Qdrant, PostgreSQL (`admin_delete_manual_teoria`) y disco; cascada en `DELETE /tecnicas/{id}`; cancelación de evaluación con borrado de video temporal; eliminación de usuario (`admin_delete_user`) con bloqueo de auto-eliminación y reasignación (`HTTP 409` / `auto_reasignar=true`). | 7 pruebas unitarias y API |
+| `test_video_storage.py` | Validación de rutas seguras `/static/videos/...`, copia persistente con UUID en `persistir_video_referencia` y auto-curación desde raíz del repositorio actualizando BD. | 3 pruebas unitarias |
+| `test_rag_context_hierarchy.py` | Estrategias de idioma ES/PT/EN, jerarquía Manual > Nota del Profesor > Fallback Seguro y consulta automática a la Biblioteca Global (`tecnica_id=None`). | 10 pruebas unitarias |
+| `test_pipeline_biomecanico.py` | Dibujo de frame crítico, búsqueda de máxima discrepancia, auto-ingesta de patrón, recorte top-down con padding y aislamiento K-Means cuando una caja supera 40% del ancho. | 7 pruebas unitarias |
+| `test_biblioteca_api.py` | Autenticación en búsqueda semántica, catálogo multiformato desde Postgres, citas inline `[1]`–`[3]`, inyección de notas del profesor y resolución de número de página. | 20 pruebas de API |
+| `test_profile_security.py` | Protección del estado `pendiente` al editar perfil y rechazo (`HTTP 403`) si el registro público intenta enviar rol `profesor` o `admin`. | 2 pruebas de seguridad (requiere BD viva) |
+| `test_hybrid_retriever.py` | Fusión de rangos recíprocos (RRF con `k=60`), expansión con glosario multilingüe y bonificación a evidencias visuales. | 6 pruebas unitarias |
+| `test_rag_reranker.py` | Reordenador Cross-Encoder con `enable_thinking=False` y fallback por similitud coseno. | 7 pruebas unitarias |
+| `test_local_vlm_adapter.py` | Parseo JSON del VLM local, verificación de idioma de respuesta y puntaje del Juez de fidelidad (`faithfulness`). | 11 pruebas unitarias |
+| `test_etapa_b_patron.py` | Registro de patrón de oro por profesor, cobertura mínima 40% (`HTTP 422`) y rollback ante error en PostgreSQL. | 11 pruebas de integración |
+| `test_primer_frame_dedup.py` | Deduplicación de cajas en el primer frame, descarte de quimeras y reflejos, y separación por `yolo26n-seg` o K-Means. | 7 pruebas unitarias |
+| `test_multimodal_image_ingestion.py` | Indexación de imágenes a 2048 dimensiones y bloqueo de *Path Traversal*. | 2 pruebas unitarias y API |
 
 *Nota.* Elaboración propia (2026).
 
-## 7.3. Pruebas E2E con Playwright
-Para garantizar que la experiencia interactiva del practicante y del docente sea impecable, se implementó una batería de 12 scripts de verificación basados en Playwright (`scripts/verify_*.py`), que interactúan con la interfaz web y capturan evidencias visuales automáticas en forma de capturas de pantalla (*screenshots*).
+## 7.3. Verificación Web de Extremo a Extremo (Playwright E2E)
+Durante las iteraciones de interfaz y estabilización del sistema se ejecutaron pruebas automatizadas de extremo a extremo con **Playwright** sobre navegadores reales para validar visualmente los flujos críticos: inicio de sesión con iconos SVG limpios, bloqueo visual del Pase de Tatami pendiente, activación del pase desde el panel del profesor, reproducción simultánea de videos, visor de manuales y diseño responsivo sin desbordamiento horizontal en 390 px, 768 px y 1920 px.
 
-Tabla 23
-*Scripts de verificación de extremo a extremo (E2E) con Playwright*
-
-| Script de Verificación | Propósito de la Prueba | Evidencias Generadas |
-| :--- | :--- | :--- |
-| `verify_iter_3x_playwright.py` | Navegación en el catálogo de libros técnicos, visor de manuales PDF y apertura del modal de teoría pedagógica. | 4 capturas de pantalla |
-| `verify_iter_3y_playwright.py` | Validación del cambio dinámico de idioma (ES/PT/EN) y renderizado de la biblioteca visual de técnicas. | 6 capturas de pantalla |
-| `verify_iter_3z_playwright.py` | Comprobación responsiva en anchos de 390 px, 768 px y 1920 px, confirmando la ausencia de desbordamiento horizontal. | 12 capturas de pantalla |
-| `verify_iter_4a_playwright.py` | Validación del muro de pago del "Pase de Tatami", impidiendo la subida de videos a alumnos sin suscripción activa. | 3 capturas de pantalla |
-| `verify_iter_4b_playwright.py` | Panel del profesor: listado de pases pendientes, conmutación de estado a "activo" (30 días) y cálculo de fecha de caducidad. | 4 capturas de pantalla |
-| `verify_iter_4c_playwright.py` | Interfaz de inicio de sesión: validación de campos obligatorios, selector de visibilidad de contraseña con iconos SVG e interfaz a 1080p. | 2 capturas de pantalla |
-| `verify_iter_4e_playwright.py` | Verificación del reemplazo de emojis gráficos genéricos por vectores SVG limpios en el componente de autenticación. | 1 captura de pantalla |
-| `verify_iter_4f_cloudflare.py` | Flujo completo de login y subida de video accediendo a través del túnel público cifrado de Cloudflare (`.trycloudflare.com`). | 2 capturas de pantalla |
-| `verify_iter_4h.py` | Validación de reglas de negocio: rechazo con HTTP 422 a nombres de usuario con espacios, catálogo inicial vacío, nombres de articulaciones en portugués y persistencia de sesión tras F5. | 3 capturas de pantalla + aserciones de API |
-| `verify_iter_4j_playwright.py` | Persistencia del idioma del profesor (Mike en PT), visualización del mensaje pedagógico en el modal de teoría y reproducción fluida de videos en vistas de progreso y feedback. | 4 capturas de pantalla |
-| `verify_ux_i18n_playwright.py` | Auditoría de internacionalización transversal en las páginas `StudentProgress`, `Library` y `FeedbackView`. | 3 capturas de pantalla |
-| `verify_iter_4a_api.py` / `4b` / `4c` | Verificación directa a nivel de protocolo HTTP y base de datos relacional mediante librerías `requests` y `psycopg2`. | Registros de consola y aserciones |
-
-*Nota.* Elaboración propia (2026).
+Con el saneamiento del repositorio previo a la entrega final (`git commit 759c0c5`), los scripts temporales de captura y verificación en `scripts/verify_*.py` fueron depurados para mantener el entorno de producción limpio, conservando las suites automatizadas permanentes dentro de `backend/tests/`.
 
 ## 7.4. Pruebas de Rendimiento y Benchmarks
-Las mediciones de rendimiento se ejecutaron sobre el hardware oficial del proyecto (MacBook Air M5 con 24 GB de memoria unificada):
-* **Velocidad de Inferencia YOLOv26-pose:** Alcanzó una tasa sostenida de **95.2 fotogramas por segundo (FPS)** en modo nano sobre el backend MPS, permitiendo procesar un video técnico de 5 segundos (aproximadamente 150 frames) en tan solo 1.57 segundos.
-* **Latencia de Vectorización Multimodal (Qwen3-VL-Embedding-2B):** Registró un promedio de **~50 milisegundos por texto descriptivo** en el benchmark local (`scripts/benchmark_qwen_local.py`).
-* **Pipeline Completo de Evaluación de Video (E2E):** El tiempo total transcurrido desde que el alumno envía el video hasta que la interfaz despliega el feedback estructurado osciló entre **21.56 y 22.56 segundos**, cumpliendo holgadamente el Acuerdo de Nivel de Servicio (*SLA*) fijado en menos de 30 segundos.
-* **Reordenador Semántico Cross-Encoder:** El percentil 95 ($p_{95}$) para evaluar y calificar 20 fragmentos candidatos de teoría fue de **2.59 segundos** (iteración 3S).
-* **Calidad de Recuperación RAG Multilingüe:** Evaluado mediante el framework RAGAS (Es et al., 2024), alcanzando un **Recall@3 del 100%**, una fidelidad semántica (*Faithfulness*) de **0.9475** y una relevancia de respuesta (*Answer Relevance*) de **0.8985**.
-* **Integridad Relacional y Vectorial:** La ejecución de `reconcile_rag.py --fix` confirmó **0 puntos huérfanos** entre PostgreSQL y las colecciones de Qdrant.
+Las mediciones registradas sobre el equipo local de producción (MacBook Air M5 con 24 GB de Memoria Unificada) confirmaron el cumplimiento de los requisitos no funcionales:
+
+* **Velocidad de Inferencia YOLOv26-pose:** Tasa sostenida de **95.2 FPS** en versión nano sobre MPS (~1.57 segundos para un video de 150 cuadros).
+* **Latencia de Vectorización (`Qwen3-VL-Embedding-2B`):** Promedio de **~50 milisegundos** por fragmento de texto en inferencia local.
+* **Pipeline Completo de Evaluación:** Tiempo total entre **21.56 y 22.56 segundos**, cumpliendo el límite objetivo menor a 30 segundos (`RNF-02`).
+* **Reordenador Cross-Encoder:** Percentil 95 ($p_{95}$) de **2.59 segundos** al evaluar 20 candidatos.
+* **Calidad de Recuperación RAG:** Evaluada con RAGAS alcanzando **Recall@3 del 100%**, fidelidad (*Faithfulness*) de **0.9475** y relevancia de respuesta de **0.8985**.
+* **Consistencia Relacional y Vectorial:** Reconciliación verificada con **0 puntos huérfanos** entre PostgreSQL y Qdrant.
 
 ## 7.5. Pruebas de Regresión y Puntos de Restauración (Rollback)
-En estricta observancia del Proceso Unificado Ágil de Larman (2004), ante cualquier degradación métrica detectada durante una iteración, se aplicó la disciplina de revertir el código al último punto estable marcado mediante etiquetas en Git (*tags*).
+Cada vez que una prueba empírica mostró una caída de precisión o un comportamiento no deseado, se revirtió el cambio al último punto estable mediante etiquetas Git (*tags*) y se registró el aprendizaje técnico.
 
-Tabla 24
-*Historial de puntos de restauración (rollbacks) y decisiones arquitectónicas empíricas*
+Tabla 23
+*Historial de puntos de restauración (rollbacks) y ajustes empíricos*
 
-| Etiqueta Git | Causa Técnica del Rollback o Ajuste | Evidencia Documentada |
+| Etiqueta Git | Causa Técnica del Rollback o Ajuste | Evidencia / Resultado |
 | :--- | :--- | :--- |
-| `iter-3c-antes` | El modelo reentrenado `best.pt` con segmentación no logró detectar simultáneamente a los dos atletas en contacto. | Memorando técnico `2026-10-31-transition-3c` |
-| `iter-3c2-antes` | Reducir el umbral de confianza a `conf=0.15` introdujo detecciones espurias de jueces y público alrededor del tatami. | Memorando técnico `2026-10-31` |
-| `iter-3c3-antes` | Aumentar la resolución a `imgsz=1280` rectangular saturó la memoria sin mejorar la separación de extremidades entrelazadas. | Memorando técnico `2026-10-31` |
-| `iter-3d-antes` | Fallo de dimensionalidad al integrar la normalización de 46 características continuas en la matriz de alineación DTW. | Memorando técnico `2026-10-31-transition-3d` |
-| `iter-3i-antes` | El filtro heurístico de spam rechazaba videos grabados en tatamis con iluminación deficiente; se implementó umbral dinámico. | Bitácora de iteración 3I |
-| `iter-3j-antes` | Detección de extremidades duplicadas en el primer frame por reflejos en el piso; se diseñó deduplicación por intersección sobre unión (IoU). | Bitácora de iteración 3J |
-| `iter-3k-antes` | Confusión entre el profesor y el alumno al no forzar la selección obligatoria de la persona a seguir (`persona_idx`). | Bitácora de iteración 3K |
-| `iter-3m-antes` | Pérdida de seguimiento articular en transiciones rápidas de guardia; se adoptó seguimiento competitivo por proximidad temporal. | Bitácora de iteración 3M |
-| `iter-3n-antes` | Falsos positivos por personas en segundo plano; se impuso regla de cobertura articular mínima del 40% del encuadre. | Bitácora de iteración 3N |
-| `iter-3r-antes` | El reordenador basado en similitud coseno simple (*bi-encoder*) alucinaba páginas de manuales; se migró a Cross-Encoder real. | Bitácora de iteración 3R |
-| `iter-3s-antes` | Recuperación incompleta en búsquedas con sinónimos en portugués; se incorporó búsqueda híbrida BM25 + vectores con RRF ($k=60$). | Bitácora de iteración 3S |
-| `iter-3v-antes` | Respuestas de la IA mezclaban términos en inglés; se añadió traducción determinística de articulaciones anatómicas. | Bitácora de iteración 3V |
-| `iter-3w-antes` | Error en la reproducción de video en navegadores Safari por encabezados de tipo MIME incorrectos en FastAPI. | Bitácora de iteración 3W |
-| `iter-3x-antes` | Cuello de botella en la ingesta masiva de manuales técnicos; se introdujo almacenamiento de fotogramas de incertidumbre para aprendizaje continuo. | Bitácora de iteración 3X |
+| `iter-3c-antes` | El reentrenamiento directo con segmentación no logró detectar simultáneamente a los dos atletas en contacto. | Se mantuvo pose directa (`USE_SEGMENTATION=False`). |
+| `iter-3c2-antes` | Bajar la confianza a `conf=0.15` introdujo detecciones falsas de público alrededor del tatami. | Se calibró filtrado por área mínima. |
+| `iter-3c3-antes` | Subir resolución a `imgsz=1280` aumentó el consumo de memoria sin mejorar la separación de cuerpos. | Se preservó resolución estándar eficiente. |
+| `iter-3d-antes` | Error de dimensionalidad al integrar el vector normalizado de 46 características en DTW. | Corregido en `PoseNormalizer` (`46 dims`). |
+| `iter-3i-antes` | El filtro anti-spam rechazaba videos en tatamis con poca luz. | Ajuste con umbral dinámico. |
+| `iter-3j-antes` | Reflejos en espejos y cajas duplicadas en el primer fotograma. | Deduplicación por IoU y filtro de área < 10%. |
+| `iter-3k-antes` | Confusión entre profesor y alumno cuando había más de una persona. | Selección obligatoria de `persona_idx` en escena. |
+| `iter-3m-antes` | Saltos de identidad durante transiciones rápidas de guardia. | Seguimiento por proximidad e IoU entre cuadros. |
+| `iter-3n-antes` | Falsos positivos de personas al fondo del gimnasio. | Regla de cobertura mínima del 40%. |
+| `iter-3r-antes` | El reordenador simple (*bi-encoder*) citaba páginas equivocadas. | Migración a Cross-Encoder `Qwen3-VL-Reranker`. |
+| `iter-3s-antes` | Consultas en portugués perdían coincidencias exactas. | Búsqueda híbrida BM25 + Densa con RRF (`k=60`). |
+| `iter-3v-antes` | El modelo mezclaba nombres de articulaciones en inglés. | Traducción determinística previa de articulaciones. |
+| `iter-3w-antes` | Fallo de reproducción de videos en Safari por tipo MIME. | Ajuste de cabeceras y `StaticFiles`. |
+| `iter-3x-antes` | Necesidad de capturar casos ambiguos al ingerir/evaluar. | Captura automática de frames con confianza < 0.65. |
 
 *Nota.* Elaboración propia (2026).
 
 ## 7.6. Pruebas de Estrés y Casos Límite
-Se diseñaron escenarios adversos para evaluar la solidez del sistema ante entradas no canónicas:
-* **Video sin personas detectables (ej. video de un saco de boxeo o pared vacía):** El filtro anti-spam local intercepta el archivo en la primera etapa y retorna un mensaje instructivo al usuario sin consumir ciclos del VLM.
-* **Múltiples personas en el tatami (3 o más individuos):** La interfaz obliga al usuario a tocar sobre la pantalla la silueta del atleta evaluado, fijando su identificador para evitar el salto de seguimiento durante el movimiento.
-* **Archivos con peso superior a 100 MB:** El frontend intercepta el archivo antes de iniciar la transmisión y notifica que excede el límite permitido por el túnel seguro de Cloudflare.
-* **Alumno con membresía vencida:** Al intentar invocar el endpoint `/api/v1/evaluaciones/analizar`, el middleware de seguridad valida la fecha de expiración y retorna un código `HTTP 403 Forbidden`.
-* **Registro con nombre de usuario con espacios (ej. `"Juan Perez"`):** El validador en Pydantic y la expresión regular del cliente bloquean la solicitud con código `HTTP 422 Unprocessable Entity`.
-* **Inyección de rutas maliciosas (*Path Traversal*):** Solicitudes con patrones del tipo `../../etc/passwd` dirigidas a los endpoints de descarga de imágenes de manuales son bloqueadas retornando `HTTP 400 Bad Request`.
+Se verificaron los siguientes escenarios adversos y casos límite:
+
+* **Video sin personas o ajeno al Jiu-Jitsu:** El filtro anti-spam ViCoS intercepta el archivo y responde `HTTP 422` sin ejecutar análisis biomecánico ni VLM.
+* **Múltiples personas en el tatami:** La interfaz obliga a elegir la silueta correcta antes de habilitar el análisis (`PERSONA_SELECTED`).
+* **Cancelación durante análisis en curso:** Al pulsar **Cancelar Análisis**, el cliente dispara `AbortController` y `POST /api/v1/evaluaciones/{id}/cancelar`, marcando `cancelado` en BD y borrando el video temporal.
+* **Archivos mayores a 100 MB:** Rechazados en carga de manuales con `HTTP 413` y validados frente al límite del túnel Cloudflare.
+* **Alumno con Pase de Tatami vencido o pendiente:** `require_active_subscription` bloquea el análisis con `HTTP 403 Forbidden`.
+* **Registro público intentando rol `profesor` o `admin`:** Rechazado con `HTTP 403 Forbidden` (probado en `test_profile_security.py`).
+* **Eliminación de profesor con videos o manuales asociados:** `admin_delete_user` responde `HTTP 409 Conflict` solicitando confirmación de reasignación y solo completa la baja cuando se pasa `reasignar_a` o `auto_reasignar=true`.
+* **Intentos de *Path Traversal* (`../../etc/passwd`):** Bloqueados con `HTTP 400 Bad Request` en descarga de imágenes y eliminación de manuales.
 
 ## 7.7. Deuda Técnica en Pruebas
-1. **Pruebas de Rutas Anteriores Omitidas (`skip`):** Los archivos `test_routes.py` y `test_yolo_adapter.py` poseen pruebas marcadas temporalmente como omitidas debido a la transición arquitectónica hacia endpoints nativos en PostgREST y DTOs de Pydantic v2.
-2. **Controlador de Conocimiento:** Las pruebas de `test_knowledge_controller.py` fueron postergadas durante la refactorización hacia el caso de uso `IngestKnowledgeUseCase`.
-3. **Ausencia de Pruebas Unitarias de Componentes Frontend:** La calidad de la interfaz visual se verifica enteramente mediante Playwright E2E; no se implementaron pruebas unitarias aisladas con Jest o Vitest a nivel de componente React individual.
-
----
+1. **Pruebas Heredadas Omitidas (`skip`):** Tres archivos heredados (`test_routes.py`, `test_yolo_adapter.py` y `test_knowledge_controller.py`) conservan en conjunto 6 pruebas omitidas tras la refactorización hacia PostgREST y `IngestKnowledgeUseCase`.
+2. **Pruebas Unitarias de Componentes React:** La interfaz frontend fue validada mediante pruebas E2E de navegador y compilación con Vite, sin suite unitaria aislada en Jest o Vitest.
 
 ---
 
 # Capítulo VIII: Seguridad
 
 ## 8.1. Modelo de Amenazas y Superficie de Ataque
-El Sistema de Análisis Biomecánico maneja activos de alta sensibilidad, entre ellos: grabaciones en video de los alumnos y profesores de la academia, datos de contacto, registros de asistencia, credenciales de acceso administrativo y llaves criptográficas de sesión. Para proteger estos activos en un despliegue expuesto a internet mediante túneles seguros, se formalizó el siguiente modelo de superficie de ataque:
+La plataforma protege activos sensibles: grabaciones en video de los practicantes, datos personales de cuentas, historial de progreso, documentos privados de la academia y credenciales administrativas. El siguiente diagrama resume las capas de defensa perimetral y local.
 
-![Diagrama de Superficie de Ataque y Defensa Perimetral](diagramas/superficie_ataque.png)
+*Figura 7: Superficie de ataque y arquitectura de defensa en profundidad.*
+
+```mermaid
+flowchart LR
+    subgraph Exterior["Red Publica / Internet"]
+        Cliente["Dispositivo Movil / Navegador"]
+        Atacante["Amenaza Externa / Fuerza Bruta"]
+    end
+
+    subgraph Perimetro["Borde Seguro (Edge)"]
+        Tunnel["Cloudflare Tunnel (cloudflared)\nCifrado TLS 1.3 / Sin puertos abiertos"]
+    end
+
+    subgraph ServidorLocal["Servidor Local del Tatami (Apple Silicon)"]
+        ViteProxy["Vite Reverse Proxy\nLista blanca allowedHosts"]
+        FastAPI["FastAPI Backend\nAuthRateLimitMiddleware / JWT HS256 / RBAC"]
+        PostgREST["PostgREST Engine\nValidacion de Claims y RPCs SECURITY DEFINER"]
+
+        subgraph Almacenamiento["Capa de Datos Segura"]
+            Postgres["PostgreSQL 16\nPoliticas RLS / pgcrypto bcrypt"]
+            Qdrant["Qdrant Vectorial\nColecciones separadas Poses y RAG"]
+            Filesystem["Almacenamiento Local\nRespaldo persistente de videos y manuales"]
+        end
+    end
+
+    Cliente -->|"HTTPS / WSS"| Tunnel
+    Atacante -.->|"Bloqueado por Rate Limit y AllowedHosts"| Tunnel
+    Tunnel --> ViteProxy
+    ViteProxy --> FastAPI
+    ViteProxy --> PostgREST
+    FastAPI --> Postgres
+    FastAPI --> Qdrant
+    FastAPI --> Filesystem
+    PostgREST --> Postgres
+```
 
 ## 8.2. Marco de Auditoría: `briiirussell/cybersecurity-skills`
-La evaluación de la postura defensiva del sistema se realizó integrando el repositorio de ciberseguridad **`briiirussell/cybersecurity-skills`**, aplicando tres vectores de análisis sobre el código fuente y los entornos de ejecución: `api-audit`, `cloud-audit` y `secrets-audit`. Los hallazgos resultantes se consolidaron en el archivo `findings.json` en la raíz del proyecto.
+Se aplicó una auditoría defensiva utilizando las tres habilidades `api-audit`, `cloud-audit` y `secrets-audit` del repositorio `briiirussell/cybersecurity-skills`, consolidando los resultados en **`docs/findings.json`**. En total se documentaron **7 hallazgos**: 3 descartados por estar ya protegidos con contraevidencia comprobada y 4 confirmados (2 subsanados de inmediato y 2 registrados como deuda de seguridad menor).
 
-Tabla 25
-*Resumen de hallazgos de auditoría de ciberseguridad formal (findings.json)*
+Tabla 24
+*Resumen de hallazgos de auditoría de ciberseguridad (`docs/findings.json`)*
 
-| Huella (*Fingerprint*) | Skill de Auditoría | Severidad | Veredicto | Estado / Mitigación Implementada |
+| Huella (*Fingerprint*) | Skill | Severidad | Veredicto | Estado / Mitigación |
 | :--- | :--- | :--- | :--- | :--- |
-| `api-audit/bola-evaluaciones/.../consultar_evaluacion` | `api-audit` | Alta | **Rechazado** | **No vulnerable:** La función `require_auth` valida rigurosamente el JWT y compara explícitamente el identificador del llamante con el `alumno_id` del registro antes de emitir los datos, denegando el acceso con HTTP 403 a usuarios no autorizados. |
-| `api-audit/cors-wildcard/.../main.py` | `api-audit` | Media | **Rechazado** | **No vulnerable:** Comprobado mediante peticiones `curl` con encabezados de origen arbitrarios; el middleware de FastAPI restringe las respuestas estrictamente a las direcciones listadas en `ALLOWED_ORIGINS`. |
-| `api-audit/rate-limit-ip-spoofing/.../AuthRateLimitMiddleware` | `api-audit` | Media | **Confirmado** | **Deuda Técnica:** El limitador de tasa extrae la IP únicamente mediante `request.client.host`. Al operar tras el túnel de Cloudflare y el proxy de Vite, las conexiones comparten la dirección local `127.0.0.1`, requiriendo extraer en futuras versiones la cabecera `CF-Connecting-IP`. |
-| `api-audit/ssrf-unvalidated-url/.../resolver_ruta_imagen_local` | `api-audit` | Media | **Confirmado** | **Deuda Técnica:** La descarga remota de imágenes para el catálogo multimodal ejecuta `requests.get()` sin verificar una lista negra de rangos de direcciones IP privadas (RFC 1918), permitiendo un vector potencial de SSRF interno. |
-| `cloud-audit/docs-exposure/.../swagger_docs` | `cloud-audit` | Baja | **Rechazado** | **No vulnerable:** El proxy inverso de Vite restringe el acceso exterior únicamente a `/api`, `/static` y `/health`; la documentación interactiva de Swagger y OpenAPI no es accesible desde el túnel público. |
-| `cloud-audit/permissive-allowed-hosts/.../vite.config.js` | `cloud-audit` | Baja | **Confirmado** | **Subsanado (Fixed):** Se eliminó la directiva permisiva `allowedHosts: true` en la configuración de Vite, sustituyéndola por una lista blanca explícita: `['.trycloudflare.com', 'localhost', '127.0.0.1']`. |
-| `secrets-audit/hardcoded-secret/.../PGRST_JWT_SECRET` | `secrets-audit` | Alta | **Confirmado** | **Subsanado (Fixed):** Se eliminó la contraseña por defecto quemada en `infrastructure/docker-compose.yml`, forzando la lectura obligatoria de la variable criptográfica `${POSTGREST_JWT_SECRET}` desde el archivo de entorno seguro. |
+| `api-audit/bola-evaluaciones/.../consultar_evaluacion` | `api-audit` | Alta | **Rechazado** | **Protegido:** `require_auth` valida el JWT y verifica que el solicitante sea el dueño (`alumno_id`) o `admin`, devolviendo `HTTP 403` ante accesos ajenos. |
+| `api-audit/cors-wildcard/.../main.py` | `api-audit` | Media | **Rechazado** | **Protegido:** FastAPI restringe los orígenes estrictamente a `ALLOWED_ORIGINS` sin reflejar cabeceras arbitrarias. |
+| `api-audit/rate-limit-ip-spoofing/.../AuthRateLimitMiddleware` | `api-audit` | Media | **Confirmado** | **Deuda Técnica:** `request.client.host` agrupa conexiones detrás del proxy bajo `127.0.0.1`; pendiente extraer `CF-Connecting-IP` verificada. |
+| `api-audit/ssrf-unvalidated-url/.../resolver_ruta_imagen_local` | `api-audit` | Media | **Confirmado** | **Deuda Técnica:** Falta bloquear explícitamente rangos IP privados (RFC 1918) al descargar URLs externas en búsqueda visual. |
+| `cloud-audit/docs-exposure/.../swagger_docs` | `cloud-audit` | Baja | **Rechazado** | **Protegido:** El proxy de Vite solo expone `/api`, `/static` y `/health` hacia el túnel público; `/docs` no es accesible externamente. |
+| `cloud-audit/permissive-allowed-hosts/.../vite.config.js` | `cloud-audit` | Baja | **Confirmado** | **Subsanado:** Se reemplazó `allowedHosts: true` por la lista explícita `['.trycloudflare.com', 'localhost', '127.0.0.1']`. |
+| `secrets-audit/hardcoded-secret/.../PGRST_JWT_SECRET` | `secrets-audit` | Alta | **Confirmado** | **Subsanado:** Se eliminó el secreto fijo en `infrastructure/docker-compose.yml`, obligando a leer `${POSTGREST_JWT_SECRET}` desde el entorno. |
 
-*Nota.* Elaboración propia en base a `findings.json` (2026).
+*Nota.* Elaboración propia con base en `docs/findings.json` (2026).
 
 ## 8.3. Controles de Seguridad Implementados
 
-### 8.3.1. Autenticación y Autorización
-* **Tokens Criptográficos JWT:** Las sesiones se gobiernan mediante tokens firmados con el algoritmo simétrico **HMAC-SHA256 (HS256)** utilizando una clave secreta de alta entropía (mínimo 64 caracteres hexadecimales).
-* **Estructura de Claims:** Cada token contiene el identificador único del usuario (`uid`), su rol en el sistema (`role`), su correo electrónico (`email`), su academia de adscripción (`sucursal_id`) y una expiración improrrogable de 24 horas.
-* **Seguridad por Fila (Row Level Security - RLS):** En la base de datos PostgreSQL, las tablas críticas (`usuarios`, `sucursales`, `tecnicas`, `evaluaciones_alumnos` y `teoria_referencia`) cuentan con directivas RLS habilitadas, impidiendo que un alumno pueda consultar registros que no pertenezcan a su propio perfil o a su sede.
+### 8.3.1. Autenticación, Roles y Autorización
+* **Tokens JWT (`HS256`):** Cada sesión firma un token con `uid`, `role`, `email`, `sucursal_id` y expiración configurable (`JWT_EXPIRATION_HOURS`: 24 horas recomendadas en `.env.example`, valor por defecto 168 horas en `config.py`).
+* **Registro Público Restringido:** `POST /api/v1/auth/signup` solo permite crear cuentas de `alumno`, rechazando `profesor` o `admin` con `HTTP 403 Forbidden`.
+* **Seguridad por Fila (RLS) y RPCs `SECURITY DEFINER`:** Las tablas críticas en PostgreSQL mantienen RLS activo y las operaciones sensibles se canalizan mediante funciones almacenadas controladas.
 
-### 8.3.2. Aislamiento Multi-Tenant (Congelamiento de Sucursal)
-Para evitar la fuga de información entre academias y garantizar la consistencia histórica ante traslados de alumnos, el script `15_multi_academia_movilidad.sql` implementa el patrón de "Sucursal Congelada":
-* Al momento de crearse una evaluación en `create_evaluacion()`, el campo `sucursal_id` se vincula permanentemente a la sede donde el alumno entrenaba en ese instante.
-* Si el alumno es transferido posteriormente a otra filial física de "Corpo e Mente", sus evaluaciones históricas permanecen inalterables en la sucursal de origen, protegiendo las estadísticas del profesor original (validado empíricamente en `verify_iter_4c_mobility.py`).
+### 8.3.2. Aislamiento Multi-Tenant (Sucursal Congelada)
+La migración `15_multi_academia_movilidad.sql` congela el `sucursal_id` en `evaluaciones_alumnos` al momento de crear cada evaluación. Si un practicante se traslada luego a otra academia, sus evaluaciones anteriores permanecen vinculadas a la sede donde entrenó originalmente.
 
-### 8.3.3. Validación Estricta de Entradas
-* **Esquemas Pydantic v2:** Todos los datos recibidos en las peticiones HTTP se someten a validación de tipos y formatos. El registro de usuarios exige que el nombre de usuario cumpla estrictamente con la expresión regular `^[a-zA-Z0-9_]{3,30}$`, rechazando cualquier espacio o carácter de escape que pudiera inducir ataques de inyección.
-* **Prevención de Salto de Directorio (*Path Traversal*):** En el servicio de entrega de imágenes multimedia (`/conocimiento/media/imagenes/`), se verifica matemáticamente que la ruta resuelta sea un descendiente estricto del directorio base mediante `path.resolve().relative_to(root)`.
+### 8.3.3. Validación Estricta de Entradas y Limpieza de Archivos
+* **Esquemas Pydantic v2:** El nombre de usuario exige únicamente letras, números y guion bajo (`^[a-zA-Z0-9_]+$`), evitando espacios o caracteres especiales.
+* **Prevención de *Path Traversal*:** Tanto la entrega de imágenes (`/conocimiento/media/imagenes/` y `/conocimiento/media/paginas/`) como el borrado de manuales validan que las rutas permanezcan estrictamente dentro del directorio raíz autorizado y rechazan `..`, `/` o `\` con `HTTP 400`.
+* **Limpieza al Cancelar:** Al cancelar una evaluación en curso se elimina inmediatamente el archivo de video temporal del alumno en `/tmp/corpocmente_videos/`.
 
 ### 8.3.4. Limitación de Tasa (*Rate Limiting*)
-Para defender al servidor frente a ataques de denegación de servicio o intentos masivos de fuerza bruta sobre el formulario de autenticación, el middleware `AuthRateLimitMiddleware` restringe las solicitudes dirigidas a `/auth/login` a un máximo de **30 peticiones por minuto por cliente**. Al sobrepasarse dicho límite, el sistema interrumpe la conexión inmediatamente devolviendo el código de estado `HTTP 429 Too Many Requests`.
+`AuthRateLimitMiddleware` en `backend/corpocmente/main.py` limita `/auth/login` a un máximo de **30 peticiones cada 60 segundos**, devolviendo `HTTP 429 Too Many Requests` si se supera ese umbral.
 
 ### 8.3.5. Cifrado en Reposo y en Tránsito
-* **Cifrado de Credenciales:** Las contraseñas de todos los usuarios se almacenan en PostgreSQL utilizando la extensión `pgcrypto` con el algoritmo adaptativo **Blowfish bcrypt** (`crypt(password, gen_salt('bf'))`), haciendo inviable la recuperación de claves en texto claro ante una filtración de la base de datos.
-* **Cifrado en Tránsito:** Todo el tráfico entre los dispositivos de los alumnos y el servidor local del tatami viaja encapsulado en canales seguros **HTTPS con TLS 1.3** a través del túnel gestionado de Cloudflare.
+* **Contraseñas:** Almacenadas en PostgreSQL con `pgcrypto` mediante algoritmo `bcrypt` (`gen_salt('bf')`).
+* **Tránsito:** Cifrado HTTPS extremo a extremo entre el celular del usuario y el túnel gestionado de Cloudflare.
 
-### 8.3.6. Protección contra Alucinaciones Deportivas (Seguridad Pedagógica)
-En una disciplina de combate con riesgo de lesión como el Jiu-Jitsu Brasileño, la generación de instrucciones biomecánicas incorrectas constituye un riesgo directo para la salud física del practicante. Para mitigar esta amenaza:
-* Se implementa un **Juez de Inteligencia Artificial (*LLM-as-a-Judge*)** que evalúa la fidelidad del consejo generado contra la teoría de los manuales del profesor, exigiendo un índice de concordancia mínimo de **0.85**.
-* Si el texto generado no alcanza dicho umbral, el sistema activa un mecanismo de degradación elegante (*Graceful Fallback*), suprimiendo la recomendación textual y entregando al alumno únicamente el informe numérico y las articulaciones afectadas determinadas por el algoritmo determinístico DTW.
+### 8.3.6. Seguridad Pedagógica contra Alucinaciones
+El **Juez de Fidelidad (`evaluar_fidelidad_grounding`)** exige un puntaje mínimo de `0.85` y cero afirmaciones sin respaldo frente a los manuales o a la nota del profesor; de lo contrario, descarta la redacción generativa y entrega únicamente el diagnóstico cuantitativo o la nota literal del instructor.
 
 ## 8.4. Gestión de Secretos y Configuración
-* **Exclusión de Secretos en Git:** Las directivas de `.gitignore` impiden de forma absoluta la subida de archivos `.env`, credenciales JSON y certificados.
-* **Verificación de Integridad del Parche MLX:** El script `reapply_mlx_patch.sh` calcula la suma de comprobación criptográfica SHA-256 del módulo de atención visual antes de permitir la ejecución del motor generativo.
-* **Deuda de Credenciales:** El archivo histórico de desarrollo `backend/client_secret_*.json` permanece en el repositorio local; aunque las directivas de exclusión están vigentes para el futuro, se planifica su rotación y purga definitiva en el historial de Git.
+* `.gitignore` excluye archivos `.env`, llaves y directorios sensibles de datos.
+* Queda pendiente purgar del historial antiguo de Git un archivo de credenciales de prueba de Google Drive (`backend/client_secret_*.json`) ya retirado de uso activo.
 
 ## 8.5. Hardening de Producción
-En el entorno de producción de la academia:
-* Se establecen de forma mandataria las variables de entorno `ENVIRONMENT="production"` y `DEBUG=false`, lo que desactiva el volcado de trazas de error (*stack traces*) detalladas en las respuestas al cliente.
-* Se diseñó el script de saneamiento `reset_production.sql`, el cual ejecuta el vaciado estructurado (`TRUNCATE`) de todas las tablas transaccionales de prueba, elimina los usuarios temporales y preserva únicamente las cuentas oficiales de los profesores y las sucursales físicas.
-* La suite de pruebas `verify_iter_4h.py` certifica automáticamente que el catálogo inicie en un estado limpio `[]` antes de comenzar la operación real.
+* En producción se configuran `ENVIRONMENT="production"` y `DEBUG=false`, activando el manejador global de excepciones en `main.py` para evitar fugas de trazas internas (`stack traces`) al usuario final.
+* El script `infrastructure/initdb/reset_production.sql` limpia todas las tablas transaccionales de prueba mediante `TRUNCATE CASCADE` y conserva únicamente las cuentas oficiales del personal y las tres sucursales registradas.
 
 ## 8.6. Deuda de Seguridad Registrada
-Tabla 26
-*Matriz de deuda técnica de seguridad registrada para el sistema*
+Habiéndose implementado formalmente el procedimiento `admin_delete_user` en `infrastructure/initdb/18_crud_integridad_cancelacion.sql`, la deuda de seguridad vigente se limita a cuatro puntos acotados:
+
+Tabla 25
+*Matriz de deuda técnica de seguridad vigente*
 
 | Vulnerabilidad / Limitación | Vector Afectado | Nivel de Riesgo | Plan de Mitigación Futuro |
 | :--- | :--- | :--- | :--- |
-| **Identificación de IP detrás de Proxy** | Middleware de Rate Limiting | Medio | Extraer la cabecera `CF-Connecting-IP` o `X-Forwarded-For` validando que la solicitud provenga exclusivamente de la red de confianza de Cloudflare. |
-| **Peticiones HTTP Salientes sin Filtrado (SSRF)** | Descarga de recursos en `/conocimiento/biblioteca/buscar` | Medio | Implementar una lista de bloqueo (*blocklist*) estricta que rechace peticiones dirigidas a rangos de red privada (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 y 127.0.0.0/8). |
-| **Historial Git con Archivos de Credenciales** | Repositorio de código fuente | Bajo (Uso Local) | Utilizar la herramienta `git-filter-repo` para purgar definitivamente cualquier rastro de llaves de prueba del historial de confirmaciones. |
-| **Persistencia de Auditoría de Impersonación** | Soporte técnico administrativo | Bajo | Crear la tabla relacional `auditoria_impersonacion` en `infrastructure/initdb/` con registros inmutables protegidos contra borrado. |
-| **Procedimiento Almacenado `admin_delete_user`** | Utilidades de prueba automatizada | Bajo | Crear formalmente la función RPC en PostgreSQL para que las suites de prueba de regresión no dependan de bloques de captura de error. |
+| **Identificación de IP detrás de Proxy** | Middleware `AuthRateLimitMiddleware` | Medio | Extraer la cabecera `CF-Connecting-IP` validando que provenga de la red de Cloudflare para aislar el límite por cliente real. |
+| **Descarga de URLs externas sin lista de bloqueo (SSRF)** | `resolver_ruta_imagen_local` en `routes.py` | Medio | Bloquear peticiones salientes hacia rangos privados (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`). |
+| **Historial Git con credenciales antiguas de Drive** | Historial del repositorio | Bajo (Uso local) | Ejecutar `git-filter-repo` para purgar el archivo `client_secret_*.json` de commits antiguos y rotar credenciales en Google Cloud. |
+| **Persistencia física de auditoría de impersonación** | Soporte técnico administrativo | Bajo | Agregar tabla inmutable `auditoria_impersonacion` y exigir re-autenticación por contraseña al impersonar. |
 
 *Nota.* Elaboración propia (2026).
 
 ## 8.7. Recomendaciones Futuras
-1. **Migración a Rate Limiting Distribuido con Redis:** Para escalar la plataforma hacia múltiples tatamis simultáneos, se recomienda sustituir el almacenamiento en memoria local de peticiones por un clúster de Redis en memoria con clave combinada de usuario e IP real.
-2. **Implementación de Análisis de Seguridad Continuo (SAST/DAST):** Integrar en el flujo de integración continua herramientas automatizadas de escaneo estático de vulnerabilidades tales como **Semgrep** y **Bandit**.
-3. **Rotación Periódica de Secretos:** Establecer una política de renovación automática de la llave `POSTGREST_JWT_SECRET` cada 90 días mediante procedimientos de migración en caliente sin desconexión de usuarios activos.
+1. **Rate Limiting Distribuido con Redis:** Sustituir el contador en memoria por Redis (`REDIS_URL` ya previsto en `config.py`) si se escalan múltiples procesos o nodos.
+2. **Escaneo Automatizado SAST/DAST en CI:** Integrar herramientas como Semgrep y Bandit en cada cambio de código.
+3. **Rotación Periódica de Secretos:** Renovar `POSTGREST_JWT_SECRET` y `JWT_SECRET_KEY` cada 90 días siguiendo ventanas de mantenimiento.
 
 ---
+
+# Capítulo IX: Conclusiones y Recomendaciones
+
+## 9.1. Conclusiones
+Al concluir el diseño, implementación, pruebas y documentación del Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño para la academia **Corpo e Mente**, se establecen las siguientes conclusiones respaldadas en evidencia técnica verificada:
+
+1. **Cumplimiento del Objetivo General y Soporte Pedagógico en el Tatami:** Se construyó y validó una plataforma web funcional (*Mobile-First* en React 19 + FastAPI + PostgreSQL 16 + Qdrant) que permite a los alumnos comparar sus videos de práctica frente a la ejecución oficial de su profesor desde su teléfono celular y recibir correcciones claras en menos de 30 segundos (entre **21.56 y 22.56 segundos** en producción local).
+2. **Viabilidad Económica y Técnica de Apple Silicon frente a NVIDIA, AMD y la Nube:** Ejecutar los modelos de visión (`YOLOv26-pose` a **95.2 FPS** en MPS) y lenguaje multimodal (`Qwen3-VL-Embedding-2B`, `Reranker-2B` e `Instruct-4B` cuantizados en Apple MLX) dentro de los **24 GB de Memoria Unificada** de una MacBook Air M5 resultó técnicamente superior para una academia real frente a tarjetas NVIDIA portátiles limitadas a 6–8 GB de VRAM, soluciones AMD con soporte limitado en ROCm o servidores GPU en la nube de **\$150 a \$400+ USD mensuales**. Esta arquitectura logra **\$0 USD en costos mensuales de IA**, cero desconexiones y privacidad absoluta de las grabaciones.
+3. **Precisión Biomecánica y Aprendizaje Continuo sin Olvido Catastrófico:** La normalización postural invariante (46 características) combinada con Alineamiento Dinámico del Tiempo (DTW) y profundidad 3D (`yolo26n-depth`) resolvió **163 oclusiones severas** de extremidades cruzadas. Asimismo, el mecanismo de aprendizaje continuo con **Replay Buffer 70/30**, congelamiento de capas (`freeze=10`), agrupamiento FINCH y reemplazo en caliente (*Hot-Swap*) elevó la precisión de pose en una técnica nueva compleja (*Americana desde la montada*) de **18.08 % a 58.65 % mAP@50-95 (+40.57 pp)** y mejoró simultáneamente las técnicas históricas de **33.95 % a 68.60 % (+34.65 pp)**, comprobando **cero olvido catastrófico**.
+4. **Confiabilidad Pedagógica y Cero Alucinaciones en el Motor RAG:** La búsqueda híbrida de dos etapas (BM25 + Qwen3-VL-Embedding + Cross-Encoder) sobre manuales específicos y Biblioteca Global obtuvo **Recall@3 del 100 %**, mientras que la jerarquía estricta de fuentes (Manual $\ge 0.65$ > Nota del Profesor > Respaldo Numérico Seguro) y el Juez de Fidelidad (`faithfulness = 0.9475`) eliminaron respuestas inventadas y ofrecieron citas verificables (`📚` y `🥋`) en español, portugués e inglés.
+5. **Trazabilidad Completa bajo Metodología ICONIX y Seguridad Defensiva:** La reorganización del análisis y diseño bajo **ICONIX** conectó sin ambigüedades los diez Casos de Uso centrados en la intención del usuario (`UC-01` a `UC-10`) con las clases, paquetes y reglas de seguridad reales del código (aislamiento multi-sucursal, Pase de Tatami por 30 días, protección BOLA/CORS/Rate Limit, cancelación transaccional de análisis y borrado atómico entre PostgreSQL y Qdrant), respaldados por **181 casos de prueba recolectados en Pytest** y auditoría bajo `briiirussell/cybersecurity-skills`.
+
+## 9.2. Recomendaciones
+
+### 9.2.1. Para la Operación Pedagógica en la Academia Corpo e Mente
+1. **Grabar Videos Patrón con Encuadre Limpio:** Recomendar a los profesores grabar sus ejecuciones modelo desde un ángulo lateral o diagonal de cuerpo completo y con iluminación uniforme para maximizar la precisión del esqueleto 3D.
+2. **Complementar Manuales con Notas Prácticas Cortas:** Aprovechar el campo de nota del profesor en cada técnica (`UC-06`) para registrar consejos puntuales que reflejen la escuela propia del instructor, garantizando respaldo teórico inmediato incluso antes de cargar libros completos.
+3. **Renovación Disciplinada del Pase de Tatami:** Verificar mensualmente la activación del Pase de Tatami (`UC-08`) desde el panel docente tras confirmar el pago presencial para evitar bloqueos inesperados al alumno durante su práctica.
+
+### 9.2.2. Para la Infraestructura y Seguridad Operativa
+1. **Mantener Respaldos Periódicos de Datos y Secretos Protegidos:** Programar copias de seguridad semanales de los volúmenes Docker (`PostgreSQL` y `Qdrant`) y del directorio `CORPOCMENTE_DATA_DIR`, además de ejecutar una rotación periódica de las llaves JWT cada 90 días.
+2. **Subsanar la Deuda de Seguridad Menor antes de Escalar Sedes:** Implementar la lectura verificada de `CF-Connecting-IP` en `AuthRateLimitMiddleware`, bloquear rangos privados RFC 1918 en `resolver_ruta_imagen_local` y añadir la tabla física `auditoria_impersonacion` para dejar rastro histórico de cada sesión de soporte técnico.
+
+### 9.2.3. Para Trabajos Futuros y Evolución del Sistema
+1. **Automatizar la Reconciliación y los Ciclos de Reentrenamiento:** Convertir el script `reconcile_rag.py` en una tarea programada nocturna e incorporar un panel visual donde el profesor apruebe con un clic los fotogramas de baja confianza (`< 0.65`) antes de lanzar el ciclo con Replay Buffer 70/30.
+2. **Deduplicación Textual por Hash en la Ingesta:** Incorporar `content_hash` SHA-256 en fragmentos de texto (PDF, DOCX, TXT) tal como ya opera en imágenes, evitando duplicar párrafos si se suben ediciones revisadas de un mismo manual.
+3. **Suite de Pruebas Unitarias en Frontend (Vitest):** Complementar las pruebas E2E de navegador con pruebas unitarias automatizadas para los componentes de React (`VideoUpload`, `FeedbackView` y `LibraryView`).
 
 ---
 
@@ -2030,10 +4211,6 @@ Khattab, O., & Zaharia, M. (2020). ColBERT: Efficient and effective passage sear
 
 Krekel, H., Oliveira, B., Pfannschmidt, R., Bruynooghe, F., Laugher, F., & Bruhin, F. (2024). *pytest documentation* (Version 8.x). https://docs.pytest.org/
 
-Kroki. (2026). *Kroki: Unified multi-engine diagram service*. https://kroki.io/
-
-Larman, C. (2004). *Applying UML and patterns: An introduction to object-oriented analysis and design and iterative development* (3rd ed.). Prentice Hall.
-
 Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H., Lewis, M., Yih, W.-t., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. *Advances in Neural Information Processing Systems*, 33, 9459–9474. https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html
 
 Malkov, Y. A., & Yashunin, D. A. (2018). Efficient and robust approximate nearest neighbor search using hierarchical navigable small world graphs. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, 42(4), 824–836. https://doi.org/10.1109/TPAMI.2018.2889473
@@ -2054,8 +4231,6 @@ OpenStreetMap Foundation. (2026). *Leaflet.js & Nominatim geocoding documentatio
 
 OWASP Foundation. (2025). *OWASP Top 10:2025 — The ten most critical web application security risks*. https://owasp.org/Top10/
 
-PlantUML. (2026). *PlantUML language reference guide*. https://plantuml.com/
-
 PostgREST. (2026). *PostgREST documentation*. https://postgrest.org/en/stable/
 
 PyTorch Foundation. (2026). *MPS backend (Metal Performance Shaders) documentation*. https://pytorch.org/docs/stable/notes/mps.html
@@ -2070,6 +4245,8 @@ Redmon, J., Divvala, S., Girshick, R., & Farhadi, A. (2016). You only look once:
 
 Robertson, S., & Zaragoza, H. (2009). The probabilistic relevance framework: BM25 and beyond. *Foundations and Trends in Information Retrieval*, 3(4), 333–389. https://doi.org/10.1561/1500000019
 
+Rosenberg, D., & Stephens, M. (2007). *Use case driven object modeling with UML: Theory and practice* (ICONIX Process). Apress.
+
 Russell, S., & Norvig, P. (2021). *Artificial intelligence: A modern approach* (4th ed.). Pearson.
 
 The PostgreSQL Global Development Group. (2026). *PostgreSQL 16 documentation: Row security policies*. https://www.postgresql.org/docs/16/ddl-rowsecurity.html
@@ -2077,3 +4254,92 @@ The PostgreSQL Global Development Group. (2026). *PostgreSQL 16 documentation: R
 Ultralytics. (2026). *YOLOv26 pose, depth, and segmentation documentation*. https://docs.ultralytics.com/tasks/pose
 
 Vite. (2026). *Vite: Next generation frontend tooling*. https://vitejs.dev/
+
+---
+
+# Anexo A: Currículum Vitae del Autor (Formato Harvard)
+
+> *Nota de formato:* El siguiente currículum vitae se presenta estructurado siguiendo el estándar internacional **Harvard Resume Format** (orientado a logros medibles, verbos de acción, orden cronológico inverso y trazabilidad verificable).
+
+---
+
+## SANTIAGO BORDA ZAMBRANA
+
+Santa Cruz de la Sierra, Bolivia · +591 60875350 · [santiagobordazambrana@gmail.com](mailto:santiagobordazambrana@gmail.com)  
+**LinkedIn:** [www.linkedin.com/in/santiagobordaz](https://www.linkedin.com/in/santiagobordaz) · **GitHub:** [https://github.com/Tsmrain](https://github.com/Tsmrain) · **Credly:** [https://www.credly.com/users/santiago-borda](https://www.credly.com/users/santiago-borda)
+
+---
+
+### PERFIL PROFESIONAL
+Estudiante de último año de Ingeniería de Sistemas (UPSA, 9.º semestre) con experiencia comprobada en administración empresarial de ecosistemas **Atlassian (Jira Data Center, Jira Cloud, Confluence)** y soporte técnico a **más de 500 usuarios**. Sólida formación práctica en arquitectura de software full-stack (**Python/FastAPI, Java/Spring Boot, React, TypeScript, PostgreSQL**) e Inteligencia Artificial aplicada (**Visión por Computadora, Motores RAG Multimodales e Inferencia Local en Apple Silicon**). Orientado a diseñar soluciones confiables, seguras y medibles para equipos de desarrollo e infraestructura.
+
+---
+
+### EDUCACIÓN
+
+**Universidad Privada de Santa Cruz de la Sierra (UPSA)** — Santa Cruz, Bolivia  
+*Licenciatura en Ingeniería de Sistemas (9.º semestre en curso)* | Ago 2021 – Dic 2026  
+* Enfoque en ingeniería de software (ICONIX / Proceso Unificado), arquitectura de datos relacionales y vectoriales, seguridad informática e Inteligencia Artificial aplicada.
+
+**Centro Boliviano Americano (CBA)** — Santa Cruz, Bolivia  
+*Programa de Lengua y Literatura Inglesa* | Feb 2019 – Mar 2022  
+* Dominio **Nivel Profesional** (comprensión lectora, redacción técnica y comunicación oral fluida).
+
+---
+
+### EXPERIENCIA PROFESIONAL
+
+**InforFactory S.R.L.** *(Cliente principal: UNIR)* — Santa Cruz, Bolivia  
+*Jira Administrator & Atlassian Specialist* | Jul 2024 – Ago 2025  
+* **Audité** el cumplimiento de Acuerdos de Nivel de Servicio (SLA) en la totalidad de proyectos de Jira, consolidando matrices en Excel por grupos de usuarios para dar visibilidad ejecutiva sobre tiempos de respuesta.
+* **Automaticé** la gestión masiva de campos personalizados en **Jira Data Center** mediante **Go** y **ScriptRunner**, validando y desplegando cambios de forma controlada en entornos de preproducción y producción.
+* **Administré** el ciclo de vida de identidades (altas, bajas y matriz de permisos) en **Jira y Confluence** para la Universidad Internacional de La Rioja (**UNIR**), asegurando la gobernanza de accesos en una operación superior a **500 usuarios**.
+* **Diagnostiqué y resolví** bloqueos críticos en flujos de trabajo provocados por reglas de automatización mal configuradas, normalizando estados y reasignaciones de tickets mediante configuración avanzada.
+* **Integré** **Jira Cloud** con **Power BI** mediante conectores vía API REST y redacté manuales operativos paso a paso (con capturas detalladas de generación de *API keys*) para habilitar su replicación por el equipo de infraestructura desde entornos web Linux.
+
+---
+
+### PROYECTOS DE INGENIERÍA E INVESTIGACIÓN DESTACADOS
+
+**Sistema de Análisis Biomecánico de Técnicas de Jiu-Jitsu Brasileño con IA Local (Corpo e Mente)** — *Proyecto de Grado, UPSA* | 2026  
+*Stack: Python 3.12, FastAPI, PostgreSQL 16 (RLS), PostgREST, Qdrant, React 19, Vite, YOLOv26-pose/depth/seg, Apple MLX/MPS, Qwen3-VL (2B/4B), Leaflet.js, Docker, Cloudflare Tunnel, Pytest, Playwright.*
+* **Diseñé e implementé** una plataforma web *Mobile-First* bajo la metodología **ICONIX**, ejecutando toda la Inteligencia Artificial localmente sobre **Apple Silicon M5 (24 GB de Memoria Unificada)** con costo mensual de **\$0 USD** en nube y privacidad total de grabaciones.
+* **Construí** un pipeline biomecánico con **YOLOv26-pose/depth (95.2 FPS)**, normalización postural de 46 dimensiones y Alineamiento Dinámico del Tiempo (**DTW**), resolviendo **163 oclusiones severas** y completando evaluaciones completas en **21.56 – 22.56 segundos**.
+* **Desarrollé** un motor **RAG multimodal** en dos etapas (*Qwen3-VL-Embedding-2B* + *Qwen3-VL-Reranker-2B* + BM25) y un Juez de Fidelidad (**0.9475 faithfulness**, **100 % Recall@3**) para emitir correcciones multi-idioma (ES/PT/EN) con citas diferenciadas entre manuales (`📚`) y notas del profesor (`🥋`).
+* **Implementé** aprendizaje continuo autónomo (*Data Flywheel*) con **Replay Buffer 70/30**, congelamiento de capas (`freeze=10`), **FINCH** y *Hot-Swap*, elevando la precisión en técnica nueva de **18.08 % a 58.65 % mAP@50-95 (+40.57 pp)** y el histórico de **33.95 % a 68.60 % (+34.65 pp)** sin olvido catastrófico.
+
+**OpenBJJ — Tutor Biomecánico Adaptativo 3D & Motor RAG (Prototipo de Investigación Inicial)** — *UPSA* | 2025 – 2026  
+*Stack: React 19, TypeScript, Node.js/Express, Prisma ORM, PostgreSQL, ChromaDB, MediaPipe Pose, Transformers.js, Google Gemini API.*
+* **Diseñé** una arquitectura híbrida cliente-ligero/servidor que ejecutaba estimación de pose 3D (33 puntos anatómicos) en el navegador con **MediaPipe (WASM/WebGL)**, reduciendo cada carga útil enviada al servidor a **~3 KB por evaluación**.
+* **Implementé** un motor RAG inicial con **ChromaDB** y *embeddings* locales de 384 dimensiones (**Transformers.js**) junto con un mecanismo de *"RAG Vivo"* apoyado en Gemini Vision para indexar técnicas nuevas sin reentrenamiento.
+* **Modelé** el prototipo inicial bajo el Proceso Unificado (UP) y patrones GRASP, elaborando diagramas de casos de uso, secuencia, clases de diseño y despliegue físico.
+* **Dimensioné** el modelo de costos e infraestructura cloud (AWS EC2, PostgreSQL gestionado, Cloudflare) proyectado para 500 usuarios concurrentes y **automaticé** la extracción de videos de entrenamiento mediante scripts en Python/`yt-dlp` sobre Google Colab.
+
+---
+
+### CERTIFICACIONES INTERNACIONALES VERIFICADAS ([Credly](https://www.credly.com/users/santiago-borda))
+*Todas las insignias digitales son verificables públicamente en el perfil oficial de Credly del autor.*
+
+| Emisor | Certificación / Insignia Digital | Fecha de Emisión | Competencias Validadas |
+| :--- | :--- | :--- | :--- |
+| **Microsoft** | **Microsoft Certified: Azure Fundamentals (AZ-900)** | 14 may 2023 | Conceptos fundamentales de servicios en la nube, cómputo, redes, almacenamiento y gobernanza en Microsoft Azure. |
+| **Cisco / OpenEDG** | **Python Essentials 1** | 06 sep 2023 | Programación en Python: sintaxis, estructuras de datos, control de flujo y resolución de problemas con librería estándar. |
+| **Cisco / OpenEDG** | **JavaScript Essentials 1** | 06 sep 2023 | Fundamentos de JavaScript: variables, funciones, estructuras de control y desarrollo de aplicaciones web básicas. |
+| **Cisco** | **Introduction to Cybersecurity** | 26 dic 2023 | Principios de ciberseguridad, panorama de amenazas, detección de vulnerabilidades y defensa perimetral. |
+| **AWS Training** | **AWS Educate: Introduction to Cloud 101** | 05 ene 2024 | Fundamentos de arquitectura cloud y despliegue básico de aplicaciones en laboratorios virtuales AWS. |
+| **AWS Training** | **AWS Educate: Getting Started with Security** | 23 ene 2024 | Gestión de identidades y accesos con **AWS IAM** y buenas prácticas de seguridad en la nube. |
+| **AWS Training** | **AWS Educate: Getting Started with Storage** | 31 ene 2024 | Soluciones de almacenamiento escalable y gestión de objetos en **Amazon S3**. |
+| **AWS Training** | **AWS Educate: Getting Started with Compute** | 02 feb 2024 | Modelos de cómputo en la nube e implementación de instancias en **Amazon EC2**. |
+| **AWS Training** | **AWS Educate: Getting Started with Networking** | 03 feb 2024 | Diseño de redes virtuales aisladas, subredes y enrutamiento mediante **Amazon VPC**. |
+| **AWS Training** | **AWS Knowledge: Cloud Essentials** | 14 feb 2024 | Dominio integral de pilares AWS: cómputo, almacenamiento, redes, bases de datos y arquitectura segura. |
+| **Cisco** | **Ethical Hacker** | 04 ene 2025 | Marco legal y ético, alcance (*scoping*), ejecución y reporte de pruebas de vulnerabilidad (34 prácticas con Kali Linux y WebSploit). |
+| **Cisco** | **Introduction to Modern AI** | 06 ene 2025 | Aplicación práctica de modelos de Inteligencia Artificial generativa e ingeniería de *prompts*. |
+
+---
+
+### HABILIDADES TÉCNICAS E IDIOMAS
+* **Lenguajes y Backend:** Python (FastAPI, Pydantic, Pytest), Java (Spring Boot), Go, JavaScript / TypeScript (Node.js/Express).
+* **Frontend:** React 19, Vite, Diseño Responsivo (*Mobile-First*), Leaflet.js.
+* **Inteligencia Artificial y Datos:** YOLOv26 (Pose/Depth/Seg), Apple MLX / MPS, Qwen3-VL, RAG Multimodal, ChromaDB, Qdrant, MediaPipe, PostgreSQL 16 (RLS, `pgcrypto`), PostgREST, Prisma ORM.
+* **Gestión y Plataforma Atlassian:** Jira Data Center, Jira Cloud, Confluence, ScriptRunner, auditoría de SLAs, automatización e integración API con Power BI.
+* **Ciberseguridad, DevOps e Idiomas:** Docker & Docker Compose, Git/GitHub, Cloudflare Tunnel, Kali Linux, evaluación de vulnerabilidades; **Español** (Nativo), **Inglés** (Profesional — CBA).

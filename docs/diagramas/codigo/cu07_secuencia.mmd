@@ -1,0 +1,31 @@
+sequenceDiagram
+    autonumber
+    actor U as Profesor o Alumno
+    participant B1 as «Boundary» PantallaDeProgreso
+    participant C1 as «Control» CoordinadorDeProgreso
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» Evaluacion
+
+    alt Profesor supervisa alumnos de su sucursal
+        U->>B1: abrirPanelDeAlumnos()
+        B1->>C1: obtenerAlumnosDeSede(profesor)
+        C1->>E1: listarAlumnosPorSucursal(sucursalId)
+        E1-->>C1: listaDeAlumnos
+        C1-->>B1: listaConEstadoDePase(listaDeAlumnos)
+        B1-->>U: mostrarAlumnosDeAcademia()
+        U->>B1: seleccionarAlumno(alumnoId)
+        B1->>C1: consultarHistorial(profesor, alumnoId)
+        C1->>E1: verificarMismaSucursal(profesor, alumnoId)
+        E1-->>C1: accesoAutorizado
+        C1->>E2: listarEvaluaciones(alumnoId)
+        E2-->>C1: evaluacionesConVideos
+        C1-->>B1: resumenDeProgreso(evaluacionesConVideos)
+        B1-->>U: mostrarEvolucionYVideos()
+    else Alumno consulta su propio historial
+        U->>B1: abrirMiProgreso()
+        B1->>C1: consultarMiHistorial(alumnoId)
+        C1->>E2: listarEvaluaciones(alumnoId)
+        E2-->>C1: misEvaluaciones
+        C1-->>B1: historialPersonal(misEvaluaciones)
+        B1-->>U: mostrarNotasYVideosPropios()
+    end

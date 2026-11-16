@@ -1,39 +1,67 @@
 classDiagram
-    class AdminUsersModal {
+    class AdminSucursales {
+        <<Boundary>>
         +usuarios: List
-        +handleImpersonar(usuario_id)
+        +fetchUsuarios()
+        +handleImpersonate(targetUserId)
+        +handleDeleteUser(targetUser)
     }
 
-    class ImpersonationBanner {
-        +usuario_nombre: String
-        +handleRestaurarAdmin()
+    class App {
+        <<Boundary>>
+        +user: LoginResponse
+        +originalAdminUser: LoginResponse
+        +onImpersonate(newUser, currentAdmin)
+    }
+
+    class UserProfileModal {
+        <<Boundary>>
+        +nombre: String
+        +selectedIdioma: String
+        +handleUpdate()
     }
 
     class AuthRoutes {
-        +impersonarUsuario(id, admin_pass) Response
-        +salirImpersonacion() Response
+        <<Boundary>>
+        +listar_usuarios() List~LoginResponse~
+        +impersonate_user(user_id) LoginResponse
+        +update_usuario(user_id, req) LoginResponse
+        +cambiar_sucursal_usuario(user_id, req) CambiarSucursalResponse
+        +eliminar_usuario(user_id, reasignar_a, auto_reasignar) Void
     }
 
-    class SessionManager {
-        +crearTokenImpersonacion(admin, objetivo) String
-        +restaurarTokenAdmin(admin_id) String
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
     }
 
-    class AuditoriaService {
-        +registrarEvento(admin_id, target_id, accion) Void
-    }
-
-    class RegistroAuditoria {
+    class Usuario {
+        <<Entity>>
         +id: UUID
-        +admin_id: UUID
-        +usuario_objetivo_id: UUID
-        +fecha: DateTime
-        +ip_origen: String
-        +accion: String
+        +nombre_completo: String
+        +rol: String
+        +sucursal_id: UUID
+        +idioma_preferido: String
     }
 
-    AdminUsersModal ..> AuthRoutes : HTTP POST
-    ImpersonationBanner ..> AuthRoutes : HTTP POST
-    AuthRoutes --> SessionManager : genera sesión
-    AuthRoutes --> AuditoriaService : audita
-    AuditoriaService --> RegistroAuditoria : persiste
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+    }
+
+    class LoginResponse {
+        <<Entity>>
+        +token: String
+        +user_id: UUID
+        +rol: String
+        +sucursal_id: UUID
+    }
+
+    AdminSucursales ..> AuthRoutes : impersonate y delete usuario
+    AdminSucursales ..> App : activa banner de soporte
+    UserProfileModal ..> AuthRoutes : PUT perfil e idioma
+    AuthRoutes --> PostgrestClient : ejecuta RPCs admin_delete_user y soporte
+    PostgrestClient --> Usuario : consulta, actualiza o elimina
+    Usuario "1" --> "1" Sucursal : adscrito_a
+    AuthRoutes ..> LoginResponse : emite token de sesion

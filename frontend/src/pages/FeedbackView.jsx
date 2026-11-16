@@ -251,7 +251,7 @@ export default function FeedbackView({ user, result, tecnica, onReset, idioma })
           </div>
         )}
 
-        {/* 3. Bottom-Left: AI Analysis Card */}
+        {/* 3. Bottom Full-Width: AI Analysis Card */}
         <section className="glass-panel feedback-card ai-feedback-card">
           <div className="ai-card-header">
             <span className="card-label">{t('aiTechnicalAnalysis')}</span>

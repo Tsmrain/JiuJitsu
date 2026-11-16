@@ -1,0 +1,16 @@
+flowchart TD
+    classDef problema fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef proceso fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+    classDef solucion fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+
+    A["Clase grupal en tatami\n(1 profesor para muchos alumnos)"]:::proceso
+    B["Practica autonoma fuera de clase\no en horarios libres"]:::proceso
+    C["Cuello de botella actual:\nel profesor no puede corregir\na cada alumno uno por uno"]:::problema
+    D["Riesgo de fijar malos habitos\no sufrir lesiones articulares"]:::problema
+    E["Solucion Corpo e Mente AI:\nAlumno sube su video desde el celular"]:::solucion
+    F["IA local compara postura contra\nel patron oficial del profesor\ny cita manuales tecnicos"]:::solucion
+    G["Alumno recibe correccion clara\nen su idioma y mejora antes\nde la siguiente clase"]:::solucion
+
+    A --> C --> D
+    B --> C
+    D -.->|"Resuelto con plataforma"| E --> F --> G

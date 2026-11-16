@@ -11,23 +11,25 @@ classDiagram
     class Profesor {
         nombre_completo
         correo
-        cinturon
+        idioma_preferido
     }
 
     class Alumno {
         nombre_completo
         correo
-        cinturon
+        idioma_preferido
     }
 
-    class Administrador {
+    class Dueno["Dueño"] {
         nombre_completo
         correo
+        idioma_preferido
     }
 
     class Tecnica {
         nombre
         nivel_cinturon
+        nota_profesor
     }
 
     class VideoReferencia {
@@ -35,9 +37,11 @@ classDiagram
         fecha_subida
     }
 
-    class TeoriaRAG {
-        texto
-        fuente
+    class BibliotecaTecnica {
+        fuente_nombre
+        fuente_tipo
+        alcance
+        contenido_texto
         pagina
     }
 
@@ -45,11 +49,13 @@ classDiagram
         fecha
         porcentaje_similitud
         retroalimentacion
+        estado
+        sucursal_congelada
     }
 
-    class PaseTatami {
+    class ActivacionCuenta["Activación de Cuenta"] {
         fecha_inicio
-        fecha_fin
+        fecha_expiracion
         estado
     }
 
@@ -58,19 +64,24 @@ classDiagram
         angulos_corporales
     }
 
-    Sucursal "1" *-- "1..*" Profesor : tiene
-    Sucursal "1" *-- "1..*" Alumno : tiene
-    Sucursal "1" *-- "1..*" Administrador : tiene
+    Dueno "1" *-- "1..*" Sucursal : es_dueno_y_dirige_sedes
+    Dueno "1" -- "0..*" Profesor : habilita_y_supervisa
+    Dueno "1" -- "0..*" Alumno : supervisa_y_da_soporte
+    Dueno "1" -- "0..*" BibliotecaTecnica : gobierna_biblioteca_global
 
-    Profesor "1" -- "1..*" Tecnica : enseña
-    Profesor "1" -- "1..*" VideoReferencia : graba
-    Profesor "1" -- "0..*" TeoriaRAG : escribe
+    Sucursal "1" *-- "0..*" Profesor : adscribe
+    Sucursal "1" *-- "0..*" Alumno : adscribe
 
-    Alumno "1" -- "1..*" Evaluacion : realiza
-    Alumno "1" -- "0..1" PaseTatami : paga
+    Profesor "1" -- "0..*" Tecnica : ensena
+    Profesor "1" -- "0..*" VideoReferencia : graba
+    Profesor "1" -- "0..*" BibliotecaTecnica : aporta
 
-    Tecnica "1" *-- "1..*" VideoReferencia : usa
-    Tecnica "1" -- "0..*" TeoriaRAG : tiene
-    Tecnica "1" -- "1..*" Evaluacion : es_evaluada_en
+    Alumno "1" -- "0..*" Evaluacion : realiza
+    Alumno "1" -- "1" ActivacionCuenta : posee
 
-    Evaluacion "1" *-- "1" EsqueletoBiomecanico : genera
+    Tecnica "1" *-- "0..*" VideoReferencia : usa_patron
+    Tecnica "1" -- "0..*" BibliotecaTecnica : respaldada_por
+    Tecnica "1" -- "0..*" Evaluacion : es_evaluada_en
+    Sucursal "1" -- "0..*" Evaluacion : registra_historia
+
+    Evaluacion "1" *-- "0..1" EsqueletoBiomecanico : genera

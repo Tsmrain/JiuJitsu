@@ -1,6 +1,7 @@
 import logging
 import math
 import os
+import re
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -154,7 +155,25 @@ def rerank_evidencias_multilingue(
             partes_texto = [p for p in (fuente, ref) if p]
 
         texto_chunk = " ".join(partes_texto).strip()
-        textos_chunks.append(texto_chunk[:350] if texto_chunk else "Técnica de Jiu-Jitsu")
+        texto_chunk = re.sub(r"^\[Imagen:\s*Página\s+\d+\s+del\s+manual\s+PDF\]\s*", "", texto_chunk, flags=re.IGNORECASE).strip()
+        textos_chunks.append(texto_chunk[:400] if texto_chunk else "Técnica de Jiu-Jitsu")
+
+    try:
+        from corpocmente.domain.glossary.glossary_service import obtener_sinonimos_multilingues
+        sinonimos_query = obtener_sinonimos_multilingues(query_texto)
+    except Exception:
+        sinonimos_query = set()
+
+    def _bonus_glosario(texto_doc: str, base_score: float) -> float:
+        if not sinonimos_query or base_score < 0.25 or not texto_doc:
+            return 0.0
+        doc_lower = texto_doc.lower()
+        hits = sum(1 for s in sinonimos_query if s and s in doc_lower)
+        if hits >= 2:
+            return 0.35
+        if hits == 1:
+            return 0.22
+        return 0.0
 
     # Intentar Reranking con Cross-Encoder real MLX
     cross_scores = Qwen3VLRerankerCrossEncoder.rerank_pairs(
@@ -165,11 +184,12 @@ def rerank_evidencias_multilingue(
 
     if cross_scores and len(cross_scores) == len(evidencias):
         evidencias_puntuadas = []
-        for ev, score in zip(evidencias, cross_scores):
+        for ev, score, texto_doc in zip(evidencias, cross_scores, textos_chunks):
             ev_copy = dict(ev)
-            score_final = score
+            score_final = float(score)
             if ev.get("media_path"):
                 score_final += 0.05
+            score_final = min(1.0, score_final + _bonus_glosario(texto_doc, float(score)))
             ev_copy["cross_encoder_score"] = round(float(score), 4)
             ev_copy["rerank_score"] = round(float(score_final), 4)
             evidencias_puntuadas.append(ev_copy)

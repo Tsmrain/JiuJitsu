@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    actor AL as NuevoAlumno
+    participant B1 as «Boundary» PantallaDeRegistro
+    participant C1 as «Control» CoordinadorDeRegistro
+    participant E1 as «Entity» Sucursal
+    participant E2 as «Entity» Usuario
+    participant E3 as «Entity» SesionDeUsuario
+
+    AL->>B1: solicitarCrearCuenta()
+    B1->>C1: consultarSucursalesDisponibles()
+    C1->>E1: listarSucursales()
+    E1-->>C1: listaDeSucursales
+    C1-->>B1: sucursalesDisponibles
+    B1-->>AL: mostrarFormularioAlumno(sucursalesDisponibles)
+    AL->>B1: enviarDatos(nombreCompleto, usuario, clave, sucursalId)
+    B1->>C1: registrarAlumno(datosRegistro)
+    C1->>C1: validarFormatoUsuarioYRolAlumno(datosRegistro)
+    alt Formato invalido o rol no permitido
+        C1-->>B1: rechazarSolicitud()
+        B1-->>AL: mostrarMensajeDeValidacion()
+    else Datos validos
+        C1->>E2: crearCuentaPendiente(datosRegistro)
+        alt Usuario ya registrado
+            E2-->>C1: conflictoUnicidad
+            C1-->>B1: informarUsuarioExistente()
+            B1-->>AL: invitarAIniciarSesion()
+        else Cuenta creada
+            E2-->>C1: usuarioPendiente
+            C1->>E3: abrirSesionInicial(usuarioPendiente)
+            E3-->>C1: sesionActiva
+            C1-->>B1: registroExitoso(sesionActiva)
+            B1-->>AL: mostrarBienvenidaConPasePendiente()
+        end
+    end

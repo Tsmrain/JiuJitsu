@@ -1,27 +1,27 @@
-graph LR
-    subgraph Exterior ["Red Pública / Internet"]
-        Cliente["Dispositivo Móvil / Navegador"]
-        Atacante["Amenaza Externa / Botnet"]
+flowchart LR
+    subgraph Exterior["Red Publica / Internet"]
+        Cliente["Dispositivo Movil / Navegador"]
+        Atacante["Amenaza Externa / Fuerza Bruta"]
     end
 
-    subgraph Perimetro ["Borde Seguro (Edge)"]
-        Tunnel["Cloudflare Tunnel (cloudflared)<br/>Cifrado TLS 1.3 / Anti-DDoS"]
+    subgraph Perimetro["Borde Seguro (Edge)"]
+        Tunnel["Cloudflare Tunnel (cloudflared)\nCifrado TLS 1.3 / Sin puertos abiertos"]
     end
 
-    subgraph Servidor_Local ["Servidor Local del Tatami (Apple Silicon)"]
-        ViteProxy["Vite Reverse Proxy<br/>Filtro allowedHosts"]
-        FastAPI["FastAPI Backend<br/>RateLimiter / AuthMiddleware"]
-        PostgREST["PostgREST Engine<br/>Validación de Claims JWT"]
+    subgraph ServidorLocal["Servidor Local del Tatami (Apple Silicon)"]
+        ViteProxy["Vite Reverse Proxy\nLista blanca allowedHosts"]
+        FastAPI["FastAPI Backend\nAuthRateLimitMiddleware / JWT HS256 / RBAC"]
+        PostgREST["PostgREST Engine\nValidacion de Claims y RPCs SECURITY DEFINER"]
 
-        subgraph Almacenamiento ["Capa de Datos Segura"]
-            Postgres["PostgreSQL 16<br/>Políticas RLS / pgcrypto"]
-            Qdrant["Qdrant Vectorial<br/>Filtrado por Tenant"]
-            Filesystem["Sistema de Archivos Local<br/>Videos Temporales en /tmp"]
+        subgraph Almacenamiento["Capa de Datos Segura"]
+            Postgres["PostgreSQL 16\nPoliticas RLS / pgcrypto bcrypt"]
+            Qdrant["Qdrant Vectorial\nColecciones separadas Poses y RAG"]
+            Filesystem["Almacenamiento Local\nRespaldo persistente de videos y manuales"]
         end
     end
 
-    Cliente -->|HTTPS / WSS| Tunnel
-    Atacante -.->|Intento de Fuerza Bruta / SSRF| Tunnel
+    Cliente -->|"HTTPS / WSS"| Tunnel
+    Atacante -.->|"Bloqueado por Rate Limit y AllowedHosts"| Tunnel
     Tunnel --> ViteProxy
     ViteProxy --> FastAPI
     ViteProxy --> PostgREST

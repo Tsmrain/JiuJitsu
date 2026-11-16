@@ -277,12 +277,37 @@ class IntelligenceAnalysisFacade:
                         if e.get("fuente_tipo") != "instructor_message" and e.get("tipo") != "instructor_message"
                     ]
 
+                    # Fallback global: si la técnica no tiene manuales propios (o solo tiene frames de video),
+                    # consultar la biblioteca global (tecnica_id=None) antes de rendirse.
+                    tiene_manual_especifico = any(
+                        e.get("fuente_tipo") not in ("video_referencia", "video_frame")
+                        for e in manuales_candidatos
+                    )
+                    if not manuales_candidatos or not tiene_manual_especifico:
+                        evidencias_globales = obtener_evidencias_rag_multimodal(
+                            qwen_adapter=self.qwen,
+                            qdrant_adapter=self.qdrant,
+                            tecnica_id=None,
+                            tecnica_nombre=tecnica_nombre,
+                            discrepancias=discrepancias_detectadas,
+                            frame_critico_path=frame_para_embedding,
+                            video_referencia_path=video_referencia_path,
+                            limit=5,
+                        )
+                        ids_existentes = {e.get("id") for e in manuales_candidatos if e.get("id")}
+                        for ev_g in evidencias_globales:
+                            if ev_g.get("fuente_tipo") == "instructor_message" or ev_g.get("tipo") == "instructor_message":
+                                continue
+                            if ev_g.get("id") and ev_g.get("id") in ids_existentes:
+                                continue
+                            manuales_candidatos.append(ev_g)
+                            if ev_g.get("id"):
+                                ids_existentes.add(ev_g.get("id"))
+
                     if manuales_candidatos:
                         # Reranking multilingüe con Cross-Encoder real Qwen3-VL (Iteración 3R)
-                        partes_q = [tecnica_nombre]
-                        if discrepancias_detectadas:
-                            partes_q.append(", ".join(discrepancias_detectadas))
-                        query_rerank = ". ".join(partes_q).strip()
+                        # Usar el nombre de la técnica limpio para no diluir la consulta cross-lingual con plantillas de discrepancias.
+                        query_rerank = (tecnica_nombre or "").strip() or ", ".join(discrepancias_detectadas)
                         evidencias_reranked = rerank_evidencias_multilingue(
                             query_texto=query_rerank,
                             evidencias=manuales_candidatos,
@@ -299,7 +324,14 @@ class IntelligenceAnalysisFacade:
                             )
                             if score_relevancia >= UMBRAL_RELEVANCIA_RAG:
                                 tiene_contexto_rag = True
-                                evidencias_rag = evidencias_reranked
+                                evidencias_rag = [
+                                    e for e in evidencias_reranked
+                                    if float(
+                                        e.get("rerank_score")
+                                        if e.get("rerank_score") is not None
+                                        else e.get("score", 0.0)
+                                    ) >= UMBRAL_RELEVANCIA_RAG
+                                ][:2] or [mejor_manual]
                                 contexto_profundo = formatear_evidencias_texto(evidencias_rag)
                                 if contexto_profundo:
                                     contexto_profundo = (
@@ -324,6 +356,8 @@ class IntelligenceAnalysisFacade:
             elif hasattr(self.qdrant, "recuperar_contexto_rag"):
                 try:
                     ctx_directo = self.qdrant.recuperar_contexto_rag(tecnica_id, discrepancias_detectadas)
+                    if not ctx_directo:
+                        ctx_directo = self.qdrant.recuperar_contexto_rag(None, discrepancias_detectadas)
                     if ctx_directo:
                         tiene_contexto_rag = True
                         contexto_profundo = f"\n\n[Contexto RAG]:\n{ctx_directo}"
@@ -418,11 +452,15 @@ class IntelligenceAnalysisFacade:
             tiene_mensaje_profesor = bool(mensaje_profesor and str(mensaje_profesor).strip())
             if (tiene_contexto_rag or tiene_mensaje_profesor) and hasattr(self.gemini, "evaluar_fidelidad_grounding"):
                 try:
-                    contexto_juez = contexto_profundo if tiene_contexto_rag else (
-                        "Observaciones biomecánicas del frame:\n"
-                        + "\n".join(f"- {d}" for d in (discrepancias_detectadas or []))
-                        if discrepancias_detectadas else ""
-                    )
+                    partes_juez = [f"Técnica evaluada: {tecnica_nombre}"]
+                    if discrepancias_detectadas:
+                        partes_juez.append(
+                            "Observaciones biomecánicas del frame:\n"
+                            + "\n".join(f"- {d}" for d in discrepancias_detectadas)
+                        )
+                    if tiene_contexto_rag and contexto_profundo:
+                        partes_juez.append(contexto_profundo)
+                    contexto_juez = "\n\n".join(partes_juez)
                     eval_grounding = self.gemini.evaluar_fidelidad_grounding(
                         respuesta={"summary": feedback_summary, "correction": feedback_correction},
                         contexto=contexto_juez,

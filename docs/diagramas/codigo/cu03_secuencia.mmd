@@ -1,0 +1,40 @@
+sequenceDiagram
+    autonumber
+    actor AL as Alumno
+    participant B1 as «Boundary» PantallaDeEvaluacion
+    participant C1 as «Control» CoordinadorDeAnalisis
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» PatronDeReferencia
+    participant E3 as «Entity» Evaluacion
+
+    AL->>B1: seleccionarVideoYTecnica(profesor, tecnica, video)
+    B1->>C1: validarPaseYElegibilidad(alumno, video)
+    C1->>E1: verificarPaseDeTatami(alumno)
+    E1-->>C1: paseVigente
+    C1->>C1: verificarEsJiuJitsu(video)
+    C1->>C1: detectarPracticantesIniciales(video)
+    C1-->>B1: candidatosEnEscena
+    B1-->>AL: mostrarSiluetasParaSeleccion(candidatos)
+    AL->>B1: confirmarMiSilueta(personaSeleccionada)
+    B1->>C1: iniciarEvaluacion(alumno, tecnica, video, personaSeleccionada)
+    C1->>E3: crearEvaluacionEnCurso(alumno, tecnica, sucursalCongelada)
+    E3-->>C1: evaluacionId
+
+    alt Alumno decide cancelar durante la espera
+        AL->>B1: cancelarAnalisis()
+        B1->>C1: cancelarEvaluacion(evaluacionId, alumno)
+        C1->>E3: marcarEstadoCancelado(evaluacionId)
+        C1->>C1: eliminarVideoTemporalYLiberarSesion()
+        C1-->>B1: cancelacionConfirmada()
+        B1-->>AL: volverAPantallaDeCarga()
+    else Analisis continua hasta finalizar
+        C1->>C1: extraerSecuenciaPostural(video, personaSeleccionada)
+        C1->>E2: recuperarPatronesActivos(tecnica)
+        E2-->>C1: secuenciasDeReferencia
+        C1->>C1: alinearYCalcularSimilitud(secuenciaAlumno, secuenciasDeReferencia)
+        C1->>C1: detectarFrameCriticoYArticulaciones()
+        C1->>E3: guardarResultadoCinematico(evaluacionId, similitud)
+        E3-->>C1: resultadoConfirmado
+        C1-->>B1: analisisCompletado(evaluacionId, similitud)
+        B1-->>AL: habilitarVistaDeFeedback(UC04)
+    end

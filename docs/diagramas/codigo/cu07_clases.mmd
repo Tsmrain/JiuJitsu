@@ -1,36 +1,63 @@
 classDiagram
-    class StudentProgressView {
+    class StudentProgress {
+        <<Boundary>>
+        +evaluaciones: List
+        +loading: Boolean
+        +renderStudentVideo()
+    }
+
+    class ProfesorTecnicas {
+        <<Boundary>>
         +alumnos: List
-        +alumno_seleccionado: Usuario
-        +cargarAlumnos()
-        +verDetalleEvaluacion(id)
+        +evaluacionesPorAlumno: Dict
+        +fetchAlumnos()
+        +fetchEvaluacionesAlumno(alumno_id)
     }
 
-    class ProgressRoutes {
-        +obtenerAlumnosSucursal() List~UsuarioDTO~
-        +obtenerHistorialAlumno(alumno_id) List~EvaluacionDTO~
+    class AuthRoutes {
+        <<Boundary>>
+        +listar_alumnos(p_sucursal_id) List~LoginResponse~
+        +listar_evaluaciones_alumno(alumno_id) List
     }
 
-    class ProgressController {
-        +listarAlumnosPorSucursal(sucursal_id) List
-        +obtenerHistorialEvaluaciones(alumno_id) List
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +consultar_evaluacion(evaluacion_id) Dict
+    }
+
+    class VideoStorage {
+        <<Control>>
+        +resolver_video_estatico(raw_path, es_referencia) String
+    }
+
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
     }
 
     class Usuario {
+        <<Entity>>
         +id: UUID
         +nombre_completo: String
-        +cinturon: String
+        +sucursal_id: UUID
         +estado_suscripcion: String
     }
 
     class Evaluacion {
+        <<Entity>>
         +id: UUID
-        +fecha: DateTime
+        +alumno_id: UUID
+        +tecnica_id: UUID
+        +sucursal_id: UUID
         +porcentaje_similitud: Float
-        +feedback_texto: String
+        +feedback_gemini_es: String
+        +fecha_evaluacion: DateTime
     }
 
-    StudentProgressView ..> ProgressRoutes : HTTP GET
-    ProgressRoutes --> ProgressController : delega
-    ProgressController --> Usuario : consulta
-    ProgressController --> Evaluacion : recupera historial
+    StudentProgress ..> AuthRoutes : HTTP GET historial propio
+    ProfesorTecnicas ..> AuthRoutes : HTTP GET alumnos y evaluaciones
+    AuthRoutes --> PostgrestClient : ejecuta RPC con aislamiento de sede
+    AuthRoutes --> VideoStorage : resuelve y autocura videos
+    EvaluacionesRoutes --> PostgrestClient : consulta detalle
+    PostgrestClient --> Usuario : valida sede y rol
+    PostgrestClient --> Evaluacion : recupera historial

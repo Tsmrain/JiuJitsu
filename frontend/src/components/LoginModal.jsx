@@ -11,12 +11,11 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-  // Signup form state
+  // Signup form state (restringido estrictamente a alumno en registro público)
   const [signupNombre, setSignupNombre] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [showSignupPassword, setShowSignupPassword] = useState(false);
-  const [signupRol, setSignupRol] = useState('alumno');
   const [signupSucursalId, setSignupSucursalId] = useState('');
 
   const [sucursales, setSucursales] = useState([]);
@@ -92,12 +91,6 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
       return;
     }
 
-    if (signupRol === 'admin') {
-      setErrorMsg(t('adminRoleReserved'));
-      setLoading(false);
-      return;
-    }
-
     try {
       const response = await fetch(`${API_BASE}/api/v1/auth/signup`, {
         method: "POST",
@@ -106,7 +99,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
           nombre_completo: signupNombre,
           username: signupUsername,
           password: signupPassword,
-          rol: signupRol,
+          rol: 'alumno',
           sucursal_id: signupSucursalId || null,
         }),
       });
@@ -179,7 +172,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
               fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', minHeight: '44px'
             }}
           >
-            {t('signupTab')}
+            {t('createStudentAccount')}
           </button>
         </div>
 
@@ -368,27 +361,17 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--brand-red)', marginBottom: '0.3rem' }}>
-                {t('userRole')}
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                {['alumno', 'profesor'].map((r) => (
-                  <button
-                    type="button"
-                    key={r}
-                    onClick={() => setSignupRol(r)}
-                    style={{
-                      padding: '0.5rem', borderRadius: '6px', fontSize: '0.8rem', textTransform: 'capitalize',
-                      border: signupRol === r ? '2px solid var(--brand-red)' : '1px solid rgba(255,255,255,0.1)',
-                      background: signupRol === r ? 'var(--brand-red)' : 'rgba(255,255,255,0.05)',
-                      color: 'white', cursor: 'pointer', fontWeight: signupRol === r ? 'bold' : 'normal'
-                    }}
-                  >
-                    {r === 'alumno' ? t('studentRole') : t('instructorRole')}
-                  </button>
-                ))}
-              </div>
+            <div style={{
+              padding: '0.55rem 0.75rem',
+              borderRadius: '8px',
+              background: 'rgba(208, 17, 24, 0.1)',
+              border: '1px solid rgba(208, 17, 24, 0.25)',
+              color: '#e6edf3',
+              fontSize: '0.8rem',
+              textAlign: 'center',
+              fontWeight: 600,
+            }}>
+              🥋 {t('createStudentAccount')}
             </div>
 
             <div>
@@ -425,7 +408,7 @@ export default function LoginModal({ isOpen, user, onClose, onLoginSuccess, idio
                 cursor: (loading || isInvalidUsernameFormat) ? 'not-allowed' : 'pointer'
               }}
             >
-              {loading ? t('creatingAccount') : t('signupTab')}
+              {loading ? t('creatingAccount') : t('createStudentAccount')}
             </button>
           </form>
         )}

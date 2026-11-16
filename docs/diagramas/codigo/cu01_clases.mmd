@@ -1,36 +1,41 @@
 classDiagram
-    class LoginView {
-        +username_or_email: String
-        +password: String
+    class LoginModal {
+        <<Boundary>>
+        +loginUserOrEmail: String
+        +loginPassword: String
+        +showLoginPassword: Boolean
         +handleLoginSubmit()
-        +displayError(msg)
+    }
+
+    class AuthRateLimitMiddleware {
+        <<Boundary>>
+        +max_attempts: Int
+        +window_seconds: Int
+        +dispatch(request, call_next)
     }
 
     class AuthRoutes {
-        +login(credentials: LoginDTO) LoginResponse
-        +getMiPerfil(token: String) UsuarioDTO
+        <<Boundary>>
+        +login(req: LoginRequest) LoginResponse
+        +get_mi_perfil(authorization: String) LoginResponse
+        +_sign_token(payload: Dict) String
+        +_decode_jwt(authorization: String) Dict
     }
 
-    class RateLimiter {
-        +verificarLimiteIP(ip: String) Boolean
-    }
-
-    class AuthService {
-        +autenticarUsuario(user_or_email: String, password: String) TokenJWT
-        +verificarPassword(plain: String, hashed: String) Boolean
-    }
-
-    class SessionManager {
-        +crearTokenJWT(user: Usuario) String
-        +validarToken(token: String) Claims
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+        +get(table: String, params: Dict) List
     }
 
     class Usuario {
+        <<Entity>>
         +id: UUID
+        +nombre_completo: String
         +username: String
         +email: String
         +password_hash: String
-        +rol: RolUsuario
+        +rol: String
         +sucursal_id: UUID
         +estado_suscripcion: String
         +fecha_expiracion: DateTime
@@ -38,22 +43,26 @@ classDiagram
     }
 
     class Sucursal {
+        <<Entity>>
         +id: UUID
         +nombre: String
         +ciudad: String
         +pais: String
     }
 
-    class TokenJWT {
-        +access_token: String
-        +token_type: String
-        +expires_in: Integer
+    class LoginResponse {
+        <<Entity>>
+        +token: String
+        +user_id: UUID
+        +rol: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+        +idioma_preferido: String
     }
 
-    LoginView ..> AuthRoutes : HTTP POST
-    AuthRoutes --> RateLimiter : consulta
-    AuthRoutes --> AuthService : delega
-    AuthService --> SessionManager : solicita token
-    AuthService --> Usuario : consulta y valida
-    Usuario "1" --> "1" Sucursal : pertenece_a
-    SessionManager ..> TokenJWT : genera
+    LoginModal ..> AuthRateLimitMiddleware : HTTP POST
+    AuthRateLimitMiddleware --> AuthRoutes : reenvia
+    AuthRoutes --> PostgrestClient : consulta authenticate y perfil
+    PostgrestClient --> Usuario : valida credenciales
+    Usuario "1" --> "1" Sucursal : adscrito_a
+    AuthRoutes ..> LoginResponse : retorna sesion y token

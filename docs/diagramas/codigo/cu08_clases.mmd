@@ -1,26 +1,41 @@
 classDiagram
-    class StudentProgressView {
-        +handleAprobarPase(alumno_id)
-        +renderBadgeEstado(estado)
+    class ProfesorTecnicas {
+        <<Boundary>>
+        +pendientes: List
+        +activandoId: UUID
+        +fetchPendientes()
+        +handleActivarPase(alumnoId, alumnoNombre)
+    }
+
+    class VideoUpload {
+        <<Boundary>>
+        +isPassActive: Boolean
+        +isExpired: Boolean
+        +isPending: Boolean
     }
 
     class AuthRoutes {
-        +activarPaseTatami(alumno_id) Response
+        <<Boundary>>
+        +listar_alumnos_pendientes() List~AlumnoPendienteResponse~
+        +activar_pase_tatami(alumno_id, req) ActivarPaseResponse
+        +check_student_subscription(user_id) Dict
+        +require_active_subscription(authorization) Dict
     }
 
-    class SubscriptionManager {
-        +activarMembresia30Dias(profesor_id, alumno_id) Usuario
-        +verificarMismaSucursal(prof_id, alumno_id) Boolean
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
     }
 
     class Usuario {
+        <<Entity>>
         +id: UUID
         +sucursal_id: UUID
         +estado_suscripcion: String
         +fecha_expiracion: DateTime
-        +activarPor30Dias()
     }
 
-    StudentProgressView ..> AuthRoutes : HTTP PUT
-    AuthRoutes --> SubscriptionManager : coordina
-    SubscriptionManager --> Usuario : actualiza estado
+    ProfesorTecnicas ..> AuthRoutes : HTTP GET/POST pases
+    VideoUpload ..> AuthRoutes : valida vigencia de suscripcion
+    AuthRoutes --> PostgrestClient : ejecuta activar_pase_alumno
+    PostgrestClient --> Usuario : actualiza estado activo y +30 dias

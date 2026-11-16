@@ -1,69 +1,67 @@
 classDiagram
-    class SignupView {
-        +nombre_completo: String
-        +username: String
-        +email: String
-        +password: String
-        +rol: String
-        +sucursal_id: UUID
+    class LoginModal {
+        <<Boundary>>
+        +signupNombre: String
+        +signupUsername: String
+        +signupPassword: String
+        +signupSucursalId: UUID
         +handleSignupSubmit()
-        +displayValidationError(msg)
     }
 
     class AuthRoutes {
-        +signup(user_data: SignupRequest) LoginResponse
-        +listarSucursales() List~SucursalDTO~
+        <<Boundary>>
+        +signup(req: SignupRequest) LoginResponse
+        +listar_sucursales() List~SucursalResponse~
+        +_sign_token(payload: Dict) String
     }
 
     class SignupRequest {
+        <<Entity>>
         +nombre_completo: String
         +username: String
-        +email: String
         +password: String
-        +rol: RolUsuario
+        +rol: String
         +sucursal_id: UUID
-        +validarFormatoUsername() Boolean
+        +validate_username(v: String) String
     }
 
-    class AuthService {
-        +registrarUsuario(data: SignupRequest) Usuario
-        +verificarUnicidad(username: String, email: String) Boolean
-    }
-
-    class SessionManager {
-        +crearTokenJWT(user: Usuario) String
+    class PostgrestClient {
+        <<Control>>
+        +rpc(function_name: String, params: Dict) Any
+        +get(table: String, params: Dict) List
     }
 
     class Usuario {
+        <<Entity>>
         +id: UUID
         +nombre_completo: String
         +username: String
         +email: String
-        +password_hash: String
-        +rol: RolUsuario
+        +rol: String
         +sucursal_id: UUID
         +estado_suscripcion: String
         +idioma_preferido: String
     }
 
     class Sucursal {
+        <<Entity>>
         +id: UUID
         +nombre: String
         +ciudad: String
         +pais: String
     }
 
-    class TokenJWT {
-        +access_token: String
-        +token_type: String
-        +expires_in: Integer
+    class LoginResponse {
+        <<Entity>>
+        +token: String
+        +user_id: UUID
+        +estado_suscripcion: String
     }
 
-    SignupView ..> AuthRoutes : HTTP POST
-    AuthRoutes ..> SignupRequest : valida esquema
-    AuthRoutes --> AuthService : delega alta
-    AuthService --> Usuario : crea registro
-    AuthService --> Sucursal : verifica existencia
-    AuthService --> SessionManager : solicita token inicial
+    LoginModal ..> AuthRoutes : HTTP POST /auth/signup
+    AuthRoutes ..> SignupRequest : valida formato y rol alumno
+    AuthRoutes --> PostgrestClient : ejecuta public_signup
+    PostgrestClient --> Sucursal : verifica sucursal activa
+    PostgrestClient --> Usuario : crea alumno en estado pendiente
     Usuario "1" --> "1" Sucursal : adscrito_a
-    SessionManager ..> TokenJWT : genera
+    AuthRoutes ..> LoginResponse : retorna sesion inicial

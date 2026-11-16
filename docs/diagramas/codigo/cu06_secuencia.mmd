@@ -1,0 +1,31 @@
+sequenceDiagram
+    autonumber
+    actor PR as Profesor
+    participant B1 as «Boundary» PantallaDeBiblioteca
+    participant C1 as «Control» CoordinadorDeConocimiento
+    participant E1 as «Entity» Tecnica
+    participant E2 as «Entity» BibliotecaTecnica
+
+    alt Subir manual o actualizar nota del profesor
+        PR->>B1: cargarDocumentoOAgregarNota(archivo, alcance, notaProfesor)
+        B1->>C1: procesarConocimiento(archivo, alcance, notaProfesor)
+        opt Incluye nota del profesor en tecnica
+            C1->>E1: guardarNotaDelProfesor(tecnica, notaProfesor)
+            E1-->>C1: notaGuardada
+        end
+        opt Incluye documento PDF, DOCX, TXT o Imagen
+            C1->>C1: extraerTextoEIlustraciones(archivo)
+            C1->>E2: catalogarFragmentosEImagenes(fuente, fragmentos)
+            E2-->>C1: totalCatalogado
+        end
+        C1-->>B1: confirmacionDeCarga(totalCatalogado)
+        B1-->>PR: mostrarFuenteDisponibleEnBiblioteca()
+    else Eliminar manual obsoleto de la biblioteca
+        PR->>B1: solicitarEliminarManual(nombreArchivo)
+        B1->>C1: eliminarManualDeFormaAtomica(nombreArchivo)
+        C1->>E2: purgarVectoresYRegistros(nombreArchivo)
+        C1->>C1: eliminarArchivoFisicoEImagenes(nombreArchivo)
+        E2-->>C1: limpiezaConfirmada
+        C1-->>B1: manualEliminado()
+        B1-->>PR: actualizarCatalogoDeBiblioteca()
+    end

@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    actor AL as Alumno
+    participant B1 as «Boundary» PantallaDeResultados
+    participant C1 as «Control» CoordinadorDeFeedback
+    participant E1 as «Entity» Evaluacion
+    participant E2 as «Entity» BibliotecaTecnica
+    participant E3 as «Entity» Tecnica
+
+    AL->>B1: consultarFeedbackEnIdioma(evaluacionId, idioma)
+    B1->>C1: generarFeedbackPedagogico(evaluacionId, idioma)
+    C1->>E1: obtenerDiagnosticoCinematico(evaluacionId)
+    E1-->>C1: similitud, frameCritico, articulaciones
+
+    alt Similitud >= 85%
+        C1->>C1: emitirReconocimientoEnIdioma(idioma)
+    else Similitud < 85%
+        C1->>E2: buscarEvidenciaEspecificaOGlobal(tecnica, frameCritico)
+        E2-->>C1: pasajesYRelevancia
+        C1->>E3: obtenerMensajeDelProfesor(tecnica)
+        E3-->>C1: notaDelProfesor
+        C1->>C1: aplicarJerarquia(Manual >= 0.65 > NotaDelProfesor > Fallback)
+        alt Existe respaldo en Manual o Nota del Profesor
+            C1->>C1: redactarCorreccion(frameCritico, contexto, idioma)
+            C1->>C1: auditarFidelidad(correccion, contexto)
+            alt Fidelidad < 0.85
+                C1->>C1: activarFallbackSeguro()
+            end
+        else Sin manuales ni nota del profesor
+            C1->>C1: retornarAvisoSinContextoSuficiente()
+        end
+    end
+
+    C1->>C1: anotarFrameYTraducirArticulaciones(idioma)
+    C1->>E1: guardarReporteDefinitivo(evaluacionId, feedback)
+    E1-->>C1: reporteGuardado
+    C1-->>B1: entregarReporteCompleto(similitud, feedback, frame, timestamp)
+    B1-->>AL: mostrarVideosComparadosYCorreccion()

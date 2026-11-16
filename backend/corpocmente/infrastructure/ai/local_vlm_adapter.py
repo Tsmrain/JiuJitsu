@@ -71,6 +71,65 @@ class LocalVLMAdapter:
 
         return self._reescribir_query_fallback(query)
 
+    @staticmethod
+    def _extraer_fragmento_relevante(texto: str, query: str, max_chars: int = 1200) -> str:
+        """
+        Cuando un chunk agrupa varias páginas ([Página X]), selecciona las secciones
+        que mejor coinciden con la consulta en lugar de truncar ciegamente al inicio.
+        """
+        clean_text = (texto or "").strip()
+        if len(clean_text) <= max_chars:
+            return clean_text
+
+        secciones = re.split(r"(?=\[P[aá]gina\s+\d+\])", clean_text, flags=re.IGNORECASE)
+        secciones = [s.strip() for s in secciones if s.strip()]
+        if len(secciones) <= 1:
+            return clean_text[:max_chars]
+
+        try:
+            from corpocmente.domain.glossary.glossary_service import expandir_query_con_glosario
+            query_exp = expandir_query_con_glosario(query) or query
+        except Exception:
+            query_exp = query
+
+        stopwords = {
+            "como", "hace", "hacer", "para", "sobre", "desde", "esta", "este",
+            "jiu", "jitsu", "bjj", "paso", "cual", "como", "the", "how", "with",
+        }
+        tokens = {
+            tok for tok in re.findall(r"[a-zA-ZáéíóúÁÉÍÓÚñÑçÇãõÃÕ]{4,}", query_exp.lower())
+            if tok not in stopwords
+        }
+        if not tokens:
+            return clean_text[:max_chars]
+
+        scored = []
+        for idx_sec, sec in enumerate(secciones):
+            sec_lower = sec.lower()
+            head_lower = sec_lower[:160]
+            score = sum(3 for tok in tokens if tok in head_lower) + sum(1 for tok in tokens if tok in sec_lower)
+            scored.append((score, idx_sec, sec))
+
+        best_score = max(s[0] for s in scored)
+        if best_score <= 0:
+            return clean_text[:max_chars]
+
+        selected = []
+        used = 0
+        for score, idx_sec, sec in sorted(scored, key=lambda x: (-x[0], x[1])):
+            if score <= 0:
+                continue
+            piece = sec[:max_chars] if not selected else sec[: max(200, max_chars - used)]
+            if used and used + len(piece) + 2 > max_chars:
+                break
+            selected.append((idx_sec, piece))
+            used += len(piece) + 2
+
+        if not selected:
+            return clean_text[:max_chars]
+        selected.sort(key=lambda x: x[0])
+        return "\n\n".join(piece for _, piece in selected)[:max_chars]
+
     def generar_respuesta_rag_chat(
         self,
         query: str,
@@ -91,44 +150,66 @@ class LocalVLMAdapter:
             return "Aún no tengo esa información en nuestros manuales ni en las notas de tu profesor. Te sugiero preguntárselo directamente a tu instructor en el tatami."
 
         context_lines = []
+        source_legend = []
         for idx, ch in enumerate(top_chunks, start=1):
-            cita = ch.get("cita") or ch.get("fuente_nombre") or f"Referencia {idx}"
+            texto = self._extraer_fragmento_relevante(ch.get("contenido_texto") or "", query, max_chars=1200)
             pagina = ch.get("pagina")
-            fuente_label = f"{cita}" if pagina or cita else f"Referencia {idx}"
-            texto = (ch.get("contenido_texto") or "").strip()[:900]
+            if pagina is None:
+                m_pag = re.search(r"\[P[aá]gina\s+(\d+)\]", texto, flags=re.IGNORECASE)
+                if m_pag:
+                    pagina = int(m_pag.group(1))
+            nombre = (ch.get("fuente_nombre") or "").strip()
+            cita = (ch.get("cita") or "").strip()
+            if nombre and pagina is not None and f"p. {pagina}" not in nombre:
+                fuente_label = f"{nombre}, p. {pagina}"
+            elif cita:
+                fuente_label = cita
+            elif nombre:
+                fuente_label = nombre
+            else:
+                fuente_label = f"Referencia {idx}"
             context_lines.append(f"[{idx}] ({fuente_label}):\n{texto}")
+            source_legend.append(f"[{idx}] {fuente_label}")
         context_block = "\n\n".join(context_lines)
+        legend_block = "\n".join(source_legend)
 
         if lang.startswith("pt"):
             system_persona = (
                 "Você é um professor de Jiu-Jitsu Brasileiro experiente, gentil e paciente. "
                 "Responda às dúvidas do aluno de forma conversacional, natural e em linguagem simples, como se estivesse no tatame. "
                 "Seja direto e breve (máximo 2 parágrafos curtos, sem repetir frases). "
-                "Se a informação não estiver nos manuais nem nas instruções do professor, diga gentilmente que não possui essa informação e sugira perguntar ao seu instrutor. "
+                "Use o símbolo de asterisco (*) para enumerar os passos ou pontos-chave da técnica, facilitando a leitura. "
+                "Se o usuário perguntar por uma técnica que NÃO está explicitamente nos apontamentos fornecidos, diga gentilmente que não possui essa informação exata e sugira perguntar ao seu instrutor. "
+                "NÃO invente passos nem misture nomes de técnicas distintas (por exemplo, nunca confunda Armbar/Chave de braço com Americana ou Kimura). "
                 "Não use linguagem técnica de banco de dados, nem diga 'fragmentos' ou 'textos'. "
-                "Cite suas fontes no final usando [1], [2]. Responda estritamente em português."
+                "Quando citar uma referência, use o formato [1], [2]. No final da resposta, liste apenas as fontes usadas copiando exatamente os nomes e páginas da seção 'Fontes disponíveis'. Responda estritamente em português."
             )
         elif lang.startswith("en"):
             system_persona = (
                 "You are an experienced, friendly, and patient Brazilian Jiu-Jitsu professor. "
                 "Answer the student's question in a natural, conversational, easy-to-understand way, as if you were on the mat. "
                 "Be concise and clear (at most 2 short paragraphs, without repeating sentences). "
-                "If the information is not in the manuals or the instructor's notes, kindly say you don't have that information and suggest asking their coach. "
+                "Use the asterisk symbol (*) to list the steps or key points of the technique, making it easy to read. "
+                "If the user asks about a technique that is NOT explicitly in the provided notes, kindly say you do not have that exact information and suggest asking their instructor. "
+                "DO NOT invent steps or mix names of different techniques (for example, never confuse Armbar with Americana or Kimura). "
                 "Do not use database technical jargon, and do not say 'fragments', 'chunks', or 'texts'. "
-                "Cite your sources at the end using [1], [2]. Reply strictly in English."
+                "When citing a source, use [1], [2]. At the end of your reply, list only the sources used by copying the exact book names and pages from 'Available sources'. Reply strictly in English."
             )
         else:
             system_persona = (
                 "Eres un profesor de Jiu-Jitsu Brasileño experimentado, amable y paciente. "
                 "Responde a las dudas del alumno de forma conversacional, natural y en lenguaje sencillo, como si estuvieras en el tatami. "
                 "Sé claro y conciso (máximo 2 o 3 párrafos cortos, sin repetir ideas ni frases). "
-                "Si la información no está en los manuales ni en las instrucciones del profesor, di amablemente que no tienes esa información y sugiérele preguntarle a su instructor. "
+                "Usa el símbolo de asterisco (*) para enumerar los pasos o puntos clave de la técnica, para que sea fácil de leer. "
+                "Si el usuario pregunta por una técnica que NO está explícitamente en los apuntes proporcionados, di amablemente que no tienes esa información exacta y sugiérele preguntar a su instructor. "
+                "NO inventes pasos ni mezcles nombres de técnicas distintas (por ejemplo, nunca confundas Armbar/llave de brazo con Americana o Kimura). "
                 "No uses lenguaje técnico de bases de datos, ni digas 'fragmentos' o 'textos'. "
-                "Cita tus fuentes al final usando [1], [2]. Responde estrictamente en español."
+                "Cuando cites un punto, usa el formato [1], [2]. Al final de tu respuesta, lista únicamente las fuentes usadas copiando textualmente su nombre y página de 'Fuentes disponibles' (sin cambiar el título del libro). Responde estrictamente en español correcto."
             )
 
         prompt = (
             f"{system_persona}\n\n"
+            f"Fuentes disponibles:\n{legend_block}\n\n"
             f"Apuntes e información disponible:\n{context_block}\n\n"
             f"Duda del alumno: {query.strip()}\n\n"
             "Respuesta del profesor:"
@@ -150,8 +231,8 @@ class LocalVLMAdapter:
                 self.processor,
                 formatted_prompt,
                 [],
-                max_tokens=280,
-                temperature=0.25,
+                max_tokens=420,
+                temperature=0.2,
                 verbose=False,
             )
             answer = str(raw.text if hasattr(raw, "text") else raw).strip()
@@ -191,9 +272,9 @@ class LocalVLMAdapter:
             raise FileNotFoundError(frame_image_path)
 
         images = [frame_image_path]
-        # top_k de recuperación es cinco: no descartamos páginas recuperadas antes
-        # de que el VLM pueda contrastarlas con el fotograma del alumno.
-        for ev in (evidencias_visuales or [])[:5]:
+        # Adjuntar hasta 2 páginas relevantes del manual a resolución eficiente (100 DPI)
+        # para evitar saturar la memoria unificada Metal GPU en Apple Silicon.
+        for ev in (evidencias_visuales or [])[:2]:
             payload = ev.get("payload", ev)
             media_path = payload.get("media_path")
             if media_path and os.path.exists(media_path):
@@ -207,7 +288,7 @@ class LocalVLMAdapter:
                         if doc.page_count > 0:
                             page_idx = min(max(0, int(payload.get("pagina") or 1) - 1), doc.page_count - 1)
                             page = doc.load_page(page_idx)
-                            pix = page.get_pixmap(dpi=150)
+                            pix = page.get_pixmap(dpi=100)
                             tmp_img = f"/tmp/corpocmente_frames/pdf_p{page_idx}_{os.path.basename(media_path)}.png"
                             os.makedirs(os.path.dirname(tmp_img), exist_ok=True)
                             pix.save(tmp_img)
@@ -278,6 +359,26 @@ class LocalVLMAdapter:
 
         full_prompt = prompt + instruccion_rag
 
+        resized_images = []
+        for idx_img, img_path in enumerate(images):
+            if img_path and os.path.isfile(img_path):
+                try:
+                    from PIL import Image
+                    with Image.open(img_path) as im:
+                        w_img, h_img = im.size
+                        if max(w_img, h_img) > 768:
+                            im_copy = im.convert("RGB")
+                            im_copy.thumbnail((768, 768), Image.Resampling.LANCZOS)
+                            tmp_resized = f"/tmp/corpocmente_frames/vlm_768_{idx_img}_{os.path.basename(img_path)}.jpg"
+                            os.makedirs(os.path.dirname(tmp_resized), exist_ok=True)
+                            im_copy.save(tmp_resized, format="JPEG", quality=85)
+                            resized_images.append(tmp_resized)
+                            continue
+                except Exception:
+                    pass
+            resized_images.append(img_path)
+        images = resized_images
+
         if hasattr(self.processor, "apply_chat_template"):
             content = [{"type": "image"} for _ in images] + [{"type": "text", "text": full_prompt}]
             formatted_prompt = self.processor.apply_chat_template(
@@ -286,6 +387,13 @@ class LocalVLMAdapter:
             )
         else:
             formatted_prompt = full_prompt
+
+        try:
+            import mlx.core as mx
+            if hasattr(mx, "clear_cache"):
+                mx.clear_cache()
+        except Exception:
+            pass
 
         raw = generate(
             self.model,

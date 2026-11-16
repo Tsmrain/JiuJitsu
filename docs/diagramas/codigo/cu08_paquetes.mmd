@@ -1,19 +1,22 @@
 graph TD
-    subgraph Presentacion ["Presentación"]
-        StudentView["StudentProgress.jsx (Badge Pase)"]
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Prof["ProfesorTecnicas.jsx (Pestaña Pases)"]
+        P_Upload["VideoUpload.jsx (Muro Pase de Tatami)"]
     end
-    subgraph Aplicacion ["Aplicación"]
-        AuthAPI["auth_routes.py"]
-        SubManager["SubscriptionManager"]
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Guardas)"]
+        A_Auth["auth_routes.py (activar_pase_tatami / require_active_subscription)"]
     end
-    subgraph Dominio ["Dominio"]
-        EntUsuario["Usuario (Membresía)"]
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_User["Usuario (estado_suscripcion y fecha_expiracion)"]
     end
-    subgraph Infraestructura ["Infraestructura"]
-        Postgres["PostgreSQL"]
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia)"]
+        I_PG["PostgrestClient / PostgreSQL"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

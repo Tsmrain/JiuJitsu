@@ -1,27 +1,25 @@
 graph TD
     subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        UI_Signup["LoginModal.jsx (Registro)"]
-        UI_State["AuthContext.jsx"]
+        UI_Signup["LoginModal.jsx (Registro de Alumno)"]
+        UI_App["App.jsx"]
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Casos de Uso y Control)"]
-        API_Auth["auth_routes.py"]
-        Ctrl_Auth["AuthService"]
-        Ctrl_Session["session_manager.py"]
+    subgraph Aplicacion ["Capa de Aplicación (Rutas y Control)"]
+        API_Auth["auth_routes.py (signup / listar_sucursales)"]
     end
 
     subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
-        Ent_DTO["SignupRequest / Reglas de Identidad"]
-        Ent_User["Usuario / Membresía Inicial"]
+        Ent_DTO["SignupRequest / LoginResponse"]
+        Ent_User["Usuario (Membresía Pendiente)"]
         Ent_Sucursal["Sucursal"]
     end
 
     subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
-        Infra_DB["PostgreSQL / PostgREST"]
-        Infra_Crypto["pgcrypto (bcrypt) / PyJWT"]
+        Infra_PG["PostgrestClient / PostgreSQL (pgcrypto)"]
+        Infra_JWT["PyJWT (HS256)"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

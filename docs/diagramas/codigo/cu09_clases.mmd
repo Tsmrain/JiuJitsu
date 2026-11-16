@@ -1,28 +1,32 @@
 classDiagram
-    class BranchManagerView {
-        +mapaLeaflet: MapInstance
+    class AdminSucursales {
+        <<Boundary>>
+        +sucursales: List
         +latitud: Float
         +longitud: Float
-        +nombre: String
-        +handleMapClick(lat, lng)
-        +guardarSucursal()
+        +googleMapsUrl: String
+        +handleGoogleMapsUrlChange(url)
+        +handleSubmit()
+        +handleDelete(sucursalId)
     }
 
-    class SucursalesRoutes {
-        +listarSucursales() List~SucursalDTO~
-        +crearSucursal(data: SucursalDTO) Response
+    class AuthRoutes {
+        <<Boundary>>
+        +listar_sucursales() List~SucursalResponse~
+        +crear_sucursal(nueva: SucursalCreate) SucursalResponse
+        +actualizar_sucursal(sucursal_id, req) SucursalResponse
+        +eliminar_sucursal(sucursal_id) Void
+        +parse_gmaps_link(req: ParseGmapsRequest) ParseGmapsResponse
     }
 
-    class BranchController {
-        +registrarSucursal(data) Sucursal
-        +obtenerDireccionInversa(lat, lng) DireccionDTO
-    }
-
-    class NominatimClient {
-        +reverseGeocode(lat, lng) JSON
+    class PostgrestClient {
+        <<Control>>
+        +get(table: String) List
+        +rpc(function_name: String, params: Dict) Any
     }
 
     class Sucursal {
+        <<Entity>>
         +id: UUID
         +nombre: String
         +pais: String
@@ -32,7 +36,6 @@ classDiagram
         +longitud: Float
     }
 
-    BranchManagerView ..> SucursalesRoutes : HTTP POST
-    SucursalesRoutes --> BranchController : delega
-    BranchController --> NominatimClient : consulta geocodificación
-    BranchController --> Sucursal : persiste
+    AdminSucursales ..> AuthRoutes : HTTP GET/POST/PUT/DELETE
+    AuthRoutes --> PostgrestClient : ejecuta RPCs de sucursal
+    PostgrestClient --> Sucursal : crea, actualiza o elimina

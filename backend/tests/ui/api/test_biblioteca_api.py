@@ -416,4 +416,100 @@ def test_buscar_en_biblioteca_inyecta_mensaje_profesor_de_tecnica_coincidente(
     assert chunks_passed[0]["fuente_tipo"] == "instructor_message"
 
 
+def test_local_vlm_extrae_seccion_relevante_multipagina_y_exige_no_mezclar(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    from corpocmente.infrastructure.ai.local_vlm_adapter import LocalVLMAdapter
+
+    adapter = object.__new__(LocalVLMAdapter)
+    adapter.model = MagicMock()
+    adapter.processor = None
+
+    captured_prompts = []
+
+    def fake_generate(model, processor, prompt, images, **kwargs):
+        captured_prompts.append(prompt)
+        return "Para hacer el Armbar desde la montada, controla la manga y cruza la pierna [1].\n\nFuentes:\n[1] Guia Jiujitsu, p. 56"
+
+    monkeypatch.setitem(sys.modules, "mlx_vlm", SimpleNamespace(generate=fake_generate))
+
+    bloque_multipagina = (
+        "[Página 42]\nRASPAGEM NA MEIA GUARDA III\n" + ("Texto de relleno de raspagem. " * 60) + "\n\n"
+        "[Página 56]\nCHAVE DE BRAÇO NA MONTADA (ARMLOCK)\nPartindo da montada, fazer pegada na manga e passar a perna sobre a cabeça."
+    )
+    res = adapter.generar_respuesta_rag_chat(
+        query="llave de brazo como se hace",
+        chunks=[{"fuente_nombre": "Guia Jiujitsu", "contenido_texto": bloque_multipagina}],
+        idioma="es",
+    )
+    prompt_enviado = captured_prompts[0]
+    assert "CHAVE DE BRAÇO NA MONTADA (ARMLOCK)" in prompt_enviado
+    assert "NO inventes pasos ni mezcles nombres de técnicas" in prompt_enviado
+    assert "símbolo de asterisco (*)" in prompt_enviado
+    assert "Guia Jiujitsu, p. 56" in prompt_enviado
+    assert "[1]" in res
+
+
+def test_resolver_nombre_fuente_real_evita_genericos():
+    from corpocmente.ui.api.routes import _resolver_nombre_fuente_real
+
+    assert _resolver_nombre_fuente_real("Libro 1", "BJJ-GuiaCompleto.pdf") == "BJJ-GuiaCompleto.pdf"
+    assert _resolver_nombre_fuente_real("", "Jiu-Jitsu University.pdf") == "Jiu-Jitsu University.pdf"
+    assert _resolver_nombre_fuente_real("Manual de Guardia", "archivo.pdf") == "Manual de Guardia"
+
+
+@patch("corpocmente.ui.api.routes.get_db")
+@patch("corpocmente.infrastructure.ai.local_vlm_adapter.LocalVLMAdapter")
+@patch("corpocmente.infrastructure.persistence.qdrant_rag_adapter.QdrantRAGAdapter")
+@patch("corpocmente.infrastructure.ai.qwen_adapter.QwenEmbeddingAdapter")
+def test_buscar_en_biblioteca_prioriza_pagina_especifica_y_resuelve_pagina(
+    mock_qwen_cls, mock_rag_cls, mock_vlm_cls, mock_get_db
+):
+    mock_get_db.return_value.rpc.return_value = []
+    mock_qwen_cls.return_value.generar_embedding_texto.return_value = [0.1] * 2048
+    mock_vlm = mock_vlm_cls.return_value
+    mock_vlm.reescribir_query_cognitiva.return_value = "llave de brazo armbar"
+    mock_vlm.generar_respuesta_rag_chat.return_value = "Respuesta [1].\n\n[1] Guia Jiujitsu, p. 56"
+
+    mock_rag_cls.return_value.buscar_biblioteca.return_value = [
+        {
+            "id": "gigante-1",
+            "score": 0.61,
+            "fuente_nombre": "Guia Jiujitsu",
+            "fuente_tipo": "manual_pdf",
+            "fuente_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/guia.pdf",
+            "media_url": None,
+            "pagina": None,
+            "cita": "Guia Jiujitsu",
+            "contenido_texto": "[Página 42]\nRaspagem na meia guarda.\n" + ("x " * 1500) + "\n[Página 62]\nAmericana na lateral.",
+        },
+        {
+            "id": "pag-56",
+            "score": 0.60,
+            "fuente_nombre": "Guia Jiujitsu",
+            "fuente_tipo": "manual_pdf",
+            "fuente_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/guia.pdf",
+            "media_url": "http://127.0.0.1:8000/api/v1/conocimiento/archivos/guia.pdf#page=56",
+            "pagina": 56,
+            "cita": "Guia Jiujitsu, p. 56",
+            "contenido_texto": "[Imagen: Página 56 del manual PDF] 54 CHAVE DE BRAÇO NA MONTADA (ARMLOCK) Partindo da montada...",
+        },
+    ]
+
+    response = client.post(
+        "/api/v1/conocimiento/biblioteca/buscar",
+        json={"query": "llave de brazo como se hace", "idioma": "es"},
+        headers=_auth_headers(),
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["sources"][0]["id"] == "pag-56"
+    assert data["sources"][0]["pagina"] == 56
+    assert data["sources"][0]["cita"] == "Guia Jiujitsu, p. 56"
+    assert data["sources"][1]["id"] == "gigante-1"
+    assert data["sources"][1]["pagina"] in (42, 62)
+    assert data["sources"][1]["media_url"] is None
+
+
+
 

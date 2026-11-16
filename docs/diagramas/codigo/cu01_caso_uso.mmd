@@ -1,0 +1,15 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Acceso"]
+        UC01(["UC-01: Iniciar Sesión en la Plataforma"]):::usecase
+    end
+
+    AL --> UC01
+    PR --> UC01
+    AD --> UC01

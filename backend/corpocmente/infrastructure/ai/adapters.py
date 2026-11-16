@@ -325,15 +325,22 @@ class YOLOPoseAdapter:
                 return _orig(*a, **kw)
             torch.load = _safe_load
             from corpocmente.config import storage_root
+            models_dir = storage_root() / "models"
+            models_dir.mkdir(parents=True, exist_ok=True)
             candidates = [
-                str(storage_root() / "models" / "yolo26l-pose.pt"),
-                str(repo_root / "backend" / "storage" / "models" / "yolo26l-pose.pt"),
-                str(repo_root / "storage" / "models" / "yolo26l-pose.pt"),
-                str(repo_root / "backend" / "yolo26l-pose.pt"),
-                "storage/models/yolo26l-pose.pt",
-                "yolo26l-pose.pt",
+                str(models_dir / "yolo26m-pose.pt"),
+                str(repo_root / "backend" / "storage" / "models" / "yolo26m-pose.pt"),
+                str(repo_root / "storage" / "models" / "yolo26m-pose.pt"),
+                str(repo_root / "backend" / "yolo26m-pose.pt"),
+                "storage/models/yolo26m-pose.pt",
+                "yolo26m-pose.pt",
             ]
-            weights = next((c for c in candidates if os.path.exists(c)), "yolo26l-pose.pt")
+            weights = next((c for c in candidates if os.path.exists(c)), None)
+            if weights is None:
+                # Descarga automática vía Ultralytics al directorio de modelos local si no existe
+                target_download = str(models_dir / "yolo26m-pose.pt")
+                logger.info("[YOLO] yolo26m-pose.pt no encontrado localmente; descargando en %s...", target_download)
+                weights = target_download
             self._model_cache = YOLO(weights)
             self._model_cache.path = str(weights)
             logger.info("[YOLO] Modelo Pose cargado: %s", weights)
@@ -1112,7 +1119,7 @@ class YOLOPoseAdapter:
         """
         Refina los 17 keypoints COCO en el fotograma crítico mediante arquitectura Top-Down:
         localiza la bounding box del atleta seleccionado, recorta con 10% de padding,
-        ejecuta inferencia aislada con yolo26l-pose.pt y mapea coordenadas al frame global.
+        ejecuta inferencia aislada con yolo26m-pose.pt y mapea coordenadas al frame global.
         Retorna (pts_refinados, pts_fallback_frame_completo).
         """
         import numpy as np
@@ -1187,7 +1194,7 @@ class YOLOPoseAdapter:
         Si clean_output_path es provisto, guarda primero el fotograma limpio sin anotaciones.
 
         Aplica refinamiento Top-Down: localiza la caja delimitadora de la persona
-        seleccionada, recorta con 10% de padding de seguridad, ejecuta yolo26l-pose.pt
+        seleccionada, recorta con 10% de padding de seguridad, ejecuta yolo26m-pose.pt
         aislado en el recorte y mapea los 17 keypoints de vuelta al fotograma original.
         Si el recorte falla o no detecta persona válida, cae limpiamente a los
         keypoints originales provistos en keypoints133.

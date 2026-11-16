@@ -1,0 +1,63 @@
+flowchart TD
+    classDef paso fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D
+    classDef decision fill:#FFF5F5,stroke:#C53030,color:#742A2A
+    classDef exito fill:#F0FFF4,stroke:#2F855A,color:#22543D
+
+    subgraph L_Alumno["Alumno (Cliente)"]
+        A1["Iniciar sesion y elegir Profesor y Tecnica"]:::paso
+        A2["Seleccionar video de practica en celular"]:::paso
+        A3["Confirmar silueta propia en primer fotograma"]:::paso
+        A4{"Desea cancelar durante\nel procesamiento?"}:::decision
+        A5["Volver a pantalla inicial"]:::paso
+        A6["Revisar feedback, saltar al segundo del error\ny abrir citas o Biblioteca"]:::exito
+    end
+
+    subgraph L_Frontend["Frontend (React 19 + Vite Proxy)"]
+        F1["Validar tamano de archivo y enviar a validar-spam"]:::paso
+        F2["Ejecutar AbortController y POST cancelar"]:::paso
+        F3["Polling a GET /evaluaciones/id cada 3s"]:::paso
+        F4["Renderizar FeedbackView (Videos + Tarjeta IA)"]:::paso
+    end
+
+    subgraph L_Backend["Backend (FastAPI)"]
+        B1{"Pase de Tatami activo\ny formato valido?"}:::decision
+        B2["Rechazar HTTP 403 / 422"]:::decision
+        B3["Crear sesion (CREATED -> PERSONA_SELECTED)"]:::paso
+        B4["Crear Evaluacion (procesando) y congelar sucursal_id"]:::paso
+        B5["Marcar estado cancelado y borrar video temporal"]:::paso
+        B6["Anotar frame critico y traducir articulaciones"]:::paso
+    end
+
+    subgraph L_Vision["IA de Vision (YOLO26 + ViCoS)"]
+        V1{"Clasificador ViCoS\nratio BJJ >= 0.60?"}:::decision
+        V2["Detectar personas y deduplicar siluetas"]:::paso
+        V3["Extraer secuencia postural 3D y tracking IoU"]:::paso
+    end
+
+    subgraph L_Conocimiento["IA Biomecanica y RAG (DTW + Qwen3-VL MLX)"]
+        K1["Normalizar 46 dims y alinear DTW contra patrones"]:::paso
+        K2{"Similitud < 85.0%?"}:::decision
+        K3["Emitir felicitacion deterministica"]:::exito
+        K4["Buscar en manual de tecnica o Biblioteca Global\ny reordenar con Cross-Encoder"]:::paso
+        K5{"Manual >= 0.65\no Nota del Profesor?"}:::decision
+        K6["Qwen3-VL-Instruct-4B genera correccion\ny Juez audita fidelidad >= 0.85"]:::paso
+        K7["Activar Respaldo Cuantitativo Seguro"]:::paso
+    end
+
+    subgraph L_Persistencia["Persistencia (PostgreSQL + Qdrant)"]
+        P1["Obtener patrones activos en Qdrant"]:::paso
+        P2["Guardar estado completado si no fue cancelado"]:::paso
+    end
+
+    A1 --> A2 --> F1 --> B1
+    B1 -->|"No"| B2
+    B1 -->|"Si"| V1
+    V1 -->|"No"| B2
+    V1 -->|"Si"| V2 --> B3 --> A3 --> B4 --> A4
+    A4 -->|"Si"| F2 --> B5 --> A5
+    A4 -->|"No"| V3 --> P1 --> K1 --> K2
+    K2 -->|"No (>= 85%)"| K3 --> B6
+    K2 -->|"Si (< 85%)"| K4 --> K5
+    K5 -->|"Si"| K6 --> B6
+    K5 -->|"No"| K7 --> B6
+    B6 --> P2 --> F3 --> F4 --> A6

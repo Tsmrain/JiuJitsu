@@ -1,0 +1,25 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    PR["👤 Profesor"]:::actor
+    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Biblioteca y Conocimiento"]
+        UC06(["UC-06: Gestionar Manuales de Estudio y Notas del Profesor"]):::usecase
+        UC06_Up(["Subir Manual a Biblioteca PDF/DOCX/TXT/Imagen"]):::usecase
+        UC06_Msg(["Escribir Nota o Consejo del Profesor en la Tecnica"]):::usecase
+        UC06_Del(["Eliminar Manual o Teoria Obsoleta"]):::usecase
+        UC06_Read(["Buscar y Previsualizar Biblioteca"]):::usecase
+    end
+
+    PR --> UC06
+    AD --> UC06
+    PR --> UC06_Read
+    AD --> UC06_Read
+    AL --> UC06_Read
+
+    UC06_Up -.->|"«extend»"| UC06
+    UC06_Msg -.->|"«extend»"| UC06
+    UC06_Del -.->|"«extend»"| UC06

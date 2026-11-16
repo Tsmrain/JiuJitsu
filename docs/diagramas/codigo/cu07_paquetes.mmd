@@ -1,20 +1,25 @@
 graph TD
-    subgraph Presentacion ["Presentación"]
-        ProgView["StudentProgress.jsx"]
+    subgraph Presentacion ["Capa de Presentación (Frontend)"]
+        P_Prog["StudentProgress.jsx"]
+        P_Prof["ProfesorTecnicas.jsx"]
     end
-    subgraph Aplicacion ["Aplicación"]
-        ProgRoutes["progress_routes.py"]
-        ProgCtrl["ProgressController"]
+
+    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
+        A_Auth["auth_routes.py (listar_alumnos / listar_evaluaciones_alumno)"]
+        A_Routes["routes.py (consultar_evaluacion)"]
     end
-    subgraph Dominio ["Dominio"]
-        EntUsuario["Usuario"]
-        EntEvaluacion["Evaluacion"]
+
+    subgraph Dominio ["Capa de Dominio (Entidades)"]
+        D_User["Usuario"]
+        D_Eval["Evaluacion"]
     end
-    subgraph Infraestructura ["Infraestructura"]
-        Postgres["PostgreSQL con RLS"]
+
+    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Videos)"]
+        I_PG["PostgrestClient / PostgreSQL (RLS)"]
+        I_Vid["video_storage.py"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

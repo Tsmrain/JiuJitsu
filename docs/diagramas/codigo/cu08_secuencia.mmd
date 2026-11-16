@@ -1,0 +1,26 @@
+sequenceDiagram
+    autonumber
+    actor PR as Profesor
+    participant B1 as «Boundary» PantallaDeMembresias
+    participant C1 as «Control» CoordinadorDeMembresias
+    participant E1 as «Entity» Usuario
+
+    PR->>B1: consultarPasesPendientes()
+    B1->>C1: listarAlumnosPendientesOExpirados(profesor)
+    C1->>E1: obtenerPendientesDeSucursal(profesor)
+    E1-->>C1: alumnosPendientes
+    C1-->>B1: nominaPendientes
+    B1-->>PR: mostrarAlumnosPendientes()
+    PR->>B1: activarPase30Dias(alumnoId)
+    B1->>C1: aprobarPaseDeTatami(profesor, alumnoId, 30)
+    C1->>E1: validarPertenenciaMismaSede(profesor, alumnoId)
+    alt Alumno de otra sucursal
+        E1-->>C1: accesoDenegado
+        C1-->>B1: rechazarOperacion()
+        B1-->>PR: informarRestriccionDeSucursal()
+    else Misma sucursal
+        C1->>E1: activarMembresiaPorTreintaDias(alumnoId)
+        E1-->>C1: estadoActivoYFechaExpiracion
+        C1-->>B1: paseActivado(fechaExpiracion)
+        B1-->>PR: confirmarActivacionExitosa()
+    end

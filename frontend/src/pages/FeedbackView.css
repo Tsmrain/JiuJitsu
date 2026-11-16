@@ -46,7 +46,7 @@
   opacity: 0.85;
 }
 
-/* 2x2 Grid Layout */
+/* Videos top row (2 columns) + AI Analysis bottom row (full width) */
 .feedback-grid-2x2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -109,8 +109,11 @@
   padding: 1rem;
 }
 
-/* AI Feedback Card */
+/* AI Feedback Card (Full Width Bottom Row) */
 .ai-feedback-card {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.03);
   border-top: 3px solid var(--brand-red);
 }

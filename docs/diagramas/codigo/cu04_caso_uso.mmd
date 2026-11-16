@@ -1,0 +1,17 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AL["👤 Alumno"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente - Feedback Biomecanico"]
+        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
+        UC04_Rep(["Reproducir Momento Exacto del Error"]):::usecase
+        UC04_Frame(["Inspeccionar Fotograma Critico y Articulaciones"]):::usecase
+        UC04_Bib(["Consultar Citas y Manuales en Biblioteca"]):::usecase
+    end
+
+    AL --> UC04
+    UC04_Rep -.->|"«extend»"| UC04
+    UC04_Frame -.->|"«extend»"| UC04
+    UC04_Bib -.->|"«extend»"| UC04

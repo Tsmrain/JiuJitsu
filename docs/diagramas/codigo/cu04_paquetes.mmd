@@ -1,32 +1,31 @@
 graph TD
     subgraph Presentacion ["Capa de Presentación (Frontend)"]
         P_Feedback["FeedbackView.jsx"]
-        P_Player["VideoPlayerOverlay.jsx"]
+        P_Library["LibraryView.jsx"]
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Orquestación RAG y Pedagógica)"]
-        A_Routes["evaluaciones_routes.py"]
+    subgraph Aplicacion ["Capa de Aplicación (Orquestación RAG y Reportes)"]
+        A_Routes["routes.py (consultar_evaluacion / buscar_en_biblioteca)"]
         A_Facade["intelligence_facade.py"]
-        A_RAG["MultimodalRAGService"]
+        A_RAG["multimodal_rag_service.py"]
     end
 
     subgraph Dominio ["Capa de Dominio (Recuperación, Estrategias y Entidades)"]
-        D_Hybrid["HybridRetriever"]
-        D_Glossary["GlossaryService"]
-        D_Prompt["PromptStrategy (ES/PT/EN)"]
-        D_Teoria["TeoriaRAG"]
-        D_Eval["Evaluacion / AnalisisResultDTO"]
+        D_Rerank["rag_reranker.py"]
+        D_Hybrid["hybrid_retriever.py"]
+        D_Glossary["glossary_service.py"]
+        D_Prompt["prompt_strategies.py"]
+        D_Models["Evaluacion / AnalisisResultDTO / TeoriaRAG"]
     end
 
-    subgraph Infraestructura ["Capa de Infraestructura (VLM Local, Reranker y Almacenamiento)"]
+    subgraph Infraestructura ["Capa de Infraestructura (VLM Local, Embeddings y BD)"]
         I_VLM["local_vlm_adapter.py (MLX)"]
-        I_QwenEmb["qwen_embedding_adapter.py"]
-        I_Rerank["qwen_reranker.py"]
-        I_Qdrant["qdrant_rag_adapter.py"]
-        I_PG["PostgreSQL / OpenCV"]
+        I_Qwen["qwen_adapter.py (MLX)"]
+        I_Qdrant["qdrant_adapter.py / qdrant_rag_adapter.py"]
+        I_PG["PostgrestClient / VideoStorage"]
     end
 
     Presentacion --> Aplicacion
+    Aplicacion --> Dominio
     Infraestructura --> Aplicacion
     Infraestructura --> Dominio
-    Aplicacion --> Dominio

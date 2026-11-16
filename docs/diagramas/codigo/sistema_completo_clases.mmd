@@ -1,0 +1,328 @@
+classDiagram
+    %% Capa de Presentacion (Frontend React 19)
+    class App {
+        <<Boundary>>
+        +user: LoginResponse
+        +idioma: String
+        +appState: String
+        +currentEvaluacionId: UUID
+        +handleUploadStart(uploadData)
+        +handleCancelAnalysis()
+        +handleLanguageChange(lang)
+    }
+
+    class LoginModal {
+        <<Boundary>>
+        +loginUserOrEmail: String
+        +signupUsername: String
+        +handleLoginSubmit()
+        +handleSignupSubmit()
+    }
+
+    class UserProfileModal {
+        <<Boundary>>
+        +nombre: String
+        +selectedIdioma: String
+        +handleUpdate()
+    }
+
+    class VideoUpload {
+        <<Boundary>>
+        +profesores: List
+        +tecnicas: List
+        +selectedFile: File
+        +handleFile(file)
+        +handleSubmit()
+    }
+
+    class SelectorPersonaVideo {
+        <<Boundary>>
+        +sessionData: Dict
+        +selectedPersonaIdx: Int
+        +onSelect(idx)
+    }
+
+    class FeedbackView {
+        <<Boundary>>
+        +result: AnalisisResultDTO
+        +showFrameModal: Boolean
+        +jumpToError(timestamp)
+    }
+
+    class StudentProgress {
+        <<Boundary>>
+        +evaluaciones: List
+    }
+
+    class LibraryView {
+        <<Boundary>>
+        +query: String
+        +manuales: List
+        +handleSearch()
+        +handleDeleteManual(filename)
+    }
+
+    class ProfesorTecnicas {
+        <<Boundary>>
+        +alumnos: List
+        +tecnicas: List
+        +pendientes: List
+        +handleActivarPase(alumno_id)
+        +handleSave()
+    }
+
+    class AdminSucursales {
+        <<Boundary>>
+        +sucursales: List
+        +usuarios: List
+        +handleImpersonate(user_id)
+        +handleDeleteUser(targetUser)
+    }
+
+    class TheoryManagerModal {
+        <<Boundary>>
+        +chunks: List
+        +handleDeleteAll()
+    }
+
+    class GlobalKnowledgeModal {
+        <<Boundary>>
+        +sources: List
+        +handleUpload()
+        +handleDeleteSource(filename)
+    }
+
+    %% Capa de Frontera API (FastAPI)
+    class AuthRoutes {
+        <<Boundary>>
+        +login(req) LoginResponse
+        +signup(req) LoginResponse
+        +impersonate_user(user_id) LoginResponse
+        +eliminar_usuario(user_id, auto_reasignar) Void
+        +activar_pase_tatami(alumno_id) ActivarPaseResponse
+        +crear_sucursal(nueva) SucursalResponse
+        +eliminar_sucursal(sucursal_id) Void
+    }
+
+    class EvaluacionesRoutes {
+        <<Boundary>>
+        +validar_spam(video) Dict
+        +obtener_primer_frame(video) Dict
+        +analizar_video(background_tasks, tecnica_id) Dict
+        +cancelar_evaluacion_endpoint(evaluacion_id) Dict
+        +consultar_evaluacion(evaluacion_id) Dict
+        +buscar_en_biblioteca(req) Dict
+        +ingerir_archivo_teoria(archivo, alcance) Dict
+        +eliminar_manual_conocimiento(filename) Dict
+    }
+
+    class TecnicasRoutes {
+        <<Boundary>>
+        +listar_tecnicas(profesor_id) List
+        +crear_tecnica(req) TecnicaResponse
+        +eliminar_tecnica(tecnica_id) Void
+        +registrar_patron_tecnica(tecnica_id, session_id) Dict
+    }
+
+    %% Capa de Aplicacion y Dominio
+    class IntelligenceAnalysisFacade {
+        <<Control>>
+        +UMBRAL_RELEVANCIA_RAG: Float
+        +ejecutar_analisis_completo(video_path, tecnica_id, idioma) AnalisisResultDTO
+    }
+
+    class IngestKnowledgeUseCase {
+        <<Control>>
+        +execute(tecnica_id, contenido_texto, alcance) IngestionResponse
+    }
+
+    class DeleteTheoryUseCase {
+        <<Control>>
+        +execute(tecnica_id, profesor_id) Dict
+    }
+
+    class SessionStateManager {
+        <<Control>>
+        +crear_sesion(session_id, video_path, personas) Dict
+        +seleccionar_persona(session_id, persona_idx) Dict
+        +iniciar_operacion(session_id, tecnica_id) Dict
+        +finalizar_operacion(session_id, exito, error) Dict
+    }
+
+    class HybridRetriever {
+        <<Control>>
+        +fusionar_rrf(densos, bm25, top_k) List
+        +recuperar(query_texto, qdrant, qwen) List
+    }
+
+    class Qwen3VLRerankerCrossEncoder {
+        <<Control>>
+        +rerank_pairs(query, documents) List
+    }
+
+    class DTWComparator {
+        <<Control>>
+        +comparar_secuencias_con_dtw(seq_m, seq_a) Dict
+    }
+
+    class PoseNormalizer {
+        <<Control>>
+        +normalizar(kpts_flat) Dict
+    }
+
+    class IPromptStrategy {
+        <<Interface>>
+        +construir_prompt_evaluacion(tecnica, discrepancias, mensaje) String
+    }
+
+    %% Entidades de Dominio
+    class Usuario {
+        <<Entity>>
+        +id: UUID
+        +username: String
+        +rol: String
+        +sucursal_id: UUID
+        +estado_suscripcion: String
+    }
+
+    class Sucursal {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +latitud: Float
+        +longitud: Float
+    }
+
+    class Tecnica {
+        <<Entity>>
+        +id: UUID
+        +nombre: String
+        +nivel_cinturon: String
+        +mensaje_profesor: String
+    }
+
+    class Evaluacion {
+        <<Entity>>
+        +id: UUID
+        +alumno_id: UUID
+        +tecnica_id: UUID
+        +sucursal_id: UUID
+        +porcentaje_similitud: Float
+        +estado: String
+    }
+
+    class PatronReferencia {
+        <<Entity>>
+        +patron_id: UUID
+        +tecnica_id: UUID
+        +secuencia_3d: List
+    }
+
+    class TeoriaRAG {
+        <<Entity>>
+        +id: UUID
+        +tecnica_id: UUID
+        +fuente_nombre: String
+        +alcance: String
+    }
+
+    class AnalisisResultDTO {
+        <<Entity>>
+        +similitud: Float
+        +feedback: String
+        +frame_critico_path: String
+        +timestamp_error_segundos: Float
+    }
+
+    %% Capa de Infraestructura
+    class YOLOPoseAdapter {
+        <<Adapter>>
+        +extraer_secuencia(video_path, idx) Dict
+        +extraer_frame_y_dibujar_error(video_path, frame_idx, kpts) String
+    }
+
+    class LocalSpamFilter {
+        <<Adapter>>
+        +validar_es_jiujitsu(video_path) Boolean
+    }
+
+    class QwenEmbeddingAdapter {
+        <<Adapter>>
+        +generar_embedding_texto(texto) List
+        +generar_embedding_imagen(image, prompt) List
+    }
+
+    class LocalVLMAdapter {
+        <<Adapter>>
+        +generar_texto_feedback(prompt, frame, idioma) Dict
+        +evaluar_fidelidad_grounding(respuesta, contexto, mensaje) Dict
+    }
+
+    class PostgrestClient {
+        <<Adapter>>
+        +rpc(function_name, params) Any
+    }
+
+    class QdrantVectorAdapter {
+        <<Adapter>>
+        +guardar_patron_secuencia(tecnica_id, patron_id, secuencia) Int
+        +eliminar_por_tecnica(tecnica_id) Int
+    }
+
+    class QdrantRAGAdapter {
+        <<Adapter>>
+        +eliminar_por_manual(filename) Int
+        +eliminar_por_tecnica(tecnica_id) Int
+    }
+
+    class VideoStorage {
+        <<Adapter>>
+        +persistir_video_referencia(src) String
+        +resolver_video_estatico(raw_path) String
+        +autocurar_videos_referencia_en_arranque() Void
+    }
+
+    App ..> LoginModal : abre
+    App ..> UserProfileModal : abre
+    App ..> VideoUpload : renderiza
+    App ..> FeedbackView : renderiza
+    App ..> StudentProgress : renderiza
+    App ..> LibraryView : renderiza
+    App ..> ProfesorTecnicas : renderiza
+    App ..> AdminSucursales : renderiza
+
+    VideoUpload ..> SelectorPersonaVideo : usa
+    ProfesorTecnicas ..> TheoryManagerModal : abre
+    ProfesorTecnicas ..> GlobalKnowledgeModal : abre
+
+    AuthRoutes --> PostgrestClient : usa
+    EvaluacionesRoutes --> IntelligenceAnalysisFacade : invoca
+    EvaluacionesRoutes --> IngestKnowledgeUseCase : invoca
+    EvaluacionesRoutes --> DeleteTheoryUseCase : invoca
+    EvaluacionesRoutes --> SessionStateManager : controla
+    EvaluacionesRoutes --> LocalSpamFilter : filtra
+    EvaluacionesRoutes --> VideoStorage : resuelve videos
+    TecnicasRoutes --> PostgrestClient : usa
+    TecnicasRoutes --> VideoStorage : persiste y autocura
+    TecnicasRoutes --> QdrantVectorAdapter : guarda o purga
+    TecnicasRoutes --> QdrantRAGAdapter : purga fragmentos
+
+    IntelligenceAnalysisFacade --> YOLOPoseAdapter : usa
+    IntelligenceAnalysisFacade --> QdrantVectorAdapter : consulta
+    IntelligenceAnalysisFacade --> LocalVLMAdapter : genera y audita
+    IntelligenceAnalysisFacade --> QwenEmbeddingAdapter : vectoriza
+    IntelligenceAnalysisFacade --> DTWComparator : alinea
+    IntelligenceAnalysisFacade --> HybridRetriever : recupera
+    IntelligenceAnalysisFacade --> Qwen3VLRerankerCrossEncoder : rerank
+    IntelligenceAnalysisFacade --> IPromptStrategy : selecciona idioma
+    IntelligenceAnalysisFacade ..> AnalisisResultDTO : retorna
+
+    DTWComparator ..> PoseNormalizer : usa
+    IngestKnowledgeUseCase --> QdrantRAGAdapter : indexa
+    DeleteTheoryUseCase --> QdrantRAGAdapter : borra
+
+    Usuario "1" --> "1" Sucursal : pertenece_a
+    Usuario "1" --> "*" Evaluacion : realiza
+    Tecnica "1" --> "*" Evaluacion : evaluada_en
+    Tecnica "1" --> "*" PatronReferencia : tiene
+    Tecnica "1" --> "*" TeoriaRAG : referencia

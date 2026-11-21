@@ -1,0 +1,13 @@
+# BoT-SORT con ReID activo y buffer largo (10s @ 60fps) para desambiguar atletas en cruces
+tracker_type: botsort
+track_high_thresh: 0.25
+track_low_thresh: 0.05
+new_track_thresh: 0.35
+track_buffer: 600        # 10s @ 60fps — oclusiones largas en suelo
+match_thresh: 0.8
+fuse_score: True
+gmc_method: sparseOptFlow
+proximity_thresh: 0.5
+appearance_thresh: 0.80  # Más estricto que default (0.25) — evita swaps de apariencia
+with_reid: True          # ReID activado
+model: auto              # Usa features internas de YOLO

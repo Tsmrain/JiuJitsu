@@ -173,7 +173,12 @@ class IntelligenceAnalysisFacade:
                 ]
             dtw_distance = mejor_dtw_res.get("dtw_distance")
             dtw_normalizado = mejor_dtw_res.get("dtw_normalizado")
-            kpts_critico = secuencia_alumno[seq_alumno_critico] if 0 <= seq_alumno_critico < len(secuencia_alumno) else None
+            crit_pos = (
+                frame_idxs_alumno.index(frame_alumno_critico)
+                if frame_idxs_alumno and frame_alumno_critico in frame_idxs_alumno
+                else seq_alumno_critico
+            )
+            kpts_critico = secuencia_alumno[crit_pos] if 0 <= crit_pos < len(secuencia_alumno) else None
         elif hasattr(self.qdrant, "buscar_maxima_diferencia"):
             if esqueletos_frames is not None:
                 esqueletos_para_qdrant = esqueletos_frames

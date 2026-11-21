@@ -49,6 +49,10 @@ class Settings(BaseSettings):
 
     # Refinamiento Top-Down sobre fotograma crítico (True = más precisión en oclusiones; False = menos térmico)
     USE_TOP_DOWN: bool = True
+
+    # Umbral mínimo de cobertura de tracking para comparación video-a-video
+    # Bajar a 0.40 para videos de baja resolución donde YOLO nano pierde frames
+    MIN_COBERTURA_COMPARACION: float = 0.40
     
     # PostgreSQL / PostgREST
     POSTGREST_URL: str = "http://localhost:3000"

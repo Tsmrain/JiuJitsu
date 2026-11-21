@@ -151,19 +151,27 @@ def procesar_comparacion_video_a_video(
             secuencia_alumno = res_alumno.get("secuencia_kpts", [])
             cobertura_alumno = float(res_alumno.get("cobertura", 0.0))
             frame_idxs_alumno = res_alumno.get("frame_idxs")
+            frames_detectados_alumno = int(res_alumno.get("frames_con_persona", 0))
+            total_frames_alumno = int(res_alumno.get("total_frames", len(secuencia_alumno)))
         else:
             secuencia_alumno = res_alumno
             cobertura_alumno = 1.0
             frame_idxs_alumno = None
+            frames_detectados_alumno = len(secuencia_alumno)
+            total_frames_alumno = len(secuencia_alumno)
 
         if isinstance(res_maestro, dict):
             secuencia_maestro = res_maestro.get("secuencia_kpts", [])
             cobertura_maestro = float(res_maestro.get("cobertura", 0.0))
             frame_idxs_maestro = res_maestro.get("frame_idxs")
+            frames_detectados_maestro = int(res_maestro.get("frames_con_persona", 0))
+            total_frames_maestro = int(res_maestro.get("total_frames", len(secuencia_maestro)))
         else:
             secuencia_maestro = res_maestro
             cobertura_maestro = 1.0
             frame_idxs_maestro = None
+            frames_detectados_maestro = len(secuencia_maestro)
+            total_frames_maestro = len(secuencia_maestro)
 
         if not secuencia_alumno:
             raise ValueError("No se detectó esqueleto válido en el video del alumno.")
@@ -171,16 +179,38 @@ def procesar_comparacion_video_a_video(
         if not secuencia_maestro:
             raise ValueError("No se detectó esqueleto válido en el video del maestro.")
 
-        if cobertura_alumno < 0.65:
+        min_cobertura = float(getattr(settings, "MIN_COBERTURA_COMPARACION", 0.40))
+
+        if cobertura_alumno < min_cobertura:
+            logger.warning(
+                "Cobertura insuficiente: %.2f%% (umbral=%.2f%%) en video=%s. "
+                "Frames totales=%d, detectados=%d, persona_idx=%d",
+                cobertura_alumno * 100,
+                min_cobertura * 100,
+                path_alumno,
+                total_frames_alumno,
+                frames_detectados_alumno,
+                persona_idx_alumno,
+            )
             raise ValueError(
                 f"Cobertura insuficiente en alumno: {cobertura_alumno * 100:.1f}%. "
-                "Se requiere al menos 65%."
+                f"Se requiere al menos {min_cobertura * 100:.0f}%."
             )
 
-        if cobertura_maestro < 0.65:
+        if cobertura_maestro < min_cobertura:
+            logger.warning(
+                "Cobertura insuficiente: %.2f%% (umbral=%.2f%%) en video=%s. "
+                "Frames totales=%d, detectados=%d, persona_idx=%d",
+                cobertura_maestro * 100,
+                min_cobertura * 100,
+                path_maestro,
+                total_frames_maestro,
+                frames_detectados_maestro,
+                persona_idx_maestro,
+            )
             raise ValueError(
                 f"Cobertura insuficiente en maestro: {cobertura_maestro * 100:.1f}%. "
-                "Se requiere al menos 65%."
+                f"Se requiere al menos {min_cobertura * 100:.0f}%."
             )
 
         logger.info("Comparando secuencias con DTW...")

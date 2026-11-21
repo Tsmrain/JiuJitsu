@@ -2,7 +2,9 @@
 """Test de comparación biomecánica profesor vs alumno para 5 pares reales en ~/Desktop/Galeria."""
 import json
 import shutil
+import subprocess
 import sys
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -35,6 +37,47 @@ PARES = [
 ]
 
 
+class ThermalMonitor:
+    def __init__(self, interval_s: float = 1.0):
+        self.samples = []
+        self._stop = False
+        self._interval = interval_s
+        self._t = threading.Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self._t.start()
+
+    def _run(self):
+        while not self._stop:
+            try:
+                out = subprocess.check_output(["pmset", "-g", "therm"], text=True, timeout=2)
+                ts = round(time.time(), 2)
+                presion = "warning" if "warning" in out.lower() and "no thermal warning" not in out.lower() else "nominal"
+                self.samples.append({"t": ts, "presion": presion, "raw": out.strip()})
+            except Exception:
+                pass
+            time.sleep(self._interval)
+
+    def stop(self):
+        self._stop = True
+        self._t.join(timeout=2)
+        return self.samples
+
+
+def _sample_powermetrics() -> str:
+    try:
+        out = subprocess.check_output(
+            ["sudo", "-n", "powermetrics", "--samplers", "smc", "-n", "1", "-i", "1000"],
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=5,
+        )
+        lines = [ln for ln in out.splitlines() if any(k in ln.lower() for k in ("temp", "power", "gpu"))]
+        return "\n".join(lines).strip() or "no disponible"
+    except Exception:
+        return "no disponible (sudo -n powermetrics requiere contraseña)"
+
+
 def _flush_mps():
     if hasattr(torch, "mps") and torch.backends.mps.is_available():
         try:
@@ -46,11 +89,14 @@ def _flush_mps():
 
 def main():
     results = []
+    thermal_lines = [f"[POWERMETRICS ANTES]\n{_sample_powermetrics()}\n"]
+
     for maestro_rel, alumno_rel, tecnica in PARES:
         maestro = GALERIA / maestro_rel
         alumno = GALERIA / alumno_rel
         cid = str(uuid.uuid4())
         print(f"\n=== {tecnica} (cid={cid}) ===", flush=True)
+        mon = ThermalMonitor(interval_s=1.0)
         try:
             pa, pm, pout = rutas_comparacion(cid)
             pa.parent.mkdir(parents=True, exist_ok=True)
@@ -68,16 +114,28 @@ def main():
                 video_maestro_nombre=maestro.name,
             )
             t0 = time.time()
-            procesar_comparacion_video_a_video(
-                comparacion_id=cid,
-                tecnica_id=tecnica,
-                idioma="es",
-                persona_idx_alumno=0,
-                persona_idx_maestro=0,
-                token="dev_token",
-            )
+            mon.start()
+            try:
+                procesar_comparacion_video_a_video(
+                    comparacion_id=cid,
+                    tecnica_id=tecnica,
+                    idioma="es",
+                    persona_idx_alumno=0,
+                    persona_idx_maestro=0,
+                    token="dev_token",
+                )
+            finally:
+                samples = mon.stop()
             dt = time.time() - t0
             data = obtener_comparacion(cid, token="dev_token") or {}
+            presiones = [s["presion"] for s in samples]
+            thermal_lines.append(
+                f"[THERMAL {tecnica}] muestras={len(samples)} warning_count={presiones.count('warning')} nominal_count={presiones.count('nominal')}\n"
+                + (samples[-1]["raw"] if samples else "sin muestras")
+                + "\n"
+            )
+            print(f"[THERMAL] {len(samples)} muestras durante {tecnica} (warning={presiones.count('warning')}, nominal={presiones.count('nominal')})", flush=True)
+
             r = {
                 "tecnica": tecnica,
                 "maestro": maestro_rel,
@@ -104,8 +162,10 @@ def main():
             results.append({"tecnica": tecnica, "error": str(e)})
         _flush_mps()
 
-    (OUT / "pares.json").write_text(json.dumps(results, indent=2, ensure_ascii=False))
-    print(f"\n[OK] {OUT / 'pares.json'}")
+    thermal_lines.append(f"[POWERMETRICS DESPUES]\n{_sample_powermetrics()}\n")
+    (OUT / "thermal.log").write_text("\n".join(thermal_lines), encoding="utf-8")
+    (OUT / "pares_v2.json").write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"\n[OK] {OUT / 'pares_v2.json'} y {OUT / 'thermal.log'}")
 
 
 if __name__ == "__main__":

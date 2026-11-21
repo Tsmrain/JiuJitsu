@@ -35,6 +35,34 @@ def _limpiar_secuencia(secuencia: List[List[float]]) -> List[List[float]]:
     return arr.tolist()
 
 
+def _filtrar_frames_validos(
+    secuencia: List[List[float]],
+    frame_idxs: List[int],
+) -> Tuple[List[List[float]], List[int]]:
+    """
+    Para secuencias COCO (>= 51 dims) provenientes de video real, elimina frames
+    vacíos ([0.0]*133 por frame negro u oclusión total) preservando `frame_idxs`
+    reales, para evitar que DTW colapse cientos de frames sobre un frame en ceros.
+    Mantiene secuencias sintéticas cortas (<= 10 frames) intactas.
+    """
+    if len(secuencia) <= 10 or len(secuencia[0]) < 51:
+        return secuencia, frame_idxs
+
+    valid_pairs = []
+    for row, fidx in zip(secuencia, frame_idxs):
+        arr = np.asarray(row[:51], dtype=np.float32).reshape(17, 3)
+        if np.any((arr[:, 0] > 0) | (arr[:, 1] > 0)):
+            valid_pairs.append((row, fidx))
+
+    if not valid_pairs:
+        raise ValueError("Secuencia inválida: no contiene frames con keypoints detectados.")
+
+    if len(valid_pairs) == len(secuencia):
+        return secuencia, frame_idxs
+
+    return [p[0] for p in valid_pairs], [p[1] for p in valid_pairs]
+
+
 def _distancia_local(a: List[float], b: List[float]) -> float:
     vec_a = normalizar(a)["vector"] if len(a) >= 51 else np.asarray(a, dtype=np.float32)
     vec_b = normalizar(b)["vector"] if len(b) >= 51 else np.asarray(b, dtype=np.float32)
@@ -341,6 +369,9 @@ def comparar_secuencias_con_dtw(
         raise ValueError("frame_idxs_maestro debe tener un índice por cada frame de la secuencia maestro.")
     if len(real_f_alumno) != len(sec_alumno):
         raise ValueError("frame_idxs_alumno debe tener un índice por cada frame de la secuencia alumno.")
+
+    sec_maestro, real_f_maestro = _filtrar_frames_validos(sec_maestro, real_f_maestro)
+    sec_alumno, real_f_alumno = _filtrar_frames_validos(sec_alumno, real_f_alumno)
 
     # Proyectar secuencias crudas al espacio invariante canónico (46 dims)
     norm_maestro = [_normalizar_frame_para_dtw(f) for f in sec_maestro]

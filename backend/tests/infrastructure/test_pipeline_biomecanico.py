@@ -412,3 +412,59 @@ def test_facade_pasa_frame_stride_y_mapea_frame_real(tmp_path):
 
     assert mock_yolo.extraer_secuencia.call_args.kwargs["frame_stride"] == 2
     assert res.frame_alumno_idx in (0, 2, 4)
+
+
+def test_dtw_filtra_frames_vacios_y_evita_frame_critico_falso():
+    """TAREA 3: Un frame negro/vacío ([0]*133) no debe colapsar el warp DTW ni forzar frame_critico=4."""
+    from corpocmente.domain.biomechanics.dtw_comparator import comparar_secuencias_con_dtw
+
+    def _pose(dx: float):
+        pts = []
+        for j in range(17):
+            pts.extend([200.0 + j * 5.0 + dx, 150.0 + (j % 4) * 15.0, 0.95])
+        return pts + [0.0] * 82
+
+    seq_m = [_pose(i * 1.5) for i in range(25)]
+    seq_a = [_pose(i * 1.5) for i in range(20)]
+    # Inyectar frame vacío en alumno idx=3 (frame real 6) y discrepancia real en idx=15 (frame real 30)
+    seq_a[3] = [0.0] * 133
+    seq_a[15][6 * 3] += 120.0  # Desviación real en hombro derecho
+
+    f_m = [i * 2 for i in range(len(seq_m))]
+    f_a = [i * 2 for i in range(len(seq_a))]
+
+    res = comparar_secuencias_con_dtw(
+        seq_m, seq_a, frame_idxs_maestro=f_m, frame_idxs_alumno=f_a
+    )
+    assert res["frame_alumno_critico"] == 30
+    assert all(p["similitud_frame"] > 0.0 for p in res["alineacion"])
+
+
+def test_dtw_secuencia_toda_ceros_lanza_error():
+    """TAREA 3: Una secuencia COCO de video (>10 frames) sin keypoints válidos debe fallar explícitamente."""
+    from corpocmente.domain.biomechanics.dtw_comparator import comparar_secuencias_con_dtw
+
+    seq_vacia = [[0.0] * 133 for _ in range(15)]
+    seq_ok = [[100.0 + i, 120.0, 0.9] * 17 + [0.0] * 82 for i in range(15)]
+    with pytest.raises(ValueError, match="keypoints detectados"):
+        comparar_secuencias_con_dtw(seq_ok, seq_vacia)
+
+
+@pytest.mark.xfail(
+    reason="TAREA 4: documenta incoherencia conocida en datos v1 (dtw_normalizado=dtw_distance/max_len escala ~1/sqrt(N) vs score_similitud=mean(similitud_esqueletos)*100); pendiente confirmación de fórmula antes de modificar score_similitud.",
+    strict=True,
+)
+def test_coherencia_dtw_vs_score():
+    """Verifica que score_similitud y dtw_normalizado apunten en la misma dirección."""
+    casos = [
+        ("Americana", 0.209014, 49.34),
+        ("EscapeGuardia", 0.264757, 60.91),
+        ("Armbar_A", 0.158769, 53.51),
+        ("Armbar_B", 0.136405, 22.81),
+    ]
+    ordenados = sorted(casos, key=lambda x: x[1])
+    scores = [c[2] for c in ordenados]
+    assert scores == sorted(scores, reverse=True), (
+        f"Incoherencia métricas: {list(zip([c[0] for c in ordenados], scores))}. "
+        f"dtw_normalizado bajo debería implicar score alto."
+    )

@@ -47,7 +47,7 @@ def test_yolo_pose_adapter_data_flywheel_uncertainty(mock_yolo_class, mock_exist
     r1.keypoints = MagicMock()
     r1.keypoints.data.cpu.return_value.numpy.return_value = kpts1
 
-    mock_model.predict.return_value = [r1]
+    mock_model.track.return_value = [r1]
 
     adapter = YOLOPoseAdapter()
     

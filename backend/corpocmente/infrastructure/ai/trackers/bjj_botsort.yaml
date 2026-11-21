@@ -1,0 +1,13 @@
+# Configuración de BoT-SORT para Jiu-Jitsu (oclusiones frecuentes, cámara no fija)
+tracker_type: botsort
+track_high_thresh: 0.25   # Confianza para asociación principal (bajar a 0.2 si se pierden IDs)
+track_low_thresh: 0.05    # Confianza para asociación secundaria (recupera detecciones débiles)
+new_track_thresh: 0.35    # Confianza mínima para crear un track nuevo (evita ruido de fondo)
+track_buffer: 60          # Frames que un track perdido se mantiene "vivo" antes de borrarse
+match_thresh: 0.8         # Umbral de IoU para matching
+fuse_score: True
+gmc_method: sparseOptFlow # Compensación de movimiento de cámara (esencial para video handheld)
+proximity_thresh: 0.5     # IoU mínimo para considerar ReID
+appearance_thresh: 0.25   # Similitud de apariencia para ReID
+with_reid: False          # Empezar SIN ReID (más rápido). Activar en Tarea 4 si los IDs saltan.
+model: auto

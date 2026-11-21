@@ -321,7 +321,7 @@ def test_extraer_secuencia_con_frame_stride_y_opt_flags():
         return r
 
     mock_model = MagicMock()
-    mock_model.predict.return_value = [make_res(100.0), make_res(105.0), make_res(110.0)]
+    mock_model.track.return_value = [make_res(100.0), make_res(105.0), make_res(110.0)]
 
     adapter = YOLOPoseAdapter(colab_url="")
     adapter._get_model = MagicMock(return_value=mock_model)
@@ -329,12 +329,69 @@ def test_extraer_secuencia_con_frame_stride_y_opt_flags():
     with patch("os.path.exists", return_value=True):
         res = adapter.extraer_secuencia("dummy.mp4", persona_idx_inicial=0, frame_stride=2)
 
-    kwargs = mock_model.predict.call_args.kwargs
+    kwargs = mock_model.track.call_args.kwargs
     assert kwargs["imgsz"] == 416
     assert kwargs["half"] is True
+    assert kwargs["persist"] is True
+    assert "bjj_botsort.yaml" in kwargs["tracker"]
     assert kwargs["vid_stride"] == 2
     assert res["frame_idxs"] == [0, 2, 4]
     assert len(res["secuencia_kpts"]) == 3
+
+
+def test_extraer_secuencia_tracking_persistente_con_ids_y_idsw():
+    """TAREA 2 y 3: Verifica selección por track_id estable y detección de ID switches/fragmentación."""
+    import torch
+    from unittest.mock import patch
+
+    def make_tracked_res(detections):
+        # detections: list of (cx, tid)
+        r = MagicMock()
+        r.orig_img = np.full((480, 640, 3), 120, dtype=np.uint8)
+        arr = np.zeros((len(detections), 17, 3), dtype=np.float32)
+        xyxy = []
+        tids = []
+        confs = []
+        for idx_d, (cx, tid) in enumerate(detections):
+            for j in range(17):
+                arr[idx_d, j] = [cx + (j % 3) * 6, 150.0 + (j // 3) * 10, 0.9]
+            xyxy.append([cx - 20.0, 140.0, cx + 40.0, 300.0])
+            tids.append(tid)
+            confs.append(0.9)
+        r.keypoints = MagicMock()
+        r.keypoints.data = torch.from_numpy(arr)
+        r.boxes = MagicMock()
+        r.boxes.__len__.return_value = len(detections)
+        r.boxes.id = torch.tensor(tids, dtype=torch.int64)
+        r.boxes.xyxy = torch.tensor(xyxy, dtype=torch.float32)
+        r.boxes.conf = torch.tensor(confs, dtype=torch.float32)
+        return r
+
+    # Frame 0..3: track_id=1 en x=200 y track_id=2 en x=500
+    # Frame 2: track_id=1 ausente brevemente (fragmentación=1), sigue track_id=2 en x=500
+    mock_results = [
+        make_tracked_res([(200.0, 1), (500.0, 2)]),
+        make_tracked_res([(202.0, 1), (500.0, 2)]),
+        make_tracked_res([(500.0, 2)]),
+        make_tracked_res([(204.0, 1), (500.0, 2)]),
+    ]
+    mock_model = MagicMock()
+    mock_model.track.return_value = mock_results
+
+    adapter = YOLOPoseAdapter(colab_url="")
+    adapter._get_model = MagicMock(return_value=mock_model)
+
+    with patch("os.path.exists", return_value=True):
+        res = adapter.extraer_secuencia("dummy.mp4", persona_idx_inicial=0, track_id_objetivo=1)
+
+    assert res["track_id_seleccionado"] == 1
+    assert res["tracking_stats"]["id_principal"] == 1
+    assert res["tracking_stats"]["frames_principal"] == 3
+    assert res["tracking_stats"]["fragmentaciones"] == 1
+    assert res["tracking_stats"]["id_switches"] == 0
+    # En frame 2 no salta al ID=2 (x=500), rellena con ceros
+    assert res["secuencia_kpts"][2][0] == 0.0
+    assert 195.0 <= res["secuencia_kpts"][3][0] <= 215.0
 
 
 def test_extraer_frame_y_dibujar_error_respeta_use_top_down_false(tmp_path):

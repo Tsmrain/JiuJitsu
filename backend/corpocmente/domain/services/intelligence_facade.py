@@ -115,7 +115,17 @@ class IntelligenceAnalysisFacade:
                 frame_idxs_alumno = ext_res.get("frame_idxs")
                 if frame_idxs_alumno is not None and len(frame_idxs_alumno) != len(secuencia_alumno):
                     frame_idxs_alumno = None
-                cobertura = ext_res.get("cobertura", 0.0)
+                tracking_stats = ext_res.get("tracking_stats")
+                if tracking_stats and tracking_stats.get("perdido_definitivamente_en_frame") is not None:
+                    raise ValueError(
+                        f"El track del alumno (ID={tracking_stats.get('id_principal')}) se perdió en el frame "
+                        f"{tracking_stats.get('perdido_definitivamente_en_frame')}. Ajusta la configuración del tracker o recorta el video."
+                    )
+                cobertura = (
+                    float(tracking_stats.get("cobertura_principal", ext_res.get("cobertura", 0.0)))
+                    if tracking_stats
+                    else ext_res.get("cobertura", 0.0)
+                )
                 total_frames = ext_res.get("total_frames", 0)
                 if isinstance(total_frames, (int, float)) and isinstance(cobertura, (int, float)):
                     if total_frames == 0 or cobertura < 0.40:

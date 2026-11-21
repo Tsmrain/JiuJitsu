@@ -109,14 +109,18 @@ def procesar_comparacion_video_a_video(
     persona_idx_alumno: int = 0,
     persona_idx_maestro: int = 0,
     token: Optional[str] = None,
+    track_id_alumno: Optional[int] = None,
+    track_id_maestro: Optional[int] = None,
+    tracker_name: str = "bjj_botsort.yaml",
 ) -> None:
     """
     Tarea de fondo:
     1. Lee videos del alumno y maestro.
-    2. Extrae secuencias de keypoints con YOLO Pose.
-    3. Compara con DTW.
-    4. Genera video side-by-side.
-    5. Persiste resultado.
+    2. Extrae secuencias de keypoints con YOLO Pose + tracking persistente.
+    3. Valida track_id y cobertura mínima.
+    4. Compara con DTW.
+    5. Genera video side-by-side.
+    6. Persiste resultado.
     """
     path_alumno, path_maestro, path_output = rutas_comparacion(comparacion_id)
 
@@ -133,26 +137,33 @@ def procesar_comparacion_video_a_video(
         frame_stride = max(1, int(getattr(settings, "FRAME_STRIDE", 1)))
         yolo = YOLOPoseAdapter()
 
-        logger.info("Extrayendo pose del alumno: %s (stride=%d)", path_alumno, frame_stride)
+        logger.info("Extrayendo pose del alumno: %s (stride=%d, tracker=%s)", path_alumno, frame_stride, tracker_name)
         res_alumno = yolo.extraer_secuencia(
             str(path_alumno),
             persona_idx_inicial=persona_idx_alumno,
             frame_stride=frame_stride,
+            tracker_name=tracker_name,
+            track_id_objetivo=track_id_alumno,
         )
 
-        logger.info("Extrayendo pose del maestro: %s (stride=%d)", path_maestro, frame_stride)
+        logger.info("Extrayendo pose del maestro: %s (stride=%d, tracker=%s)", path_maestro, frame_stride, tracker_name)
         res_maestro = yolo.extraer_secuencia(
             str(path_maestro),
             persona_idx_inicial=persona_idx_maestro,
             frame_stride=frame_stride,
+            tracker_name=tracker_name,
+            track_id_objetivo=track_id_maestro,
         )
 
+        tracking_alumno = None
+        tracking_maestro = None
         if isinstance(res_alumno, dict):
             secuencia_alumno = res_alumno.get("secuencia_kpts", [])
             cobertura_alumno = float(res_alumno.get("cobertura", 0.0))
             frame_idxs_alumno = res_alumno.get("frame_idxs")
             frames_detectados_alumno = int(res_alumno.get("frames_con_persona", 0))
             total_frames_alumno = int(res_alumno.get("total_frames", len(secuencia_alumno)))
+            tracking_alumno = res_alumno.get("tracking_stats")
         else:
             secuencia_alumno = res_alumno
             cobertura_alumno = 1.0
@@ -166,12 +177,52 @@ def procesar_comparacion_video_a_video(
             frame_idxs_maestro = res_maestro.get("frame_idxs")
             frames_detectados_maestro = int(res_maestro.get("frames_con_persona", 0))
             total_frames_maestro = int(res_maestro.get("total_frames", len(secuencia_maestro)))
+            tracking_maestro = res_maestro.get("tracking_stats")
         else:
             secuencia_maestro = res_maestro
             cobertura_maestro = 1.0
             frame_idxs_maestro = None
             frames_detectados_maestro = len(secuencia_maestro)
             total_frames_maestro = len(secuencia_maestro)
+
+        if comparacion_id in _STORE:
+            _STORE[comparacion_id].update({
+                "tracking_alumno": tracking_alumno,
+                "tracking_maestro": tracking_maestro,
+            })
+
+        if (
+            path_alumno.resolve() == path_maestro.resolve()
+            and tracking_alumno
+            and tracking_maestro
+            and tracking_alumno.get("id_principal") is not None
+            and tracking_alumno.get("id_principal") == tracking_maestro.get("id_principal")
+        ):
+            raise ValueError(
+                f"Colisión de track_id={tracking_alumno.get('id_principal')} para alumno y maestro en el mismo video."
+            )
+
+        if tracking_alumno and tracking_alumno.get("perdido_definitivamente_en_frame") is not None:
+            raise ValueError(
+                f"El track del alumno (ID={tracking_alumno.get('id_principal')}) se perdió en el frame "
+                f"{tracking_alumno.get('perdido_definitivamente_en_frame')}. Ajusta la configuración del tracker o recorta el video."
+            )
+
+        if tracking_maestro and tracking_maestro.get("perdido_definitivamente_en_frame") is not None:
+            raise ValueError(
+                f"El track del maestro (ID={tracking_maestro.get('id_principal')}) se perdió en el frame "
+                f"{tracking_maestro.get('perdido_definitivamente_en_frame')}. Ajusta la configuración del tracker o recorta el video."
+            )
+
+        if tracking_alumno:
+            cobertura_alumno_eval = float(tracking_alumno.get("cobertura_principal", cobertura_alumno))
+        else:
+            cobertura_alumno_eval = cobertura_alumno
+
+        if tracking_maestro:
+            cobertura_maestro_eval = float(tracking_maestro.get("cobertura_principal", cobertura_maestro))
+        else:
+            cobertura_maestro_eval = cobertura_maestro
 
         if not secuencia_alumno:
             raise ValueError("No se detectó esqueleto válido en el video del alumno.")
@@ -181,11 +232,11 @@ def procesar_comparacion_video_a_video(
 
         min_cobertura = float(getattr(settings, "MIN_COBERTURA_COMPARACION", 0.40))
 
-        if cobertura_alumno < min_cobertura:
+        if cobertura_alumno_eval < min_cobertura:
             logger.warning(
                 "Cobertura insuficiente: %.2f%% (umbral=%.2f%%) en video=%s. "
                 "Frames totales=%d, detectados=%d, persona_idx=%d",
-                cobertura_alumno * 100,
+                cobertura_alumno_eval * 100,
                 min_cobertura * 100,
                 path_alumno,
                 total_frames_alumno,
@@ -193,15 +244,15 @@ def procesar_comparacion_video_a_video(
                 persona_idx_alumno,
             )
             raise ValueError(
-                f"Cobertura insuficiente en alumno: {cobertura_alumno * 100:.1f}%. "
+                f"Cobertura insuficiente en alumno: {cobertura_alumno_eval * 100:.1f}%. "
                 f"Se requiere al menos {min_cobertura * 100:.0f}%."
             )
 
-        if cobertura_maestro < min_cobertura:
+        if cobertura_maestro_eval < min_cobertura:
             logger.warning(
                 "Cobertura insuficiente: %.2f%% (umbral=%.2f%%) en video=%s. "
                 "Frames totales=%d, detectados=%d, persona_idx=%d",
-                cobertura_maestro * 100,
+                cobertura_maestro_eval * 100,
                 min_cobertura * 100,
                 path_maestro,
                 total_frames_maestro,
@@ -209,7 +260,7 @@ def procesar_comparacion_video_a_video(
                 persona_idx_maestro,
             )
             raise ValueError(
-                f"Cobertura insuficiente en maestro: {cobertura_maestro * 100:.1f}%. "
+                f"Cobertura insuficiente en maestro: {cobertura_maestro_eval * 100:.1f}%. "
                 f"Se requiere al menos {min_cobertura * 100:.0f}%."
             )
 
@@ -240,6 +291,12 @@ def procesar_comparacion_video_a_video(
         ]
         if len(alineacion_para_guardar) > 2000:
             alineacion_para_guardar = resumen_alineacion(alineacion_para_guardar, max_items=240)
+
+        if comparacion_id in _STORE:
+            _STORE[comparacion_id].update({
+                "tracking_alumno": tracking_alumno,
+                "tracking_maestro": tracking_maestro,
+            })
 
         _actualizar_row(
             comparacion_id,

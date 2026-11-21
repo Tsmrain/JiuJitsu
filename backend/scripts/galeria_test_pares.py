@@ -88,14 +88,20 @@ def _flush_mps():
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tracker", default="bjj_botsort.yaml")
+    parser.add_argument("--out-json", default="pares_v3.json")
+    args = parser.parse_args()
+
     results = []
-    thermal_lines = [f"[POWERMETRICS ANTES]\n{_sample_powermetrics()}\n"]
+    thermal_lines = [f"[POWERMETRICS ANTES ({args.tracker})]\n{_sample_powermetrics()}\n"]
 
     for maestro_rel, alumno_rel, tecnica in PARES:
         maestro = GALERIA / maestro_rel
         alumno = GALERIA / alumno_rel
         cid = str(uuid.uuid4())
-        print(f"\n=== {tecnica} (cid={cid}) ===", flush=True)
+        print(f"\n=== {tecnica} [tracker={args.tracker}] (cid={cid}) ===", flush=True)
         mon = ThermalMonitor(interval_s=1.0)
         try:
             pa, pm, pout = rutas_comparacion(cid)
@@ -123,11 +129,29 @@ def main():
                     persona_idx_alumno=0,
                     persona_idx_maestro=0,
                     token="dev_token",
+                    tracker_name=args.tracker,
                 )
             finally:
                 samples = mon.stop()
             dt = time.time() - t0
             data = obtener_comparacion(cid, token="dev_token") or {}
+            t_alu = data.get("tracking_alumno") or {}
+            t_mae = data.get("tracking_maestro") or {}
+            for role_label, vname, st in [("Alumno", alumno_rel, t_alu), ("Maestro", maestro_rel, t_mae)]:
+                print(
+                    f"[TRACKING] ({role_label}) Video: {vname}\n"
+                    f"  - IDs detectados: {st.get('ids_detectados', [])}\n"
+                    f"  - ID principal (más frames): {st.get('id_principal')} "
+                    f"(presente en {st.get('frames_principal', 0)}/{st.get('frames_no_negros', 0)} frames = "
+                    f"{round(float(st.get('cobertura_principal', 0.0)) * 100, 1)}%)\n"
+                    f"  - ID switches del principal: {st.get('id_switches', 0)} "
+                    f"(frames={st.get('id_switch_frames', [])})\n"
+                    f"  - Fragmentación: {st.get('fragmentaciones', 0)} "
+                    f"(intervalos={st.get('fragmentacion_intervalos', [])})\n"
+                    f"  - Pérdida definitiva en frame: {st.get('perdido_definitivamente_en_frame')}",
+                    flush=True,
+                )
+
             presiones = [s["presion"] for s in samples]
             thermal_lines.append(
                 f"[THERMAL {tecnica}] muestras={len(samples)} warning_count={presiones.count('warning')} nominal_count={presiones.count('nominal')}\n"
@@ -148,6 +172,8 @@ def main():
                 "frame_alumno_critico": data.get("frame_alumno_critico"),
                 "frame_maestro_critico": data.get("frame_maestro_critico"),
                 "articulaciones_criticas": data.get("articulaciones_criticas"),
+                "tracking_alumno": t_alu,
+                "tracking_maestro": t_mae,
                 "error_message": data.get("error_message"),
                 "tiempo_total_s": round(dt, 2),
                 "video_output_existe": pout.exists(),
@@ -162,10 +188,10 @@ def main():
             results.append({"tecnica": tecnica, "error": str(e)})
         _flush_mps()
 
-    thermal_lines.append(f"[POWERMETRICS DESPUES]\n{_sample_powermetrics()}\n")
+    thermal_lines.append(f"[POWERMETRICS DESPUES ({args.tracker})]\n{_sample_powermetrics()}\n")
     (OUT / "thermal.log").write_text("\n".join(thermal_lines), encoding="utf-8")
-    (OUT / "pares_v2.json").write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"\n[OK] {OUT / 'pares_v2.json'} y {OUT / 'thermal.log'}")
+    (OUT / args.out_json).write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"\n[OK] {OUT / args.out_json} y {OUT / 'thermal.log'}")
 
 
 if __name__ == "__main__":

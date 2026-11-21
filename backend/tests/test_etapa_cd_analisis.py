@@ -221,7 +221,7 @@ def test_tracking_desplazamiento_y_oclusion_parcial():
         mock_cap_class.return_value = mock_cap
 
         mock_yolo_instance = MagicMock()
-        mock_yolo_instance.predict.return_value = mock_results
+        mock_yolo_instance.track.return_value = mock_results
         mock_yolo_class.return_value = mock_yolo_instance
 
         res = adapter.extraer_secuencia(

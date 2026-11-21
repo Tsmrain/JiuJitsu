@@ -282,3 +282,133 @@ def test_top_down_aisla_por_kmeans_si_caja_supera_40_porciento():
     crop_arg = mock_model.predict.call_args_list[1].kwargs["source"]
     # El ancho del recorte aislado debe haberse reducido a <= 40% de 1000px (<= 400px)
     assert crop_arg.shape[1] <= 400
+
+
+def test_pose_model_priority_prefers_generic_nano_over_finetuned_and_medium(tmp_path):
+    """TAREA 1 y 2: Genérico yolo26n-pose.pt debe tener mayor prioridad que finetuned y medium."""
+    from pathlib import Path
+    repo_root = tmp_path / "repo"
+    models_dir = tmp_path / "models"
+    (repo_root / "backend").mkdir(parents=True)
+    models_dir.mkdir(parents=True)
+
+    candidates = YOLOPoseAdapter._pose_model_candidates(repo_root, models_dir)
+    idx_generic_backend = candidates.index(str(repo_root / "backend" / "yolo26n-pose.pt"))
+    idx_autonomous = candidates.index(str(repo_root / "yolo26n_autonomous.pt"))
+    idx_americana = candidates.index(str(repo_root / "yolo26n_americana.pt"))
+    idx_medium = candidates.index(str(models_dir / "yolo26m-pose.pt"))
+
+    assert idx_generic_backend < idx_autonomous < idx_medium
+    assert idx_generic_backend < idx_americana < idx_medium
+
+    selected_path = YOLOPoseAdapter()._get_model().path
+    assert "yolo26n-pose.pt" in str(selected_path)
+
+
+def test_extraer_secuencia_con_frame_stride_y_opt_flags():
+    """TAREA 3 y 4: Verifica vid_stride, imgsz=416, half=True y preservación de frame_idxs reales."""
+    import torch
+    from unittest.mock import patch
+
+    def make_res(cx):
+        r = MagicMock()
+        r.boxes = None
+        arr = np.zeros((1, 17, 3), dtype=np.float32)
+        for j in range(17):
+            arr[0, j] = [cx + (j % 3) * 4, 200.0 + (j // 3) * 4, 0.9]
+        r.keypoints = MagicMock()
+        r.keypoints.data = torch.from_numpy(arr)
+        return r
+
+    mock_model = MagicMock()
+    mock_model.predict.return_value = [make_res(100.0), make_res(105.0), make_res(110.0)]
+
+    adapter = YOLOPoseAdapter(colab_url="")
+    adapter._get_model = MagicMock(return_value=mock_model)
+
+    with patch("os.path.exists", return_value=True):
+        res = adapter.extraer_secuencia("dummy.mp4", persona_idx_inicial=0, frame_stride=2)
+
+    kwargs = mock_model.predict.call_args.kwargs
+    assert kwargs["imgsz"] == 416
+    assert kwargs["half"] is True
+    assert kwargs["vid_stride"] == 2
+    assert res["frame_idxs"] == [0, 2, 4]
+    assert len(res["secuencia_kpts"]) == 3
+
+
+def test_extraer_frame_y_dibujar_error_respeta_use_top_down_false(tmp_path):
+    """TAREA 5: Cuando USE_TOP_DOWN=False no debe ejecutar _refinar_keypoints_top_down."""
+    from unittest.mock import patch
+    from corpocmente.config import settings
+
+    video_path = str(tmp_path / "test_td.mp4")
+    output_path = str(tmp_path / "critico_td.jpg")
+    _crear_video_prueba(video_path, num_frames=2)
+
+    kpts = []
+    for _ in range(17):
+        kpts.extend([0.5, 0.5, 0.9])
+    kpts.extend([0.0] * (133 - len(kpts)))
+
+    adapter = YOLOPoseAdapter(colab_url="")
+    with patch.object(settings, "USE_TOP_DOWN", False), \
+         patch.object(adapter, "_refinar_keypoints_top_down") as mock_td:
+        res_path = adapter.extraer_frame_y_dibujar_error(
+            video_path=video_path,
+            frame_idx=0,
+            keypoints133=kpts,
+            articulaciones_criticas=[13],
+            output_path=output_path,
+        )
+        assert os.path.exists(res_path)
+        mock_td.assert_not_called()
+
+
+def test_facade_pasa_frame_stride_y_mapea_frame_real(tmp_path):
+    """TAREA 4: Facade usa FRAME_STRIDE, pasa frame_idxs a DTW y preserva frame_alumno_idx real."""
+    from unittest.mock import patch
+    from corpocmente.config import settings
+
+    video_alumno = str(tmp_path / "alumno_stride.mp4")
+    _crear_video_prueba(video_alumno, num_frames=6)
+
+    def _valid_frame(offset: float):
+        pts = []
+        for j in range(17):
+            pts.extend([0.3 + j * 0.01 + offset, 0.4 + j * 0.01, 0.95])
+        pts.extend([0.0] * (133 - len(pts)))
+        return pts
+
+    ref_seq = [_valid_frame(0.0) for _ in range(6)]
+    alu_seq = [_valid_frame(0.0), _valid_frame(0.15), _valid_frame(0.02)]
+
+    mock_yolo = MagicMock()
+    mock_yolo.extraer_secuencia.return_value = {
+        "secuencia_kpts": alu_seq,
+        "frame_idxs": [0, 2, 4],
+        "total_frames": 3,
+        "frames_con_persona": 3,
+        "cobertura": 1.0,
+    }
+    mock_qdrant = MagicMock()
+    mock_qdrant.obtener_todas_secuencias_referencia.return_value = [ref_seq]
+    mock_qdrant.recuperar_contexto_rag.return_value = ""
+    mock_gemini = MagicMock()
+    mock_gemini.generar_texto_feedback.return_value = "Feedback ok."
+
+    facade = IntelligenceAnalysisFacade(
+        yolo_adapter=mock_yolo,
+        qdrant_adapter=mock_qdrant,
+        gemini_adapter=mock_gemini,
+    )
+    with patch.object(settings, "FRAME_STRIDE", 2):
+        res = facade.ejecutar_analisis_completo(
+            video_path=video_alumno,
+            tecnica_id=uuid4(),
+            tecnica_nombre="Americana",
+            evaluacion_id="test-stride",
+        )
+
+    assert mock_yolo.extraer_secuencia.call_args.kwargs["frame_stride"] == 2
+    assert res.frame_alumno_idx in (0, 2, 4)

@@ -89,21 +89,32 @@ class IntelligenceAnalysisFacade:
                 logger.warning(f"No se pudo auto-ingerir video de referencia del profesor: {e_ref}")
 
         secuencia_alumno = None
+        frame_idxs_alumno = None
         if hasattr(self.yolo, "extraer_secuencia"):
+            try:
+                from corpocmente.config import settings
+                frame_stride = max(1, int(getattr(settings, "FRAME_STRIDE", 1)))
+            except Exception:
+                frame_stride = 1
             logger.info(
-                "[INTEGRACION] Facade -> extraer_secuencia video=%s persona_idx=%s patrones_ref=%d",
+                "[INTEGRACION] Facade -> extraer_secuencia video=%s persona_idx=%s patrones_ref=%d frame_stride=%d",
                 video_path,
                 persona_idx,
                 len(secuencias_referencia),
+                frame_stride,
             )
             ext_res = self.yolo.extraer_secuencia(
                 video_path,
                 persona_idx_inicial=persona_idx,
                 evaluacion_id=str(evaluacion_id) if evaluacion_id else None,
-                tecnica_id=str(tecnica_id) if tecnica_id else None
+                tecnica_id=str(tecnica_id) if tecnica_id else None,
+                frame_stride=frame_stride,
             )
             if isinstance(ext_res, dict):
                 secuencia_alumno = ext_res.get("secuencia_kpts", [])
+                frame_idxs_alumno = ext_res.get("frame_idxs")
+                if frame_idxs_alumno is not None and len(frame_idxs_alumno) != len(secuencia_alumno):
+                    frame_idxs_alumno = None
                 cobertura = ext_res.get("cobertura", 0.0)
                 total_frames = ext_res.get("total_frames", 0)
                 if isinstance(total_frames, (int, float)) and isinstance(cobertura, (int, float)):
@@ -125,7 +136,11 @@ class IntelligenceAnalysisFacade:
             logger.info("Comparando video del alumno contra %d patrón(es) de referencia activo(s) para técnica %s", len(secuencias_referencia), tecnica_id)
             for idx_ref, sec_ref in enumerate(secuencias_referencia):
                 try:
-                    dtw_cand = comparar_secuencias_con_dtw(sec_ref, secuencia_alumno)
+                    dtw_cand = comparar_secuencias_con_dtw(
+                        sec_ref,
+                        secuencia_alumno,
+                        frame_idxs_alumno=frame_idxs_alumno,
+                    )
                     score_cand = dtw_cand.get("score_similitud", 0.0)
                     logger.debug("Patrón ref #%d: score_similitud = %.2f%%", idx_ref + 1, score_cand)
                     if mejor_dtw_res is None or score_cand > mejor_dtw_res.get("score_similitud", -1.0):
@@ -136,6 +151,7 @@ class IntelligenceAnalysisFacade:
         if mejor_dtw_res:
             similitud = mejor_dtw_res["score_similitud"]
             frame_alumno_critico = mejor_dtw_res["frame_alumno_critico"]
+            seq_alumno_critico = mejor_dtw_res.get("seq_alumno_critico", frame_alumno_critico)
             arts_criticas = mejor_dtw_res.get("articulaciones_criticas", [])
             from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
             nombres_arts = obtener_nombres_articulaciones(arts_criticas, idioma=idioma)
@@ -157,7 +173,7 @@ class IntelligenceAnalysisFacade:
                 ]
             dtw_distance = mejor_dtw_res.get("dtw_distance")
             dtw_normalizado = mejor_dtw_res.get("dtw_normalizado")
-            kpts_critico = secuencia_alumno[frame_alumno_critico] if frame_alumno_critico < len(secuencia_alumno) else None
+            kpts_critico = secuencia_alumno[seq_alumno_critico] if 0 <= seq_alumno_critico < len(secuencia_alumno) else None
         elif hasattr(self.qdrant, "buscar_maxima_diferencia"):
             if esqueletos_frames is not None:
                 esqueletos_para_qdrant = esqueletos_frames
@@ -167,7 +183,12 @@ class IntelligenceAnalysisFacade:
                     vec = list(kp)
                     if len(vec) < 133:
                         vec.extend([0.0] * (133 - len(vec)))
-                    esqueletos_para_qdrant.append(EsqueletoBiomecanico(frame_idx=i, keypoints133=vec[:133], angulos_articulares={}))
+                    real_idx = (
+                        frame_idxs_alumno[i]
+                        if frame_idxs_alumno and i < len(frame_idxs_alumno)
+                        else i
+                    )
+                    esqueletos_para_qdrant.append(EsqueletoBiomecanico(frame_idx=real_idx, keypoints133=vec[:133], angulos_articulares={}))
             resultado_comparacion = self.qdrant.buscar_maxima_diferencia(esqueletos_para_qdrant, tecnica_id)
             similitud = resultado_comparacion.score
             frame_alumno_critico = getattr(resultado_comparacion, "frame_alumno_idx", 0) or 0

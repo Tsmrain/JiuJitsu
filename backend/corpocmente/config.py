@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     
     # Visión por Computadora: YOLO Segmentation multi-etapa (Opcional, default False)
     USE_SEGMENTATION: bool = False
+
+    # Submuestreo temporal del pipeline de video (1 = todos los frames; 2 = mitad; 3 = tercio)
+    FRAME_STRIDE: int = 2
+
+    # Refinamiento Top-Down sobre fotograma crítico (True = más precisión en oclusiones; False = menos térmico)
+    USE_TOP_DOWN: bool = True
     
     # PostgreSQL / PostgREST
     POSTGREST_URL: str = "http://localhost:3000"

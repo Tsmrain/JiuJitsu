@@ -129,18 +129,22 @@ def procesar_comparacion_video_a_video(
         if not path_maestro.exists():
             raise FileNotFoundError(f"Video del maestro no encontrado: {path_maestro}")
 
+        from corpocmente.config import settings
+        frame_stride = max(1, int(getattr(settings, "FRAME_STRIDE", 1)))
         yolo = YOLOPoseAdapter()
 
-        logger.info("Extrayendo pose del alumno: %s", path_alumno)
+        logger.info("Extrayendo pose del alumno: %s (stride=%d)", path_alumno, frame_stride)
         res_alumno = yolo.extraer_secuencia(
             str(path_alumno),
             persona_idx_inicial=persona_idx_alumno,
+            frame_stride=frame_stride,
         )
 
-        logger.info("Extrayendo pose del maestro: %s", path_maestro)
+        logger.info("Extrayendo pose del maestro: %s (stride=%d)", path_maestro, frame_stride)
         res_maestro = yolo.extraer_secuencia(
             str(path_maestro),
             persona_idx_inicial=persona_idx_maestro,
+            frame_stride=frame_stride,
         )
 
         if isinstance(res_alumno, dict):

@@ -6,6 +6,7 @@ import json
 import mimetypes
 from datetime import datetime, timezone
 from pathlib import Path
+import torch
 from corpocmente.domain.entities.models import EsqueletoBiomecanico
 
 logger = logging.getLogger(__name__)
@@ -156,7 +157,6 @@ class YOLOPoseAdapter:
 
         # Determinismo estricto para inferencia y seguimiento reproducible
         try:
-            import torch
             torch.use_deterministic_algorithms(True, warn_only=True)
             if hasattr(torch.backends, "mps") and hasattr(torch.backends.mps, "deterministic"):
                 torch.backends.mps.deterministic = True
@@ -241,7 +241,6 @@ class YOLOPoseAdapter:
     def _get_depth_model(self):
         if not hasattr(self, "_depth_model_cache") or self._depth_model_cache is None:
             os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/ultralytics")
-            import torch
             from ultralytics import YOLO
             _orig = torch.load
             def _safe_load(*a, **kw):
@@ -262,7 +261,6 @@ class YOLOPoseAdapter:
     def _get_seg_model(self):
         if not hasattr(self, "_seg_model_cache") or self._seg_model_cache is None:
             os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/ultralytics")
-            import torch
             from ultralytics import YOLO
             _orig = torch.load
             def _safe_load(*a, **kw):
@@ -283,66 +281,73 @@ class YOLOPoseAdapter:
             self._seg_model_cache = YOLO(weights)
         return self._seg_model_cache
 
+    @staticmethod
+    def _pose_model_candidates(repo_root: Path, models_dir: Path) -> list:
+        """Prioridad: genérico nano COCO (clase 'person' robusta) > finetuned > medium."""
+        return [
+            # 1) Genérico nano COCO — máxima precisión en identificación de personas
+            str(repo_root / "backend" / "yolo26n-pose.pt"),
+            str(models_dir / "yolo26n-pose.pt"),
+            str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
+            str(repo_root / "backend" / "storage" / "models" / "yolo26n-pose.pt"),
+            "storage/models/yolo26n-pose.pt",
+            "yolo26n-pose.pt",
+            # 2) Fallbacks finetuned (solo si el genérico no existe)
+            str(repo_root / "yolo26n_autonomous.pt"),
+            str(repo_root / "storage" / "models" / "yolo26n_autonomous.pt"),
+            str(repo_root / "yolo26n_americana.pt"),
+            str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
+            str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
+            # 3) Fallback medium solo si nano/finetuned no existen
+            str(models_dir / "yolo26m-pose.pt"),
+            str(repo_root / "backend" / "storage" / "models" / "yolo26m-pose.pt"),
+            str(repo_root / "storage" / "models" / "yolo26m-pose.pt"),
+            "yolo26m-pose.pt",
+        ]
+
     def _get_model(self):
         repo_root = Path(__file__).resolve().parents[4]
-        autonomous_path = repo_root / "yolo26n_autonomous.pt"
-        if not autonomous_path.exists():
-            autonomous_path = repo_root / "storage" / "models" / "yolo26n_autonomous.pt"
+        from corpocmente.config import storage_root
+        models_dir = storage_root() / "models"
+        models_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Hot-Swap: Si hay un modelo autónomo validado por el Gatekeeper, cargarlo en memoria sin reiniciar
-        if autonomous_path.exists():
-            current_mtime = autonomous_path.stat().st_mtime
+        candidates = self._pose_model_candidates(repo_root, models_dir)
+        selected = next((c for c in candidates if os.path.exists(c)), None)
+
+        # Hot-swap de yolo26n_autonomous.pt solo cuando no existe genérico COCO previo
+        is_autonomous = selected is not None and "yolo26n_autonomous.pt" in selected
+        if is_autonomous:
+            autonomous_mtime = Path(selected).stat().st_mtime
             if (
-                not hasattr(self, "_model_cache")
-                or self._model_cache is None
-                or getattr(self._model_cache, "path", "") != str(autonomous_path)
-                or getattr(self, "_model_mtime", None) != current_mtime
+                getattr(self, "_model_cache", None) is not None
+                and getattr(self._model_cache, "path", "") == selected
+                and getattr(self, "_model_mtime", None) == autonomous_mtime
             ):
-                import torch
-                from ultralytics import YOLO
-                _orig = torch.load
-                def _safe_load(*a, **kw):
-                    kw["weights_only"] = False
-                    return _orig(*a, **kw)
-                torch.load = _safe_load
-                self._model_cache = YOLO(str(autonomous_path))
-                self._model_cache.path = str(autonomous_path)
-                self._model_mtime = current_mtime
-                logger.info(f"🔥 Hot-Swap: Cargando modelo autónomo {autonomous_path.name}")
-            return self._model_cache
+                return self._model_cache
 
-        # 2. Fallback al modelo en producción / original
-        if (
-            not hasattr(self, "_model_cache")
-            or self._model_cache is None
-            or "yolo26n_autonomous.pt" in str(getattr(self._model_cache, "path", ""))
+        if getattr(self, "_model_cache", None) is None or (
+            is_autonomous and getattr(self._model_cache, "path", "") != selected
         ):
-            import torch
             from ultralytics import YOLO
             _orig = torch.load
             def _safe_load(*a, **kw):
                 kw["weights_only"] = False
                 return _orig(*a, **kw)
             torch.load = _safe_load
-            from corpocmente.config import storage_root
-            models_dir = storage_root() / "models"
-            models_dir.mkdir(parents=True, exist_ok=True)
-            candidates = [
-                str(models_dir / "yolo26m-pose.pt"),
-                str(repo_root / "backend" / "storage" / "models" / "yolo26m-pose.pt"),
-                str(repo_root / "storage" / "models" / "yolo26m-pose.pt"),
-                str(repo_root / "backend" / "yolo26m-pose.pt"),
-                "storage/models/yolo26m-pose.pt",
-                "yolo26m-pose.pt",
-            ]
-            weights = next((c for c in candidates if os.path.exists(c)), None)
+
+            weights = selected
             if weights is None:
                 # Descarga automática vía Ultralytics al directorio de modelos local si no existe
-                target_download = str(models_dir / "yolo26m-pose.pt")
-                logger.info("[YOLO] yolo26m-pose.pt no encontrado localmente; descargando en %s...", target_download)
+                target_download = str(models_dir / "yolo26n-pose.pt")
+                logger.info("[YOLO] yolo26n-pose.pt no encontrado localmente; descargando en %s...", target_download)
                 weights = target_download
+
+            logger.info("[YOLO] Modelo de pose seleccionado: %s", weights)
             self._model_cache = YOLO(weights)
             self._model_cache.path = str(weights)
+            if is_autonomous:
+                self._model_mtime = Path(selected).stat().st_mtime
+                logger.info(f"🔥 Hot-Swap: Cargando modelo autónomo {Path(selected).name}")
             logger.info("[YOLO] Modelo Pose cargado: %s", weights)
         return self._model_cache
 
@@ -355,6 +360,7 @@ class YOLOPoseAdapter:
         tecnica_id: Optional[str] = None,
         use_depth: bool = False,
         use_segmentation: Optional[bool] = None,
+        frame_stride: Optional[int] = None,
     ) -> dict:
         """
         Extrae la secuencia temporal completa de keypoints (133 dims por frame) usando YOLO
@@ -474,9 +480,6 @@ class YOLOPoseAdapter:
         # Intento 2: Inferencia local con YOLO Pose
         try:
             import gc
-            import torch
-            from ultralytics import YOLO
-
             import psutil
             if psutil.virtual_memory().available < 2 * 1024**3:
                 raise RuntimeError(
@@ -492,23 +495,24 @@ class YOLOPoseAdapter:
                 return _orig(*args, **kwargs)
             torch.load = _safe_load
 
-            repo_root = Path(__file__).resolve().parents[4]
-            _candidates = [
-                str(repo_root / "yolo26n_autonomous.pt"),
-                str(repo_root / "storage" / "models" / "yolo26n_autonomous.pt"),
-                str(repo_root / "yolo26n_americana.pt"),
-                str(repo_root / "storage" / "models" / "yolo26n_americana.pt"),
-                str(repo_root / "storage" / "models" / "yolo26s_bjj_pose" / "weights" / "best.pt"),
-                str(repo_root / "storage" / "models" / "yolo26n-pose.pt"),
-                str(repo_root / "backend" / "yolo26n-pose.pt"),
-                "storage/models/yolo26n-pose.pt",
-                "yolo26n-pose.pt",
-                "yolo11n-pose.pt",
-            ]
+            stride = max(1, int(frame_stride)) if frame_stride is not None else 1
+
             log_ram_usage("pre_yolo_load")
             model = self._get_model()
             log_ram_usage("post_yolo_load")
-            results = model.predict(source=video_path, stream=True, verbose=False, conf=0.10, device=_device)
+
+            # imgsz=416 + half=True: reduce ~65% de FLOPs vs 640/FP32 sin pérdida perceptible en pose BJJ
+            predict_kwargs = {
+                "source": video_path,
+                "stream": True,
+                "verbose": False,
+                "conf": 0.10,
+                "device": _device,
+                "imgsz": 416,
+                "half": True,
+            }
+            if stride > 1:
+                predict_kwargs["vid_stride"] = stride
 
             if use_segmentation is None:
                 try:
@@ -518,6 +522,7 @@ class YOLOPoseAdapter:
                     use_segmentation = os.getenv("USE_SEGMENTATION", "false").lower() == "true"
 
             secuencia_kpts = []
+            frame_idxs = []
             personas_rastreadas = {}
             personas_depth = {}
             oclusiones_detectadas = 0
@@ -537,211 +542,217 @@ class YOLOPoseAdapter:
             log_csv_path = uncertainty_base_dir / "log.csv"
             uncertainty_saved_count = 0
 
-            for f_idx, r in enumerate(results):
-                frames_evaluados += 1
+            with torch.inference_mode():
+                results = model.predict(**predict_kwargs)
+                for f_idx, r in enumerate(results):
+                    real_f_idx = f_idx * stride
+                    frames_evaluados += 1
+                    frame_idxs.append(real_f_idx)
 
-                # Data Flywheel: si la confianza promedio de las cajas es < 0.65, guardar frame (max 10 por video)
-                try:
-                    avg_box_conf = 0.0
-                    if hasattr(r, "boxes") and r.boxes is not None and len(r.boxes) > 0 and hasattr(r.boxes, "conf") and len(r.boxes.conf) > 0:
-                        avg_box_conf = float(r.boxes.conf.mean().cpu().item())
-                    elif r.keypoints is not None and len(r.keypoints.data) > 0:
-                        raw_kpts_conf = r.keypoints.data.cpu().numpy()
-                        mask_k = (raw_kpts_conf[:, :, 2] > 0)
-                        if np.any(mask_k):
-                            avg_box_conf = float(raw_kpts_conf[:, :, 2][mask_k].mean())
-
-                    if 0.0 < avg_box_conf < 0.65 and uncertainty_saved_count < 10:
-                        frame_img = getattr(r, "orig_img", None)
-                        if frame_img is not None:
-                            frame_save_path = uncertainty_dir / f"frame_{f_idx}.jpg"
-                            cv2.imwrite(str(frame_save_path), frame_img)
-                            uncertainty_saved_count += 1
-                            write_header = not log_csv_path.exists()
-                            with open(log_csv_path, "a", encoding="utf-8") as f_csv:
-                                if write_header:
-                                    f_csv.write("timestamp,tecnica_id,frame_idx,confidence,path\n")
-                                f_csv.write(f"{datetime.now(timezone.utc).isoformat()},{uncertainty_tec},{f_idx},{avg_box_conf:.4f},{frame_save_path}\n")
-                except Exception as e_flywheel:
-                    logger.debug("Data flywheel uncertainty frame error: %s", e_flywheel)
-                if r.keypoints is None or len(r.keypoints.data) == 0:
-                    secuencia_kpts.append([0.0] * 133)
-                    continue
-
-                raw = r.keypoints.data.cpu().numpy()
-                candidatos = [
-                    p for p in raw
-                    if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 4
-                ]
-
-                # Refinamiento opcional con YOLO Segmentation en oclusiones severas
-                if use_segmentation and len(candidatos) < 2 and getattr(r, "orig_img", None) is not None:
+                    # Data Flywheel: si la confianza promedio de las cajas es < 0.65, guardar frame (max 10 por video)
                     try:
-                        seg_model = self._get_seg_model()
-                        seg_res = seg_model.predict(source=r.orig_img, verbose=False, conf=0.15, classes=[0], device=_device)
-                        if seg_res and len(seg_res[0].boxes) >= 2:
-                            extra_cands = []
-                            boxes = seg_res[0].boxes.xyxy.cpu().numpy()
-                            im_h, im_w = r.orig_img.shape[:2]
-                            for b in boxes:
-                                x1, y1, x2, y2 = b
-                                pad_x = (x2 - x1) * 0.10
-                                pad_y = (y2 - y1) * 0.10
-                                cx1, cy1 = int(max(0, x1 - pad_x)), int(max(0, y1 - pad_y))
-                                cx2, cy2 = int(min(im_w, x2 + pad_x)), int(min(im_h, y2 + pad_y))
-                                crop = r.orig_img[cy1:cy2, cx1:cx2]
-                                if crop.size > 0 and crop.shape[0] >= 20 and crop.shape[1] >= 20:
-                                    p_res = model.predict(source=crop, verbose=False, conf=0.10, device=_device)
-                                    if p_res and p_res[0].keypoints is not None and len(p_res[0].keypoints.data) > 0:
-                                        for pk in p_res[0].keypoints.data.cpu().numpy():
-                                            gk = pk.copy()
-                                            gk[:, 0] += cx1
-                                            gk[:, 1] += cy1
-                                            if (gk[:, 2] > 0.3).sum() >= 4:
-                                                extra_cands.append(gk)
-                            if len(extra_cands) >= 2:
-                                candidatos = extra_cands
-                    except Exception as e_seg:
-                        logger.debug("Error en segmentación multi-etapa: %s", e_seg)
+                        avg_box_conf = 0.0
+                        if hasattr(r, "boxes") and r.boxes is not None and len(r.boxes) > 0 and hasattr(r.boxes, "conf") and len(r.boxes.conf) > 0:
+                            avg_box_conf = float(r.boxes.conf.mean().cpu().item())
+                        elif r.keypoints is not None and len(r.keypoints.data) > 0:
+                            raw_kpts_conf = r.keypoints.data.cpu().numpy()
+                            mask_k = (raw_kpts_conf[:, :, 2] > 0)
+                            if np.any(mask_k):
+                                avg_box_conf = float(raw_kpts_conf[:, :, 2][mask_k].mean())
 
-                if not candidatos:
-                    secuencia_kpts.append([0.0] * 133)
-                    continue
+                        if 0.0 < avg_box_conf < 0.65 and uncertainty_saved_count < 10:
+                            frame_img = getattr(r, "orig_img", None)
+                            if frame_img is not None:
+                                frame_save_path = uncertainty_dir / f"frame_{real_f_idx}.jpg"
+                                cv2.imwrite(str(frame_save_path), frame_img)
+                                uncertainty_saved_count += 1
+                                write_header = not log_csv_path.exists()
+                                with open(log_csv_path, "a", encoding="utf-8") as f_csv:
+                                    if write_header:
+                                        f_csv.write("timestamp,tecnica_id,frame_idx,confidence,path\n")
+                                    f_csv.write(f"{datetime.now(timezone.utc).isoformat()},{uncertainty_tec},{real_f_idx},{avg_box_conf:.4f},{frame_save_path}\n")
+                    except Exception as e_flywheel:
+                        logger.debug("Data flywheel uncertainty frame error: %s", e_flywheel)
+                    if r.keypoints is None or len(r.keypoints.data) == 0:
+                        secuencia_kpts.append([0.0] * 133)
+                        continue
 
-                # Filtrar reflejos de espejos o figuras distantes diminutas
-                # Si una caja delimitadora es menor al 10% del área de la caja mayor, se descarta
-                if len(candidatos) > 1:
-                    areas = []
-                    for c in candidatos:
-                        mask = (c[:, 2] > 0.3) & (c[:, 0] > 0)
-                        pts = c[mask, :2]
-                        if len(pts) >= 2:
-                            w_box = float(pts[:, 0].max() - pts[:, 0].min())
-                            h_box = float(pts[:, 1].max() - pts[:, 1].min())
-                            areas.append(w_box * h_box)
-                        else:
-                            areas.append(0.0)
-                    max_area = max(areas) if areas else 0.0
-                    if max_area > 0.0:
-                        sin_reflejos = [
-                            c for c, a in zip(candidatos, areas)
-                            if a >= 0.10 * max_area
-                        ]
-                        if sin_reflejos:
-                            candidatos = sin_reflejos
+                    raw = r.keypoints.data.cpu().numpy()
+                    candidatos = [
+                        p for p in raw
+                        if p.shape == (17, 3) and np.count_nonzero((p[:, 2] > 0.3) & (p[:, 0] > 0)) >= 4
+                    ]
 
-                # Detección y desambiguación de oclusiones por profundidad métrica (> 40% IoU)
-                cand_depths = {}
-                if use_depth and len(candidatos) > 1:
-                    cajas_cand = [self._extraer_caja_c(c) for c in candidatos]
-                    hay_superposicion = False
-                    for i in range(len(cajas_cand)):
-                        for j in range(i + 1, len(cajas_cand)):
-                            if self._calcular_iou(cajas_cand[i], cajas_cand[j]) > 0.40:
-                                hay_superposicion = True
+                    # Refinamiento opcional con YOLO Segmentation en oclusiones severas
+                    if use_segmentation and len(candidatos) < 2 and getattr(r, "orig_img", None) is not None:
+                        try:
+                            seg_model = self._get_seg_model()
+                            seg_res = seg_model.predict(source=r.orig_img, verbose=False, conf=0.15, classes=[0], device=_device)
+                            if seg_res and len(seg_res[0].boxes) >= 2:
+                                extra_cands = []
+                                boxes = seg_res[0].boxes.xyxy.cpu().numpy()
+                                im_h, im_w = r.orig_img.shape[:2]
+                                for b in boxes:
+                                    x1, y1, x2, y2 = b
+                                    pad_x = (x2 - x1) * 0.10
+                                    pad_y = (y2 - y1) * 0.10
+                                    cx1, cy1 = int(max(0, x1 - pad_x)), int(max(0, y1 - pad_y))
+                                    cx2, cy2 = int(min(im_w, x2 + pad_x)), int(min(im_h, y2 + pad_y))
+                                    crop = r.orig_img[cy1:cy2, cx1:cx2]
+                                    if crop.size > 0 and crop.shape[0] >= 20 and crop.shape[1] >= 20:
+                                        p_res = model.predict(
+                                            source=crop, verbose=False, conf=0.10, device=_device, imgsz=416, half=True
+                                        )
+                                        if p_res and p_res[0].keypoints is not None and len(p_res[0].keypoints.data) > 0:
+                                            for pk in p_res[0].keypoints.data.cpu().numpy():
+                                                gk = pk.copy()
+                                                gk[:, 0] += cx1
+                                                gk[:, 1] += cy1
+                                                if (gk[:, 2] > 0.3).sum() >= 4:
+                                                    extra_cands.append(gk)
+                                if len(extra_cands) >= 2:
+                                    candidatos = extra_cands
+                        except Exception as e_seg:
+                            logger.debug("Error en segmentación multi-etapa: %s", e_seg)
+
+                    if not candidatos:
+                        secuencia_kpts.append([0.0] * 133)
+                        continue
+
+                    # Filtrar reflejos de espejos o figuras distantes diminutas
+                    # Si una caja delimitadora es menor al 10% del área de la caja mayor, se descarta
+                    if len(candidatos) > 1:
+                        areas = []
+                        for c in candidatos:
+                            mask = (c[:, 2] > 0.3) & (c[:, 0] > 0)
+                            pts = c[mask, :2]
+                            if len(pts) >= 2:
+                                w_box = float(pts[:, 0].max() - pts[:, 0].min())
+                                h_box = float(pts[:, 1].max() - pts[:, 1].min())
+                                areas.append(w_box * h_box)
+                            else:
+                                areas.append(0.0)
+                        max_area = max(areas) if areas else 0.0
+                        if max_area > 0.0:
+                            sin_reflejos = [
+                                c for c, a in zip(candidatos, areas)
+                                if a >= 0.10 * max_area
+                            ]
+                            if sin_reflejos:
+                                candidatos = sin_reflejos
+
+                    # Detección y desambiguación de oclusiones por profundidad métrica (> 40% IoU)
+                    cand_depths = {}
+                    if use_depth and len(candidatos) > 1:
+                        cajas_cand = [self._extraer_caja_c(c) for c in candidatos]
+                        hay_superposicion = False
+                        for i in range(len(cajas_cand)):
+                            for j in range(i + 1, len(cajas_cand)):
+                                if self._calcular_iou(cajas_cand[i], cajas_cand[j]) > 0.40:
+                                    hay_superposicion = True
+                                    break
+                            if hay_superposicion:
                                 break
+
                         if hay_superposicion:
-                            break
+                            oclusiones_detectadas += 1
+                            frame_img = getattr(r, "orig_img", None)
+                            if frame_img is not None:
+                                try:
+                                    depth_model = self._get_depth_model()
+                                    depth_res = depth_model.predict(source=frame_img, verbose=False, device=_device)
+                                    if depth_res and hasattr(depth_res[0], "depth") and depth_res[0].depth is not None:
+                                        depth_map = depth_res[0].depth.data.cpu().numpy().squeeze()
+                                        H_d, W_d = depth_map.shape[:2]
+                                        for c_idx, box_c in enumerate(cajas_cand):
+                                            x1, y1 = int(max(0, min(W_d - 1, box_c[0]))), int(max(0, min(H_d - 1, box_c[1])))
+                                            x2, y2 = int(max(0, min(W_d, box_c[2]))), int(max(0, min(H_d, box_c[3])))
+                                            crop = depth_map[y1:max(y1 + 1, y2), x1:max(x1 + 1, x2)]
+                                            valid = crop[crop > 0] if crop.size > 0 else np.array([])
+                                            cand_depths[c_idx] = float(np.median(valid)) if len(valid) > 0 else 1.5
 
-                    if hay_superposicion:
-                        oclusiones_detectadas += 1
-                        frame_img = getattr(r, "orig_img", None)
-                        if frame_img is not None:
-                            try:
-                                depth_model = self._get_depth_model()
-                                depth_res = depth_model.predict(source=frame_img, verbose=False, device=_device)
-                                if depth_res and hasattr(depth_res[0], "depth") and depth_res[0].depth is not None:
-                                    depth_map = depth_res[0].depth.data.cpu().numpy().squeeze()
-                                    H_d, W_d = depth_map.shape[:2]
-                                    for c_idx, box_c in enumerate(cajas_cand):
-                                        x1, y1 = int(max(0, min(W_d - 1, box_c[0]))), int(max(0, min(H_d - 1, box_c[1])))
-                                        x2, y2 = int(max(0, min(W_d, box_c[2]))), int(max(0, min(H_d, box_c[3])))
-                                        crop = depth_map[y1:max(y1 + 1, y2), x1:max(x1 + 1, x2)]
-                                        valid = crop[crop > 0] if crop.size > 0 else np.array([])
-                                        cand_depths[c_idx] = float(np.median(valid)) if len(valid) > 0 else 1.5
+                                        for i in range(len(cajas_cand)):
+                                            for j in range(i + 1, len(cajas_cand)):
+                                                if self._calcular_iou(cajas_cand[i], cajas_cand[j]) > 0.40:
+                                                    oc_res = self._resolver_oclusion_por_profundidad(cajas_cand[i], cajas_cand[j], depth_map)
+                                                    logger.debug("Oclusión resuelta f=%d (c%d vs c%d): %s", real_f_idx, i, j, oc_res)
+                                except Exception as e_dm:
+                                    logger.debug("Error procesando profundidad en frame %d: %s", real_f_idx, e_dm)
 
-                                    for i in range(len(cajas_cand)):
-                                        for j in range(i + 1, len(cajas_cand)):
-                                            if self._calcular_iou(cajas_cand[i], cajas_cand[j]) > 0.40:
-                                                oc_res = self._resolver_oclusion_por_profundidad(cajas_cand[i], cajas_cand[j], depth_map)
-                                                logger.debug("Oclusión resuelta f=%d (c%d vs c%d): %s", f_idx, i, j, oc_res)
-                            except Exception as e_dm:
-                                logger.debug("Error procesando profundidad en frame %d: %s", f_idx, e_dm)
-
-                assigned_trackers = set()
-                if not personas_rastreadas:
-                    for c_idx, c in enumerate(candidatos):
-                        personas_rastreadas[c_idx] = c
-                        if c_idx in cand_depths:
-                            personas_depth[c_idx] = cand_depths[c_idx]
-                    assigned_trackers.update(personas_rastreadas.keys())
-                else:
-                    frame_w = w if w > 1.0 else (
-                        float(r.orig_img.shape[1]) if getattr(r, "orig_img", None) is not None else 1280.0
-                    )
-                    max_jump_px = min(0.20, float(max_disp_norm)) * frame_w if max_disp_norm > 0 else 0.20 * frame_w
-                    cost_matrix = {}
-                    for t_idx, t_pose in personas_rastreadas.items():
-                        box_t = self._extraer_caja_c(t_pose)
-                        if box_t == [0.0, 0.0, 0.0, 0.0]:
-                            continue
-                        cx_t = (box_t[0] + box_t[2]) * 0.5
-                        cy_t = (box_t[1] + box_t[3]) * 0.5
+                    assigned_trackers = set()
+                    if not personas_rastreadas:
                         for c_idx, c in enumerate(candidatos):
-                            box_c = self._extraer_caja_c(c)
-                            if box_c == [0.0, 0.0, 0.0, 0.0]:
-                                continue
-                            cx_c = (box_c[0] + box_c[2]) * 0.5
-                            cy_c = (box_c[1] + box_c[3]) * 0.5
-                            dist_centro = ((cx_c - cx_t) ** 2 + (cy_c - cy_t) ** 2) ** 0.5
-                            if dist_centro > max_jump_px:
-                                continue
-
-                            iou = self._calcular_iou(box_t, box_c)
-                            cost = 1.0 - iou
-
-                            # Penalización métrica de profundidad si hay oclusión y datos z
-                            if use_depth and t_idx in personas_depth and c_idx in cand_depths:
-                                delta_z = abs(cand_depths[c_idx] - personas_depth[t_idx])
-                                cost += 0.2 * (delta_z / 2.0)
-
-                            cost_matrix[(t_idx, c_idx)] = cost
-
-                    # Asignación estricta (Greedy match con menor costo / mayor IoU)
-                    sorted_pairs = sorted(cost_matrix.items(), key=lambda item: item[1])
-                    assigned_cands = set()
-                    new_poses = {}
-                    for (t_idx, c_idx), cost in sorted_pairs:
-                        if t_idx in assigned_trackers or c_idx in assigned_cands:
-                            continue
-                        # Umbral de asignación estricto: IoU >= 0.20 (cost <= 0.80)
-                        if cost <= 0.80:
-                            assigned_trackers.add(t_idx)
-                            assigned_cands.add(c_idx)
-                            new_poses[t_idx] = candidatos[c_idx]
+                            personas_rastreadas[c_idx] = c
                             if c_idx in cand_depths:
-                                personas_depth[t_idx] = cand_depths[c_idx]
+                                personas_depth[c_idx] = cand_depths[c_idx]
+                        assigned_trackers.update(personas_rastreadas.keys())
+                    else:
+                        frame_w = w if w > 1.0 else (
+                            float(r.orig_img.shape[1]) if getattr(r, "orig_img", None) is not None else 1280.0
+                        )
+                        max_jump_px = min(0.20, float(max_disp_norm)) * frame_w if max_disp_norm > 0 else 0.20 * frame_w
+                        cost_matrix = {}
+                        for t_idx, t_pose in personas_rastreadas.items():
+                            box_t = self._extraer_caja_c(t_pose)
+                            if box_t == [0.0, 0.0, 0.0, 0.0]:
+                                continue
+                            cx_t = (box_t[0] + box_t[2]) * 0.5
+                            cy_t = (box_t[1] + box_t[3]) * 0.5
+                            for c_idx, c in enumerate(candidatos):
+                                box_c = self._extraer_caja_c(c)
+                                if box_c == [0.0, 0.0, 0.0, 0.0]:
+                                    continue
+                                cx_c = (box_c[0] + box_c[2]) * 0.5
+                                cy_c = (box_c[1] + box_c[3]) * 0.5
+                                dist_centro = ((cx_c - cx_t) ** 2 + (cy_c - cy_t) ** 2) ** 0.5
+                                if dist_centro > max_jump_px:
+                                    continue
 
-                    for t_idx, c_pose in new_poses.items():
-                        personas_rastreadas[t_idx] = c_pose
+                                iou = self._calcular_iou(box_t, box_c)
+                                cost = 1.0 - iou
 
-                # Asignación estricta de la persona seleccionada (frozen_target_idx)
-                if frozen_target_idx in assigned_trackers:
-                    persona_actual = personas_rastreadas[frozen_target_idx]
-                    frames_con_persona += 1
-                    kpts = persona_actual.flatten().tolist()
-                    if len(kpts) < 133:
-                        kpts.extend([0.0] * (133 - len(kpts)))
-                    secuencia_kpts.append(kpts[:133])
-                else:
-                    # Oclusión severa o atleta fuera de cuadro: no saltar al oponente
-                    secuencia_kpts.append([0.0] * 133)
+                                # Penalización métrica de profundidad si hay oclusión y datos z
+                                if use_depth and t_idx in personas_depth and c_idx in cand_depths:
+                                    delta_z = abs(cand_depths[c_idx] - personas_depth[t_idx])
+                                    cost += 0.2 * (delta_z / 2.0)
+
+                                cost_matrix[(t_idx, c_idx)] = cost
+
+                        # Asignación estricta (Greedy match con menor costo / mayor IoU)
+                        sorted_pairs = sorted(cost_matrix.items(), key=lambda item: item[1])
+                        assigned_cands = set()
+                        new_poses = {}
+                        for (t_idx, c_idx), cost in sorted_pairs:
+                            if t_idx in assigned_trackers or c_idx in assigned_cands:
+                                continue
+                            # Umbral de asignación estricto: IoU >= 0.20 (cost <= 0.80)
+                            if cost <= 0.80:
+                                assigned_trackers.add(t_idx)
+                                assigned_cands.add(c_idx)
+                                new_poses[t_idx] = candidatos[c_idx]
+                                if c_idx in cand_depths:
+                                    personas_depth[t_idx] = cand_depths[c_idx]
+
+                        for t_idx, c_pose in new_poses.items():
+                            personas_rastreadas[t_idx] = c_pose
+
+                    # Asignación estricta de la persona seleccionada (frozen_target_idx)
+                    if frozen_target_idx in assigned_trackers:
+                        persona_actual = personas_rastreadas[frozen_target_idx]
+                        frames_con_persona += 1
+                        kpts = persona_actual.flatten().tolist()
+                        if len(kpts) < 133:
+                            kpts.extend([0.0] * (133 - len(kpts)))
+                        secuencia_kpts.append(kpts[:133])
+                    else:
+                        # Oclusión severa o atleta fuera de cuadro: no saltar al oponente
+                        secuencia_kpts.append([0.0] * 133)
 
             total = max(1, frames_evaluados)
             cobertura = frames_con_persona / total
             return {
                 "secuencia_kpts": secuencia_kpts,
-                "frame_idxs": list(range(len(secuencia_kpts))),
+                "frame_idxs": frame_idxs,
                 "total_frames": frames_evaluados,
                 "frames_con_persona": frames_con_persona,
                 "cobertura": round(cobertura, 4),
@@ -760,7 +771,6 @@ class YOLOPoseAdapter:
             import gc
             gc.collect()
             try:
-                import torch
                 if torch.backends.mps.is_available():
                     torch.mps.empty_cache()
             except Exception:
@@ -1078,10 +1088,11 @@ class YOLOPoseAdapter:
             return None
 
         crop = source_frame[cy1:cy2, cx1:cx2]
-        predict_kwargs = {"source": crop, "conf": 0.15, "verbose": False}
+        predict_kwargs = {"source": crop, "conf": 0.15, "verbose": False, "imgsz": 416, "half": True}
         if device is not None:
             predict_kwargs["device"] = device
-        crop_res = model.predict(**predict_kwargs)
+        with torch.inference_mode():
+            crop_res = model.predict(**predict_kwargs)
         if not crop_res or getattr(crop_res[0], "keypoints", None) is None or len(crop_res[0].keypoints.data) == 0:
             return None
 
@@ -1135,7 +1146,8 @@ class YOLOPoseAdapter:
             kpt_box = [float(min(xs)), float(min(ys)), float(max(xs)), float(max(ys))]
 
         model = self._get_model()
-        results = model.predict(source=frame, conf=0.15, verbose=False)
+        with torch.inference_mode():
+            results = model.predict(source=frame, conf=0.15, verbose=False, imgsz=416, half=True)
 
         fallback_pts: Optional[dict[int, tuple[int, int, float]]] = None
 
@@ -1250,7 +1262,13 @@ class YOLOPoseAdapter:
                 py = max(0, min(h - 1, py))
                 pts[i] = (px, py, conf)
 
-        if os.path.exists(video_path) and frame is not None:
+        try:
+            from corpocmente.config import settings
+            use_top_down = getattr(settings, "USE_TOP_DOWN", True)
+        except Exception:
+            use_top_down = True
+
+        if use_top_down and os.path.exists(video_path) and frame is not None:
             try:
                 refined_pts, fallback_pts = self._refinar_keypoints_top_down(
                     frame, pts, persona_idx=persona_idx, frame_idx=frame_idx

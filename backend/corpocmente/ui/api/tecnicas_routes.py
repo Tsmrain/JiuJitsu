@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from corpocmente.config import settings, storage_root
+from corpocmente.domain.entities.models import NombreTecnica
 from corpocmente.infrastructure.persistence.postgrest_client import PostgrestClient
 from corpocmente.infrastructure.persistence.video_storage import (
     VIDEOS_DIR as UPLOAD_DIR,
@@ -137,6 +138,64 @@ async def listar_tecnicas(profesor_id: Optional[UUID] = None):
     return resultados
 
 
+def _validar_nombre_tecnica_unico(
+    db: PostgrestClient,
+    raw_nombre: str,
+    exclude_tecnica_id: Optional[UUID] = None,
+) -> NombreTecnica:
+    """
+    Delega al Value Object de Dominio (`NombreTecnica`) la normalización legible y canónica,
+    validando que no exista otra técnica equivalente (ej. 'Montada' == 'mONTAda' == 'Llave de Brazo' == 'llavedebrazo').
+    """
+    try:
+        nombre_vo = NombreTecnica.crear(raw_nombre)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    try:
+        existentes = db.rpc("get_tecnicas_with_videos", {}) or []
+    except Exception:
+        existentes = []
+
+    seen_ids = set()
+    for row in existentes:
+        rid = str(row.get("id") or "")
+        if not rid or rid in seen_ids:
+            continue
+        seen_ids.add(rid)
+        if exclude_tecnica_id is not None and rid == str(exclude_tecnica_id):
+            continue
+        nombre_actual = row.get("nombre") or ""
+        try:
+            clave_actual = NombreTecnica.calcular_clave_canonica(nombre_actual)
+        except ValueError:
+            continue
+        if clave_actual == nombre_vo.clave_canonica:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe una técnica registrada con el nombre '{nombre_actual}'.",
+            )
+    return nombre_vo
+
+
+def _manejar_error_duplicado_tecnica(exc: Exception) -> None:
+    msg = str(exc)
+    if "DUPLICATE_TECHNIQUE:" in msg:
+        existente = msg.split("DUPLICATE_TECHNIQUE:", 1)[1].splitlines()[0].strip(" \"'")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe una técnica registrada con el nombre '{existente}'.",
+        ) from exc
+    if "uq_tecnicas_nombre_canonico" in msg or "23505" in msg or "duplicate key" in msg.lower():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una técnica registrada con un nombre equivalente.",
+        ) from exc
+
+
 @router.post("", response_model=TecnicaResponse, status_code=status.HTTP_201_CREATED)
 async def crear_tecnica(req: TecnicaCreate, background_tasks: BackgroundTasks, authorization: Optional[str] = Header(None)):
     """
@@ -145,11 +204,18 @@ async def crear_tecnica(req: TecnicaCreate, background_tasks: BackgroundTasks, a
     """
     require_staff(authorization)
     db = get_db()
-    created = db.rpc("admin_create_tecnica", {
-        "p_nombre": req.nombre,
-        "p_nivel_cinturon": req.nivel_cinturon,
-        "p_mensaje_profesor": req.mensaje_profesor,
-    })
+    nombre_vo = _validar_nombre_tecnica_unico(db, req.nombre)
+    try:
+        created = db.rpc("admin_create_tecnica", {
+            "p_nombre": nombre_vo.visible,
+            "p_nivel_cinturon": req.nivel_cinturon,
+            "p_mensaje_profesor": req.mensaje_profesor,
+        })
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _manejar_error_duplicado_tecnica(exc)
+        raise
     if not created:
         raise HTTPException(status_code=500, detail="Error creating technique.")
     c = created[0] if isinstance(created, list) else created
@@ -169,12 +235,19 @@ async def actualizar_tecnica(tecnica_id: UUID, req: TecnicaCreate, background_ta
     """
     require_staff(authorization)
     db = get_db()
-    updated = db.rpc("admin_update_tecnica", {
-        "p_tecnica_id": str(tecnica_id),
-        "p_nombre": req.nombre,
-        "p_nivel_cinturon": req.nivel_cinturon,
-        "p_mensaje_profesor": req.mensaje_profesor,
-    })
+    nombre_vo = _validar_nombre_tecnica_unico(db, req.nombre, exclude_tecnica_id=tecnica_id)
+    try:
+        updated = db.rpc("admin_update_tecnica", {
+            "p_tecnica_id": str(tecnica_id),
+            "p_nombre": nombre_vo.visible,
+            "p_nivel_cinturon": req.nivel_cinturon,
+            "p_mensaje_profesor": req.mensaje_profesor,
+        })
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _manejar_error_duplicado_tecnica(exc)
+        raise
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Technique not found.")
     c = updated[0] if isinstance(updated, list) else updated

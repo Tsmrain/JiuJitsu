@@ -23,6 +23,18 @@ const BELT_KEYS = {
   'Black': 'blackBelt',
 };
 
+function normalizarNombreVisible(nombre) {
+  return String(nombre || '').trim().replace(/\s+/g, ' ');
+}
+
+function calcularClaveCanonicaTecnica(nombre) {
+  return normalizarNombreVisible(nombre)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
 export default function ProfesorTecnicas({ user, onClose, idioma }) {
   const t = (key) => getTranslation(idioma, key);
   const getBeltLabel = (nivel) => {
@@ -213,8 +225,31 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
     }
   };
 
+  const claveNombreActual = calcularClaveCanonicaTecnica(formData.nombre);
+  const nombreInvalido = formData.nombre.trim().length > 0 && claveNombreActual.length === 0;
+  const tecnicaDuplicada = claveNombreActual
+    ? tecnicas.find(
+        (tech) =>
+          String(tech.id) !== String(editingId || '') &&
+          calcularClaveCanonicaTecnica(tech.nombre) === claveNombreActual
+      )
+    : null;
+  const duplicateErrorMessage = tecnicaDuplicada
+    ? `${t('duplicateTechniqueError') || 'Ya existe una técnica registrada con ese nombre'}: "${tecnicaDuplicada.nombre}"`
+    : '';
+
   const handleSave = async (e) => {
     e.preventDefault();
+    const nombreVisible = normalizarNombreVisible(formData.nombre);
+    const claveCanonica = calcularClaveCanonicaTecnica(nombreVisible);
+    if (!claveCanonica) {
+      alert(t('techniqueNameInvalid') || 'El nombre de la técnica debe contener al menos una letra o número.');
+      return;
+    }
+    if (tecnicaDuplicada) {
+      alert(duplicateErrorMessage);
+      return;
+    }
     if (!selectedFile && !previewUrl) {
       alert(t('mustUploadReferenceVideo') || 'Debes subir el video de referencia para esta técnica.');
       return;
@@ -239,7 +274,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         setPersonaSelection({
           tecnicaId: null,
           pendingTecnica: {
-            nombre: formData.nombre,
+            nombre: nombreVisible,
             nivel_cinturon: formData.nivel_cinturon,
             mensaje_profesor: (formData.mensaje_profesor || "").trim(),
           },
@@ -266,7 +301,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           setPersonaSelection({
             tecnicaId: editingId,
             pendingTecnica: {
-              nombre: formData.nombre,
+              nombre: nombreVisible,
               nivel_cinturon: formData.nivel_cinturon,
               mensaje_profesor: (formData.mensaje_profesor || "").trim(),
             },
@@ -284,7 +319,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
               "Authorization": `Bearer ${user.token}`
             },
             body: JSON.stringify({
-              nombre: formData.nombre,
+              nombre: nombreVisible,
               nivel_cinturon: formData.nivel_cinturon,
               mensaje_profesor: (formData.mensaje_profesor || "").trim(),
             })
@@ -335,7 +370,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
         createdTecnicaId = savedTecnica.id;
       } else if (targetTecnicaId && pendingTecnica) {
         // Si estamos editando, actualizar campos
-        await fetch(`${API_BASE}/api/v1/tecnicas/${targetTecnicaId}`, {
+        const updateRes = await fetch(`${API_BASE}/api/v1/tecnicas/${targetTecnicaId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -343,6 +378,10 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
           },
           body: JSON.stringify(pendingTecnica)
         });
+        if (!updateRes.ok) {
+          const err = await updateRes.json().catch(() => ({}));
+          throw new Error(err.detail || t('errorUpdatingTechnique') || "Error actualizando técnica.");
+        }
       }
 
       // 2. Confirmar persona seleccionada en la sesión
@@ -865,6 +904,16 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
               <div className="form-group">
                 <label>{t('techniqueName')}</label>
                 <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} placeholder={t('techniqueNamePlaceholder') || "Ej: Armbar desde la Guardia"} />
+                {tecnicaDuplicada && (
+                  <p style={{ color: '#f87171', fontSize: '0.82rem', marginTop: '0.4rem' }}>
+                    {duplicateErrorMessage}
+                  </p>
+                )}
+                {!tecnicaDuplicada && nombreInvalido && (
+                  <p style={{ color: '#f87171', fontSize: '0.82rem', marginTop: '0.4rem' }}>
+                    {t('techniqueNameInvalid') || 'El nombre de la técnica debe contener al menos una letra o número.'}
+                  </p>
+                )}
               </div>
 
               <div className="form-group">
@@ -928,7 +977,7 @@ export default function ProfesorTecnicas({ user, onClose, idioma }) {
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} disabled={saving}>
                   {t('close')}
                 </button>
-                <button type="submit" className="btn-primary" disabled={saving}>
+                <button type="submit" className="btn-primary" disabled={saving || Boolean(tecnicaDuplicada) || nombreInvalido}>
                   {saving ? t('savingTechnique') : t('saveTechnique')}
                 </button>
               </div>

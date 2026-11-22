@@ -1,6 +1,45 @@
+import re
+import unicodedata
+from dataclasses import dataclass
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from uuid import UUID
+
+
+@dataclass(frozen=True)
+class NombreTecnica:
+    """
+    Value Object de Dominio (Information Expert - Larman) para la identidad nominal de una técnica.
+    Separa el nombre visible legible (preserva espacios para UI, BM25, glosario y VLM)
+    de la clave canónica compacta sin espacios, tildes ni distinción de mayúsculas (para unicidad).
+    """
+
+    visible: str
+    clave_canonica: str
+
+    @staticmethod
+    def normalizar_visible(raw: str) -> str:
+        limpio = " ".join(str(raw or "").strip().split())
+        if not limpio:
+            raise ValueError("El nombre de la técnica no puede estar vacío.")
+        return limpio
+
+    @staticmethod
+    def calcular_clave_canonica(raw: str) -> str:
+        sin_tildes = "".join(
+            ch for ch in unicodedata.normalize("NFD", str(raw or ""))
+            if unicodedata.category(ch) != "Mn"
+        )
+        clave = re.sub(r"[^a-z0-9]+", "", sin_tildes.lower())
+        if not clave:
+            raise ValueError("El nombre de la técnica debe contener caracteres alfanuméricos válidos.")
+        return clave
+
+    @classmethod
+    def crear(cls, raw: str) -> "NombreTecnica":
+        visible = cls.normalizar_visible(raw)
+        clave = cls.calcular_clave_canonica(visible)
+        return cls(visible=visible, clave_canonica=clave)
 
 class EsqueletoBiomecanico(BaseModel):
     frame_idx: int = 0
@@ -31,8 +70,6 @@ class Evaluacion(BaseModel):
         
     def marcar_estado(self, nuevo_estado: str) -> None:
         pass
-
-from typing import List, Dict, Optional, Any
 
 class AnalisisResultDTO(BaseModel):
     model_config = {"arbitrary_types_allowed": True}

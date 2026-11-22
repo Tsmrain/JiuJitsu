@@ -24,6 +24,13 @@ class LoginRequest(BaseModel):
     username_or_email: str
     password: str
 
+def _validate_username_str(v: str) -> str:
+    v = v.strip()
+    if not re.match(r"^[a-zA-Z0-9_]+$", v):
+        raise ValueError("El nombre de usuario solo puede contener letras, números y guiones bajos (sin espacios ni caracteres especiales)")
+    return v
+
+
 class SignupRequest(BaseModel):
     nombre_completo: str
     username: str
@@ -34,10 +41,7 @@ class SignupRequest(BaseModel):
     @field_validator("username")
     @classmethod
     def validate_username(cls, v: str) -> str:
-        v = v.strip()
-        if not re.match(r"^[a-zA-Z0-9_]+$", v):
-            raise ValueError("El nombre de usuario solo puede contener letras, números y guiones bajos (sin espacios ni caracteres especiales)")
-        return v
+        return _validate_username_str(v)
 
 class LoginResponse(BaseModel):
     token: str
@@ -136,6 +140,56 @@ class UserUpdateRequest(BaseModel):
 
 class IdiomaUpdateRequest(BaseModel):
     idioma: str
+
+def _validate_email_str(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return None
+    clean = v.strip().lower()
+    if clean == "":
+        return None
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", clean):
+        raise ValueError("Formato de correo electrónico inválido.")
+    return clean
+
+
+class AdminCreateProfesorRequest(BaseModel):
+    nombre_completo: str
+    username: str
+    password: str
+    email: Optional[str] = None
+    sucursal_id: UUID
+    idioma_preferido: str = "es"
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return _validate_username_str(v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_email_str(v)
+
+class AdminUpdateProfesorRequest(BaseModel):
+    nombre_completo: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    sucursal_id: Optional[UUID] = None
+    rol: Optional[str] = None
+    idioma_preferido: Optional[str] = None
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return _validate_username_str(v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_email_str(v)
 
 
 def get_db():
@@ -608,6 +662,131 @@ async def update_usuario(user_id: UUID, req: UserUpdateRequest, authorization: O
         estado_suscripcion=sub_status,
         fecha_expiracion=exp_status
     )
+
+def _row_to_login_response(u: Dict[str, Any], token: str = "") -> LoginResponse:
+    """Convierte una fila de usuario devuelta por RPC en LoginResponse uniforme."""
+    rol = u.get("rol", "profesor")
+    sub_status = u.get("estado_suscripcion") or ("activo" if rol in ("admin", "profesor") else "pendiente")
+    return LoginResponse(
+        token=token,
+        user_id=UUID(str(u["id"])),
+        nombre_completo=u["nombre_completo"],
+        username=u["username"],
+        email=u["email"],
+        rol=rol,
+        avatar_url=u.get("avatar_url"),
+        sucursal_id=UUID(str(u["sucursal_id"])) if u.get("sucursal_id") else None,
+        sucursal_nombre=u.get("sucursal_nombre") or "Sucursal Eliminada",
+        idioma_preferido=(u.get("idioma_preferido") or "es").lower(),
+        estado_suscripcion=sub_status,
+        fecha_expiracion=str(u["fecha_expiracion"]) if u.get("fecha_expiracion") else None,
+    )
+
+@router.post("/auth/profesores", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+async def crear_profesor_admin(
+    req: AdminCreateProfesorRequest,
+    authorization: Optional[str] = Header(None),
+):
+    """Crea una nueva cuenta de Profesor activa asignada a una sucursal (solo Admin)."""
+    require_admin(authorization)
+    if not req.nombre_completo.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El nombre completo es obligatorio.")
+    if not req.password or len(req.password.strip()) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña debe tener al menos 6 caracteres.")
+
+    lang_clean = (req.idioma_preferido or "es").strip().lower()
+    if lang_clean not in ("es", "pt", "en"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Idioma no soportado. Valores permitidos: 'es', 'pt', 'en'.")
+
+    db = get_db()
+    sucursales = db.get("sucursales", {"id": f"eq.{req.sucursal_id}"})
+    if not sucursales:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sucursal no encontrada.")
+
+    usr_clean = req.username.strip()
+    usr_email = str(req.email).strip().lower() if req.email else f"{usr_clean.lower()}@corpocmente.com"
+
+    try:
+        rows = db.rpc("admin_create_profesor", {
+            "p_nombre_completo": req.nombre_completo.strip(),
+            "p_username": usr_clean,
+            "p_email": usr_email,
+            "p_password": req.password,
+            "p_sucursal_id": str(req.sucursal_id),
+            "p_rol": "profesor",
+            "p_idioma_preferido": lang_clean,
+        })
+    except Exception as e:
+        err = str(e).lower()
+        if "unique" in err or "duplicate" in err or "23505" in err:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El nombre de usuario o correo electrónico ya está registrado.",
+            )
+        raise
+
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo crear el profesor.")
+    created = rows[0] if isinstance(rows, list) else rows
+    return _row_to_login_response(created)
+
+@router.put("/auth/profesores/{user_id}", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def actualizar_profesor_admin(
+    user_id: UUID,
+    req: AdminUpdateProfesorRequest,
+    authorization: Optional[str] = Header(None),
+):
+    """Modifica nombre, usuario, correo, contraseña opcional, sucursal, idioma o rol de un profesor (solo Admin)."""
+    caller = require_admin(authorization)
+    caller_uid = str(caller.get("uid") or "")
+
+    if req.password is not None and req.password.strip() != "" and len(req.password.strip()) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña debe tener al menos 6 caracteres.")
+
+    lang_clean = None
+    if req.idioma_preferido is not None and req.idioma_preferido.strip() != "":
+        lang_clean = req.idioma_preferido.strip().lower()
+        if lang_clean not in ("es", "pt", "en"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Idioma no soportado. Valores permitidos: 'es', 'pt', 'en'.")
+
+    rol_clean = None
+    if req.rol is not None and req.rol.strip() != "":
+        rol_clean = req.rol.strip().lower()
+        if rol_clean not in ("profesor", "alumno"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rol no válido. Valores permitidos: 'profesor', 'alumno'.")
+        if str(user_id) == caller_uid:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No puedes cambiar el rol de tu propia cuenta de administrador.")
+
+    db = get_db()
+    if req.sucursal_id is not None:
+        sucursales = db.get("sucursales", {"id": f"eq.{req.sucursal_id}"})
+        if not sucursales:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sucursal no encontrada.")
+
+    try:
+        rows = db.rpc("admin_manage_profesor", {
+            "p_user_id": str(user_id),
+            "p_nombre_completo": req.nombre_completo.strip() if req.nombre_completo else None,
+            "p_username": req.username.strip() if req.username else None,
+            "p_email": str(req.email).strip().lower() if req.email else None,
+            "p_password": req.password if (req.password and req.password.strip() != "") else None,
+            "p_sucursal_id": str(req.sucursal_id) if req.sucursal_id else None,
+            "p_rol": rol_clean,
+            "p_idioma_preferido": lang_clean,
+        })
+    except Exception as e:
+        err = str(e).lower()
+        if "unique" in err or "duplicate" in err or "23505" in err:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El nombre de usuario o correo electrónico ya está registrado en otra cuenta.",
+            )
+        raise
+
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profesor no encontrado.")
+    updated = rows[0] if isinstance(rows, list) else rows
+    return _row_to_login_response(updated)
 
 @router.put("/auth/usuarios/{user_id}/idioma", response_model=Dict[str, Any], status_code=status.HTTP_200_OK)
 async def actualizar_idioma_usuario(

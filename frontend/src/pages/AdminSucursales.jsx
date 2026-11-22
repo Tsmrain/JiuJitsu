@@ -75,6 +75,17 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
   // -- USER STATES --
   const [usuarios, setUsuarios] = useState([]);
   const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+
+  // -- PROFESSOR CRUD STATES --
+  const [editingProfId, setEditingProfId] = useState(null);
+  const [profNombre, setProfNombre] = useState('');
+  const [profUsername, setProfUsername] = useState('');
+  const [profEmail, setProfEmail] = useState('');
+  const [profPassword, setProfPassword] = useState('');
+  const [profSucursalId, setProfSucursalId] = useState('');
+  const [profIdioma, setProfIdioma] = useState('es');
+  const [savingProf, setSavingProf] = useState(false);
+  const [profFeedback, setProfFeedback] = useState(null);
   
   // Form fields
   const [nombre, setNombre] = useState('');
@@ -167,8 +178,18 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
 
   useEffect(() => {
     if (activeTab === 'sucursales') fetchSucursales();
+    if (activeTab === 'profesores') {
+      fetchSucursales();
+      fetchUsuarios();
+    }
     if (activeTab === 'usuarios') fetchUsuarios();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!profSucursalId && sucursales.length > 0) {
+      setProfSucursalId(sucursales[0].id);
+    }
+  }, [sucursales, profSucursalId]);
 
   // 2. Inyección dinámica de Leaflet (OpenStreetMap 100% Gratis sin API Key)
   useEffect(() => {
@@ -425,6 +446,7 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
       }
 
       if (res.ok) {
+        if (editingProfId === targetUser.user_id) resetProfForm();
         fetchUsuarios();
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -432,6 +454,111 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
       }
     } catch (e) {
       console.error("Error deleting user:", e);
+      alert(t('connectionError'));
+    }
+  };
+
+  const resetProfForm = () => {
+    setEditingProfId(null);
+    setProfNombre('');
+    setProfUsername('');
+    setProfEmail('');
+    setProfPassword('');
+    setProfSucursalId(sucursales[0]?.id || '');
+    setProfIdioma('es');
+    setProfFeedback(null);
+  };
+
+  const handleStartEditProf = (prof) => {
+    setEditingProfId(prof.user_id);
+    setProfNombre(prof.nombre_completo || '');
+    setProfUsername(prof.username || '');
+    setProfEmail(prof.email || '');
+    setProfPassword('');
+    setProfSucursalId(prof.sucursal_id || sucursales[0]?.id || '');
+    setProfIdioma((prof.idioma_preferido || 'es').toLowerCase());
+    setProfFeedback(null);
+    setActiveTab('profesores');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleProfSubmit = async (e) => {
+    e.preventDefault();
+    setProfFeedback(null);
+
+    if (!profNombre.trim() || !profUsername.trim() || !profSucursalId) {
+      setProfFeedback({ type: 'error', text: t('errorSavingInstructor') });
+      return;
+    }
+    if (!editingProfId && (!profPassword || profPassword.trim().length < 6)) {
+      setProfFeedback({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres.' });
+      return;
+    }
+
+    setSavingProf(true);
+    const payload = {
+      nombre_completo: profNombre.trim(),
+      username: profUsername.trim(),
+      email: profEmail.trim() || undefined,
+      sucursal_id: profSucursalId,
+      idioma_preferido: profIdioma,
+    };
+    if (profPassword && profPassword.trim() !== '') {
+      payload.password = profPassword;
+    }
+
+    const url = editingProfId
+      ? `${API_BASE}/api/v1/auth/profesores/${editingProfId}`
+      : `${API_BASE}/api/v1/auth/profesores`;
+    const method = editingProfId ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const msg = editingProfId ? t('instructorUpdatedSuccess') : t('instructorCreatedSuccess');
+        resetProfForm();
+        setProfFeedback({ type: 'ok', text: msg });
+        fetchUsuarios();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setProfFeedback({ type: 'error', text: errData.detail || t('errorSavingInstructor') });
+      }
+    } catch (err) {
+      console.error("Error saving instructor:", err);
+      setProfFeedback({ type: 'error', text: t('connectionError') });
+    } finally {
+      setSavingProf(false);
+    }
+  };
+
+  const handlePromoteStudent = async (student) => {
+    const label = student.nombre_completo || student.username;
+    if (!confirm(`¿Ascender a "${label}" al rol de Profesor?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/profesores/${student.user_id}`, {
+        method: 'PUT',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ rol: 'profesor' })
+      });
+      if (res.ok) {
+        fetchUsuarios();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || t('errorSavingInstructor'));
+      }
+    } catch (e) {
+      console.error("Error promoting user:", e);
       alert(t('connectionError'));
     }
   };
@@ -480,6 +607,19 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
         >
           {user?.rol === 'admin' ? t('branchManagement') : t('ourBranches')}
         </button>
+        {user?.rol === 'admin' && (
+          <button
+            onClick={() => setActiveTab('profesores')}
+            style={{
+              flex: 1, padding: '0.75rem', background: 'none', border: 'none',
+              borderBottom: activeTab === 'profesores' ? '3px solid var(--brand-red)' : '3px solid transparent',
+              color: activeTab === 'profesores' ? 'white' : 'var(--text-secondary)',
+              fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'
+            }}
+          >
+            {t('instructorsTab')}
+          </button>
+        )}
         {user?.rol === 'admin' && (
           <button
             onClick={() => setActiveTab('usuarios')}
@@ -666,6 +806,212 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
       </div>
       </div>
 
+      {activeTab === 'profesores' && user?.rol === 'admin' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'white' }}>
+                {editingProfId ? `✏️ ${t('editInstructor')}` : `➕ ${t('registerNewInstructor')}`}
+              </h3>
+              {editingProfId && (
+                <button
+                  type="button"
+                  onClick={resetProfForm}
+                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '0.45rem 0.85rem', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', minHeight: '36px' }}
+                >
+                  ✕ {t('cancelEdit')}
+                </button>
+              )}
+            </div>
+
+            {profFeedback && (
+              <div style={{
+                marginBottom: '1rem',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                background: profFeedback.type === 'ok' ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.16)',
+                border: profFeedback.type === 'ok' ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                color: profFeedback.type === 'ok' ? '#86efac' : '#fca5a5',
+              }}>
+                {profFeedback.text}
+              </div>
+            )}
+
+            <form onSubmit={handleProfSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>{t('instructorName')}</label>
+                <input
+                  type="text"
+                  required
+                  value={profNombre}
+                  onChange={e => setProfNombre(e.target.value)}
+                  placeholder="Ej. Carlos Gracie Jr."
+                  style={{ width: '100%', padding: '0.65rem', minHeight: '44px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>{t('instructorUsername')}</label>
+                <input
+                  type="text"
+                  required
+                  pattern="^[a-zA-Z0-9_]+$"
+                  value={profUsername}
+                  onChange={e => setProfUsername(e.target.value)}
+                  placeholder="ej. carlos_bjj"
+                  style={{ width: '100%', padding: '0.65rem', minHeight: '44px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>{t('instructorEmail')}</label>
+                <input
+                  type="email"
+                  value={profEmail}
+                  onChange={e => setProfEmail(e.target.value)}
+                  placeholder="profesor@corpocmente.com"
+                  style={{ width: '100%', padding: '0.65rem', minHeight: '44px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>
+                  {editingProfId ? t('passwordOptionalEdit') : t('instructorPassword')}
+                </label>
+                <input
+                  type="password"
+                  required={!editingProfId}
+                  minLength={6}
+                  value={profPassword}
+                  onChange={e => setProfPassword(e.target.value)}
+                  placeholder={editingProfId ? "••••••" : "Mínimo 6 caracteres"}
+                  style={{ width: '100%', padding: '0.65rem', minHeight: '44px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>{t('assignedBranch')}</label>
+                <select
+                  required
+                  value={profSucursalId}
+                  onChange={e => setProfSucursalId(e.target.value)}
+                  style={{ width: '100%', padding: '0.65rem', minHeight: '44px', borderRadius: '6px', background: '#18181b', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                >
+                  {sucursales.map(s => (
+                    <option key={s.id} value={s.id}>{s.nombre} ({s.ciudad})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>{t('preferredLanguage')}</label>
+                <select
+                  value={profIdioma}
+                  onChange={e => setProfIdioma(e.target.value)}
+                  style={{ width: '100%', padding: '0.65rem', minHeight: '44px', borderRadius: '6px', background: '#18181b', border: '1px solid rgba(255,255,255,0.2)', color: 'white', boxSizing: 'border-box' }}
+                >
+                  <option value="es">Español (es)</option>
+                  <option value="pt">Português (pt)</option>
+                  <option value="en">English (en)</option>
+                </select>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.75rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                <button
+                  type="submit"
+                  disabled={savingProf}
+                  className="btn-primary"
+                  style={{ minHeight: '44px', padding: '0.65rem 1.4rem', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  {savingProf ? '...' : (editingProfId ? `💾 ${t('saveChanges')}` : `➕ ${t('createInstructor')}`)}
+                </button>
+                {editingProfId && (
+                  <button
+                    type="button"
+                    onClick={resetProfForm}
+                    className="btn-secondary"
+                    style={{ minHeight: '44px', padding: '0.65rem 1.2rem', cursor: 'pointer' }}
+                  >
+                    {t('cancelEdit')}
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+            {(() => {
+              const profesoresList = usuarios.filter(u => u.rol === 'profesor');
+              return (
+                <>
+                  <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>
+                    {t('registeredInstructors')} ({profesoresList.length})
+                  </h3>
+                  {loadingUsuarios ? (
+                    <p>{t('loadingStudents')}</p>
+                  ) : profesoresList.length === 0 ? (
+                    <p style={{ color: 'var(--text-secondary)' }}>{t('noInstructorsYet')}</p>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                      {profesoresList.map(prof => (
+                        <div key={prof.user_id} style={{
+                          background: 'rgba(255,255,255,0.04)', padding: '1rem', borderRadius: '8px',
+                          border: editingProfId === prof.user_id ? '1px solid var(--brand-red)' : '1px solid rgba(255,255,255,0.1)',
+                          display: 'flex', flexDirection: 'column', gap: '0.45rem'
+                        }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{prof.nombre_completo}</div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{prof.username} · {prof.email}</div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            {t('branchAcademy')}: <strong style={{ color: 'white' }}>{prof.sucursal_nombre}</strong>
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#4da6ff' }}>
+                            {t('preferredLanguage')}: {(prof.idioma_preferido || 'es').toUpperCase()}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => handleStartEditProf(prof)}
+                              className="btn-secondary"
+                              style={{ padding: '0.5rem 0.75rem', fontSize: '0.82rem', minHeight: '40px', cursor: 'pointer' }}
+                            >
+                              ✏️ {t('edit')}
+                            </button>
+                            <button
+                              onClick={() => handleImpersonate(prof.user_id)}
+                              className="btn-primary"
+                              style={{ flex: 1, padding: '0.5rem', fontSize: '0.82rem', minHeight: '40px', background: 'var(--brand-red)', border: 'none', cursor: 'pointer' }}
+                            >
+                              {t('impersonateInstructor')}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(prof)}
+                              className="btn-secondary"
+                              style={{
+                                padding: '0.5rem 0.75rem',
+                                fontSize: '0.82rem',
+                                minHeight: '40px',
+                                background: 'rgba(239, 68, 68, 0.14)',
+                                color: '#fca5a5',
+                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                cursor: 'pointer',
+                              }}
+                              title={t('deleteUser')}
+                            >
+                              🗑️ {t('deleteUser')}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {activeTab === 'usuarios' && (
         <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>{t('usersTab')} ({usuarios.length})</h3>
@@ -695,6 +1041,24 @@ export default function AdminSucursales({ user, onClose, onImpersonate, idioma =
                   
                   {u.rol !== 'admin' && (
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                      {u.rol === 'profesor' && (
+                        <button
+                          onClick={() => handleStartEditProf(u)}
+                          className="btn-secondary"
+                          style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', cursor: 'pointer' }}
+                        >
+                          ✏️ {t('edit')}
+                        </button>
+                      )}
+                      {u.rol === 'alumno' && (
+                        <button
+                          onClick={() => handlePromoteStudent(u)}
+                          className="btn-secondary"
+                          style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', cursor: 'pointer' }}
+                        >
+                          ⬆️ {t('promoteToInstructor')}
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleImpersonate(u.user_id)}
                         className="btn-primary"

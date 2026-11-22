@@ -1,0 +1,49 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+hide footbox
+autonumber
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+skinparam SequenceGroupBorderThickness 1
+skinparam SequenceGroupBorderColor #CBD5E1
+skinparam SequenceGroupBackgroundColor #F8FAFC
+skinparam SequenceGroupHeaderFontColor #1E3A8A
+skinparam SequenceGroupFontColor #475569
+skinparam SequenceLifeLineBorderColor #94A3B8
+actor "Dueño" as AD
+boundary "PanelSucursales" as B1
+control "CoordinadorSedes" as C1
+entity "Sucursal" as E1
+entity "Usuario" as E2
+
+alt Crear o actualizar sucursal
+  AD -> B1 : indicarUbicacionYDatos(referenciaMapa, nombre)
+  B1 -> C1 : extraerCoordenadasYCompletarDireccion()
+  C1 -> E1 : persistirSucursal(nombre, pais, ciudad, direccion, coords)
+  E1 --> C1 : sucursalConfirmada
+  C1 --> B1 : actualizarDirectorioYMapa()
+  B1 --> AD : mostrarSedeActualizada()
+else Eliminar sucursal inactiva
+  AD -> B1 : solicitarBajaSucursal(sucursalId)
+  B1 -> C1 : verificarYSuprimir(sucursalId)
+  C1 -> E2 : contarUsuariosVinculados(sucursalId)
+  alt Existen usuarios adscritos
+    E2 --> C1 : usuariosActivos > 0
+    C1 --> B1 : bloquearEliminacion()
+    B1 --> AD : exigirReasignacionPrevia()
+  else Sin usuarios vinculados
+    C1 -> E1 : eliminarSucursal(sucursalId)
+    E1 --> C1 : bajaConfirmada
+    C1 --> B1 : refrescarCatalogo()
+  end
+end
+@enduml

@@ -1,0 +1,58 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class LoginModal <<Boundary>> {
+  +loginUserOrEmail: String
+  +loginPassword: String
+  +showLoginPassword: Boolean
+  +handleLoginSubmit()
+}
+class AuthRateLimitMiddleware <<Boundary>> {
+  +max_attempts: Int
+  +window_seconds: Int
+  +dispatch(request, call_next)
+}
+class AuthRoutes <<Boundary>> {
+  +login(req: LoginRequest): LoginResponse
+  +get_mi_perfil(authorization: String): LoginResponse
+  +_sign_token(payload: Dict): String
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name: String, params: Dict): Any
+  +get(table: String, params: Dict): List
+}
+class Usuario <<Entity>> {
+  +id: UUID
+  +nombre_completo: String
+  +username: String
+  +email: String
+  +rol: String
+  +sucursal_id: UUID
+  +estado_suscripcion: String
+  +idioma_preferido: String
+}
+class Sucursal <<Entity>> {
+  +id: UUID
+  +nombre: String
+  +ciudad: String
+  +pais: String
+}
+class LoginResponse <<Entity>> {
+  +token: String
+  +user_id: UUID
+  +rol: String
+  +sucursal_id: UUID
+  +estado_suscripcion: String
+}
+LoginModal ..> AuthRateLimitMiddleware : HTTP POST
+AuthRateLimitMiddleware --> AuthRoutes : reenvía
+AuthRoutes --> PostgrestClient : authenticate y perfil
+PostgrestClient --> Usuario : valida credenciales
+Usuario "1" --> "1" Sucursal : adscrito_a
+AuthRoutes ..> LoginResponse : retorna sesión
+@enduml

@@ -1,0 +1,21 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam stateBackgroundColor #F7FAFC
+skinparam stateBorderColor #2B6CB0
+skinparam stateFontColor #1A365D
+
+[*] --> Pendiente : Alumno crea cuenta\nen una sucursal (UC-02)
+
+state "Pendiente de Activación" as Pendiente #FFF5F5 : Análisis biomecánico restringido\nAcceso permitido a Biblioteca y Progreso
+
+state "Activo (Vigente 30 días)" as Activo #F0FFF4 : Análisis de videos habilitado\nFecha de vencimiento +30 días
+
+state "Expirado" as Expirado #FFF5F5 : Vencieron los 30 días sin renovación\nNuevos análisis bloqueados
+
+Pendiente --> Activo : Profesor confirma pago presencial\nen la misma sede (UC-08)
+Activo --> Expirado : Transcurren 30 días calendario
+Expirado --> Activo : Profesor registra nueva renovación\nmensual (+30 días)
+@enduml

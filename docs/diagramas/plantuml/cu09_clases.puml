@@ -1,0 +1,38 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class AdminSucursales <<Boundary>> {
+  +sucursales: List
+  +latitud: Float
+  +longitud: Float
+  +handleSubmit()
+  +handleDelete(sucursalId)
+}
+class AuthRoutes <<Boundary>> {
+  +listar_sucursales()
+  +crear_sucursal()
+  +actualizar_sucursal()
+  +eliminar_sucursal()
+  +parse_gmaps_link()
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name, params)
+}
+class Sucursal <<Entity>> {
+  +id: UUID
+  +nombre: String
+  +pais: String
+  +ciudad: String
+  +direccion: String
+  +latitud: Float
+  +longitud: Float
+}
+AdminSucursales ..> AuthRoutes
+AuthRoutes --> PostgrestClient
+PostgrestClient --> Sucursal
+@enduml

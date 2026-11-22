@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Alumno" as AL
+boundary "Interfaz de Carga y Progreso\n(VideoUpload)" as B1
+boundary "Selector de Silueta\n(SelectorPersonaVideo)" as B2
+control "Validador de Membresía y Dominio\n(LocalSpamFilter / SessionState)" as C1
+control "Motor Biomecánico\n(YOLO26 + Normalizer + DTW)" as C2
+entity "Pase de Tatami\n(Usuario)" as E1
+entity "Patrón de Referencia" as E2
+entity "Evaluación" as E3
+
+AL --> B1 : elige profesor, técnica y video
+B1 --> C1 : verifica pase y contenido BJJ
+C1 --> E1 : consulta vigencia de pase
+C1 --> B2 : devuelve candidatos del 1er cuadro
+AL --> B2 : confirma su silueta
+B2 --> C2 : inicia análisis o cancelación
+C2 --> E2 : recupera patrones activos del profesor
+C2 --> E3 : guarda resultado o estado cancelado
+@enduml

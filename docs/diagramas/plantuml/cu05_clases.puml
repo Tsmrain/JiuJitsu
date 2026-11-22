@@ -1,0 +1,62 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class ProfesorTecnicas <<Boundary>> {
+  +tecnicas: List
+  +handleSave()
+  +handleConfirmPersona()
+  +handleDelete(id)
+}
+class SelectorPersonaVideo <<Boundary>> {
+  +sessionData: Dict
+  +onSelect(idx)
+}
+class TecnicasRoutes <<Boundary>> {
+  +crear_tecnica()
+  +actualizar_tecnica()
+  +eliminar_tecnica()
+  +registrar_patron_tecnica()
+}
+class VideoStorage <<Control>> {
+  +persistir_video_referencia()
+  +autocurar_videos_referencia_en_arranque()
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name, params)
+}
+class YOLOPoseAdapter <<Adapter>> {
+  +extraer_secuencia()
+}
+class QdrantVectorAdapter <<Adapter>> {
+  +guardar_patron_secuencia()
+  +eliminar_por_tecnica()
+}
+class QdrantRAGAdapter <<Adapter>> {
+  +eliminar_por_tecnica()
+}
+class Tecnica <<Entity>> {
+  +id: UUID
+  +nombre: String
+  +nivel_cinturon: String
+  +mensaje_profesor: String
+}
+class PatronReferencia <<Entity>> {
+  +id: UUID
+  +tecnica_id: UUID
+  +url_video: String
+}
+ProfesorTecnicas ..> SelectorPersonaVideo
+ProfesorTecnicas ..> TecnicasRoutes
+TecnicasRoutes --> VideoStorage
+TecnicasRoutes --> YOLOPoseAdapter
+TecnicasRoutes --> QdrantVectorAdapter
+TecnicasRoutes --> QdrantRAGAdapter
+TecnicasRoutes --> PostgrestClient
+PostgrestClient --> Tecnica
+QdrantVectorAdapter --> PatronReferencia
+@enduml

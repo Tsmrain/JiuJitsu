@@ -1,0 +1,27 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Administrador (Dueño)" as AD
+actor "Usuario (Alumno o Profesor)" as US
+rectangle "Sistema Corpo e Mente — Gobierno de Cuentas y Soporte" {
+  usecase "UC-10: Soporte Técnico y Administración de Cuentas" as UC10
+  usecase "Registrar, Editar o Eliminar Profesor" as UC10P
+  usecase "Brindar Soporte en Sesión Delegada" as UC10I
+  usecase "Eliminar Cuenta con Reasignación" as UC10D
+  usecase "Trasladar Sucursal de Usuario" as UC10S
+  usecase "Actualizar Perfil e Idioma Propio" as UC10U
+}
+AD --> UC10
+US --> UC10U
+UC10P ..> UC10 : <<extend>>
+UC10I ..> UC10 : <<extend>>
+UC10D ..> UC10 : <<extend>>
+UC10S ..> UC10 : <<extend>>
+@enduml

@@ -1,0 +1,46 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+hide footbox
+autonumber
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+skinparam SequenceGroupBorderThickness 1
+skinparam SequenceGroupBorderColor #CBD5E1
+skinparam SequenceGroupBackgroundColor #F8FAFC
+skinparam SequenceGroupHeaderFontColor #1E3A8A
+skinparam SequenceGroupFontColor #475569
+skinparam SequenceLifeLineBorderColor #94A3B8
+actor Profesor as PR
+actor Alumno as AL
+boundary "PantallaProgreso" as B1
+control "CoordinadorProgreso" as C1
+entity "Usuario" as E1
+entity "Evaluacion" as E2
+
+alt Profesor consulta estudiantes de su sede
+  PR -> B1 : solicitarListadoAlumnosSede()
+  B1 -> C1 : obtenerAlumnosPorSucursal(profesor)
+  C1 -> E1 : filtrarPorSede(sucursalProfesor)
+  E1 --> C1 : alumnosAutorizados
+  C1 --> B1 : listaDeAlumnos
+  PR -> B1 : consultarHistorialAlumno(alumnoId)
+  B1 -> C1 : verificarSedeYListarEvaluaciones(profesor, alumnoId)
+else Alumno consulta su propio historial
+  AL -> B1 : consultarMiProgreso()
+  B1 -> C1 : listarEvaluacionesPropias(alumno)
+end
+C1 -> E2 : recuperarEvaluacionesYSedeCongelada()
+E2 --> C1 : historialConMultimedia
+C1 --> B1 : presentarEvolucionDetallada()
+B1 --> PR : mostrarComparativaYAvance()
+B1 --> AL : mostrarComparativaYAvance()
+@enduml

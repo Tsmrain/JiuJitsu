@@ -1,0 +1,69 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class FeedbackView <<Boundary>> {
+  +evaluacion: AnalisisResultDTO
+  +saltarAlSegundoError(ts)
+}
+class LibraryView <<Boundary>> {
+  +query: String
+  +resultados: List
+}
+class EvaluacionesRoutes <<Boundary>> {
+  +consultar_evaluacion(id): AnalisisResultDTO
+  +buscar_en_biblioteca(query): Dict
+}
+class IntelligenceAnalysisFacade <<Control>> {
+  +generar_feedback()
+}
+class MultimodalRAGService <<Control>> {
+  +aplicar_jerarquia_contexto()
+}
+class HybridRetriever <<Control>> {
+  +buscar_bm25_y_densa()
+}
+class GlossaryService <<Control>> {
+  +expandir_query_bjj()
+}
+interface IPromptStrategy <<Interface>> {
+  +construir_prompt()
+  +mensaje_respaldo()
+}
+class Qwen3VLRerankerCrossEncoder <<Adapter>> {
+  +rerank(query, docs)
+}
+class LocalVLMAdapter <<Adapter>> {
+  +generar_texto_feedback()
+  +evaluar_fidelidad_grounding()
+}
+class Evaluacion <<Entity>> {
+  +porcentaje_similitud: Float
+  +feedback_gemini_es: String
+}
+class TeoriaRAG <<Entity>> {
+  +fuente_tipo: String
+  +fuente_nombre: String
+}
+class AnalisisResultDTO <<Entity>> {
+  +similitud: Float
+  +timestamp_error_segundos: Float
+  +frame_critico_path: String
+}
+FeedbackView ..> EvaluacionesRoutes
+LibraryView ..> EvaluacionesRoutes
+EvaluacionesRoutes --> IntelligenceAnalysisFacade
+IntelligenceAnalysisFacade --> MultimodalRAGService
+MultimodalRAGService --> HybridRetriever
+HybridRetriever --> GlossaryService
+IntelligenceAnalysisFacade --> Qwen3VLRerankerCrossEncoder
+IntelligenceAnalysisFacade --> IPromptStrategy
+IntelligenceAnalysisFacade --> LocalVLMAdapter
+MultimodalRAGService ..> TeoriaRAG
+IntelligenceAnalysisFacade --> Evaluacion
+EvaluacionesRoutes ..> AnalisisResultDTO
+@enduml

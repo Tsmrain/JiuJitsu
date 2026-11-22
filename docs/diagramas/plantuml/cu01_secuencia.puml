@@ -1,0 +1,51 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+hide footbox
+autonumber
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+skinparam SequenceGroupBorderThickness 1
+skinparam SequenceGroupBorderColor #CBD5E1
+skinparam SequenceGroupBackgroundColor #F8FAFC
+skinparam SequenceGroupHeaderFontColor #1E3A8A
+skinparam SequenceGroupFontColor #475569
+skinparam SequenceLifeLineBorderColor #94A3B8
+actor Usuario as U
+boundary "PantallaDeAcceso" as B1
+control "CoordinadorDeAcceso" as C1
+entity "Usuario" as E1
+entity "Sucursal" as E2
+entity "SesionDeUsuario" as E3
+
+U -> B1 : solicitarAcceso(identificador, clave)
+B1 -> C1 : autenticarUsuario(identificador, clave)
+C1 -> C1 : verificarIntentosPermitidos(solicitante)
+alt Umbral de intentos superado
+  C1 --> B1 : bloqueoTemporal()
+  B1 --> U : informarBloqueoTemporal()
+else Dentro del límite permitido
+  C1 -> E1 : validarCredenciales(identificador, clave)
+  alt Credenciales válidas
+    E1 --> C1 : datosUsuario(rol, sede, idioma, membresía)
+    C1 -> E2 : consultarNombreSede(sede)
+    E2 --> C1 : nombreDeSucursal
+    C1 -> E3 : abrirSesionActiva(datosUsuario, nombreDeSucursal)
+    E3 --> C1 : sesionActiva
+    C1 --> B1 : accesoAutorizado(sesionActiva)
+    B1 --> U : habilitarEntornoSegunRol(rol, idioma)
+  else Credenciales incorrectas
+    E1 --> C1 : accesoDenegado
+    C1 --> B1 : errorUnificado()
+    B1 --> U : informarCredencialesInvalidas()
+  end
+end
+@enduml

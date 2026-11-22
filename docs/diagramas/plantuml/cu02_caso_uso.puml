@@ -1,0 +1,18 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Nuevo Practicante (Alumno)" as AL
+rectangle "Sistema Corpo e Mente — Registro" {
+  usecase "UC-02: Crear Cuenta de Alumno" as UC02
+  usecase "Elegir Sucursal de Entrenamiento" as UC02S
+}
+AL --> UC02
+UC02 ..> UC02S : <<include>>
+@enduml

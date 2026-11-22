@@ -1,0 +1,59 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+hide footbox
+autonumber
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+skinparam SequenceGroupBorderThickness 1
+skinparam SequenceGroupBorderColor #CBD5E1
+skinparam SequenceGroupBackgroundColor #F8FAFC
+skinparam SequenceGroupHeaderFontColor #1E3A8A
+skinparam SequenceGroupFontColor #475569
+skinparam SequenceLifeLineBorderColor #94A3B8
+actor Alumno as AL
+boundary "PantallaDeEvaluacion" as B1
+control "CoordinadorDeAnalisis" as C1
+entity "Usuario" as E1
+entity "PatronDeReferencia" as E2
+entity "Evaluacion" as E3
+
+AL -> B1 : seleccionarPractica(profesor, tecnica, video)
+B1 -> C1 : validarMembresiaYDominio(alumno, video)
+C1 -> E1 : verificarPaseDeTatami(alumno)
+E1 --> C1 : paseVigente
+C1 -> C1 : confirmarPracticaJiuJitsuYDetectarSiluetas(video)
+C1 --> B1 : candidatosEnEscena
+B1 --> AL : solicitarConfirmacionCorporal(candidatos)
+AL -> B1 : confirmarMiSilueta(personaSeleccionada)
+B1 -> C1 : iniciarEvaluacion(alumno, tecnica, video, personaSeleccionada)
+C1 -> E3 : registrarEvaluacionEnCurso(alumno, tecnica, sedeActual)
+E3 --> C1 : evaluacionId
+
+alt Alumno cancela durante el procesamiento
+  AL -> B1 : solicitarCancelarAnalisis()
+  B1 -> C1 : cancelarEvaluacion(evaluacionId, alumno)
+  C1 -> E3 : marcarCancelado(evaluacionId)
+  C1 -> C1 : limpiarVideoTemporal()
+  C1 --> B1 : cancelacionConfirmada()
+  B1 --> AL : restaurarEstadoInicial()
+else Procesamiento completo
+  C1 -> C1 : extraerSecuenciaPostural(video, personaSeleccionada)
+  C1 -> E2 : obtenerPatronesActivos(tecnica)
+  E2 --> C1 : secuenciasDeReferencia
+  C1 -> C1 : normalizarYAlinearSecuencias()
+  C1 -> C1 : identificarMomentoCriticoYArticulaciones()
+  C1 -> E3 : registrarSimilitud(evaluacionId, similitud)
+  E3 --> C1 : resultadoGuardado
+  C1 --> B1 : analisisFinalizado(evaluacionId, similitud)
+  B1 --> AL : darPasoAFeedback(UC04)
+end
+@enduml

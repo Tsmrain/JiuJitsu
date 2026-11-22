@@ -1,0 +1,24 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Profesor" as PR
+actor "Administrador (Dueño)" as AD
+rectangle "Sistema Corpo e Mente — Catálogo Técnico" {
+  usecase "UC-05: Gestionar Técnicas y Videos de Referencia" as UC05
+  usecase "Registrar o Editar Técnica" as UC05A
+  usecase "Grabar Video Patrón e Identificar Instructor" as UC05V
+  usecase "Eliminar Técnica del Catálogo" as UC05D
+}
+PR --> UC05
+AD --> UC05
+UC05 ..> UC05A : <<include>>
+UC05V ..> UC05 : <<extend>>
+UC05D ..> UC05 : <<extend>>
+@enduml

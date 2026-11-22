@@ -1,0 +1,58 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class AdminSucursales <<Boundary>> {
+  +usuarios: List
+  +handleCreateOrEditProfesor()
+  +handleImpersonate(userId)
+  +handleDeleteUser(user)
+}
+class App <<Boundary>> {
+  +user: LoginResponse
+  +originalAdminUser: LoginResponse
+  +onImpersonate()
+}
+class UserProfileModal <<Boundary>> {
+  +nombre: String
+  +selectedIdioma: String
+  +handleUpdate()
+}
+class AuthRoutes <<Boundary>> {
+  +crear_profesor()
+  +actualizar_profesor()
+  +impersonate_user()
+  +eliminar_usuario()
+  +update_usuario()
+  +cambiar_sucursal_usuario()
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name, params)
+}
+class Usuario <<Entity>> {
+  +id: UUID
+  +rol: String
+  +sucursal_id: UUID
+  +idioma_preferido: String
+}
+class Sucursal <<Entity>> {
+  +id: UUID
+  +nombre: String
+}
+class LoginResponse <<Entity>> {
+  +token: String
+  +user_id: UUID
+  +rol: String
+}
+AdminSucursales ..> AuthRoutes
+AdminSucursales ..> App
+UserProfileModal ..> AuthRoutes
+AuthRoutes --> PostgrestClient
+PostgrestClient --> Usuario
+Usuario "1" --> "1" Sucursal
+AuthRoutes ..> LoginResponse
+@enduml

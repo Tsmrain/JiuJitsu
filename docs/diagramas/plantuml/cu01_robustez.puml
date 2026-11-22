@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Usuario\n(Alumno / Profesor / Dueño)" as U
+boundary "Pantalla de Acceso\n(LoginModal)" as B1
+boundary "Filtro de Intentos\n(AuthRateLimit)" as B2
+control "Coordinador de Acceso\n(AuthRoutes / Postgrest)" as C1
+entity "Usuario" as E1
+entity "Sucursal" as E2
+entity "Sesión Activa" as E3
+
+U --> B1 : ingresa credenciales
+B1 --> B2 : valida tasa de intentos
+B2 --> C1 : delega autenticación
+C1 --> E1 : contrasta clave y perfil
+C1 --> E2 : consulta sede asignada
+C1 --> E3 : emite contexto firmado
+@enduml

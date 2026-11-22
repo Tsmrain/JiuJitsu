@@ -1,0 +1,20 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Alumno" as AL
+actor "Profesor" as PR
+actor "Administrador (Dueño)" as AD
+rectangle "Sistema Corpo e Mente — Acceso" {
+  usecase "UC-01: Iniciar Sesión en el Sistema" as UC01
+}
+AL --> UC01
+PR --> UC01
+AD --> UC01
+@enduml

@@ -1,0 +1,68 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam nodeBackgroundColor #F7FAFC
+skinparam nodeBorderColor #2B6CB0
+skinparam databaseBackgroundColor #FFF5F5
+skinparam databaseBorderColor #C53030
+skinparam cloudBackgroundColor #F0FFF4
+skinparam cloudBorderColor #2F855A
+
+node "Dispositivo del Usuario\n(Celular / Tablet / PC)" as CLIENTE {
+  artifact "Navegador Web\n(React 19 SPA + Leaflet.js)" as SPA
+}
+
+cloud "Servicios Externos de Internet" as EXT {
+  node "Cloudflare Zero Trust Edge" as CF {
+    [HTTPS *.trycloudflare.com\nLimite 100 MB]
+  }
+  node "OpenStreetMap / Nominatim" as OSM {
+    [Cartografía y Geocodificación Inversa]
+  }
+}
+
+node "Servidor Local On-Premise\n(MacBook Air Apple Silicon M5 - 24 GB RAM Unificada)" as MAC {
+  node "Túnel Seguro" {
+    [cloudflared\n(Túnel Saliente sin Port Forwarding)] as CFD
+  }
+
+  node "Frontend y Reverse Proxy\n(Node / Vite 5.4 - Puerto 5173)" as VITE {
+    [Vite Proxy /allowedHosts\nEnruta /api, /static, /health] as VPROXY
+  }
+
+  node "Backend e IA Local\n(Python 3.12 / FastAPI + Uvicorn - Puerto 8000)" as BACK {
+    [API REST FastAPI\n(Rate Limit, JWT HS256, Casos de Uso)] as FAPI
+    [Motor Visión GPU (PyTorch MPS)\nYOLOv26-pose + depth + seg + ViCoS] as MPS
+    [Motor RAG y VLM (Apple MLX)\nQwen3-VL Embedding 2B + Reranker 2B + Instruct 4B] as MLX
+  }
+
+  folder "Almacenamiento Local APFS" as DISCO {
+    [CORPOCMENTE_DATA_DIR\n(Videos Patrón, Manuales, Láminas)] as DDATA
+    [Modelos (.pt, MLX) y\nVideos Temporales (/tmp)] as DMOD
+  }
+
+  node "Contenedores Docker\n(infrastructure/docker-compose.yml)" as DOCKER {
+    [corpocmente_postgrest\n(PostgREST - Puertos 3000/3001)] as PRST
+    database "corpocmente_postgres\n(PostgreSQL 16 + RLS + pgcrypto\nPuerto 5432)" as PG
+    database "corpocmente_qdrant\n(Qdrant Vector DB\nPuertos 6333/6334)" as QD
+  }
+}
+
+SPA --> CF : HTTPS / TLS
+SPA --> OSM : HTTPS Tiles / Geocode
+CF --> CFD : Túnel Cifrado Saliente
+CFD --> VPROXY : HTTP 127.0.0.1:5173
+VPROXY --> FAPI : HTTP Proxy 127.0.0.1:8000
+
+FAPI --> MPS
+FAPI --> MLX
+FAPI --> DDATA : Lectura / Escritura
+MPS --> DMOD : Pesos / Hot-Swap
+MLX --> DMOD : Pesos 4/8 bits
+
+FAPI --> PRST : REST + JWT (3000)
+PRST --> PG : TCP postgres:5432
+FAPI --> QD : HTTP / gRPC (6333/6334)
+@enduml

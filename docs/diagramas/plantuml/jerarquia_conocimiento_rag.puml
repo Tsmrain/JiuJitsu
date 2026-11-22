@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam activityBackgroundColor #F7FAFC
+skinparam activityBorderColor #2B6CB0
+skinparam activityDiamondBackgroundColor #FFF5F5
+skinparam activityDiamondBorderColor #C53030
+
+start
+:Resultado de comparación biomecánica disponible;
+if (¿Similitud >= 85.0%?) then (Sí)
+  :Emitir felicitación determinística\nen el idioma del alumno;
+  stop
+else (No (< 85.0%))
+  :Buscar evidencia en manuales propios\nde la técnica;
+  if (¿Técnica tiene manuales propios?) then (No)
+    :Ampliar consulta a Biblioteca Global\nde la academia;
+  else (Sí)
+  endif
+  :Reordenar mejores candidatos documentales;
+  if (¿Manual relevante >= 0.65?) then (Sí — Prioridad 1)
+    :Construir explicación apoyada en manuales (citas) y nota docente;
+  elseif (¿Existe Nota Práctica del Profesor?) then (Sí — Prioridad 2)
+    :Construir explicación apoyada únicamente en la nota del instructor;
+  else (No — Prioridad 3)
+    :Entregar Respaldo Cuantitativo Seguro\n(porcentaje, segundo crítico y articulaciones sin invención libre);
+    stop
+  endif
+  :Auditar fidelidad frente a fuentes (>= 0.85);
+  if (¿Fidelidad aprobada?) then (Sí)
+    :Entregar corrección final en ES / PT / EN;
+  else (No)
+    :Descartar redacción libre y entregar respaldo seguro;
+  endif
+endif
+stop
+@enduml

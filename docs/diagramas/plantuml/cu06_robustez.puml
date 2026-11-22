@@ -1,0 +1,33 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Profesor / Dueño" as PR
+actor "Alumno" as AL
+boundary "Gestor de Conocimiento\n(Global / TheoryModal)" as B1
+boundary "Buscador de Biblioteca\n(LibraryView)" as B2
+control "Gestor Documental\n(Ingest / Delete / Msg)" as C1
+control "Buscador Semántico\n(Embedding / Retriever)" as C2
+entity "Manual Técnico\n(TeoriaRAG)" as E1
+entity "Nota Docente\n(Tecnica)" as E2
+
+PR --> B1 : carga manuales o redacta notas
+B1 --> C1 : fragmenta, valida o depura documentos
+C1 --> E1 : indexa o elimina acervo
+C1 --> E2 : sincroniza nota del instructor
+AL --> B2 : formula consulta técnica
+PR --> B2 : consulta acervo
+B2 --> C2 : recupera fuentes diferenciadas
+C2 --> E1 : lee pasajes de manuales
+C2 --> E2 : lee consejos docentes
+@enduml

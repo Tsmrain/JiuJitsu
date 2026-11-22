@@ -1,0 +1,30 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Profesor / Dueño" as PR
+boundary "Gestión de Técnicas\n(ProfesorTecnicas)" as B1
+boundary "Selector de Instructor\n(SelectorPersonaVideo)" as B2
+control "Coordinador de Catálogo\n(TecnicasRoutes / VideoStorage)" as C1
+control "Extractor de Patrón\n(YOLOPose / VectorAdapter)" as C2
+entity "Técnica" as E1
+entity "Patrón de Referencia" as E2
+
+PR --> B1 : crea, edita o elimina técnica
+B1 --> C1 : procesa metadatos y video guía
+C1 --> B2 : muestra siluetas en primer cuadro
+PR --> B2 : designa al instructor ejecutante
+B2 --> C2 : extrae postura y verifica visibilidad >= 40%
+C2 --> E2 : almacena patrón vectorial y copia persistente
+C1 --> E1 : actualiza catálogo o purga técnica completa
+@enduml

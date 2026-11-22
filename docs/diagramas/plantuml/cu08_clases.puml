@@ -1,0 +1,35 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class ProfesorTecnicas <<Boundary>> {
+  +pendientes: List
+  +handleActivarPase(alumnoId)
+}
+class VideoUpload <<Boundary>> {
+  +isPassActive: Boolean
+  +isExpired: Boolean
+}
+class AuthRoutes <<Boundary>> {
+  +listar_alumnos_pendientes()
+  +activar_pase_tatami()
+  +require_active_subscription()
+}
+class PostgrestClient <<Control>> {
+  +rpc("activar_pase_alumno")
+}
+class Usuario <<Entity>> {
+  +id: UUID
+  +sucursal_id: UUID
+  +estado_suscripcion: String
+  +fecha_expiracion: DateTime
+}
+ProfesorTecnicas ..> AuthRoutes
+VideoUpload ..> AuthRoutes
+AuthRoutes --> PostgrestClient
+PostgrestClient --> Usuario
+@enduml

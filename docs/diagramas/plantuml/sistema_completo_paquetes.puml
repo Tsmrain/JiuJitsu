@@ -1,0 +1,62 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 110
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam packageBackgroundColor #F7FAFC
+skinparam packageBorderColor #2B6CB0
+skinparam packageFontColor #1A365D
+
+package "Capa de Presentacion (Frontend Web Mobile-First)" as P_UI #EBF8FF {
+  package "pages" {
+    [VideoUpload / FeedbackView]
+    [StudentProgress / LibraryView]
+    [ProfesorTecnicas / AdminSucursales]
+  }
+  package "components & i18n" {
+    [Modales (Login, Perfil, Teoria, Silueta)]
+    [Diccionarios ES / PT / EN]
+  }
+}
+
+package "Capa de Frontera HTTP (ui.api - FastAPI)" as P_API #F0FFF4 {
+  [AuthRateLimitMiddleware & main]
+  [auth_routes]
+  [tecnicas_routes]
+  [evaluaciones_routes]
+}
+
+package "Capa de Aplicacion (application)" as P_APP #FAF5FF {
+  [IntelligenceAnalysisFacade]
+  [IngestKnowledgeUseCase / DeleteTheoryUseCase]
+  [MultimodalRAGService / SessionStateManager]
+  [AnalisisResultDTO]
+}
+
+package "Capa de Dominio (domain - Nucleo Puro)" as P_DOM #FFF5F5 {
+  [Entidades (Usuario, Sucursal, Tecnica, Evaluacion)]
+  [Biomecanica (PoseNormalizer, DTWComparator)]
+  [Estrategias (IPromptStrategy, GlossaryService)]
+  [Contratos / Puertos de Repositorio]
+}
+
+package "Capa de Infraestructura (infrastructure)" as P_INF #EDF2F7 {
+  [Adaptadores IA Local (YOLOPose, MLX VLM, Qwen)]
+  [Adaptadores Persistencia (PostgREST, Qdrant)]
+  [Almacenamiento Multimedia (VideoStorage)]
+}
+
+P_UI -down-> P_API : HTTPS / Proxy
+P_API -down-> P_APP : orquesta casos de uso
+P_API -down-> P_DOM : usa contratos DTO/entidades
+P_APP -down-> P_DOM : aplica reglas y algoritmos puros
+P_INF -up-|> P_DOM : implementa interfaces (DIP)
+P_INF -up-|> P_APP : provee adaptadores concretos
+
+note bottom of P_DOM
+  Principio de Inversión de Dependencias (DIP):
+  El núcleo de Dominio no depende de FastAPI,
+  React, Qdrant, PostgreSQL ni modelos externos.
+end note
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Administrador (Dueño)" as AD
+actor "Profesor" as PR
+actor "Alumno" as AL
+rectangle "Sistema Corpo e Mente — Sucursales" {
+  usecase "UC-09: Gestionar Sucursales y Coordenadas" as UC09
+  usecase "Geolocalizar Sede en Mapa" as UC09M
+  usecase "Retirar Sucursal sin Usuarios" as UC09D
+  usecase "Consultar Directorio de Sedes" as UC09V
+}
+AD --> UC09
+PR --> UC09V
+AL --> UC09V
+UC09 ..> UC09M : <<include>>
+UC09D ..> UC09 : <<extend>>
+@enduml

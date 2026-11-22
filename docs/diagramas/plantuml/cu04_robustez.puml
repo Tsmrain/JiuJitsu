@@ -1,0 +1,33 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Alumno" as AL
+boundary "Pantalla de Resultados\n(FeedbackView)" as B1
+boundary "Visor de Biblioteca\n(LibraryView)" as B2
+control "Coordinador de Feedback\n(IntelligenceFacade / RAG)" as C1
+control "Auditor de Fidelidad\n(Reranker / Judge / Idioma)" as C2
+entity "Evaluación" as E1
+entity "Manual Técnico\n(TeoriaRAG)" as E2
+entity "Nota del Profesor\n(Tecnica)" as E3
+
+AL --> B1 : revisa resultado y salta al fallo
+B1 --> C1 : solicita diagnóstico e imagen anotada
+C1 --> E1 : lee métricas y segundo crítico
+C1 --> E2 : consulta manuales específicos o globales
+C1 --> E3 : consulta consejo práctico docente
+C1 --> C2 : aplica jerarquía y valida fidelidad >= 0.85
+C2 --> B1 : entrega corrección traducida y citas
+AL --> B2 : amplía consulta bibliográfica
+B2 --> C1 : busca evidencia documental
+@enduml

@@ -1,0 +1,95 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+
+class "Dueño" as Dueno {
+  nombre_completo
+  correo
+  idioma_preferido
+}
+
+class Sucursal {
+  nombre
+  ciudad
+  pais
+  direccion
+  latitud
+  longitud
+}
+
+class Profesor {
+  nombre_completo
+  correo
+  idioma_preferido
+}
+
+class Alumno {
+  nombre_completo
+  correo
+  idioma_preferido
+}
+
+class "Activación de Cuenta\n(Pase de Tatami)" as Pase {
+  fecha_inicio
+  fecha_expiracion
+  estado
+}
+
+class Tecnica {
+  nombre
+  nivel_cinturon
+  nota_profesor
+}
+
+class VideoReferencia {
+  archivo_video
+  fecha_registro
+}
+
+class BibliotecaTecnica {
+  fuente_nombre
+  fuente_tipo
+  alcance
+  contenido_texto
+  pagina
+}
+
+class Evaluacion {
+  fecha
+  porcentaje_similitud
+  retroalimentacion
+  estado
+  sucursal_congelada
+}
+
+class EsqueletoBiomecanico {
+  puntos_articulaciones
+  angulos_corporales
+}
+
+Dueno "1" *-- "1..*" Sucursal : dirige sedes
+Dueno "1" -- "0..*" Profesor : registra y gestiona
+Dueno "1" -- "0..*" Alumno : supervisa y asiste
+Dueno "1" -- "0..*" BibliotecaTecnica : gobierna acervo global
+
+Sucursal "1" *-- "0..*" Profesor : adscribe
+Sucursal "1" *-- "0..*" Alumno : adscribe
+
+Profesor "1" -- "0..*" Tecnica : enseña
+Profesor "1" -- "0..*" VideoReferencia : graba modelo
+Profesor "1" -- "0..*" BibliotecaTecnica : aporta material
+
+Alumno "1" *-- "1" Pase : posee vigencia
+Alumno "1" -- "0..*" Evaluacion : realiza práctica
+
+Tecnica "1" *-- "0..*" VideoReferencia : usa patrón
+Tecnica "1" -- "0..*" BibliotecaTecnica : respaldada por
+Tecnica "1" -- "0..*" Evaluacion : es evaluada en
+Sucursal "1" -- "0..*" Evaluacion : conserva sucursal histórica
+Evaluacion "1" *-- "0..1" EsqueletoBiomecanico : genera comparación
+@enduml

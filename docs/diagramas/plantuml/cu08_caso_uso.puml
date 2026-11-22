@@ -1,0 +1,18 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Profesor" as PR
+actor "Administrador (Dueño)" as AD
+rectangle "Sistema Corpo e Mente — Membresía" {
+  usecase "UC-08: Activar Pase de Tatami (30 Días)" as UC08
+}
+PR --> UC08
+AD --> UC08
+@enduml

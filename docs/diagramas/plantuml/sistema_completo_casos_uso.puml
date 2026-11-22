@@ -1,0 +1,69 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+
+actor "Alumno" as AL
+actor "Profesor" as PR
+actor "Administrador (Dueño)" as AD
+
+package "Identificación y Acceso" {
+  usecase "UC-01: Iniciar Sesión" as UC01
+  usecase "UC-02: Crear Cuenta de Alumno" as UC02
+}
+
+package "Análisis Biomecánico y Feedback" {
+  usecase "UC-03: Analizar Técnica" as UC03
+  usecase "Confirmar Identidad Corporal" as UC03S
+  usecase "Cancelar Análisis en Curso" as UC03C
+  usecase "UC-04: Consultar Feedback Biomecánico" as UC04
+  usecase "Inspeccionar Segundo del Error" as UC04R
+}
+
+package "Catálogo Técnico y Conocimiento" {
+  usecase "UC-05: Gestionar Técnicas y Videos Patrón" as UC05
+  usecase "UC-06: Gestionar Manuales y Notas Docentes" as UC06
+  usecase "Consultar Biblioteca Técnica" as UC06L
+}
+
+package "Gestión Académica y Multi-Sede" {
+  usecase "UC-07: Ver Progreso de Alumnos" as UC07
+  usecase "UC-08: Activar Pase de Tatami (30 días)" as UC08
+  usecase "UC-09: Gestionar Sucursales en Mapa" as UC09
+  usecase "UC-10: Soporte Técnico, Profesores y Cuentas" as UC10
+}
+
+AL --> UC01
+PR --> UC01
+AD --> UC01
+AL --> UC02
+
+AL --> UC03
+UC03 ..> UC03S : <<include>>
+UC03C ..> UC03 : <<extend>>
+AL --> UC04
+UC04 ..> UC04R : <<include>>
+
+PR --> UC05
+AD --> UC05
+PR --> UC06
+AD --> UC06
+AL --> UC06L
+PR --> UC06L
+AD --> UC06L
+
+AL --> UC07
+PR --> UC07
+PR --> UC08
+AD --> UC08
+AD --> UC09
+AD --> UC10
+AL --> UC10 : perfil propio
+PR --> UC10 : perfil propio
+@enduml

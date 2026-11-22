@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Alumno" as AL
+actor "Profesor" as PR
+boundary "Mi Progreso\n(StudentProgress)" as B1
+boundary "Supervisión Docente\n(ProfesorTecnicas)" as B2
+control "Coordinador de Historial\n(Auth/EvalRoutes + VideoStorage)" as C1
+entity "Usuario y Sede" as E1
+entity "Evaluación Histórica" as E2
+
+AL --> B1 : consulta evolución propia
+PR --> B2 : supervisa alumnos de su sede
+B1 --> C1 : solicita historial propio
+B2 --> C1 : solicita alumnos filtrados por sede
+C1 --> E1 : verifica coincidencia de rol y sede
+C1 --> E2 : consolida puntajes, fechas y sede congelada
+@enduml

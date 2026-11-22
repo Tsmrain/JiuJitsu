@@ -1,0 +1,17 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam ActivityBackgroundColor #F7FAFC
+skinparam ActivityBorderColor #2B6CB0
+
+start
+:Alumno acude a recepción y abona mensualidad;
+:Administración entrega comprobante de pago;
+:Alumno entrega comprobante al Profesor e ingresa al tatami;
+:Profesor demuestra la técnica al grupo;
+#FFF5F5:Cuello de Botella Operativo\n(Instructor no logra corregir individualmente\ncada repetición ni prácticas fuera de clase);
+#F0FFF4:Intervención Propuesta del Sistema\n(Asistente biomecánico 24/7 con citas verificadas);
+stop
+@enduml

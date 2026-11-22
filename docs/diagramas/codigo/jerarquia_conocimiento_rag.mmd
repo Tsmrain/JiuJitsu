@@ -1,0 +1,26 @@
+flowchart TD
+    classDef paso fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    classDef decision fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef salida fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+
+    INI["Resultado Biomecánico: Similitud DTW y Articulaciones Críticas"]:::paso
+    D1{"¿Similitud >= 85.0%?"}:::decision
+    FEL["Reconocimiento positivo determinístico\n(Sin consumo de modelo generativo)"]:::salida
+    BUS["Búsqueda Híbrida (BM25 + Qwen3-VL-Embedding + Reranker)\nen Técnica y Respaldo en Biblioteca Global"]:::paso
+    D2{"¿Mejor pasaje de manual\ncon relevancia >= 0.65?"}:::decision
+    P1["Prioridad 1: Redacción fundamentada en Manual Técnico\ncon citas 📚 y verificación visual"]:::paso
+    D3{"¿Existe nota escrita\ndel Profesor?"}:::decision
+    P2["Prioridad 2: Redacción fundamentada en Nota del Profesor\ncon cita institucional 🥋"]:::paso
+    P3["Prioridad 3: Respaldo Cuantitativo Seguro\n(Métrica + fotograma + articulaciones, sin modelo generativo)"]:::salida
+    JUEZ{"Juez de Fidelidad:\n¿Faithfulness >= 0.85?"}:::decision
+    FIN["Entrega de retroalimentación verificada en idioma del alumno"]:::salida
+
+    INI --> D1
+    D1 -->|"Sí"| FEL
+    D1 -->|"No (< 85%)"| BUS --> D2
+    D2 -->|"Sí"| P1 --> JUEZ
+    D2 -->|"No"| D3
+    D3 -->|"Sí"| P2 --> JUEZ
+    D3 -->|"No"| P3
+    JUEZ -->|"Aprobado"| FIN
+    JUEZ -->|"Rechazado (< 0.85)"| P3

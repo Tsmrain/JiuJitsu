@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam rectangleBackgroundColor #F7FAFC
+skinparam rectangleBorderColor #2B6CB0
+
+package "Inversión Inicial (CAPEX)" as CAPEX #FFF5F5 {
+  [Hardware Local: MacBook Air M5\n24 GB RAM Unificada (USD 1,499)]
+  [Software Open Source e IA Local\n(FastAPI, Postgres, Qdrant, YOLO, Qwen: USD 0)]
+}
+
+package "Costo Operativo Mensual (OPEX)" as OPEX {
+  [Estación Local: Energía CRE + Mantenimiento\n(~USD 17 / mes)] as OP_LOC
+  [Alternativa Nube Evitada: AWS EC2 + RDS\n(~USD 414.66 / mes)] as OP_CLD #FFF5F5
+}
+
+package "Retorno Mensual Conservador" as RET #F0FFF4 {
+  [Retención / Captación (+4 alumnos)\n+USD 180 / mes]
+  [Ahorro Tiempo Docente (12 h/mes)\n+USD 144 / mes]
+  [Ahorro Nube Evitada\n(+USD 397.66 / mes no desembolsados)]
+}
+
+rectangle "Resultado Financiero Conservador\nBeneficio Neto: USD 307 / mes\nPayback: 4.88 meses (Directo)\nROI 12 meses: +145.76%\nROI 24 meses: +391.53%" as RES #E6FFFA
+
+CAPEX --> RES
+OP_LOC --> RES
+OP_CLD ..> RET : costo evitado
+RET --> RES
+@enduml

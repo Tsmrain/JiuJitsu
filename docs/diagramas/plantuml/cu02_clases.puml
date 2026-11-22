@@ -1,0 +1,55 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class LoginModal <<Boundary>> {
+  +signupNombre: String
+  +signupUsername: String
+  +signupPassword: String
+  +signupSucursalId: UUID
+  +handleSignupSubmit()
+}
+class AuthRoutes <<Boundary>> {
+  +signup(req: SignupRequest): LoginResponse
+  +listar_sucursales(): List
+  +_sign_token(payload: Dict): String
+}
+class SignupRequest <<Entity>> {
+  +nombre_completo: String
+  +username: String
+  +password: String
+  +rol: String
+  +sucursal_id: UUID
+  +validate_username(v: String): String
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name: String, params: Dict): Any
+  +get(table: String): List
+}
+class Usuario <<Entity>> {
+  +id: UUID
+  +rol: String
+  +sucursal_id: UUID
+  +estado_suscripcion: String
+}
+class Sucursal <<Entity>> {
+  +id: UUID
+  +nombre: String
+  +ciudad: String
+}
+class LoginResponse <<Entity>> {
+  +token: String
+  +user_id: UUID
+  +estado_suscripcion: String
+}
+LoginModal ..> AuthRoutes : HTTP POST signup / GET sucursales
+AuthRoutes --> SignupRequest : valida reglas
+AuthRoutes --> PostgrestClient : ejecuta public_signup
+PostgrestClient --> Usuario : crea con estado pendiente
+PostgrestClient --> Sucursal : verifica sede
+AuthRoutes ..> LoginResponse : retorna sesión
+@enduml

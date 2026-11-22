@@ -1,0 +1,31 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Dueño (Administrador)" as AD
+actor "Usuario" as US
+boundary "Administración de Cuentas\n(AdminSucursales / App)" as B1
+boundary "Perfil Personal\n(UserProfileModal)" as B2
+control "Gestor de Identidades y Soporte\n(AuthRoutes / Postgrest)" as C1
+entity "Usuario (Alumno / Profesor)" as E1
+entity "Sucursal" as E2
+entity "Sesión Delegada" as E3
+
+AD --> B1 : gestiona profesores, traslados, bajas o soporte
+B1 --> C1 : ejecuta altas docentes, reasignación o impersonación
+US --> B2 : actualiza nombre, clave o idioma propio
+B2 --> C1 : persiste cambios preservando membresía
+C1 --> E1 : administra ciclo de vida sin auto-eliminación
+C1 --> E2 : valida sede destino
+C1 --> E3 : emite sesión temporal reversible
+@enduml

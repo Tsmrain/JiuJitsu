@@ -1,0 +1,25 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Dueño (Administrador)" as AD
+boundary "Mapa y Directorio de Sedes\n(AdminSucursales)" as B1
+control "Gestor Territorial\n(AuthRoutes / Nominatim)" as C1
+entity "Sucursal" as E1
+entity "Usuario" as E2
+
+AD --> B1 : registra, ubica o retira sede
+B1 --> C1 : extrae coordenadas y completa dirección
+C1 --> E1 : crea o actualiza datos geográficos
+C1 --> E2 : valida ausencia de usuarios antes de eliminar
+@enduml

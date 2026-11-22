@@ -1,0 +1,48 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class StudentProgress <<Boundary>> {
+  +evaluaciones: List
+  +renderStudentVideo()
+}
+class ProfesorTecnicas <<Boundary>> {
+  +alumnos: List
+  +fetchAlumnos()
+  +fetchEvaluacionesAlumno()
+}
+class AuthRoutes <<Boundary>> {
+  +listar_alumnos()
+  +listar_evaluaciones_alumno()
+}
+class EvaluacionesRoutes <<Boundary>> {
+  +consultar_evaluacion()
+}
+class VideoStorage <<Control>> {
+  +resolver_video_estatico()
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name, params)
+}
+class Usuario <<Entity>> {
+  +id: UUID
+  +sucursal_id: UUID
+}
+class Evaluacion <<Entity>> {
+  +id: UUID
+  +sucursal_id: UUID
+  +porcentaje_similitud: Float
+  +fecha_evaluacion: DateTime
+}
+StudentProgress ..> AuthRoutes
+ProfesorTecnicas ..> AuthRoutes
+AuthRoutes --> PostgrestClient
+AuthRoutes --> VideoStorage
+EvaluacionesRoutes --> PostgrestClient
+PostgrestClient --> Usuario
+PostgrestClient --> Evaluacion
+@enduml

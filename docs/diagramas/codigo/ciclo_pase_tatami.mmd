@@ -1,0 +1,19 @@
+flowchart LR
+    classDef estado fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+    classDef bloqueo fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef activo fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+
+    REG["Registro Público de Alumno"]:::estado
+    PEND["Estado: PENDIENTE\n(Acceso a perfil y consulta bibliográfica;\nanálisis biomecánico restringido)"]:::bloqueo
+    PAGO{"Pago presencial confirmado\nen recepción por Profesor o Dueño"}:::estado
+    ACT["Estado: ACTIVO (30 días)\n(Habilitación plena para evaluaciones\nbiomecánicas y feedback IA)"]:::activo
+    VENC{"¿Superó la fecha\nde expiración?"}:::estado
+    EXP["Estado: EXPIRADO\n(Historial preservado;\nnuevas evaluaciones bloqueadas)"]:::bloqueo
+
+    REG --> PEND
+    PEND --> PAGO
+    PAGO -->|"Activación / Renovación"| ACT
+    ACT --> VENC
+    VENC -->|"No (dentro de los 30 días)"| ACT
+    VENC -->|"Sí (plazo cumplido)"| EXP
+    EXP -->|"Nuevo pago presencial"| PAGO

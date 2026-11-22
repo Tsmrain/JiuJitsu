@@ -1,0 +1,41 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam nodeBackgroundColor #F7FAFC
+skinparam nodeBorderColor #2B6CB0
+skinparam databaseBackgroundColor #FFF5F5
+skinparam databaseBorderColor #C53030
+
+package "Red Pública / Internet" {
+  [Dispositivo Móvil / Navegador] as CLI
+  [Amenaza Externa / Fuerza Bruta] as ATK #FFF5F5
+}
+
+package "Borde Seguro (Edge)" #F0FFF4 {
+  [Cloudflare Tunnel (cloudflared)\nTLS 1.3 / Sin puertos abiertos] as edge_tun
+}
+
+node "Servidor Local del Tatami (Apple Silicon)" {
+  [Vite Reverse Proxy\nLista blanca allowedHosts] as VPX
+  [FastAPI Backend\nRate Limit / JWT HS256 / RBAC] as FAPI
+  [PostgREST Engine\nClaims y RPCs SECURITY DEFINER] as PRST
+
+  package "Capa de Datos Segura" #FFF5F5 {
+    database "PostgreSQL 16\nPolíticas RLS / pgcrypto bcrypt" as PG
+    database "Qdrant Vectorial\nColecciones Poses y RAG" as QD
+    folder "Almacenamiento Local\nVideos Patrón y Manuales" as FS
+  }
+}
+
+CLI --> edge_tun : HTTPS / WSS
+ATK ..> edge_tun : Bloqueado por Rate Limit\ny AllowedHosts
+edge_tun --> VPX
+VPX --> FAPI
+FAPI --> PRST
+PRST --> PG
+FAPI --> QD
+FAPI --> FS
+@enduml

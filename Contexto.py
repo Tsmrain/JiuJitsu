@@ -3,10 +3,14 @@
 Contexto.py — Genera un archivo Markdown con el contexto completo de tu proyecto.
 
 Escanea el directorio del proyecto, filtra directorios irrelevantes
-(venv, .venv, node_modules, __pycache__, .git, dist-info, etc.) y archivos
-binarios, y produce un .md con:
-  1. Estructura jerárquica de los archivos incluidos.
-  2. Contenido completo de cada archivo en bloques de código.
+(venv, .venv, node_modules, __pycache__, .git, dist-info, etc.) y credenciales
+sensibles (.env, client_secret_*), y produce un .md con:
+  1. Historial reciente de commits y estado local de Git.
+  2. Mapa completo del proyecto usando el comando `tree` (con pesos y activos
+     no textuales como modelos .pt, diagramas .png y documentos .docx).
+  3. Métricas cuantitativas por módulo y lenguaje/extensión.
+  4. Árbol de archivos incluidos con líneas y tamaño por archivo.
+  5. Contenido completo de cada archivo en bloques de código seguros.
 
 El .md resultante se puede pasar directamente como prompt/contexto a un
 agente de IA (Claude, GPT, Cursor, Cline, etc.).
@@ -19,6 +23,9 @@ Uso:
 
 import argparse
 import os
+import re
+import shutil
+import subprocess
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -38,19 +45,32 @@ EXCLUDED_DIRS = {
     "target", "obj", ".gradle", ".mvn",
     "bin", "out", "__MACOSX",
     ".terraform", ".serverless",
-    # Carpetas de datos, modelos, temporales y assets pesados
-    "data", "storage", "runs", "venv_mlx", "documentos_word", "datasets", "dataset",
+    # Carpetas de modelos/temporales pesados (se mantienen visibles en `tree`)
+    "storage", "runs", "venv_mlx", "documentos_word", "datasets", "dataset",
 }
 
 EXCLUDED_DIR_SUFFIXES = (".dist-info", ".egg-info", ".egg", ".framework")
 
-# Archivos concretos a excluir (lockfiles grandes, sistema)
+# Archivos concretos a excluir (lockfiles grandes, sistema, credenciales reales)
 EXCLUDED_FILES = {
     "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
     "poetry.lock", "Pipfile.lock", "Cargo.lock", "composer.lock",
     "Gemfile.lock", "go.sum", "packages.lock.json",
-    ".DS_Store", "Thumbs.db",
+    ".DS_Store", "Thumbs.db", ".env",
 }
+
+EXCLUDED_FILE_PREFIXES = ("client_secret_", "~$")
+
+# Patrón base para `tree -I`: oculta entornos/cachés pesados y credenciales,
+# pero preserva activos visibles importantes (storage, modelos .pt, .png, .docx).
+TREE_IGNORE_PATTERNS = (
+    ".git", ".hg", ".svn", ".idea", ".vscode",
+    "node_modules", "venv", ".venv", "venv_mlx", "virtualenv", "ENV",
+    "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".cache",
+    "dist", "build", "coverage", "htmlcov", "__MACOSX",
+    "*.dist-info", "*.egg-info",
+    ".DS_Store", "Thumbs.db", ".env", "client_secret_*", "~$*",
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Extensiones incluidas / excluidas
@@ -58,17 +78,17 @@ EXCLUDED_FILES = {
 
 INCLUDED_EXTENSIONS = {
     # Python
-    ".py", ".pyi", ".pyx",
+    ".py", ".pyi", ".pyx", ".patched",
     # JS / TS
     ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts",
     # Web
     ".html", ".htm", ".css", ".scss", ".sass", ".less",
     ".vue", ".svelte",
     # Datos / config
-    ".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
-    ".xml", ".env",
-    # Docs
-    ".md", ".rst", ".txt",
+    ".json", ".jsonl", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
+    ".xml",
+    # Docs y diagramas
+    ".md", ".rst", ".txt", ".puml", ".mmd",
     # Shell
     ".sh", ".bash", ".zsh", ".ps1", ".bat", ".cmd",
     # DB
@@ -90,7 +110,7 @@ INCLUDED_FILENAMES = {
     "requirements.txt", "requirements-dev.txt",
     "Pipfile", "pyproject.toml", "setup.py", "setup.cfg",
     ".gitignore", ".dockerignore", ".gitattributes",
-    ".env", ".env.example", ".env.local", ".env.template",
+    ".env.example", ".env.template",
     "package.json", "tsconfig.json",
     ".babelrc", ".eslintrc", ".prettierrc", ".editorconfig",
     "docker-compose.yml", "docker-compose.yaml",
@@ -154,7 +174,7 @@ def should_include_file(path: Path, excluded_paths: frozenset = frozenset()) -> 
         return False
     name = path.name
     ext = path.suffix.lower()
-    if name in EXCLUDED_FILES:
+    if name in EXCLUDED_FILES or name.startswith(EXCLUDED_FILE_PREFIXES):
         return False
     if ext in EXCLUDED_EXTENSIONS:
         return False
@@ -200,17 +220,80 @@ def collect_files(root: Path, excluded_paths: frozenset = frozenset()) -> list:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Árbol jerárquico
+# Árbol jerárquico, comando `tree` y métricas
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_tree(root: Path, files: list) -> str:
-    """Construye un árbol con únicamente los archivos que se incluirán."""
+def _format_size_kb(size_bytes: int) -> str:
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    return f"{size_bytes / 1024:.1f} KB"
+
+
+def get_system_tree_block(root: Path, excluded_output_name: str = "") -> list:
+    """Ejecuta el comando `tree` del sistema (o un fallback) para mapear todo el disco."""
+    ignore_items = list(TREE_IGNORE_PATTERNS)
+    if excluded_output_name:
+        ignore_items.append(excluded_output_name)
+    ignore_expr = "|".join(ignore_items)
+
+    tree_output = ""
+    tree_cmd = shutil.which("tree")
+    if tree_cmd:
+        try:
+            res = subprocess.run(
+                [
+                    tree_cmd, "-a", "--dirsfirst", "-h", "--du", "-F",
+                    "-I", ignore_expr, str(root),
+                ],
+                capture_output=True, text=True, check=False, timeout=10,
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                tree_output = res.stdout.replace(str(root), root.name or str(root)).strip()
+        except Exception:
+            tree_output = ""
+
+    if not tree_output:
+        # Fallback puro en Python si `tree` no está instalado en el sistema
+        all_paths = []
+        skip_names = EXCLUDED_DIRS - {"storage"}
+        for dirpath, dirnames, filenames in os.walk(root):
+            current = Path(dirpath)
+            dirnames[:] = sorted(
+                d for d in dirnames
+                if d not in skip_names and not d.startswith(".")
+                and not any(d.endswith(s) for s in EXCLUDED_DIR_SUFFIXES)
+            )
+            for fname in sorted(filenames):
+                if (fname in EXCLUDED_FILES
+                        or fname.startswith(EXCLUDED_FILE_PREFIXES)
+                        or fname == excluded_output_name):
+                    continue
+                all_paths.append(current / fname)
+        records = [{"rel": p.relative_to(root), "size": p.stat().st_size, "lines": None} for p in all_paths]
+        tree_output = build_tree(root, records, show_metrics=False)
+
+    return [
+        "## 🌳 Mapa Completo en Disco (`tree` sin dependencias pesadas)",
+        "",
+        "> Incluye activos no textuales (pesos `.pt`/`.pkl`, imágenes `.png`/`.jpg`, `.docx`, `storage/`, etc.) omitidos en los bloques de código.",
+        "",
+        "```text",
+        tree_output,
+        "```",
+        "",
+        "---",
+        "",
+    ]
+
+
+def build_tree(root: Path, records: list, show_metrics: bool = True) -> str:
+    """Construye un árbol jerárquico con métricas por archivo (líneas y tamaño)."""
     tree = defaultdict(lambda: {"dirs": set(), "files": []})
 
-    for f in files:
-        rel = f.relative_to(root)
+    for rec in records:
+        rel = rec["rel"]
         parent_parts = rel.parent.parts if str(rel.parent) != "." else ()
-        tree[parent_parts]["files"].append(rel.name)
+        tree[parent_parts]["files"].append(rec)
         for i in range(len(parent_parts)):
             tree[parent_parts[:i]]["dirs"].add(parent_parts[i])
 
@@ -218,17 +301,80 @@ def build_tree(root: Path, files: list) -> str:
 
     def render(parts, prefix=""):
         node = tree[parts]
-        entries = ([(d, True) for d in sorted(node["dirs"])]
-                   + [(f, False) for f in sorted(node["files"])])
-        for i, (name, is_dir) in enumerate(entries):
+        sorted_dirs = [(d, True, None) for d in sorted(node["dirs"])]
+        sorted_files = [(r["rel"].name, False, r) for r in sorted(node["files"], key=lambda x: x["rel"].name)]
+        entries = sorted_dirs + sorted_files
+        for i, (name, is_dir, rec) in enumerate(entries):
             is_last = i == len(entries) - 1
             connector = "└── " if is_last else "├── "
-            lines.append(prefix + connector + name + ("/" if is_dir else ""))
             if is_dir:
+                lines.append(f"{prefix}{connector}{name}/")
                 render(parts + (name,), prefix + ("    " if is_last else "│   "))
+            else:
+                if show_metrics and rec and rec["lines"] is not None:
+                    meta = f" ({rec['lines']:,} líneas, {_format_size_kb(rec['size'])})"
+                elif show_metrics and rec:
+                    meta = f" ({_format_size_kb(rec['size'])})"
+                else:
+                    meta = ""
+                lines.append(f"{prefix}{connector}{name}{meta}")
 
     render(())
     return "\n".join(lines)
+
+
+def build_metrics_summary(records: list) -> list:
+    """Genera tablas de resumen por módulo raíz y por extensión."""
+    by_module = defaultdict(lambda: {"files": 0, "lines": 0, "bytes": 0})
+    by_ext = defaultdict(lambda: {"files": 0, "lines": 0, "bytes": 0})
+    total_lines = 0
+    total_bytes = 0
+
+    for rec in records:
+        rel = rec["rel"]
+        module = rel.parts[0] if len(rel.parts) > 1 else "(raíz)"
+        ext = rel.suffix.lower() or rel.name
+        lines_cnt = rec["lines"] or 0
+        size_b = rec["size"]
+
+        by_module[module]["files"] += 1
+        by_module[module]["lines"] += lines_cnt
+        by_module[module]["bytes"] += size_b
+
+        by_ext[ext]["files"] += 1
+        by_ext[ext]["lines"] += lines_cnt
+        by_ext[ext]["bytes"] += size_b
+
+        total_lines += lines_cnt
+        total_bytes += size_b
+
+    out = [
+        "## 📊 Resumen Cuantitativo del Código y Documentación",
+        "",
+        f"- **Total archivos leídos:** {len(records):,}",
+        f"- **Total líneas:** {total_lines:,}",
+        f"- **Peso total de texto incluido:** {_format_size_kb(total_bytes)}",
+        "",
+        "### Por Módulo Principal",
+        "",
+        "| Módulo | Archivos | Líneas | Tamaño |",
+        "|---|---:|---:|---:|",
+    ]
+    for mod, st in sorted(by_module.items(), key=lambda x: (-x[1]["bytes"], x[0])):
+        out.append(f"| `{mod}` | {st['files']:,} | {st['lines']:,} | {_format_size_kb(st['bytes'])} |")
+
+    out.extend([
+        "",
+        "### Por Extensión / Tipo (Top 12)",
+        "",
+        "| Tipo | Archivos | Líneas | Tamaño |",
+        "|---|---:|---:|---:|",
+    ])
+    for ext, st in sorted(by_ext.items(), key=lambda x: (-x[1]["files"], -x[1]["bytes"]))[:12]:
+        out.append(f"| `{ext}` | {st['files']:,} | {st['lines']:,} | {_format_size_kb(st['bytes'])} |")
+
+    out.extend(["", "---", ""])
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -236,14 +382,15 @@ def build_tree(root: Path, files: list) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 LANG_MAP = {
-    "py": "python", "pyi": "python", "pyx": "cython",
+    "py": "python", "pyi": "python", "pyx": "cython", "patched": "python",
     "js": "javascript", "jsx": "jsx", "mjs": "javascript", "cjs": "javascript",
     "ts": "typescript", "tsx": "tsx", "mts": "typescript", "cts": "typescript",
     "html": "html", "htm": "html", "css": "css", "scss": "scss",
     "sass": "sass", "less": "less",
-    "json": "json", "yaml": "yaml", "yml": "yaml", "toml": "toml",
+    "json": "json", "jsonl": "json", "yaml": "yaml", "yml": "yaml", "toml": "toml",
     "ini": "ini", "cfg": "ini", "conf": "conf",
     "md": "markdown", "rst": "rst", "txt": "text",
+    "puml": "plantuml", "mmd": "mermaid",
     "sh": "bash", "bash": "bash", "zsh": "bash",
     "ps1": "powershell", "bat": "batch", "cmd": "batch",
     "sql": "sql", "graphql": "graphql", "gql": "graphql",
@@ -262,49 +409,114 @@ LANG_MAP = {
 # Generación del Markdown final
 # ─────────────────────────────────────────────────────────────────────────────
 
-def generate_markdown(root: Path, files: list, max_size: int) -> str:
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    total = len(files)
+def safe_code_fence(content: str) -> str:
+    """Devuelve un delimitador de backticks que no colisiona con bloques internos."""
+    runs = [len(m.group(0)) for m in re.finditer(r"`+", content)]
+    return "`" * max(3, (max(runs) + 1) if runs else 3)
 
+
+def get_git_history_block(root: Path) -> list:
+    """Captura historial reciente de commits y estado de cambios locales si existe Git."""
+    if not (root / ".git").exists():
+        return []
+    blocks = []
+    try:
+        log_res = subprocess.run(
+            ["git", "-C", str(root), "log", "-n", "40", "--date=short", "--pretty=format:%h %ad %s"],
+            capture_output=True, text=True, check=False, timeout=5,
+        )
+        st_res = subprocess.run(
+            ["git", "-C", str(root), "status", "--short"],
+            capture_output=True, text=True, check=False, timeout=5,
+        )
+        if log_res.returncode == 0 and log_res.stdout.strip():
+            blocks.extend([
+                "## 🕰️ Historial Reciente de Commits (`git log`)",
+                "",
+                "```text",
+                log_res.stdout.strip(),
+                "```",
+                "",
+            ])
+        if st_res.returncode == 0 and st_res.stdout.strip():
+            blocks.extend([
+                "## 🛠️ Cambios Locales en Curso (`git status --short`)",
+                "",
+                "```text",
+                st_res.stdout.strip(),
+                "```",
+                "",
+            ])
+        if blocks:
+            blocks.append("---")
+            blocks.append("")
+    except Exception:
+        pass
+    return blocks
+
+
+def generate_markdown(root: Path, files: list, max_size: int, output_name: str = "") -> str:
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    records = []
+    for filepath in files:
+        content = read_file_safe(filepath, max_size)
+        if content is None:
+            continue
+        rel = filepath.relative_to(root)
+        try:
+            size_b = filepath.stat().st_size
+        except OSError:
+            size_b = len(content.encode("utf-8"))
+        line_cnt = len(content.splitlines())
+        records.append({
+            "path": filepath,
+            "rel": rel,
+            "content": content,
+            "size": size_b,
+            "lines": line_cnt,
+        })
+
+    included = len(records)
     out = [
         f"# Contexto del Proyecto: `{root.name}`",
         "",
         f"- **Generado:** {timestamp}",
         f"- **Raíz:** `{root.resolve()}`",
-        f"- **Archivos incluidos:** {total}",
+        f"- **Archivos de código/texto incluidos:** {included}",
         "",
-        "> Este documento contiene el contexto completo del proyecto para ser "
-        "utilizado por un agente de IA.",
+        "> Este documento contiene el contexto completo del proyecto (mapa en disco con `tree`, métricas, historial Git y código fuente) para ser utilizado por un agente de IA.",
         "",
         "---",
         "",
-        "## 📁 Estructura del proyecto",
+    ]
+    out.extend(get_git_history_block(root))
+    out.extend(get_system_tree_block(root, output_name))
+    out.extend(build_metrics_summary(records))
+    out.extend([
+        "## 📁 Estructura de Archivos Incluidos (con líneas y tamaño)",
         "",
-        "```",
-        build_tree(root, files),
+        "```text",
+        build_tree(root, records, show_metrics=True),
         "```",
         "",
         "---",
         "",
         "## 📄 Contenido de los archivos",
         "",
-    ]
+    ])
 
-    included = 0
-    for filepath in files:
-        content = read_file_safe(filepath, max_size)
-        if content is None:
-            continue
-        included += 1
-        rel = filepath.relative_to(root)
-        ext = filepath.suffix.lstrip(".").lower()
+    for rec in records:
+        rel = rec["rel"]
+        content = rec["content"]
+        ext = rel.suffix.lstrip(".").lower()
         lang = LANG_MAP.get(ext, ext or "text")
+        fence = safe_code_fence(content)
 
-        out.append(f"### `{rel}`")
+        out.append(f"### `{rel}` ({rec['lines']:,} líneas, {_format_size_kb(rec['size'])})")
         out.append("")
-        out.append(f"```{lang}")
+        out.append(f"{fence}{lang}")
         out.append(content.rstrip("\n"))
-        out.append("```")
+        out.append(fence)
         out.append("")
 
     out.append("---")
@@ -346,7 +558,7 @@ def main():
         sys.exit(1)
 
     print("📝 Generando Markdown...")
-    md = generate_markdown(root, files, max_size)
+    md = generate_markdown(root, files, max_size, output_name=output.name)
 
     output.write_text(md, encoding="utf-8")
     size_kb = output.stat().st_size / 1024

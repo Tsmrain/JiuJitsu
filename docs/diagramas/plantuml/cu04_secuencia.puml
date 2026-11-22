@@ -1,0 +1,57 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+hide footbox
+autonumber
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+skinparam SequenceGroupBorderThickness 1
+skinparam SequenceGroupBorderColor #CBD5E1
+skinparam SequenceGroupBackgroundColor #F8FAFC
+skinparam SequenceGroupHeaderFontColor #1E3A8A
+skinparam SequenceGroupFontColor #475569
+skinparam SequenceLifeLineBorderColor #94A3B8
+actor Alumno as AL
+boundary "PantallaDeResultados" as B1
+control "CoordinadorDeFeedback" as C1
+entity "Evaluacion" as E1
+entity "BibliotecaTecnica" as E2
+entity "Tecnica" as E3
+
+AL -> B1 : consultarFeedback(evaluacionId, idioma)
+B1 -> C1 : generarFeedbackPedagogico(evaluacionId, idioma)
+C1 -> E1 : obtenerResultadoCinematico(evaluacionId)
+E1 --> C1 : similitud, instanteCritico, articulaciones
+
+alt Similitud >= 85%
+  C1 -> C1 : emitirFelicitacionEnIdioma(idioma)
+else Similitud < 85%
+  C1 -> E2 : buscarEvidenciaEnManualesOBibliotecaGlobal(tecnica)
+  E2 --> C1 : pasajesYRelevancia
+  C1 -> E3 : obtenerNotaDelProfesor(tecnica)
+  E3 --> C1 : notaDelProfesor
+  C1 -> C1 : aplicarJerarquiaFuentes()
+  alt Existe respaldo bibliográfico o docente
+    C1 -> C1 : redactarCorreccionYAuditarFidelidad()
+    alt Fidelidad < 0.85
+      C1 -> C1 : aplicarRespaldoSeguro()
+    end
+  else Sin respaldo teórico suficiente
+    C1 -> C1 : generarAvisoCuantitativoSeguro()
+  end
+end
+
+C1 -> C1 : marcarArticulacionesCriticasYTraducir(idioma)
+C1 -> E1 : guardarReporteDefinitivo(evaluacionId, reporte)
+E1 --> C1 : reporteConfirmado
+C1 --> B1 : entregarReporte(similitud, reporte, videoGuia, segundoError)
+B1 --> AL : presentarComparativaYReferencias()
+@enduml

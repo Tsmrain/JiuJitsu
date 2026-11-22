@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam usecaseBackgroundColor #F7FAFC
+skinparam usecaseBorderColor #2B6CB0
+actor "Profesor" as PR
+actor "Administrador (Dueño)" as AD
+actor "Alumno" as AL
+rectangle "Sistema Corpo e Mente — Biblioteca y Conocimiento" {
+  usecase "UC-06: Gestionar Manuales y Notas del Profesor" as UC06
+  usecase "Incorporar Manual de Estudio" as UC06U
+  usecase "Registrar Nota Práctica Docente" as UC06M
+  usecase "Retirar Manual Obsoleto" as UC06D
+  usecase "Consultar Biblioteca Técnica" as UC06R
+}
+PR --> UC06
+AD --> UC06
+PR --> UC06R
+AD --> UC06R
+AL --> UC06R
+UC06U ..> UC06 : <<extend>>
+UC06M ..> UC06 : <<extend>>
+UC06D ..> UC06 : <<extend>>
+@enduml

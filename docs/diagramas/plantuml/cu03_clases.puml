@@ -1,0 +1,77 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class App <<Boundary>> {
+  +isAnalyzing: Boolean
+  +handleCancelAnalysis()
+}
+class VideoUpload <<Boundary>> {
+  +selectedProfesorId: UUID
+  +selectedTecnicaId: UUID
+  +videoFile: File
+}
+class SelectorPersonaVideo <<Boundary>> {
+  +sessionData: Dict
+  +selectedIdx: Int
+  +onSelect(idx)
+}
+class EvaluacionesRoutes <<Boundary>> {
+  +validar_spam_video(video)
+  +iniciar_sesion(video)
+  +analizar_evaluacion(evaluacion_id)
+  +cancelar_evaluacion(evaluacion_id)
+}
+class SessionStateManager <<Control>> {
+  +create_session(): String
+  +confirm_persona(idx)
+  +cancel_session()
+}
+class LocalSpamFilter <<Control>> {
+  +es_jiu_jitsu(video): Dict
+}
+class IntelligenceAnalysisFacade <<Control>> {
+  +ejecutar_analisis(evaluacion_id)
+}
+class YOLOPoseAdapter <<Adapter>> {
+  +detectar_personas_primer_frame()
+  +extraer_secuencia()
+}
+class PoseNormalizer <<Control>> {
+  +normalizar_secuencia_46d()
+}
+class DTWComparator <<Control>> {
+  +alinear_y_comparar()
+}
+class Evaluacion <<Entity>> {
+  +id: UUID
+  +sucursal_id: UUID
+  +estado: String
+  +porcentaje_similitud: Float
+}
+class PatronReferencia <<Entity>> {
+  +id: UUID
+  +tecnica_id: UUID
+  +secuencia_3d: List
+}
+class EsqueletoBiomecanico <<Entity>> {
+  +frame_critico: Int
+  +articulaciones_error: List
+}
+App ..> VideoUpload
+VideoUpload ..> SelectorPersonaVideo
+VideoUpload ..> EvaluacionesRoutes
+EvaluacionesRoutes --> SessionStateManager
+EvaluacionesRoutes --> LocalSpamFilter
+EvaluacionesRoutes --> IntelligenceAnalysisFacade
+IntelligenceAnalysisFacade --> YOLOPoseAdapter
+IntelligenceAnalysisFacade --> PoseNormalizer
+IntelligenceAnalysisFacade --> DTWComparator
+IntelligenceAnalysisFacade --> PatronReferencia
+IntelligenceAnalysisFacade --> Evaluacion
+DTWComparator ..> EsqueletoBiomecanico
+@enduml

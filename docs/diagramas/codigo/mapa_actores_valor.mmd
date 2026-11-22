@@ -1,0 +1,21 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef valor fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    classDef centro fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+
+    D["👤 Dueño de Corpo e Mente"]:::actor
+    P["👤 Profesor / Maestro"]:::actor
+    A["👤 Alumno"]:::actor
+    S["🏛️ Sede Física (Knock Out)"]:::actor
+
+    PLAT(["Plataforma de Análisis Biomecánico y Conocimiento BJJ"]):::centro
+
+    D -->|"Estandarización multi-sucursal y control de costos ($0 nube)"| PLAT
+    P -->|"Aporte de patrones oficiales, notas técnicas y ahorro de 12 h/mes"| PLAT
+    A -->|"Evaluación objetiva 24/7, prevención de lesiones e idioma propio"| PLAT
+    S -->|"Cobranza presencial vinculada a habilitación digital (Pase de Tatami)"| PLAT
+
+    PLAT -->|"Trazabilidad ejecutiva y retención de alumnos"| D
+    PLAT -->|"Seguimiento grupal ordenado por sucursal"| P
+    PLAT -->|"Corrección biomecánica verificada con citas"| A
+    PLAT -->|"Cero fricción con efectivo/QR sin pasarelas externas"| S

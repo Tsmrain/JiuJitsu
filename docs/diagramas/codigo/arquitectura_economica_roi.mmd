@@ -1,0 +1,28 @@
+flowchart LR
+    classDef capex fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef opex fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    classDef roi fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+
+    subgraph INV["Inversión Inicial (CAPEX)"]
+        HW["Hardware Local: MacBook Air M5\n24 GB Memoria Unificada (~USD 1,499)"]:::capex
+        SW["Software Open Source e IA Local\n(FastAPI, Postgres, Qdrant, YOLO, Qwen: USD 0)"]:::opex
+    end
+
+    subgraph OPE["Costo Operativo Mensual (OPEX)"]
+        EL["Energía CRE + Mantenimiento\n(~USD 17 / mes en Santa Cruz)"]:::opex
+        CL["Alternativa Cloud Evitada\n(AWS g4dn.xlarge + RDS: ~USD 414.66 / mes)"]:::capex
+    end
+
+    subgraph BEN["Retorno de Valor Mensual"]
+        RET["Retención / Captación (+4 alumnos)\n+USD 180 / mes"]:::roi
+        HOR["Ahorro de Tiempo Docente (12 h/mes)\n+USD 144 / mes"]:::roi
+        AHC["Ahorro Neto de Nube Evitada\n+USD 397.66 / mes"]:::roi
+    end
+
+    RES["Resultado Escenario Conservador:\nBeneficio Neto USD 307/mes | Payback 4.9 meses\nROI 12 meses: +145.8% | ROI 24 meses: +391.5%"]:::roi
+
+    INV --> RES
+    EL --> RES
+    RET --> RES
+    HOR --> RES
+    CL -.->|"Evitado por arquitectura local"| AHC --> RES

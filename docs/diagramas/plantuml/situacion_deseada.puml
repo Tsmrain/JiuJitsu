@@ -1,0 +1,40 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam rectangleBackgroundColor #F7FAFC
+skinparam rectangleBorderColor #2B6CB0
+skinparam noteBackgroundColor #F0FFF4
+skinparam noteBorderColor #2F855A
+
+actor "Alumno\n(Practica en tatami o casa)" as AL
+actor "Profesor\n(Graba técnica guía y consejos)" as PR
+actor "Dueño\n(Gobierna sedes y profesores)" as DU
+
+rectangle "Sistema de Apoyo Biomecánico Corpo e Mente" {
+  usecase "1. Alumno envía video\ny confirma quién es" as P1
+  usecase "2. El sistema compara su postura\ncon el modelo de su profesor" as P2
+  usecase "3. Busca respaldo en manuales\ny notas oficiales del profesor" as P3
+  usecase "4. Entrega corrección clara\ncon el segundo exacto del fallo" as P4
+}
+
+AL --> P1
+PR --> P2 : aporta técnica guía
+PR --> P3 : aporta consejos propios
+DU --> P3 : gestiona sedes y profesores
+P1 -right-> P2
+P2 -right-> P3
+P3 -right-> P4
+P4 --> AL : mejora continua y\nprevención de lesiones
+
+note bottom of P4
+  Beneficio para el negocio:
+  • El alumno recibe guía objetiva 24/7 en su idioma
+  • El profesor dedica la clase a corregir táctica avanzada
+  • Todas las sedes mantienen el mismo estándar técnico
+end note
+@enduml

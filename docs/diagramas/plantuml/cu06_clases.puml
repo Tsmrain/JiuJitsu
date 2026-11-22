@@ -1,0 +1,66 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+skinparam classHeaderBackgroundColor #EBF8FF
+class GlobalKnowledgeModal <<Boundary>> {
+  +file: File
+  +handleUpload()
+  +handleCancelUpload()
+  +handleDeleteSource()
+}
+class TheoryManagerModal <<Boundary>> {
+  +tecnica: Tecnica
+  +handleDeleteAll()
+}
+class LibraryView <<Boundary>> {
+  +manuales: List
+  +fetchManuales()
+}
+class EvaluacionesRoutes <<Boundary>> {
+  +ingerir_archivo_teoria()
+  +listar_manuales_pdf()
+  +eliminar_manual_conocimiento()
+  +eliminar_teoria()
+}
+class IngestKnowledgeUseCase <<Control>> {
+  +execute(tecnica_id, contenido, alcance)
+}
+class DeleteTheoryUseCase <<Control>> {
+  +execute(tecnica_id, profesor_id)
+}
+class InstructorMessageIngestion <<Control>> {
+  +sincronizar_mensaje_profesor()
+}
+class QwenEmbeddingAdapter <<Adapter>> {
+  +generar_embedding_texto()
+  +generar_embedding_imagen()
+}
+class QdrantRAGAdapter <<Adapter>> {
+  +ingestar_desde_respuesta()
+  +eliminar_por_manual()
+}
+class PostgrestClient <<Control>> {
+  +rpc(function_name, params)
+}
+class TeoriaRAG <<Entity>> {
+  +id: UUID
+  +fuente_tipo: String
+  +alcance: String
+}
+GlobalKnowledgeModal ..> EvaluacionesRoutes
+TheoryManagerModal ..> EvaluacionesRoutes
+LibraryView ..> EvaluacionesRoutes
+EvaluacionesRoutes --> IngestKnowledgeUseCase
+EvaluacionesRoutes --> DeleteTheoryUseCase
+EvaluacionesRoutes --> QdrantRAGAdapter
+EvaluacionesRoutes --> PostgrestClient
+IngestKnowledgeUseCase --> QwenEmbeddingAdapter
+IngestKnowledgeUseCase --> QdrantRAGAdapter
+IngestKnowledgeUseCase --> TeoriaRAG
+DeleteTheoryUseCase --> QdrantRAGAdapter
+InstructorMessageIngestion --> QdrantRAGAdapter
+@enduml

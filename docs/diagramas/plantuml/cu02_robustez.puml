@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+top to bottom direction
+skinparam actorBackgroundColor #FFF5F5
+skinparam actorBorderColor #C53030
+skinparam boundaryBackgroundColor #EBF8FF
+skinparam boundaryBorderColor #2B6CB0
+skinparam controlBackgroundColor #FAF5FF
+skinparam controlBorderColor #6B46C1
+skinparam entityBackgroundColor #F0FFF4
+skinparam entityBorderColor #2F855A
+actor "Nuevo Practicante" as AL
+boundary "Pantalla de Registro\n(LoginModal)" as B1
+control "Gestor de Registro\n(AuthRoutes / Postgrest)" as C1
+entity "Solicitud Registro\n(SignupRequest)" as E0
+entity "Sucursal" as E1
+entity "Usuario (Alumno)" as E2
+entity "Sesión Inicial" as E3
+
+AL --> B1 : aporta datos y elige sucursal
+B1 --> C1 : solicita creación de cuenta
+C1 --> E0 : valida formato y rol alumno
+C1 --> E1 : verifica sucursal oficial
+C1 --> E2 : registra cuenta en estado pendiente
+C1 --> E3 : abre sesión restringida
+@enduml

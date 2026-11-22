@@ -1,0 +1,91 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 125
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor #F7FAFC
+skinparam ActivityBorderColor #2B6CB0
+skinparam ActivityFontColor #1A365D
+skinparam ActivityDiamondBackgroundColor #FFF5F5
+skinparam ActivityDiamondBorderColor #C53030
+skinparam ActivityDiamondFontColor #742A2A
+skinparam ArrowColor #4A5568
+
+|Alumno (Cliente)|
+start
+:Iniciar sesion y elegir Profesor y Tecnica;
+:Seleccionar video de practica en celular;
+
+|Frontend (React 19 + Vite Proxy)|
+:Validar tamano de archivo y enviar a validar-spam;
+
+|Backend (FastAPI)|
+if (Pase de Tatami activo\ny formato valido?) then (No)
+  :Rechazar HTTP 403 / 422;
+  stop
+else (Si)
+endif
+
+|IA de Vision (YOLO26 + ViCoS)|
+if (Clasificador ViCoS\nratio BJJ >= 0.60?) then (No)
+  |Backend (FastAPI)|
+  :Rechazar HTTP 403 / 422;
+  stop
+else (Si)
+  :Detectar personas y deduplicar siluetas;
+endif
+
+|Backend (FastAPI)|
+:Crear sesion (CREATED -> PERSONA_SELECTED);
+
+|Alumno (Cliente)|
+:Confirmar silueta propia en primer fotograma;
+
+|Backend (FastAPI)|
+:Crear Evaluacion (procesando) y congelar sucursal_id;
+
+|Alumno (Cliente)|
+if (Desea cancelar durante\nel procesamiento?) then (Si)
+  |Frontend (React 19 + Vite Proxy)|
+  :Ejecutar AbortController y POST cancelar;
+  |Backend (FastAPI)|
+  :Marcar estado cancelado y borrar video temporal;
+  |Alumno (Cliente)|
+  :Volver a pantalla inicial;
+  stop
+else (No)
+endif
+
+|IA de Vision (YOLO26 + ViCoS)|
+:Extraer secuencia postural 3D y tracking IoU;
+
+|Persistencia (PostgreSQL + Qdrant)|
+:Obtener patrones activos en Qdrant;
+
+|IA Biomecanica y RAG (DTW + Qwen3-VL MLX)|
+:Normalizar 46 dims y alinear DTW contra patrones;
+if (Similitud < 85.0%?) then (No (>= 85%))
+  :Emitir felicitacion deterministica;
+else (Si (< 85%))
+  :Buscar en manual de tecnica o Biblioteca Global\ny reordenar con Cross-Encoder;
+  if (Manual >= 0.65\no Nota del Profesor?) then (Si)
+    :Qwen3-VL-Instruct-4B genera correccion\ny Juez audita fidelidad >= 0.85;
+  else (No)
+    :Activar Respaldo Cuantitativo Seguro;
+  endif
+endif
+
+|Backend (FastAPI)|
+:Anotar frame critico y traducir articulaciones;
+
+|Persistencia (PostgreSQL + Qdrant)|
+:Guardar estado completado si no fue cancelado;
+
+|Frontend (React 19 + Vite Proxy)|
+:Polling a GET /evaluaciones/id cada 3s;
+:Renderizar FeedbackView (Videos + Tarjeta IA);
+
+|Alumno (Cliente)|
+:Revisar feedback, saltar al segundo del error\ny abrir citas o Biblioteca;
+stop
+
+@enduml

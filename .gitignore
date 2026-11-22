@@ -53,6 +53,7 @@ htmlcov/
 
 # SO / editor
 .DS_Store
+~$*
 .idea/
 .vscode/*
 !.vscode/extensions.json

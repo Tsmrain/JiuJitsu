@@ -1,0 +1,118 @@
+@startuml
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+left to right direction
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #2B6CB0
+
+package "Presentacion (Frontend React 19)" {
+  class App
+  class LoginModal
+  class VideoUpload
+  class SelectorPersonaVideo
+  class FeedbackView
+  class StudentProgress
+  class LibraryView
+  class ProfesorTecnicas
+  class TheoryManagerModal
+  class GlobalKnowledgeModal
+  class AdminSucursales
+  class UserProfileModal
+}
+
+package "Frontera HTTP (FastAPI)" {
+  class AuthRoutes
+  class EvaluacionesRoutes
+  class TecnicasRoutes
+  class AuthRateLimitMiddleware
+}
+
+package "Aplicacion y Dominio" {
+  class IntelligenceAnalysisFacade
+  class SessionStateManager
+  class LocalSpamFilter
+  class IngestKnowledgeUseCase
+  class DeleteTheoryUseCase
+  class MultimodalRAGService
+  class HybridRetriever
+  class GlossaryService
+  interface IPromptStrategy
+  class PoseNormalizer
+  class DTWComparator
+  class Usuario
+  class Sucursal
+  class Tecnica
+  class PatronReferencia
+  class Evaluacion
+  class TeoriaRAG
+  class AnalisisResultDTO
+}
+
+package "Infraestructura" {
+  class PostgrestClient
+  class VideoStorage
+  class YOLOPoseAdapter
+  class QwenEmbeddingAdapter
+  class Qwen3VLRerankerCrossEncoder
+  class LocalVLMAdapter
+  class QdrantVectorAdapter
+  class QdrantRAGAdapter
+}
+
+App ..> LoginModal
+App ..> VideoUpload
+App ..> FeedbackView
+App ..> StudentProgress
+App ..> LibraryView
+App ..> ProfesorTecnicas
+App ..> AdminSucursales
+App ..> UserProfileModal
+
+VideoUpload ..> SelectorPersonaVideo
+ProfesorTecnicas ..> TheoryManagerModal
+ProfesorTecnicas ..> GlobalKnowledgeModal
+
+LoginModal ..> AuthRateLimitMiddleware
+AuthRateLimitMiddleware --> AuthRoutes
+VideoUpload ..> EvaluacionesRoutes
+FeedbackView ..> EvaluacionesRoutes
+LibraryView ..> EvaluacionesRoutes
+ProfesorTecnicas ..> TecnicasRoutes
+AdminSucursales ..> AuthRoutes
+
+AuthRoutes --> PostgrestClient
+EvaluacionesRoutes --> IntelligenceAnalysisFacade
+EvaluacionesRoutes --> IngestKnowledgeUseCase
+EvaluacionesRoutes --> DeleteTheoryUseCase
+EvaluacionesRoutes --> SessionStateManager
+EvaluacionesRoutes --> LocalSpamFilter
+EvaluacionesRoutes --> VideoStorage
+TecnicasRoutes --> PostgrestClient
+TecnicasRoutes --> VideoStorage
+TecnicasRoutes --> QdrantVectorAdapter
+TecnicasRoutes --> QdrantRAGAdapter
+
+IntelligenceAnalysisFacade --> YOLOPoseAdapter
+IntelligenceAnalysisFacade --> QdrantVectorAdapter
+IntelligenceAnalysisFacade --> LocalVLMAdapter
+IntelligenceAnalysisFacade --> QwenEmbeddingAdapter
+IntelligenceAnalysisFacade --> DTWComparator
+IntelligenceAnalysisFacade --> HybridRetriever
+IntelligenceAnalysisFacade --> MultimodalRAGService
+IntelligenceAnalysisFacade --> Qwen3VLRerankerCrossEncoder
+IntelligenceAnalysisFacade --> IPromptStrategy
+IntelligenceAnalysisFacade ..> AnalisisResultDTO
+
+HybridRetriever --> GlossaryService
+DTWComparator ..> PoseNormalizer
+IngestKnowledgeUseCase --> QdrantRAGAdapter
+DeleteTheoryUseCase --> QdrantRAGAdapter
+
+Usuario "1" --> "1" Sucursal
+Usuario "1" --> "*" Evaluacion
+Tecnica "1" --> "*" Evaluacion
+Tecnica "1" --> "*" PatronReferencia
+Tecnica "1" --> "*" TeoriaRAG
+@enduml

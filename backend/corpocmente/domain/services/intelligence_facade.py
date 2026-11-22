@@ -20,6 +20,44 @@ logger = logging.getLogger(__name__)
 
 UMBRAL_RELEVANCIA_RAG = 0.65
 
+
+def _sanitizar_respuesta_coach(texto: str, idioma: str = "es") -> str:
+    """
+    Limpia citas rígidas de página '(p. X)' y reemplaza roles literales de manual ('Tori'/'Uke')
+    si el modelo local los filtró desde el texto fuente.
+    """
+    import re
+    if not texto or not isinstance(texto, str):
+        return ""
+    res = texto.strip()
+    # Remover citas de página como '(p. 20)', '(pág. 20)', '(page 20)' sin romper la puntuación
+    res = re.sub(r"\s*\(\s*(?:p(?:ág|ag)?\.?|page)\s*\d+[^)]*\)", "", res, flags=re.IGNORECASE)
+
+    lang = (idioma or "es").lower().strip()
+    if lang.startswith("pt"):
+        res = re.sub(r"\bde\s+uke\b", "do seu parceiro", res, flags=re.IGNORECASE)
+        res = re.sub(r"\bpara\s+uke\b", "para seu parceiro", res, flags=re.IGNORECASE)
+        res = re.sub(r"\buke\b", "seu parceiro", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\s+deve\b", "Você deve", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\b", "você", res, flags=re.IGNORECASE)
+    elif lang.startswith("en"):
+        res = re.sub(r"\buke's\b", "your partner's", res, flags=re.IGNORECASE)
+        res = re.sub(r"\buke\b", "your partner", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\s+must\b", "You must", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\s+should\b", "You should", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\b", "you", res, flags=re.IGNORECASE)
+    else:
+        res = re.sub(r"\b(?:de|del)\s+uke\b", "de tu compañero", res, flags=re.IGNORECASE)
+        res = re.sub(r"\b(?:a|al|para)\s+uke\b", "a tu compañero", res, flags=re.IGNORECASE)
+        res = re.sub(r"\buke\b", "tu compañero", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\s+debe\b", "Debes", res, flags=re.IGNORECASE)
+        res = re.sub(r"\btori\b", "tú", res, flags=re.IGNORECASE)
+
+    # Limpiar espacios dobles antes de signos de puntuación
+    res = re.sub(r"\s+([.,;:])", r"\1", res)
+    res = re.sub(r" {2,}", " ", res).strip()
+    return res
+
 class IntelligenceAnalysisFacade:
     def __init__(self, 
                  yolo_adapter: YOLOPoseAdapter, 
@@ -168,17 +206,17 @@ class IntelligenceAnalysisFacade:
             lang_clean = (idioma or "es").lower().strip()
             if lang_clean in ("pt", "portuguese", "português", "portugues"):
                 discrepancias_detectadas = [
-                    f"Desvio biomecânico em {art}: desalinhamento em relação ao padrão do instrutor."
+                    f"Ajuste necessário em {art} durante {tecnica_nombre}."
                     for art in nombres_arts
                 ]
             elif lang_clean in ("en", "english"):
                 discrepancias_detectadas = [
-                    f"Biomechanical deviation at {art}: misalignment vs. the instructor's pattern."
+                    f"Adjustment needed at {art} during {tecnica_nombre}."
                     for art in nombres_arts
                 ]
             else:
                 discrepancias_detectadas = [
-                    f"Desviación biomecánica en {art}: desalineación respecto al patrón del instructor."
+                    f"Ajuste necesario en {art} durante {tecnica_nombre}."
                     for art in nombres_arts
                 ]
             dtw_distance = mejor_dtw_res.get("dtw_distance")
@@ -273,8 +311,12 @@ class IntelligenceAnalysisFacade:
                 output_path=out_clean_path,
             )
 
-        es_limpio_valido = isinstance(frame_limpio, (str, bytes, os.PathLike)) and os.path.isfile(frame_limpio)
+        from pathlib import Path
+        es_limpio_valido = isinstance(frame_limpio, (str, bytes, Path)) and os.path.isfile(frame_limpio)
         frame_para_embedding = frame_limpio if es_limpio_valido else frame_resaltado
+        # Para que Qwen3-VL observe agarres, solapas y postura real sin oclusión gráfica de líneas/puntos,
+        # enviamos el fotograma limpio (fallback al anotado si no existe archivo limpio en disco).
+        frame_para_vlm = frame_para_embedding
 
         # 4. Evaluación y feedback condicional (IA sólo si hay errores)
         UMBRAL_ACEPTABLE = 85.0
@@ -367,8 +409,45 @@ class IntelligenceAnalysisFacade:
                                         if e.get("rerank_score") is not None
                                         else e.get("score", 0.0)
                                     ) >= UMBRAL_RELEVANCIA_RAG
-                                ][:2] or [mejor_manual]
-                                contexto_profundo = formatear_evidencias_texto(evidencias_rag)
+                                ][:3] or [mejor_manual]
+                                evidencias_para_prompt = []
+                                for ev_sel in evidencias_rag:
+                                    ev_p = dict(ev_sel)
+                                    snippet = ev_p.get("_matched_snippet")
+                                    texto_orig = str(ev_p.get("contenido_texto") or "")
+                                    if snippet and len(texto_orig) > 1600:
+                                        import re as _re
+                                        if ev_p.get("pagina") is None:
+                                            m_pag = _re.search(r"\[P[aá]gina\s+(\d+)\]", snippet, flags=_re.IGNORECASE)
+                                            if m_pag:
+                                                ev_p["pagina"] = int(m_pag.group(1))
+                                        # Si el snippet termina cortado antes del final del bloque largo, unir la continuación
+                                        # del bloque siguiente del mismo manual para no cortar una técnica a mitad de frase.
+                                        if snippet and snippet.rstrip()[-1:] not in (".", "!", "?"):
+                                            fuente_sel = ev_p.get("fuente_nombre")
+                                            cont_added = False
+                                            for cand in manuales_candidatos:
+                                                if cand.get("id") == ev_p.get("id"):
+                                                    continue
+                                                if fuente_sel and cand.get("fuente_nombre") != fuente_sel:
+                                                    continue
+                                                cand_txt = (cand.get("contenido_texto") or "").strip()
+                                                if len(cand_txt) > 500 and not cand_txt.lstrip().startswith("[Página"):
+                                                    tail = _re.split(r"\[P[aá]gina\s+\d+\]", cand_txt, maxsplit=1, flags=_re.IGNORECASE)[0].strip()
+                                                    if tail and not tail[:20].isdigit():
+                                                        snippet = (snippet.rstrip() + tail[:900]).strip()
+                                                        cont_added = True
+                                                        break
+                                            if not cont_added:
+                                                pos_snip = texto_orig.find(snippet[-80:])
+                                                if pos_snip != -1:
+                                                    extra = texto_orig[pos_snip + 80:pos_snip + 980]
+                                                    extra = _re.split(r"\[P[aá]gina\s+\d+\]", extra, maxsplit=1, flags=_re.IGNORECASE)[0]
+                                                    if extra:
+                                                        snippet = (snippet + extra).strip()
+                                        ev_p["contenido_texto"] = snippet
+                                    evidencias_para_prompt.append(ev_p)
+                                contexto_profundo = formatear_evidencias_texto(evidencias_para_prompt)
                                 if contexto_profundo:
                                     contexto_profundo = (
                                         "\n\n[Evidence retrieved from manuals and instructor reference videos]:\n"
@@ -414,21 +493,41 @@ class IntelligenceAnalysisFacade:
             from corpocmente.domain.strategies.prompt_strategies import obtener_estrategia_prompt
             strategy = obtener_estrategia_prompt(idioma)
 
-            if tiene_contexto_rag:
-                # Prioridad 1: Manual RAG de alta relevancia (ignora mensaje del profesor)
-                prompt = strategy.construir_prompt_evaluacion(
-                    tecnica_nombre,
-                    discrepancias_detectadas,
-                    mensaje_profesor="",
-                    tiene_contexto_rag=True,
-                )
-                if contexto_profundo:
-                    prompt += contexto_profundo
+            msg_prof_limpio = mensaje_profesor.strip() if mensaje_profesor and str(mensaje_profesor).strip() else ""
+            tiene_mensaje_profesor = bool(msg_prof_limpio)
 
+            # Cubre los 4 escenarios:
+            # 1) Ambos (manual + mensaje del profesor)
+            # 2) Solo manual de biblioteca
+            # 3) Solo instrucciones escritas del profesor
+            # 4) Ninguno (análisis visual directo con nombre de técnica + fotograma limpio sin esqueleto)
+            prompt = strategy.construir_prompt_evaluacion(
+                tecnica_nombre,
+                discrepancias_detectadas,
+                mensaje_profesor=msg_prof_limpio,
+                tiene_contexto_rag=tiene_contexto_rag,
+            )
+            if tiene_contexto_rag and contexto_profundo:
+                prompt += contexto_profundo
+
+            # Liberar caché MPS de PyTorch antes de ejecutar MLX VLM para evitar contención Metal GPU
+            try:
+                import gc
+                import torch
+                gc.collect()
+                if hasattr(torch, "mps") and torch.backends.mps.is_available():
+                    torch.mps.synchronize()
+                    torch.mps.empty_cache()
+            except Exception:
+                pass
+
+            evidencias_vlm = evidencias_rag if tiene_contexto_rag else []
+            vlm_ok = False
+            try:
                 res_gemini = self.gemini.generar_texto_feedback(
                     prompt,
-                    frame_resaltado,
-                    evidencias_visuales=evidencias_rag,
+                    frame_para_vlm,
+                    evidencias_visuales=evidencias_vlm,
                     idioma=idioma,
                 )
 
@@ -441,52 +540,44 @@ class IntelligenceAnalysisFacade:
                     partes = feedback_texto.split(".")
                     feedback_summary = partes[0].strip() if partes else "Technique error"
                     feedback_correction = feedback_texto
-
-            elif mensaje_profesor and mensaje_profesor.strip():
-                # Prioridad 2: No hay manual útil pero sí mensaje del profesor
-                prompt = strategy.construir_prompt_evaluacion(
-                    tecnica_nombre,
-                    discrepancias_detectadas,
-                    mensaje_profesor=mensaje_profesor.strip(),
-                    tiene_contexto_rag=False,
-                )
-
-                res_gemini = self.gemini.generar_texto_feedback(
-                    prompt,
-                    frame_resaltado,
-                    evidencias_visuales=[],
-                    idioma=idioma,
-                )
-
-                if isinstance(res_gemini, dict):
-                    feedback_summary = res_gemini.get("summary", "Technique error")
-                    feedback_correction = res_gemini.get("correction", "")
+                vlm_ok = True
+            except Exception as e_vlm:
+                logger.warning("Fallo invocando VLM para '%s': %s. Aplicando fallback.", tecnica_nombre, e_vlm)
+                lang_fb = (idioma or "es").lower().strip()
+                if tiene_mensaje_profesor:
+                    if lang_fb.startswith("pt"):
+                        feedback_summary = f"Ajuste técnico em {tecnica_nombre}"
+                    elif lang_fb.startswith("en"):
+                        feedback_summary = f"Coach cue for {tecnica_nombre}"
+                    else:
+                        feedback_summary = f"Indicaciones del profesor: {tecnica_nombre}"
+                    feedback_correction = msg_prof_limpio
+                    feedback_texto = feedback_correction
+                elif tiene_contexto_rag:
+                    from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
+                    arts_lbl = ", ".join(obtener_nombres_articulaciones(arts_criticas or [], idioma=idioma))
+                    if lang_fb.startswith("pt"):
+                        feedback_summary = f"Ajuste em {tecnica_nombre}"
+                        feedback_correction = f"Revise o posicionamento em {arts_lbl or 'suas articulações'} para executar {tecnica_nombre} com controle."
+                    elif lang_fb.startswith("en"):
+                        feedback_summary = f"Adjustment for {tecnica_nombre}"
+                        feedback_correction = f"Focus on {arts_lbl or 'your posture and grips'} to execute {tecnica_nombre} cleanly."
+                    else:
+                        feedback_summary = f"Ajuste técnico en {tecnica_nombre}"
+                        feedback_correction = f"Ajusta {arts_lbl or 'tu postura y agarres'} en el punto clave para completar {tecnica_nombre}."
                     feedback_texto = feedback_correction
                 else:
-                    feedback_texto = str(res_gemini)
-                    partes = feedback_texto.split(".")
-                    feedback_summary = partes[0].strip() if partes else "Technique error"
-                    feedback_correction = feedback_texto
-
-            else:
-                # Prioridad 3: Fallback Seguro (ni manuales útiles ni mensaje del instructor)
-                # NO invocamos al VLM para prevenir alucinaciones
-                fallback_data = strategy.obtener_mensaje_sin_contexto()
-                feedback_summary = fallback_data.get("summary", "Información insuficiente")
-                feedback_correction = fallback_data.get(
-                    "correction",
-                    "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
-                )
-                feedback_texto = feedback_correction
-                logger.info(
-                    "Prioridad 3 activa (Fallback seguro): Sin manuales ni mensaje del profesor para '%s'. VLM omitido.",
-                    tecnica_nombre,
-                )
+                    fallback_data = strategy.obtener_mensaje_sin_contexto()
+                    feedback_summary = fallback_data.get("summary", "Información insuficiente")
+                    feedback_correction = fallback_data.get(
+                        "correction",
+                        "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
+                    )
+                    feedback_texto = feedback_correction
 
             # Mecanismo de Grounding (Anti-Alucinaciones con LLM-as-a-Judge)
-            # Solo aplica si se consultó al VLM (Prioridad 1 o 2)
-            tiene_mensaje_profesor = bool(mensaje_profesor and str(mensaje_profesor).strip())
-            if (tiene_contexto_rag or tiene_mensaje_profesor) and hasattr(self.gemini, "evaluar_fidelidad_grounding"):
+            # Aplica únicamente cuando el VLM respondió y hay fuentes de referencia
+            if vlm_ok and (tiene_contexto_rag or tiene_mensaje_profesor) and hasattr(self.gemini, "evaluar_fidelidad_grounding"):
                 try:
                     partes_juez = [f"Técnica evaluada: {tecnica_nombre}"]
                     if discrepancias_detectadas:
@@ -500,7 +591,7 @@ class IntelligenceAnalysisFacade:
                     eval_grounding = self.gemini.evaluar_fidelidad_grounding(
                         respuesta={"summary": feedback_summary, "correction": feedback_correction},
                         contexto=contexto_juez,
-                        mensaje_profesor="" if tiene_contexto_rag else mensaje_profesor,
+                        mensaje_profesor=msg_prof_limpio,
                     )
                     if (
                         isinstance(eval_grounding, dict)
@@ -511,28 +602,56 @@ class IntelligenceAnalysisFacade:
                         unsupported = eval_grounding.get("unsupported_claims") or []
                         if faith_score < 0.85 or (isinstance(unsupported, list) and len(unsupported) > 0):
                             logger.warning(
-                                "Alucinación detectada por LLM-Judge (score=%.2f, claims=%s). Aplicando fallback seguro.",
+                                "Alucinación detectada por LLM-Judge (score=%.2f, claims=%s). Reintentando ajuste estricto.",
                                 faith_score,
                                 unsupported,
                             )
-                            if tiene_mensaje_profesor:
-                                lang_fb = (idioma or "es").lower().strip()
-                                if lang_fb.startswith("pt"):
-                                    feedback_summary = f"Ajuste técnico em {tecnica_nombre}"
-                                elif lang_fb.startswith("en"):
-                                    feedback_summary = f"Coach cue for {tecnica_nombre}"
+                            reintento_ok = False
+                            if tiene_contexto_rag:
+                                try:
+                                    prompt_estricto = (
+                                        prompt
+                                        + "\n\nCORRECCIÓN OBLIGATORIA: Elimina detalles no respaldados ("
+                                        + ", ".join(str(c) for c in unsupported[:3])
+                                        + ") y redacta de forma humana respetando fielmente las instrucciones del profesor/manual y la postura real de la imagen."
+                                    )
+                                    res_re = self.gemini.generar_texto_feedback(
+                                        prompt_estricto,
+                                        frame_para_vlm,
+                                        evidencias_visuales=evidencias_vlm,
+                                        idioma=idioma,
+                                    )
+                                    if isinstance(res_re, dict) and (res_re.get("correction") or "").strip():
+                                        feedback_summary = res_re.get("summary", feedback_summary)
+                                        feedback_correction = res_re.get("correction", feedback_correction)
+                                        feedback_texto = feedback_correction
+                                        reintento_ok = True
+                                except Exception as e_retry:
+                                    logger.debug("Reintento tras LLM-Judge falló: %s", e_retry)
+
+                            if not reintento_ok:
+                                if tiene_mensaje_profesor:
+                                    lang_fb = (idioma or "es").lower().strip()
+                                    if lang_fb.startswith("pt"):
+                                        feedback_summary = f"Ajuste técnico em {tecnica_nombre}"
+                                    elif lang_fb.startswith("en"):
+                                        feedback_summary = f"Coach cue for {tecnica_nombre}"
+                                    else:
+                                        feedback_summary = f"Indicaciones del profesor: {tecnica_nombre}"
+                                    feedback_correction = msg_prof_limpio
+                                    feedback_texto = feedback_correction
+                                elif tiene_contexto_rag:
+                                    # Si el manual fue recuperado con alta relevancia, nunca sobrescribir con
+                                    # "Información insuficiente" por discrepancia del juez.
+                                    logger.info("Conservando respuesta generada respaldada por manual RAG para '%s'.", tecnica_nombre)
                                 else:
-                                    feedback_summary = f"Indicaciones del profesor: {tecnica_nombre}"
-                                feedback_correction = str(mensaje_profesor).strip()
-                                feedback_texto = feedback_correction
-                            else:
-                                fallback_data = strategy.obtener_mensaje_sin_contexto()
-                                feedback_summary = fallback_data.get("summary", "Información insuficiente")
-                                feedback_correction = fallback_data.get(
-                                    "correction",
-                                    "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
-                                )
-                                feedback_texto = feedback_correction
+                                    fallback_data = strategy.obtener_mensaje_sin_contexto()
+                                    feedback_summary = fallback_data.get("summary", "Información insuficiente")
+                                    feedback_correction = fallback_data.get(
+                                        "correction",
+                                        "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica.",
+                                    )
+                                    feedback_texto = feedback_correction
                 except Exception as e_judge:
                     logger.warning("Fallo en evaluación de fidelidad grounding (no bloqueante): %s", e_judge)
 
@@ -550,6 +669,10 @@ class IntelligenceAnalysisFacade:
 
         from corpocmente.infrastructure.ai.adapters import obtener_nombres_articulaciones
         nombres_articulaciones_criticas = obtener_nombres_articulaciones(arts_criticas or [], idioma=idioma)
+
+        feedback_summary = _sanitizar_respuesta_coach(feedback_summary, idioma=idioma) or feedback_summary
+        feedback_correction = _sanitizar_respuesta_coach(feedback_correction, idioma=idioma) or feedback_correction
+        feedback_texto = _sanitizar_respuesta_coach(feedback_texto, idioma=idioma) or feedback_texto
 
         return AnalisisResultDTO(
             similitud=similitud,

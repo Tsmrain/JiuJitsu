@@ -232,9 +232,11 @@ def test_facade_separa_frame_limpio_para_rag_y_frame_resaltado_para_gemini(tmp_p
     img_llamada = mock_qwen.generar_embedding.call_args.kwargs.get("image_path") or mock_qwen.generar_embedding.call_args.args[0]
     assert "clean_" in img_llamada
 
-    # VLM debe recibir el frame crítico anotado para feedback visual pedagógico
+    # VLM también recibe el frame limpio (sin keypoints/esqueleto) para no ocluir agarres ni postura
     gemini_frame = mock_gemini.generar_texto_feedback.call_args.args[1]
-    assert "critico_" in gemini_frame
+    assert "clean_" in gemini_frame
+    # El DTO de respuesta para la UI mantiene el fotograma anotado (critico_*.jpg)
+    assert "critico_" in res.frame_critico_path
     assert res.feedback == "Feedback corregido."
 
 
@@ -278,8 +280,7 @@ def test_facade_no_rompe_si_ambos_embeddings_fallan(tmp_path):
         )
 
     # Qdrant RAG no debe llamarse porque no hay vectores válidos.
-    # Al no haber RAG ni mensaje del profesor, entra el fallback seguro (Prioridad 3)
-    # y el VLM NO se invoca para evitar alucinaciones.
+    # Aun sin manuales ni mensaje del profesor, el VLM analiza el fotograma limpio + nombre de técnica.
     mock_qdrant.recuperar_evidencias_rag_multimodal.assert_not_called()
-    mock_gemini.generar_texto_feedback.assert_not_called()
-    assert "No hay información suficiente en los manuales" in res.feedback
+    mock_gemini.generar_texto_feedback.assert_called_once()
+    assert res.feedback == "Feedback sin RAG."

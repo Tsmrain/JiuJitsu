@@ -108,6 +108,76 @@ def _cos_sim(vec_a: List[float], vec_b: List[float]) -> float:
     return float(np.dot(arr_a, arr_b) / (norm_a * norm_b))
 
 
+def _extraer_ventana_relevante_rerank(
+    texto: str,
+    query_texto: str,
+    sinonimos_query: set,
+    max_chars: int = 1200,
+) -> str:
+    """
+    Para chunks extensos multi-página (ej. 8000 chars), selecciona la sección o ventana
+    que mejor coincide con la consulta y sus sinónimos en lugar de truncar ciegamente a [:400].
+    """
+    clean_text = (texto or "").strip()
+    if len(clean_text) <= max_chars:
+        return clean_text
+
+    secciones = re.split(r"(?=\[P[aá]gina\s+\d+\])", clean_text, flags=re.IGNORECASE)
+    secciones = [s.strip() for s in secciones if s.strip()]
+    if len(secciones) <= 1:
+        # Dividir en ventanas deslizantes si el bloque no tiene marcadores [Página X]
+        paso = 700
+        secciones = [clean_text[i:i + max_chars] for i in range(0, len(clean_text), paso)]
+
+    stopwords = {
+        "como", "hace", "hacer", "para", "sobre", "desde", "esta", "este",
+        "jiu", "jitsu", "bjj", "paso", "cual", "the", "how", "with", "tecnica", "técnica",
+    }
+    tokens = {
+        tok for tok in re.findall(r"[a-zA-ZáéíóúÁÉÍÓÚñÑçÇãõÃÕ0-9\-]{3,}", query_texto.lower())
+        if tok not in stopwords
+    }
+    for syn in sinonimos_query:
+        for tok in re.findall(r"[a-zA-ZáéíóúÁÉÍÓÚñÑçÇãõÃÕ0-9\-]{3,}", str(syn).lower()):
+            if tok not in stopwords:
+                tokens.add(tok)
+
+    if not tokens:
+        return clean_text[:max_chars]
+
+    scored = []
+    for idx_sec, sec in enumerate(secciones):
+        sec_lower = sec.lower()
+        head_lower = sec_lower[:200]
+        score = sum(3 for tok in tokens if tok in head_lower) + sum(1 for tok in tokens if tok in sec_lower)
+        # Penalizar páginas/encabezados vacíos sin cuerpo descriptivo
+        if len(sec.strip()) < 160 and "descri" not in sec_lower:
+            score = max(0, score - 5)
+        scored.append((score, idx_sec, sec))
+
+    best_score = max(s[0] for s in scored)
+    if best_score <= 0:
+        return clean_text[:max_chars]
+
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    mejor = scored[0][2]
+    if len(mejor) <= max_chars:
+        return mejor
+
+    # Centrar ventana dentro de la mejor sección alrededor del primer hit de token
+    mejor_lower = mejor.lower()
+    hit_pos = -1
+    for tok in sorted(tokens, key=len, reverse=True):
+        pos = mejor_lower.find(tok)
+        if pos != -1:
+            hit_pos = pos
+            break
+    if hit_pos == -1:
+        return mejor[:max_chars]
+    start = max(0, hit_pos - max_chars // 3)
+    return mejor[start:start + max_chars].strip()
+
+
 def rerank_evidencias_multilingue(
     query_texto: str,
     evidencias: List[Dict[str, Any]],
@@ -142,8 +212,38 @@ def rerank_evidencias_multilingue(
         )
         return ordenadas[:top_k]
 
-    # Extraer textos de los chunks candidatos
+    try:
+        from corpocmente.domain.glossary.glossary_service import (
+            cargar_glosario,
+            expandir_query_con_glosario,
+            obtener_sinonimos_multilingues,
+        )
+        sinonimos_query = obtener_sinonimos_multilingues(query_texto)
+        query_expandida_ce = expandir_query_con_glosario(query_texto, max_sinonimos=12) or query_texto
+        glosario_items = cargar_glosario().get("sinonimos", [])
+    except Exception:
+        sinonimos_query = set()
+        query_expandida_ce = query_texto
+        glosario_items = []
+
+    # Identificar grupos conceptuales del glosario presentes en la query (ej: {"armbar", "mount"})
+    q_lower = query_texto.lower()
+    grupos_query: List[tuple] = []
+    for entry in glosario_items:
+        variantes = set()
+        for lang_key in ("es", "pt", "en"):
+            for v in entry.get(lang_key, []):
+                if v:
+                    variantes.add(v.lower().strip())
+        canon = (entry.get("canonical") or "").lower().strip()
+        if canon:
+            variantes.add(canon)
+        if any(re.search(r"\b" + re.escape(v) + r"\b", q_lower) for v in variantes):
+            grupos_query.append((canon or next(iter(variantes), ""), variantes))
+
+    # Extraer textos sustanciales de los chunks candidatos (ventanas centradas en la consulta)
     textos_chunks: List[str] = []
+    placeholders_vacios: List[bool] = []
     for ev in evidencias:
         contenido = (ev.get("contenido_texto") or "").strip()
         asociado = (ev.get("texto_asociado") or "").strip()
@@ -155,19 +255,41 @@ def rerank_evidencias_multilingue(
             partes_texto = [p for p in (fuente, ref) if p]
 
         texto_chunk = " ".join(partes_texto).strip()
-        texto_chunk = re.sub(r"^\[Imagen:\s*Página\s+\d+\s+del\s+manual\s+PDF\]\s*", "", texto_chunk, flags=re.IGNORECASE).strip()
-        textos_chunks.append(texto_chunk[:400] if texto_chunk else "Técnica de Jiu-Jitsu")
+        texto_sin_placeholder = re.sub(
+            r"^\[Imagen:\s*Página\s+\d+\s+del\s+manual\s+PDF\]\s*",
+            "",
+            texto_chunk,
+            flags=re.IGNORECASE,
+        ).strip()
+        es_vacio = len(texto_sin_placeholder) < 25 and bool(ev.get("media_path"))
+        placeholders_vacios.append(es_vacio)
+        if texto_sin_placeholder:
+            fragmento = _extraer_ventana_relevante_rerank(
+                texto_sin_placeholder,
+                query_texto=query_texto,
+                sinonimos_query=sinonimos_query,
+                max_chars=1200,
+            )
+            textos_chunks.append(fragmento)
+        else:
+            textos_chunks.append("Página visual del manual sin texto")
 
-    try:
-        from corpocmente.domain.glossary.glossary_service import obtener_sinonimos_multilingues
-        sinonimos_query = obtener_sinonimos_multilingues(query_texto)
-    except Exception:
-        sinonimos_query = set()
-
-    def _bonus_glosario(texto_doc: str, base_score: float) -> float:
-        if not sinonimos_query or base_score < 0.25 or not texto_doc:
+    def _bonus_glosario(texto_doc: str, base_score: float, qdrant_score: float, es_vacio: bool) -> float:
+        if es_vacio or not texto_doc:
             return 0.0
         doc_lower = texto_doc.lower()
+        if grupos_query:
+            grupos_hit = sum(
+                1 for _, vars_set in grupos_query
+                if any(v in doc_lower for v in vars_set)
+            )
+            if grupos_hit >= 2 and (base_score >= 0.15 or qdrant_score >= 0.40):
+                return 0.50
+            if grupos_hit == 1 and base_score >= 0.25:
+                return 0.22
+            return 0.0
+        if not sinonimos_query or base_score < 0.25:
+            return 0.0
         hits = sum(1 for s in sinonimos_query if s and s in doc_lower)
         if hits >= 2:
             return 0.35
@@ -177,21 +299,23 @@ def rerank_evidencias_multilingue(
 
     # Intentar Reranking con Cross-Encoder real MLX
     cross_scores = Qwen3VLRerankerCrossEncoder.rerank_pairs(
-        query=query_texto,
+        query=query_expandida_ce,
         documents=textos_chunks,
         instruction=instruction,
     )
 
     if cross_scores and len(cross_scores) == len(evidencias):
         evidencias_puntuadas = []
-        for ev, score, texto_doc in zip(evidencias, cross_scores, textos_chunks):
+        for ev, score, texto_doc, es_vacio in zip(evidencias, cross_scores, textos_chunks, placeholders_vacios):
             ev_copy = dict(ev)
-            score_final = float(score)
-            if ev.get("media_path"):
+            q_score = float(ev.get("score") or 0.0)
+            score_final = float(score) * (0.5 if es_vacio else 1.0)
+            if ev.get("media_path") and not es_vacio:
                 score_final += 0.05
-            score_final = min(1.0, score_final + _bonus_glosario(texto_doc, float(score)))
+            score_final = min(1.0, score_final + _bonus_glosario(texto_doc, float(score), q_score, es_vacio))
             ev_copy["cross_encoder_score"] = round(float(score), 4)
             ev_copy["rerank_score"] = round(float(score_final), 4)
+            ev_copy["_matched_snippet"] = texto_doc
             evidencias_puntuadas.append(ev_copy)
 
         evidencias_puntuadas.sort(

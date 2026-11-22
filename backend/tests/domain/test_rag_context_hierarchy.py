@@ -25,18 +25,30 @@ from corpocmente.domain.entities.models import EsqueletoBiomecanico
 class TestPromptStrategiesHierarchyAndCrossLingual:
     """Verifica directivas de jerarquía y cross-lingual en todas las estrategias."""
 
-    def test_spanish_strategy_with_rag_context(self):
+    def test_spanish_strategy_with_rag_and_instructor_message(self):
         strategy = SpanishPromptStrategy()
         prompt = strategy.construir_prompt_evaluacion(
             tecnica_nombre="Armbar",
             discrepancias=["Cadera baja"],
-            mensaje_profesor="Instrucción que debe ignorarse",
+            mensaje_profesor="Cerrar las rodillas",
             tiene_contexto_rag=True,
         )
-        assert "REGLA ESTRICTA: Responde basándote ÚNICAMENTE en el contexto del manual adjunto." in prompt
-        assert "EL CONTEXTO PUEDE ESTAR EN OTRO IDIOMA, TRADÚCELO Y RESPONDE EN ESPAÑOL." in prompt
-        assert "Instrucción que debe ignorarse" not in prompt
-        assert "(p. X)" in prompt
+        assert "manuales adjuntos junto con las indicaciones del profesor" in prompt
+        assert "Cerrar las rodillas" in prompt
+        assert "NUNCA menciones nombres propios" in prompt
+        assert "NO cites páginas" in prompt
+
+    def test_spanish_strategy_with_rag_context_only(self):
+        strategy = SpanishPromptStrategy()
+        prompt = strategy.construir_prompt_evaluacion(
+            tecnica_nombre="Armbar",
+            discrepancias=["Cadera baja"],
+            mensaje_profesor="",
+            tiene_contexto_rag=True,
+        )
+        assert "manuales adjuntos y lo observable en el fotograma" in prompt
+        assert "entrenador en el tatami" in prompt
+        assert "NO cites páginas" in prompt
 
     def test_spanish_strategy_with_instructor_message_only(self):
         strategy = SpanishPromptStrategy()
@@ -46,22 +58,20 @@ class TestPromptStrategiesHierarchyAndCrossLingual:
             mensaje_profesor="Apretar rodillas firmemente",
             tiene_contexto_rag=False,
         )
-        assert "REGLA ESTRICTA: Basa tu corrección únicamente en las instrucciones directas del profesor." in prompt
         assert "Apretar rodillas firmemente" in prompt
-        assert "EL CONTEXTO PUEDE ESTAR EN OTRO IDIOMA" not in prompt
+        assert "secuencia técnica del profesor" in prompt
 
     def test_english_strategy_with_rag_context(self):
         strategy = EnglishPromptStrategy()
         prompt = strategy.construir_prompt_evaluacion(
             tecnica_nombre="Triangle Choke",
             discrepancias=["Loose leg clamp"],
-            mensaje_profesor="Should be ignored",
+            mensaje_profesor="",
             tiene_contexto_rag=True,
         )
-        assert "STRICT RULE: Base your response SOLELY on the attached manual context." in prompt
-        assert "THE CONTEXT MAY BE IN ANOTHER LANGUAGE, TRANSLATE IT AND RESPOND IN ENGLISH." in prompt
-        assert "Should be ignored" not in prompt
-        assert "(p. X)" in prompt
+        assert "attached manual context" in prompt
+        assert "NEVER use proper names" in prompt
+        assert "Do NOT cite page numbers" in prompt
 
     def test_english_strategy_with_instructor_message_only(self):
         strategy = EnglishPromptStrategy()
@@ -71,22 +81,20 @@ class TestPromptStrategiesHierarchyAndCrossLingual:
             mensaje_profesor="Cut angle to 90 degrees",
             tiene_contexto_rag=False,
         )
-        assert "STRICT RULE: Base your correction solely on the direct instructions from the instructor." in prompt
+        assert "Ensure your correction aligns strictly with these instructions." in prompt
         assert "Cut angle to 90 degrees" in prompt
-        assert "THE CONTEXT MAY BE IN ANOTHER LANGUAGE" not in prompt
 
     def test_portuguese_strategy_with_rag_context(self):
         strategy = PortuguesePromptStrategy()
         prompt = strategy.construir_prompt_evaluacion(
             tecnica_nombre="Mata-Leão",
             discrepancias=["Cotovelo aberto"],
-            mensaje_profesor="Deve ser ignorado",
+            mensaje_profesor="",
             tiene_contexto_rag=True,
         )
-        assert "REGRA ESTRITA: Responda baseando-se UNICAMENTE no contexto do manual anexo." in prompt
-        assert "O CONTEXTO PODE ESTAR EM OUTRO IDIOMA, TRADUZA-O E RESPONDA EM PORTUGUÊS." in prompt
-        assert "Deve ser ignorado" not in prompt
-        assert "(p. X)" in prompt
+        assert "manual anexo" in prompt
+        assert "NUNCA mencione nomes próprios" in prompt
+        assert "NÃO cite números de página" in prompt
 
     def test_portuguese_strategy_with_instructor_message_only(self):
         strategy = PortuguesePromptStrategy()
@@ -96,9 +104,8 @@ class TestPromptStrategiesHierarchyAndCrossLingual:
             mensaje_profesor="Esconda a mão atrás da cabeça",
             tiene_contexto_rag=False,
         )
-        assert "REGRA ESTRITA: Baseie sua correção unicamente nas instruções diretas do professor." in prompt
         assert "Esconda a mão atrás da cabeça" in prompt
-        assert "O CONTEXTO PODE ESTAR EM OUTRO IDIOMA" not in prompt
+        assert "treinador no tatame" in prompt
 
     def test_fallback_strings_by_language(self):
         fb_es = SpanishPromptStrategy().obtener_mensaje_sin_contexto()
@@ -145,7 +152,7 @@ class TestIntelligenceFacadeContextHierarchy:
         )
         return facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen
 
-    def test_prioridad_1_rag_manual_supera_umbral_y_ignora_mensaje_profesor(self):
+    def test_prioridad_1_combina_manual_y_mensaje_profesor_cuando_ambos_existen(self):
         facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen = self._setup_facade()
 
         # Simular manual con score 0.82 (>= UMBRAL_RELEVANCIA_RAG = 0.65)
@@ -162,7 +169,7 @@ class TestIntelligenceFacadeContextHierarchy:
 
         mock_gemini.generar_texto_feedback.return_value = {
             "summary": "Presión incorrecta",
-            "correction": "Baja el hombro como indica el manual (p. 142).",
+            "correction": "Baja el hombro como indica el manual (p. 142) y bloquea la muñeca.",
         }
 
         with patch("os.path.exists", return_value=True):
@@ -170,21 +177,17 @@ class TestIntelligenceFacadeContextHierarchy:
                 video_path="/tmp/video.mp4",
                 tecnica_id=uuid4(),
                 tecnica_nombre="Americana",
-                mensaje_profesor="Instrucción del instructor que debe ser descartada por P1",
+                mensaje_profesor="Bloquea la muñeca pegada al tatami",
                 idioma="es",
             )
 
-        # Gemini debe haber sido llamado
+        # Gemini debe haber sido llamado combinando AMBAS fuentes
         mock_gemini.generar_texto_feedback.assert_called_once()
         call_prompt = mock_gemini.generar_texto_feedback.call_args.args[0]
         evidencias_visuales = mock_gemini.generar_texto_feedback.call_args.kwargs.get("evidencias_visuales")
 
-        # Debe contener la regla estricta de manual y cita cross-lingual
-        assert "REGLA ESTRICTA: Responde basándote ÚNICAMENTE en el contexto del manual adjunto." in call_prompt
-        assert "EL CONTEXTO PUEDE ESTAR EN OTRO IDIOMA, TRADÚCELO Y RESPONDE EN ESPAÑOL." in call_prompt
         assert "Underhook the arm and drive shoulder pressure" in call_prompt
-        # El mensaje del profesor NO debe estar en el prompt
-        assert "Instrucción del instructor que debe ser descartada" not in call_prompt
+        assert "Bloquea la muñeca pegada al tatami" in call_prompt
         assert len(evidencias_visuales) == 1
         assert res.feedback_summary == "Presión incorrecta"
 
@@ -221,53 +224,61 @@ class TestIntelligenceFacadeContextHierarchy:
         call_prompt = mock_gemini.generar_texto_feedback.call_args.args[0]
         evidencias_visuales = mock_gemini.generar_texto_feedback.call_args.kwargs.get("evidencias_visuales")
 
-        assert "REGLA ESTRICTA: Basa tu corrección únicamente en las instrucciones directas del profesor." in call_prompt
         assert "Fija la muñeca al suelo y desliza el codo como un pincel." in call_prompt
+        assert "secuencia técnica del profesor" in call_prompt
         # El contenido irrelevante del manual NO debe ser inyectado
         assert "Conceptos no relacionados con Americana" not in call_prompt
         # Evidencias visuales vacías para no distraer al VLM con manuales no relevantes
         assert len(evidencias_visuales) == 0
 
-    def test_prioridad_3_sin_manuales_ni_mensaje_omite_gemini_y_retorna_fallback_es(self):
+    def test_prioridad_3_sin_manuales_ni_mensaje_analiza_frame_y_tecnica_en_vlm_es(self):
         facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen = self._setup_facade()
-
-        # Sin manuales
         mock_qdrant.recuperar_evidencias_rag_multimodal.return_value = []
+        mock_gemini.generar_texto_feedback.return_value = {
+            "summary": "Control de codo abierto",
+            "correction": "Acerca la muñeca y presiona la cadera en la Americana.",
+        }
 
         with patch("os.path.exists", return_value=True):
             res = facade.ejecutar_analisis_completo(
                 video_path="/tmp/video.mp4",
                 tecnica_id=uuid4(),
                 tecnica_nombre="Americana",
-                mensaje_profesor="",  # Vacío
+                mensaje_profesor="",
                 idioma="es",
             )
 
-        # Gemini NO debe haber sido invocado para evitar alucinaciones
-        mock_gemini.generar_texto_feedback.assert_not_called()
-        assert res.feedback_summary == "Información insuficiente"
-        assert res.feedback == "No hay información suficiente en los manuales ni en las instrucciones del instructor para evaluar esta técnica."
+        mock_gemini.generar_texto_feedback.assert_called_once()
+        call_prompt = mock_gemini.generar_texto_feedback.call_args.args[0]
+        assert "Americana" in call_prompt
+        assert "No hay manuales ni instrucciones escritas del profesor" in call_prompt
+        mock_gemini.evaluar_fidelidad_grounding.assert_not_called()
+        assert res.feedback_summary == "Control de codo abierto"
 
-    def test_prioridad_3_sin_manuales_ni_mensaje_omite_gemini_y_retorna_fallback_en(self):
+    def test_prioridad_3_sin_manuales_ni_mensaje_analiza_frame_y_tecnica_en_vlm_en(self):
         facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen = self._setup_facade()
         mock_qdrant.recuperar_evidencias_rag_multimodal.return_value = []
+        mock_gemini.generar_texto_feedback.return_value = {
+            "summary": "Loose shoulder lock",
+            "correction": "Keep the opponent's wrist pinned to the mat during Kimura.",
+        }
 
         with patch("os.path.exists", return_value=True):
             res = facade.ejecutar_analisis_completo(
                 video_path="/tmp/video.mp4",
                 tecnica_id=uuid4(),
                 tecnica_nombre="Kimura",
-                mensaje_profesor="   ",  # Solo espacios
+                mensaje_profesor="   ",
                 idioma="en",
             )
 
-        mock_gemini.generar_texto_feedback.assert_not_called()
-        assert res.feedback_summary == "Insufficient information"
-        assert res.feedback == "There is not enough information in the manuals or instructor instructions to evaluate this technique."
+        mock_gemini.generar_texto_feedback.assert_called_once()
+        assert res.feedback_summary == "Loose shoulder lock"
 
-    def test_prioridad_3_sin_manuales_ni_mensaje_omite_gemini_y_retorna_fallback_pt(self):
+    def test_prioridad_3_sin_manuales_ni_mensaje_si_vlm_falla_retorna_fallback_pt(self):
         facade, mock_yolo, mock_qdrant, mock_gemini, mock_qwen = self._setup_facade()
         mock_qdrant.recuperar_evidencias_rag_multimodal.return_value = []
+        mock_gemini.generar_texto_feedback.side_effect = RuntimeError("VLM offline")
 
         with patch("os.path.exists", return_value=True):
             res = facade.ejecutar_analisis_completo(
@@ -278,7 +289,7 @@ class TestIntelligenceFacadeContextHierarchy:
                 idioma="pt",
             )
 
-        mock_gemini.generar_texto_feedback.assert_not_called()
+        mock_gemini.generar_texto_feedback.assert_called_once()
         assert res.feedback_summary == "Informações insuficientes"
         assert res.feedback == "Não há informações suficientes nos manuais nem nas instruções do instrutor para avaliar esta técnica."
 
@@ -355,4 +366,55 @@ class TestIntelligenceFacadeContextHierarchy:
         assert tec_id in called_tecnica_ids
         assert None in called_tecnica_ids
         assert res.feedback_summary != "Información insuficiente"
-        assert "p. 56" in res.feedback
+        assert "Controla la manga y pasa la pierna sobre la cabeza" in res.feedback
+        assert "p. 56" not in res.feedback
+
+    def test_reranker_encuentra_tecnica_en_chunk_largo_y_no_premia_placeholder_vacio(self):
+        from corpocmente.domain.services.rag_reranker import rerank_evidencias_multilingue, Qwen3VLRerankerCrossEncoder
+
+        texto_largo = (
+            "[Página 1] Índice general de técnicas de suelo...\n" + ("Texto introductorio. " * 120) +
+            "\n[Página 20]\n15 - 160 - UDE-HISHIGI-JUJI-GATAME\n"
+            "Descrição I - Após estabilizar a montada, Tori agarra o kimono e passa a perna sobre a cabeça."
+        )
+        evidencias = [
+            {
+                "id": "img_placeholder",
+                "score": 0.42,
+                "fuente_tipo": "manual_pdf",
+                "fuente_nombre": "Manual 1",
+                "media_path": "/tmp/pag_20.png",
+                "contenido_texto": "[Imagen: Página 20 del manual PDF]",
+            },
+            {
+                "id": "chunk_largo_real",
+                "score": 0.48,
+                "fuente_tipo": "manual_pdf",
+                "fuente_nombre": "Manual 1",
+                "contenido_texto": texto_largo,
+            },
+        ]
+
+        captured_docs = []
+
+        def fake_rerank(query, documents, instruction=None):
+            captured_docs.extend(documents)
+            return [0.22 if "sin texto" in d else 0.21 for d in documents]
+
+        with patch.object(Qwen3VLRerankerCrossEncoder, "rerank_pairs", side_effect=fake_rerank):
+            ranked = rerank_evidencias_multilingue("Llave de brazo desde la Montada", evidencias, top_k=2)
+
+        assert any("UDE-HISHIGI-JUJI-GATAME" in d for d in captured_docs)
+        assert ranked[0]["id"] == "chunk_largo_real"
+        assert ranked[0]["rerank_score"] >= UMBRAL_RELEVANCIA_RAG
+
+    def test_sanitizar_respuesta_coach_elimina_paginas_y_tori_uke(self):
+        from corpocmente.domain.services.intelligence_facade import _sanitizar_respuesta_coach
+
+        raw = "Tori debe alinear el codo derecho y la rodilla sobre el hombro de Uke (p. 20)."
+        limpio = _sanitizar_respuesta_coach(raw, idioma="es")
+        assert "Tori" not in limpio and "tori" not in limpio
+        assert "Uke" not in limpio and "uke" not in limpio
+        assert "(p. 20)" not in limpio
+        assert "Debes alinear el codo derecho" in limpio
+        assert "tu compañero" in limpio

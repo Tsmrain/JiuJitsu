@@ -764,21 +764,40 @@ class QdrantVectorAdapter:
         def payload_de(hit):
             return hit.payload or {}
 
-        def es_visual(hit):
-            return bool(payload_de(hit).get("media_path"))
+        def es_placeholder_visual(hit):
+            p = payload_de(hit)
+            txt = (p.get("contenido_texto") or "").strip()
+            asoc = (p.get("texto_asociado") or "").strip()
+            return bool(p.get("media_path")) and not asoc and (not txt or txt.startswith("[Imagen:") or len(txt) < 40)
 
-        visuales = [h for h in ordenados if es_visual(h)]
-        no_visuales = [h for h in ordenados if not es_visual(h)]
+        def es_visual_con_contenido(hit):
+            return bool(payload_de(hit).get("media_path")) and not es_placeholder_visual(hit)
+
+        visuales_con_texto = [h for h in ordenados if es_visual_con_contenido(h)]
+        textuales = [h for h in ordenados if not payload_de(h).get("media_path")]
+        placeholders_visuales = [h for h in ordenados if es_placeholder_visual(h)]
 
         if video_referencia_path:
-            visuales.sort(
+            visuales_con_texto.sort(
+                key=lambda h: (
+                    0 if payload_de(h).get("video_path") == video_referencia_path else 1,
+                    -h.score,
+                )
+            )
+            placeholders_visuales.sort(
                 key=lambda h: (
                     0 if payload_de(h).get("video_path") == video_referencia_path else 1,
                     -h.score,
                 )
             )
 
-        seleccionados = (visuales + no_visuales)[:limit]
+        # Garantizar que los placeholders visuales sin texto ("[Imagen: Página X]") no desplacen
+        # todos los fragmentos textuales reales del manual fuera del top `limit`.
+        con_contenido = visuales_con_texto + textuales
+        if len(con_contenido) >= limit:
+            seleccionados = con_contenido[:limit]
+        else:
+            seleccionados = (con_contenido + placeholders_visuales)[:limit]
 
         evidencias = []
 

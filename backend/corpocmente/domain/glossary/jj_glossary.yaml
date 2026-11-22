@@ -5,8 +5,8 @@
 sinonimos:
   # --- POSICIONES Y CONTROLES ---
   - canonical: "closed guard"
-    es: ["guardia cerrada", "cerrar guardia"]
-    pt: ["guarda fechada", "fechar a guarda"]
+    es: ["guardia cerrada", "cerrar guardia", "escape de guardia cerrada", "abrir guardia cerrada"]
+    pt: ["guarda fechada", "fechar a guarda", "cadeado"]
     en: ["closed guard", "close guard"]
     tags: ["posicion", "defensa"]
 
@@ -43,8 +43,8 @@ sinonimos:
   # --- FINALIZACIONES Y SUMISIONES ---
   - canonical: "armbar"
     es: ["llave de brazo", "armbar", "palanca de brazo", "armlock"]
-    pt: ["chave de braço", "armlock", "armbar", "chave de braco"]
-    en: ["armbar", "straight armlock", "armlock", "arm bar"]
+    pt: ["chave de braço", "armlock", "armbar", "chave de braco", "juji-gatame", "juji gatame", "ude-hishigi-juji-gatame", "ude hishigi juji gatame"]
+    en: ["armbar", "straight armlock", "armlock", "arm bar", "juji-gatame", "juji gatame"]
     tags: ["finalizacion", "articulacion"]
 
   - canonical: "triangle"
@@ -85,8 +85,8 @@ sinonimos:
     tags: ["movimiento", "escape"]
 
   - canonical: "break closed guard standing"
-    es: ["abrir guardia de pie", "ponerse de pie", "pararse para abrir guardia", "salida de guardia parándose"]
-    pt: ["levantar para abrir a guarda", "abrir guarda em pé", "saída de guarda em pé"]
+    es: ["abrir guardia de pie", "ponerse de pie", "pararse para abrir guardia", "salida de guardia parándose", "escape de guardia cerrada", "escapar de guardia cerrada"]
+    pt: ["levantar para abrir a guarda", "abrir guarda em pé", "saída de guarda em pé", "abrindo o cadeado", "passagem de guarda"]
     en: ["stand up guard pass", "breaking closed guard standing", "standing guard break", "stand up escape"]
     tags: ["movimiento", "transicion"]
 

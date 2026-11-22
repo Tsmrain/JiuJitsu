@@ -272,9 +272,9 @@ class LocalVLMAdapter:
             raise FileNotFoundError(frame_image_path)
 
         images = [frame_image_path]
-        # Adjuntar hasta 2 páginas relevantes del manual a resolución eficiente (100 DPI)
-        # para evitar saturar la memoria unificada Metal GPU en Apple Silicon.
-        for ev in (evidencias_visuales or [])[:2]:
+        # Adjuntar hasta 1 evidencia visual real solo si no sobrecarga con texto largo
+        max_visuales = 0 if len(prompt) > 1200 else 1
+        for ev in (evidencias_visuales or [])[:max_visuales]:
             payload = ev.get("payload", ev)
             media_path = payload.get("media_path")
             if media_path and os.path.exists(media_path):
@@ -302,9 +302,8 @@ class LocalVLMAdapter:
             if lang in ("pt", "portuguese", "português", "portugues"):
                 instruccion_rag = (
                     "\n\nAs imagens anexadas, após o fotograma do aluno, são páginas recuperadas do manual. "
-                    "Baseie-se na mensagem do professor e nas imagens das páginas do manual anexadas para dar a correção. "
-                    "Mencione a indicação do professor e cite a página do livro como '(p. X)' de onde tirou a referência visual. "
-                    "Se a informação não estiver no texto, na imagem ou na mensagem do professor, abstenha-se de inventar. "
+                    "Use-as junto com o contexto técnico como base de conhecimento, mas responda em tom natural e humano de treinador no tatame. "
+                    "Não cite números de página '(p. X)' nem use nomes próprios ou 'Tori'/'Uke' (use segunda pessoa e 'seu parceiro'). "
                     "RESPONDA ESTRITAMENTE EM PORTUGUÊS. "
                     "\n\nResponda EXCLUSIVAMENTE com um objeto JSON válido "
                     "com as chaves 'summary' e 'correction'. Não use markdown nem texto fora do JSON."
@@ -312,9 +311,8 @@ class LocalVLMAdapter:
             elif lang in ("en", "english"):
                 instruccion_rag = (
                     "\n\nThe attached images, after the student's frame, are retrieved manual pages. "
-                    "Base your correction on the instructor's message and the attached manual page images. "
-                    "Mention the instructor's instructions and cite the manual page as '(p. X)' where you retrieved the visual reference or correction. "
-                    "If the information is not in the text, the image, or the instructor's message, refrain from inventing details. "
+                    "Use them together with the technical context as your knowledge base, replying in a natural mats-side coach tone. "
+                    "Do not cite page numbers '(p. X)' and never use proper names or 'Tori'/'Uke' (use second person and 'your partner'). "
                     "REPLY STRICTLY IN ENGLISH. "
                     "\n\nReply EXCLUSIVELY with a valid JSON object "
                     "containing keys 'summary' and 'correction'. Do not include markdown or text outside the JSON."
@@ -322,9 +320,8 @@ class LocalVLMAdapter:
             else:
                 instruccion_rag = (
                     "\n\nLas imágenes adjuntas, después del fotograma del alumno, son páginas recuperadas del manual. "
-                    "Básate en el mensaje del profesor y en las imágenes de las páginas del manual adjuntas para dar la corrección. "
-                    "Menciona la indicación del profesor y cita la página del libro como '(p. X)' de donde sacaste la referencia o corrección visual. "
-                    "Si la información no está en el texto, en la imagen o en el mensaje del profesor, abstente de inventar. "
+                    "Úsalas junto con el contexto técnico como base de conocimiento, pero responde en tono natural y humano de entrenador en el tatami. "
+                    "No cites páginas '(p. X)' ni uses nombres propios ni 'Tori'/'Uke' (habla en segunda persona y usa como máximo 'tu compañero'). "
                     "RESPONDE ESTRICTAMENTE EN ESPAÑOL. "
                     "\n\nResponde EXCLUSIVAMENTE con un objeto JSON válido "
                     "con las claves 'summary' y 'correction'. "
@@ -333,24 +330,24 @@ class LocalVLMAdapter:
         else:
             if lang in ("pt", "portuguese", "português", "portugues"):
                 instruccion_rag = (
-                    "\n\nAnalise o frame crítico do aluno seguindo rigorosamente as instruções do professor ou o contexto técnico fornecido no prompt. "
-                    "Não cite números de página '(p. X)' se não houver páginas de manual anexadas. "
+                    "\n\nAnalise o frame limpo do aluno usando o contexto técnico como limite de conhecimento, com tom humano e prático de treinador no tatame. "
+                    "Não cite números de página '(p. X)' nem use nomes próprios ou 'Tori'/'Uke' (use segunda pessoa e 'seu parceiro'). "
                     "RESPONDA ESTRITAMENTE EM PORTUGUÊS. "
                     "\n\nResponda EXCLUSIVAMENTE com um objeto JSON válido "
                     "com as chaves 'summary' e 'correction'. Não use markdown nem texto fora do JSON."
                 )
             elif lang in ("en", "english"):
                 instruccion_rag = (
-                    "\n\nAnalyze the student's critical frame strictly following the instructor's instructions or technical context provided in the prompt. "
-                    "Do not cite page numbers '(p. X)' unless manual text explicitly provides them. "
+                    "\n\nAnalyze the clean student frame using the technical context as your knowledge boundary, in a natural mats-side coaching tone. "
+                    "Do not cite page numbers '(p. X)' and never use proper names or 'Tori'/'Uke' (use second person and 'your partner'). "
                     "REPLY STRICTLY IN ENGLISH. "
                     "\n\nReply EXCLUSIVELY with a valid JSON object "
                     "containing keys 'summary' and 'correction'. Do not include markdown or text outside the JSON."
                 )
             else:
                 instruccion_rag = (
-                    "\n\nAnaliza el fotograma crítico del alumno siguiendo estrictamente las indicaciones del profesor o las referencias técnicas incluidas en el prompt. "
-                    "No cites páginas '(p. X)' si no se incluyeron en el contexto. "
+                    "\n\nAnaliza el fotograma limpio del alumno usando el contexto técnico como límite de conocimiento, con un tono humano y práctico de entrenador en el tatami. "
+                    "No cites páginas '(p. X)' ni uses nombres propios ni 'Tori'/'Uke' (habla en segunda persona y usa como máximo 'tu compañero'). "
                     "RESPONDE ESTRICTAMENTE EN ESPAÑOL. "
                     "\n\nResponde EXCLUSIVAMENTE con un objeto JSON válido "
                     "con las claves 'summary' y 'correction'. "
@@ -565,12 +562,12 @@ class LocalVLMAdapter:
             f"[CONTEXTO DE REFERENCIA]:\n{contexto_completo.strip()}\n\n"
             f"[RESPUESTA A EVALUAR]:\nSummary: {summary}\nCorrection: {correction}\n\n"
             "REGLAS ESTRICTAS DE EVALUACIÓN:\n"
-            "1. El 'Summary' es el diagnóstico del error biomecánico observado. Es válido si se relaciona directamente con el problema técnico cubierto en el contexto.\n"
-            "2. La 'Correction' debe basarse en los principios, articulaciones, agarres o posturas explicados en el contexto.\n"
-            "3. Si la respuesta contiene afirmaciones técnicas ajenas, inventa nombres de llaves o movimientos ausentes en el contexto, agrégalas a 'unsupported_claims'.\n"
-            "4. Si 'unsupported_claims' NO está vacío, 'faithfulness_score' DEBE ser menor a 0.70 (por ejemplo 0.0 a 0.50).\n"
-            "5. Si todas las afirmaciones técnicas están respaldadas por el contexto, 'unsupported_claims' debe ser [] y 'faithfulness_score' entre 0.90 y 1.0.\n"
-            "6. La respuesta puede estar redactada en un idioma diferente al del contexto (por ejemplo, respuesta en portugués o español con manuales en inglés). Evalúa la equivalencia semántica y biomecánica entre idiomas. NO consideres como no respaldada una afirmación por el solo hecho de ser una traducción o sinónimo en otro idioma.\n"
+            "1. El 'Summary' es el diagnóstico o ajuste principal observado. Es válido si se relaciona con la técnica, las articulaciones críticas o el contexto.\n"
+            "2. La 'Correction' es válida si sintetiza con naturalidad los principios del contexto y las observaciones biomecánicas del frame (incluyendo explicaciones de causa-efecto como cerrar rodillas/codos para evitar que el compañero escape).\n"
+            "3. Traducciones equivalentes entre idiomas (ej. PT->ES: 'joelho'='rodilla', 'cotovelo'='codo', 'quadril'='cadera', 'ombro'='hombro', 'punho'='muñeca') y la adaptación de 'Tori'/'Uke' a segunda persona ('tú'/'tu compañero') SON VÁLIDAS y NO son alucinaciones.\n"
+            "4. Solo agrega a 'unsupported_claims' afirmaciones que inventen una técnica distinta (ej. confundir Armbar con Kimura) o contradigan abiertamente el contexto.\n"
+            "5. Si 'unsupported_claims' NO está vacío, 'faithfulness_score' DEBE ser menor a 0.70 (por ejemplo 0.0 a 0.50).\n"
+            "6. Si las afirmaciones técnicas están respaldadas o razonadas coherentemente desde el contexto y las articulaciones detectadas, 'unsupported_claims' debe ser [] y 'faithfulness_score' entre 0.90 y 1.0.\n"
             "7. Responde EXCLUSIVAMENTE con un JSON con el siguiente formato:\n"
             "{\"faithfulness_score\": <float entre 0.0 y 1.0>, \"unsupported_claims\": [<lista de strings>], \"reasoning\": \"<breve explicación>\"}"
         )
@@ -589,7 +586,7 @@ class LocalVLMAdapter:
             self.processor,
             formatted_prompt,
             [],
-            max_tokens=250,
+            max_tokens=380,
             temperature=0.0,
             verbose=False,
         )

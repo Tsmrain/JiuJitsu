@@ -1,29 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_Prof["ProfesorTecnicas.jsx"]
-        P_Sel["SelectorPersonaVideo.jsx"]
-        P_Api["api/tecnicas.js"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Retroalimentación Técnica"]
+        B["UI Resultados y Biblioteca"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Retroalimentación y Conocimiento"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Evaluación, Técnica, Manual y Nota"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Rutas y Servicios)"]
-        A_Routes["tecnicas_routes.py"]
-        A_Msg["instructor_message_ingestion.py"]
-        A_VidRag["rag_video_ingestion.py"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
-        D_Tecnica["Tecnica"]
-        D_Patron["PatronReferencia"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Visión, Almacenamiento y BD)"]
-        I_YOLO["adapters.py (YOLOPoseAdapter)"]
-        I_Vid["video_storage.py (Respaldo y Auto-curación)"]
-        I_Qdrant["qdrant_adapter.py / qdrant_rag_adapter.py"]
-        I_PG["PostgrestClient / PostgreSQL"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

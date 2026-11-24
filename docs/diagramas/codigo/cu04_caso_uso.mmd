@@ -4,14 +4,16 @@ flowchart LR
 
     AL["👤 Alumno"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Feedback Biomecanico"]
-        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
-        UC04_Rep(["Reproducir Momento Exacto del Error"]):::usecase
-        UC04_Frame(["Inspeccionar Fotograma Critico y Articulaciones"]):::usecase
-        UC04_Bib(["Consultar Citas y Manuales en Biblioteca"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Análisis"]
+        UC04(["UC-04: Analizar Técnica"]):::usecase
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
+        SEL(["Confirmar Silueta en Escena"]):::usecase
+        CAN(["Cancelar Evaluación en Curso"]):::usecase
+        UC05(["UC-05: Generar Feedback Biomecánico"]):::usecase
     end
 
     AL --> UC04
-    UC04_Rep -.->|"«extend»"| UC04
-    UC04_Frame -.->|"«extend»"| UC04
-    UC04_Bib -.->|"«extend»"| UC04
+    UC04 -.->|"«include»"| UC02
+    UC04 -.->|"«include»"| SEL
+    CAN -.->|"«extend»"| UC04
+    UC05 -.->|"«extend»"| UC04

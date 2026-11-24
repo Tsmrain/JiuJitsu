@@ -1,26 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_Admin["AdminSucursales.jsx (Pestaña Usuarios)"]
-        P_App["App.jsx (Banner de Soporte)"]
-        P_Prof["UserProfileModal.jsx"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Administración de Sucursales"]
+        B["UI Gestión de Sucursales"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Sucursales"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Sucursal y Usuario"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
-        A_Auth["auth_routes.py (impersonate, update, cambiar-sucursal, delete)"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Entidades)"]
-        D_User["Usuario"]
-        D_Suc["Sucursal"]
-        D_Resp["LoginResponse / Token"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
-        I_PG["PostgrestClient / PostgreSQL (admin_delete_user)"]
-        I_JWT["PyJWT (HS256)"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

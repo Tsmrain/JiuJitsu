@@ -1,40 +1,28 @@
 sequenceDiagram
     autonumber
-    actor AL as Alumno
-    participant B1 as «Boundary» PantallaDeEvaluacion
-    participant C1 as «Control» CoordinadorDeAnalisis
-    participant E1 as «Entity» Usuario
-    participant E2 as «Entity» PatronDeReferencia
-    participant E3 as «Entity» Evaluacion
+    actor NP as Nuevo Practicante
+    participant B1 as «Boundary» UI Registro de Alumno
+    participant C1 as «Control» Controlador de Registro
+    participant E1 as «Entity» Sucursal
+    participant E2 as «Entity» Usuario
+    participant E3 as «Entity» Mensualidad
 
-    AL->>B1: seleccionarVideoYTecnica(profesor, tecnica, video)
-    B1->>C1: validarPaseYElegibilidad(alumno, video)
-    C1->>E1: verificarPaseDeTatami(alumno)
-    E1-->>C1: paseVigente
-    C1->>C1: verificarEsJiuJitsu(video)
-    C1->>C1: detectarPracticantesIniciales(video)
-    C1-->>B1: candidatosEnEscena
-    B1-->>AL: mostrarSiluetasParaSeleccion(candidatos)
-    AL->>B1: confirmarMiSilueta(personaSeleccionada)
-    B1->>C1: iniciarEvaluacion(alumno, tecnica, video, personaSeleccionada)
-    C1->>E3: crearEvaluacionEnCurso(alumno, tecnica, sucursalCongelada)
-    E3-->>C1: evaluacionId
-
-    alt Alumno decide cancelar durante la espera
-        AL->>B1: cancelarAnalisis()
-        B1->>C1: cancelarEvaluacion(evaluacionId, alumno)
-        C1->>E3: marcarEstadoCancelado(evaluacionId)
-        C1->>C1: eliminarVideoTemporalYLiberarSesion()
-        C1-->>B1: cancelacionConfirmada()
-        B1-->>AL: volverAPantallaDeCarga()
-    else Analisis continua hasta finalizar
-        C1->>C1: extraerSecuenciaPostural(video, personaSeleccionada)
-        C1->>E2: recuperarPatronesActivos(tecnica)
-        E2-->>C1: secuenciasDeReferencia
-        C1->>C1: alinearYCalcularSimilitud(secuenciaAlumno, secuenciasDeReferencia)
-        C1->>C1: detectarFrameCriticoYArticulaciones()
-        C1->>E3: guardarResultadoCinematico(evaluacionId, similitud)
-        E3-->>C1: resultadoConfirmado
-        C1-->>B1: analisisCompletado(evaluacionId, similitud)
-        B1-->>AL: habilitarVistaDeFeedback(UC04)
+    NP->>B1: solicitarFormularioRegistro()
+    B1->>C1: obtenerSedesDisponibles()
+    C1->>E1: listarSucursalesActivas()
+    E1-->>C1: listaSucursales
+    C1-->>B1: sedesDisponibles
+    B1-->>NP: mostrarFormularioDeAlta(sedesDisponibles)
+    NP->>B1: enviarDatos(nombre, identificador, clave, sucursal)
+    B1->>C1: registrarNuevoAlumno(datos)
+    C1->>C1: validarIdentificadorYRolAlumno(datos)
+    alt Identificador repetido o formato inválido
+        C1-->>B1: rechazarRegistro()
+        B1-->>NP: mostrarObservacionDeRegistro()
+    else Datos válidos
+        C1->>E2: crearUsuarioAlumno(datos)
+        C1->>E3: inicializarMensualidadPendiente(usuario)
+        E3-->>C1: mensualidadPendiente
+        C1-->>B1: cuentaRegistrada(usuario, mensualidadPendiente)
+        B1-->>NP: informarEsperaDeActivacionPresencial()
     end

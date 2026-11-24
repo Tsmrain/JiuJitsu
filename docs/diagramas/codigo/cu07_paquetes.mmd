@@ -1,25 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_Prog["StudentProgress.jsx"]
-        P_Prof["ProfesorTecnicas.jsx"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Biblioteca y Notas Docentes"]
+        B["UI Conocimiento y Biblioteca"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Biblioteca"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Técnica, Manual Técnico y Nota"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Rutas)"]
-        A_Auth["auth_routes.py (listar_alumnos / listar_evaluaciones_alumno)"]
-        A_Routes["routes.py (consultar_evaluacion)"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Entidades)"]
-        D_User["Usuario"]
-        D_Eval["Evaluacion"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Videos)"]
-        I_PG["PostgrestClient / PostgreSQL (RLS)"]
-        I_Vid["video_storage.py"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

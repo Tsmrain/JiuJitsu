@@ -2,12 +2,18 @@ flowchart LR
     classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
     classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
 
-    AL["👤 Nuevo Practicante (Alumno)"]:::actor
+    AL["👤 Alumno"]:::actor
+    PR["👤 Profesor"]:::actor
+    AD["👤 Dueño"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Registro"]
-        UC02(["UC-02: Crear Cuenta de Alumno"]):::usecase
-        UC02_Sede(["Elegir Sucursal de Entrenamiento"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Autorización"]
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
+        VR(["Verificar Perfil y Sucursal"]):::usecase
+        VM(["Comprobar Vigencia de Mensualidad"]):::usecase
     end
 
     AL --> UC02
-    UC02 -.->|"«include»"| UC02_Sede
+    PR --> UC02
+    AD --> UC02
+    UC02 -.->|"«include»"| VR
+    UC02 -.->|"«include»"| VM

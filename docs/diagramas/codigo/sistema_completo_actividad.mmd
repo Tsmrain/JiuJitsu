@@ -3,61 +3,42 @@ flowchart TD
     classDef decision fill:#FFF5F5,stroke:#C53030,color:#742A2A
     classDef exito fill:#F0FFF4,stroke:#2F855A,color:#22543D
 
-    subgraph L_Alumno["Alumno (Cliente)"]
-        A1["Iniciar sesion y elegir Profesor y Tecnica"]:::paso
-        A2["Seleccionar video de practica en celular"]:::paso
-        A3["Confirmar silueta propia en primer fotograma"]:::paso
-        A4{"Desea cancelar durante\nel procesamiento?"}:::decision
-        A5["Volver a pantalla inicial"]:::paso
-        A6["Revisar feedback, saltar al segundo del error\ny abrir citas o Biblioteca"]:::exito
+    subgraph L_Alumno["Alumno"]
+        A1["Iniciar sesión y validar rol asignado"]:::paso
+        A2["Elegir técnica y enviar video de práctica"]:::paso
+        A3["Confirmar su silueta en la escena inicial"]:::paso
+        A4{"¿Desea cancelar?"}:::decision
+        A5["Volver al inicio sin registrar"]:::paso
+        A6["Revisar comparativa, segundo del error y guía"]:::exito
     end
 
-    subgraph L_Frontend["Frontend (React 19 + Vite Proxy)"]
-        F1["Validar tamano de archivo y enviar a validar-spam"]:::paso
-        F2["Ejecutar AbortController y POST cancelar"]:::paso
-        F3["Polling a GET /evaluaciones/id cada 3s"]:::paso
-        F4["Renderizar FeedbackView (Videos + Tarjeta IA)"]:::paso
+    subgraph L_Control["Control de Mensualidad"]
+        C1{"¿Mensualidad vigente y práctica válida?"}:::decision
+        C2["Informar restricción o rechazo"]:::decision
+        C3["Registrar evaluación en curso en sede"]:::paso
+        C4["Anular evaluación y limpiar archivo"]:::paso
     end
 
-    subgraph L_Backend["Backend (FastAPI)"]
-        B1{"Pase de Tatami activo\ny formato valido?"}:::decision
-        B2["Rechazar HTTP 403 / 422"]:::decision
-        B3["Crear sesion (CREATED -> PERSONA_SELECTED)"]:::paso
-        B4["Crear Evaluacion (procesando) y congelar sucursal_id"]:::paso
-        B5["Marcar estado cancelado y borrar video temporal"]:::paso
-        B6["Anotar frame critico y traducir articulaciones"]:::paso
+    subgraph L_Postura["Evaluación Postural"]
+        P1["Detectar participantes iniciales"]:::paso
+        P2["Seguir postura y comparar contra modelo"]:::paso
+        P3["Calcular acierto y momento crítico"]:::paso
+        P4["Extraer imagen del error y articulaciones"]:::paso
     end
 
-    subgraph L_Vision["IA de Vision (YOLO26 + ViCoS)"]
-        V1{"Clasificador ViCoS\nratio BJJ >= 0.60?"}:::decision
-        V2["Detectar personas y deduplicar siluetas"]:::paso
-        V3["Extraer secuencia postural 3D y tracking IoU"]:::paso
+    subgraph L_Guia["Conocimiento y Retroalimentación"]
+        G1{"¿Ejecución sobresaliente?"}:::decision
+        G2["Emitir felicitación en idioma del alumno"]:::exito
+        G3["Consultar manuales de técnica y notas docentes"]:::paso
+        G4["Redactar corrección práctica en lenguaje humano"]:::paso
+        G5["Verificar respaldo en fuentes oficiales"]:::exito
     end
 
-    subgraph L_Conocimiento["IA Biomecanica y RAG (DTW + Qwen3-VL MLX)"]
-        K1["Normalizar 46 dims y alinear DTW contra patrones"]:::paso
-        K2{"Similitud < 85.0%?"}:::decision
-        K3["Emitir felicitacion deterministica"]:::exito
-        K4["Buscar en manual de tecnica o Biblioteca Global\ny reordenar con Cross-Encoder"]:::paso
-        K5{"Manual >= 0.65\no Nota del Profesor?"}:::decision
-        K6["Qwen3-VL-Instruct-4B genera correccion\ny Juez audita fidelidad >= 0.85"]:::paso
-        K7["Activar Respaldo Cuantitativo Seguro"]:::paso
-    end
-
-    subgraph L_Persistencia["Persistencia (PostgreSQL + Qdrant)"]
-        P1["Obtener patrones activos en Qdrant"]:::paso
-        P2["Guardar estado completado si no fue cancelado"]:::paso
-    end
-
-    A1 --> A2 --> F1 --> B1
-    B1 -->|"No"| B2
-    B1 -->|"Si"| V1
-    V1 -->|"No"| B2
-    V1 -->|"Si"| V2 --> B3 --> A3 --> B4 --> A4
-    A4 -->|"Si"| F2 --> B5 --> A5
-    A4 -->|"No"| V3 --> P1 --> K1 --> K2
-    K2 -->|"No (>= 85%)"| K3 --> B6
-    K2 -->|"Si (< 85%)"| K4 --> K5
-    K5 -->|"Si"| K6 --> B6
-    K5 -->|"No"| K7 --> B6
-    B6 --> P2 --> F3 --> F4 --> A6
+    A1 --> A2 --> C1
+    C1 -->|"No"| C2
+    C1 -->|"Sí"| P1 --> A3 --> C3
+    C3 --> A4
+    A4 -->|"Sí"| C4 --> A5
+    A4 -->|"No"| P2 --> P3 --> P4 --> G1
+    G1 -->|"Sí"| G2 --> A6
+    G1 -->|"No"| G3 --> G4 --> G5 --> A6

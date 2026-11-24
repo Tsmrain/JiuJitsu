@@ -2,18 +2,10 @@ flowchart LR
     classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
     classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
 
-    AL["👤 Alumno"]:::actor
+    NP["👤 Nuevo Practicante"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Analisis de Tecnica"]
-        UC03(["UC-03: Evaluar Ejecucion en Video"]):::usecase
-        UC03_Sel(["Seleccionar Profesor y Tecnica"]):::usecase
-        UC03_Sil(["Confirmar Silueta Propia en Escena"]):::usecase
-        UC03_Can(["Cancelar Analisis en Curso"]):::usecase
-        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Incorporación"]
+        UC03(["UC-03: Crear Cuenta de Alumno"]):::usecase
     end
 
-    AL --> UC03
-    UC03 -.->|"«include»"| UC03_Sel
-    UC03 -.->|"«include»"| UC03_Sil
-    UC03_Can -.->|"«extend»"| UC03
-    UC04 -.->|"«extend»"| UC03
+    NP --> UC03

@@ -1,26 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        UI_Login["LoginModal.jsx"]
-        UI_App["App.jsx"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Acceso"]
+        B["UI Acceso"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Acceso"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Usuario y Sesión"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Rutas y Control)"]
-        API_Main["main.py (AuthRateLimitMiddleware)"]
-        API_Auth["auth_routes.py"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Entidades y Reglas)"]
-        Ent_User["Usuario"]
-        Ent_Sucursal["Sucursal"]
-        Ent_Resp["LoginRequest / LoginResponse"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Persistencia y Criptografía)"]
-        Infra_PG["PostgrestClient / PostgreSQL (pgcrypto)"]
-        Infra_JWT["PyJWT (HS256)"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

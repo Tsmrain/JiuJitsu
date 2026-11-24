@@ -2,19 +2,12 @@ flowchart LR
     classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
     classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
 
-    AD["👤 Administrador (Dueño de la Marca)"]:::actor
-    US["👤 Usuario (Alumno o Profesor)"]:::actor
+    AD["👤 Dueño"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Soporte y Cuentas"]
-        UC10(["UC-10: Soporte Tecnico y Administracion de Cuentas"]):::usecase
-        UC10_Imp(["Entrar como Otro Usuario para Soporte"]):::usecase
-        UC10_Del(["Eliminar Cuenta con Reasignacion"]):::usecase
-        UC10_Suc(["Cambiar Sucursal de Usuario"]):::usecase
-        UC10_Perf(["Editar Perfil e Idioma Propio"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Sedes"]
+        UC10(["UC-10: Gestionar Sucursales y Coordenadas"]):::usecase
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
     end
 
     AD --> UC10
-    US --> UC10_Perf
-    UC10_Imp -.->|"«extend»"| UC10
-    UC10_Del -.->|"«extend»"| UC10
-    UC10_Suc -.->|"«extend»"| UC10
+    UC10 -.->|"«include»"| UC02

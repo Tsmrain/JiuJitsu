@@ -1,57 +1,33 @@
 flowchart TB
-    classDef nodo fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
     classDef comp fill:#FFFFFF,stroke:#4A5568,color:#1A202C,stroke-width:1.5px
-    classDef db fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
     classDef ext fill:#F0FFF4,stroke:#2F855A,color:#22543D,stroke-width:2px
+    classDef db fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
 
-    subgraph N_Cliente["Dispositivo del Usuario (Celular / Tablet / PC)"]
-        C_Web["Navegador Web (React 19 SPA + Leaflet.js)"]:::comp
+    subgraph N_Cliente["Dispositivo del Usuario (Celular / Computadora)"]
+        C_Web["Portal Web de la Academia"]:::comp
     end
 
-    subgraph N_Externos["Servicios Externos de Internet"]
-        E_CF["Cloudflare Zero Trust Edge\n(HTTPS *.trycloudflare.com | Limite 100 MB)"]:::ext
-        E_OSM["OpenStreetMap y Nominatim\n(Mapas y Geocodificacion Inversa)"]:::ext
+    subgraph N_Externos["Servicios de Apoyo Externos"]
+        E_Acceso["Canal Seguro de Acceso Remoto"]:::ext
+        E_Mapas["Servicio Cartográfico de Ubicación"]:::ext
     end
 
-    subgraph N_Mac["Servidor Local On-Premise (MacBook Air Apple Silicon M5 - 24 GB Memoria Unificada)"]
-        subgraph N_Tunnel["Tunel Seguro"]
-            S_CFD["Servicio cloudflared\n(Tunel Saliente sin Port Forwarding)"]:::comp
-        end
-
-        subgraph N_Web["Frontend & Reverse Proxy (Node / Vite 5.4 - Puerto 5173)"]
-            S_Vite["Vite Dev/Preview Proxy\n(Enruta /api, /static, /health | allowedHosts)"]:::comp
-        end
-
-        subgraph N_Back["Backend & Motores de IA Local (Python 3.12 / FastAPI + Uvicorn - Puerto 8000)"]
-            B_API["API REST FastAPI\n(AuthRateLimit, JWT HS256, Casos de Uso)"]:::comp
-            B_MPS["Motor Vision en GPU (PyTorch MPS)\nYOLOv26-pose + depth + seg + ViCoS"]:::comp
-            B_MLX["Motor RAG y VLM en Neural Engine / GPU (Apple MLX)\nQwen3-VL Embedding 2B (8b) + Reranker 2B (4b) + Instruct 4B (4b)"]:::comp
-        end
-
-        subgraph N_Disco["Almacenamiento Local en Disco (APFS)"]
-            D_Data["CORPOCMENTE_DATA_DIR\n(Manuales, Imagenes, Videos Patron y Uncertainty Frames)"]:::comp
-            D_Models["Modelos y Videos Temporales\n(backend/storage/models/*.pt y /tmp/corpocmente_videos)"]:::comp
-        end
-
-        subgraph N_Docker["Contenedores Docker (infrastructure/docker-compose.yml)"]
-            DK_PRST["corpocmente_postgrest\n(PostgREST API | Puertos 3000 / 3001)"]:::db
-            DK_PG["corpocmente_postgres\n(PostgreSQL 16 + RLS + pgcrypto | Puerto 5432\nVolumen: corpocmente_postgres_data)"]:::db
-            DK_QD["corpocmente_qdrant\n(Qdrant Vector DB | Puertos 6333 / 6334\nVolumen: corpocmente_qdrant_data)"]:::db
+    subgraph N_Academia["Estación Local en la Academia"]
+        S_Portal["Atención de Solicitudes del Portal"]:::comp
+        S_Reglas["Coordinación de Reglas de Negocio"]:::comp
+        S_MotorIA["Evaluación Postural y Asistencia Técnica"]:::comp
+        subgraph N_Repos["Resguardo Privado en Sede"]
+            R_Datos["Registro Académico, Sedes y Mensualidades"]:::db
+            R_Conoc["Acervo de Patrones, Manuales y Notas"]:::db
+            R_Media["Archivo de Videos Modelo y Documentos"]:::db
         end
     end
 
-    C_Web -->|"HTTPS (TLS)"| E_CF
-    C_Web -->|"HTTPS (Tiles / Nominatim)"| E_OSM
-    E_CF -->|"Tunel cifrado saliente"| S_CFD
-    S_CFD -->|"HTTP 127.0.0.1:5173"| S_Vite
-    S_Vite -->|"HTTP Proxy 127.0.0.1:8000"| B_API
-
-    B_API --> B_MPS
-    B_API --> B_MLX
-    B_API -->|"Lectura / Escritura"| D_Data
-    B_MPS -->|"Carga modelos / Hot-Swap"| D_Models
-    B_MLX -->|"Pesos locales 4/8 bits"| D_Models
-
-    B_API -->|"REST + JWT (Puerto 3000)"| DK_PRST
-    DK_PRST -->|"TCP postgres:5432"| DK_PG
-    B_API -->|"HTTP/gRPC (Puertos 6333/6334)"| DK_QD
+    C_Web -->|"conexión segura"| E_Acceso
+    C_Web -->|"consulta de mapas"| E_Mapas
+    E_Acceso --> S_Portal
+    S_Portal --> S_Reglas
+    S_Reglas --> S_MotorIA
+    S_Reglas --> R_Datos
+    S_MotorIA --> R_Conoc
+    S_Reglas --> R_Media

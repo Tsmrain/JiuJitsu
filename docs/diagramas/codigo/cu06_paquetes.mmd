@@ -1,31 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_Global["GlobalKnowledgeModal.jsx"]
-        P_Theory["TheoryManagerModal.jsx"]
-        P_Lib["LibraryView.jsx"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Catálogo de Técnicas"]
+        B["UI Gestión de Técnicas e Instructor"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Catálogo y Patrón"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Técnica, Video, Patrón y Biblioteca"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Casos de Uso y Rutas)"]
-        A_Routes["routes.py (ingesta, descarga, borrado de manuales)"]
-        A_Ingest["ingest_knowledge_use_case.py"]
-        A_Del["delete_theory_use_case.py"]
-        A_List["list_theory_use_case.py"]
-        A_Msg["instructor_message_ingestion.py"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Entidades)"]
-        D_Teoria["TeoriaRAG"]
-        D_Tecnica["Tecnica"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Embeddings, Vector DB y Almacenamiento)"]
-        I_Qwen["qwen_adapter.py (MLX)"]
-        I_Qdrant["qdrant_rag_adapter.py"]
-        I_PG["PostgrestClient / PostgreSQL"]
-        I_FS["Almacenamiento de Manuales (Disco)"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

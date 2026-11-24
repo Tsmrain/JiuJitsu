@@ -1,32 +1,27 @@
 sequenceDiagram
     autonumber
-    actor AD as Administrador
-    participant B1 as «Boundary» PantallaDeSucursales
-    participant C1 as «Control» CoordinadorDeSucursales
-    participant E1 as «Entity» Sucursal
+    actor PR as Profesor o Dueño
+    participant B1 as «Boundary» UI Control de Mensualidad
+    participant C1 as «Control» Controlador de Mensualidad
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» Sucursal
+    participant E3 as «Entity» Mensualidad
 
-    alt Registrar o editar sucursal
-        AD->>B1: indicarUbicacionOEnlace(coordenadasOUrl)
-        B1->>C1: obtenerDatosGeograficos(coordenadasOUrl)
-        C1-->>B1: propuestaPaisCiudadDireccion
-        B1-->>AD: mostrarDatosYMapa(propuesta)
-        AD->>B1: confirmarGuardarSucursal(nombre, pais, ciudad, direccion, lat, lng)
-        B1->>C1: guardarSucursal(datosSucursal)
-        C1->>E1: persistirSucursal(datosSucursal)
-        E1-->>C1: sucursalGuardada
-        C1-->>B1: confirmacion(sucursalGuardada)
-        B1-->>AD: actualizarListaYMapa()
-    else Eliminar sucursal existente
-        AD->>B1: solicitarEliminarSucursal(sucursalId)
-        B1->>C1: eliminarSucursal(sucursalId)
-        C1->>E1: verificarSinUsuariosYBorrar(sucursalId)
-        alt Tiene usuarios adscritos
-            E1-->>C1: rechazoPorIntegridad
-            C1-->>B1: informarUsuariosVinculados()
-            B1-->>AD: mostrarAdvertenciaDeReasignacion()
-        else Sucursal vacia
-            E1-->>C1: sucursalEliminada
-            C1-->>B1: bajaConfirmada()
-            B1-->>AD: actualizarListaDeSedes()
-        end
+    PR->>B1: consultarMensualidadesPendientes()
+    B1->>C1: listarAlumnosPendientesOExpirados(solicitante)
+    C1->>E2: determinarAlcanceDeSucursal(solicitante)
+    C1->>E1: obtenerAlumnosDeSede(sucursal)
+    C1->>E3: filtrarPendientesOExpiradas()
+    E3-->>C1: nominaPorActivar
+    C1-->>B1: listaDeAlumnosPorRenovar()
+    PR->>B1: confirmarPagoPresencialYActivar(alumno)
+    B1->>C1: habilitarMensualidad30Dias(solicitante, alumno)
+    C1->>E2: verificarCoincidenciaDeSede(solicitante, alumno)
+    alt Sede no autorizada
+        C1-->>B1: denegarActivacionPorSede()
+    else Sede válida
+        C1->>E3: activarPorTreintaDias(alumno)
+        E3-->>C1: mensualidadActivaConVencimiento
+        C1-->>B1: confirmacionDeVigencia()
+        B1-->>PR: actualizarListaDeMensualidades()
     end

@@ -1,31 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_Feedback["FeedbackView.jsx"]
-        P_Library["LibraryView.jsx"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Análisis Biomecánico"]
+        B["UI Evaluación y Silueta"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Evaluación y Biomecánico"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Mensualidad, Patrón y Evaluación"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Orquestación RAG y Reportes)"]
-        A_Routes["routes.py (consultar_evaluacion / buscar_en_biblioteca)"]
-        A_Facade["intelligence_facade.py"]
-        A_RAG["multimodal_rag_service.py"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Recuperación, Estrategias y Entidades)"]
-        D_Rerank["rag_reranker.py"]
-        D_Hybrid["hybrid_retriever.py"]
-        D_Glossary["glossary_service.py"]
-        D_Prompt["prompt_strategies.py"]
-        D_Models["Evaluacion / AnalisisResultDTO / TeoriaRAG"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (VLM Local, Embeddings y BD)"]
-        I_VLM["local_vlm_adapter.py (MLX)"]
-        I_Qwen["qwen_adapter.py (MLX)"]
-        I_Qdrant["qdrant_adapter.py / qdrant_rag_adapter.py"]
-        I_PG["PostgrestClient / VideoStorage"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

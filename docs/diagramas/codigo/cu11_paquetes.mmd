@@ -1,0 +1,15 @@
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Soporte y Cuentas"]
+        B["UI Administración y Soporte"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Cuentas y Soporte"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Usuario, Sucursal y Sesión Delegada"]:::pkg
+    end
+
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

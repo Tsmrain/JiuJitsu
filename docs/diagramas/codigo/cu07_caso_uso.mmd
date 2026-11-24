@@ -3,13 +3,18 @@ flowchart LR
     classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
 
     PR["👤 Profesor"]:::actor
+    AD["👤 Dueño"]:::actor
     AL["👤 Alumno"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Progreso y Evaluaciones"]
-        UC07(["UC-07: Consultar Progreso y Evaluaciones"]):::usecase
-        UC07_Det(["Revisar Videos y Correccion de Evaluacion"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Biblioteca"]
+        UC07(["UC-07: Gestionar Manuales y Notas"]):::usecase
+        CON(["Consultar Biblioteca Técnica"]):::usecase
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
     end
 
     PR --> UC07
-    AL --> UC07
-    UC07 -.->|"«include»"| UC07_Det
+    AD --> UC07
+    PR --> CON
+    AD --> CON
+    AL --> CON
+    UC07 -.->|"«include»"| UC02

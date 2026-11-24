@@ -1,0 +1,23 @@
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    subgraph P1["Paquete Frontera (Pantallas de Usuario)"]
+        B1["Acceso, Rol y Estado de Mensualidad"]:::pkg
+        B2["Evaluación y Resultados del Alumno"]:::pkg
+        B3["Catálogo, Biblioteca, Progreso y Sedes"]:::pkg
+    end
+
+    subgraph P2["Paquete Control (Reglas del Negocio)"]
+        C1["Gestión de Acceso, Roles, Mensualidades y Cuentas"]:::pkg
+        C2["Evaluación Postural y Modelos del Profesor"]:::pkg
+        C3["Biblioteca y Retroalimentación Verificada"]:::pkg
+    end
+
+    subgraph P3["Paquete Entidades (Conceptos de la Academia)"]
+        E1["Usuario, Rol, Sucursal y Mensualidad"]:::pkg
+        E2["Técnica, Patrón y Evaluación"]:::pkg
+        E3["Manuales Oficiales y Notas del Profesor"]:::pkg
+    end
+
+    P1 -->|"solicita acciones"| P2
+    P2 -->|"administra y consulta"| P3

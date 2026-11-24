@@ -1,31 +1,28 @@
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant B1 as «Boundary» PantallaDeAcceso
-    participant C1 as «Control» CoordinadorDeAcceso
+    participant B1 as «Boundary» UI Acceso
+    participant C1 as «Control» Controlador de Acceso
     participant E1 as «Entity» Usuario
-    participant E2 as «Entity» Sucursal
-    participant E3 as «Entity» SesionDeUsuario
+    participant E2 as «Entity» Sesión
 
-    U->>B1: solicitarAcceso(identificador, clave)
-    B1->>C1: autenticarUsuario(identificador, clave)
-    C1->>C1: verificarIntentosPermitidos(solicitante)
-    alt Umbral de intentos superado
+    U->>B1: ingresarCredenciales(identificador, clave)
+    B1->>C1: solicitarAutenticacion(identificador, clave)
+    C1->>C1: verificarLimiteDeIntentos(identificador)
+    alt Límite de intentos superado
         C1-->>B1: bloqueoTemporal()
-        B1-->>U: informarBloqueoTemporal()
-    else Dentro del limite permitido
+        B1-->>U: informarEsperaDeSeguridad()
+    else Dentro del límite permitido
         C1->>E1: validarCredenciales(identificador, clave)
-        alt Credenciales validas
-            E1-->>C1: datosUsuario(rol, sedeId, idioma, estadoMembresia)
-            C1->>E2: consultarNombreSede(sedeId)
-            E2-->>C1: nombreDeSucursal
-            C1->>E3: abrirSesionActiva(datosUsuario, nombreDeSucursal)
-            E3-->>C1: sesionActiva
-            C1-->>B1: accesoAutorizado(sesionActiva)
-            B1-->>U: mostrarPanelSegunRol(rol, idioma)
+        alt Credenciales válidas
+            E1-->>C1: identidadVerificada(usuario)
+            C1->>E2: registrarSesionActiva(usuario)
+            E2-->>C1: sesionIniciada
+            C1-->>B1: accesoAutenticado(sesionIniciada)
+            B1-->>U: confirmarIngresoYEvaluarPerfil()
         else Credenciales incorrectas
-            E1-->>C1: accesoDenegado
-            C1-->>B1: errorUnificado()
-            B1-->>U: mostrarCredencialesInvalidas()
+            E1-->>C1: credencialesInvalidas
+            C1-->>B1: notificarErrorDeAcceso()
+            B1-->>U: solicitarNuevasCredenciales()
         end
     end

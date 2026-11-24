@@ -1,30 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_App["App.jsx (AbortController y Cancelación)"]
-        P_Upload["VideoUpload.jsx"]
-        P_Selector["SelectorPersonaVideo.jsx"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Incorporación de Alumnos"]
+        B["UI Registro de Alumno"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Registro"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Sucursal, Usuario y Mensualidad"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Rutas y Sesiones)"]
-        A_Routes["routes.py (analizar, primer-frame, cancelar)"]
-        A_Session["session_manager.py"]
-        A_Facade["intelligence_facade.py"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Biomecánica y Entidades)"]
-        D_DTW["dtw_comparator.py"]
-        D_Norm["pose_normalizer.py"]
-        D_Eval["Evaluacion"]
-        D_Esq["EsqueletoBiomecanico"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Visión y Persistencia)"]
-        I_YOLO["adapters.py (YOLOPoseAdapter)"]
-        I_Spam["local_spam_filter.py"]
-        I_DB["PostgrestClient / QdrantVectorAdapter"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

@@ -1,38 +1,41 @@
 sequenceDiagram
     autonumber
     actor AL as Alumno
-    participant B1 as «Boundary» PantallaDeResultados
-    participant C1 as «Control» CoordinadorDeFeedback
-    participant E1 as «Entity» Evaluacion
-    participant E2 as «Entity» BibliotecaTecnica
-    participant E3 as «Entity» Tecnica
+    participant B1 as «Boundary» UI Evaluación de Técnica
+    participant B2 as «Boundary» UI Selección de Silueta
+    participant C1 as «Control» Controlador de Evaluación
+    participant C2 as «Control» Controlador Biomecánico
+    participant E1 as «Entity» Mensualidad
+    participant E2 as «Entity» Patrón de Referencia
+    participant E3 as «Entity» Evaluación
+    participant E4 as «Entity» Esqueleto Biomecánico
 
-    AL->>B1: consultarFeedbackEnIdioma(evaluacionId, idioma)
-    B1->>C1: generarFeedbackPedagogico(evaluacionId, idioma)
-    C1->>E1: obtenerDiagnosticoCinematico(evaluacionId)
-    E1-->>C1: similitud, frameCritico, articulaciones
-
-    alt Similitud >= 85%
-        C1->>C1: emitirReconocimientoEnIdioma(idioma)
-    else Similitud < 85%
-        C1->>E2: buscarEvidenciaEspecificaOGlobal(tecnica, frameCritico)
-        E2-->>C1: pasajesYRelevancia
-        C1->>E3: obtenerMensajeDelProfesor(tecnica)
-        E3-->>C1: notaDelProfesor
-        C1->>C1: aplicarJerarquia(Manual >= 0.65 > NotaDelProfesor > Fallback)
-        alt Existe respaldo en Manual o Nota del Profesor
-            C1->>C1: redactarCorreccion(frameCritico, contexto, idioma)
-            C1->>C1: auditarFidelidad(correccion, contexto)
-            alt Fidelidad < 0.85
-                C1->>C1: activarFallbackSeguro()
-            end
-        else Sin manuales ni nota del profesor
-            C1->>C1: retornarAvisoSinContextoSuficiente()
-        end
+    AL->>B1: seleccionarProfesorTecnicaYVideo(profesor, tecnica, video)
+    B1->>C1: validarElegibilidadYContenido(alumno, video)
+    C1->>E1: confirmarMensualidadVigente(alumno)
+    E1-->>C1: mensualidadActiva
+    C1->>C2: verificarPracticaJiuJitsuYExtraerEscena(video)
+    C2-->>C1: siluetasDetectadas
+    C1-->>B2: mostrarCandidatosIniciales(siluetasDetectadas)
+    AL->>B2: confirmarSiluetaPropia(silueta)
+    B2->>C1: iniciarAnalisis(alumno, tecnica, silueta)
+    C1->>E3: registrarEvaluacionEnCurso(alumno, tecnica, sede)
+    E3-->>C1: evaluacionEnCurso
+    alt Alumno solicita cancelar
+        AL->>B1: cancelarEvaluacion()
+        B1->>C1: abortarProceso(evaluacionEnCurso)
+        C1->>E3: marcarCanceladaYLimpiarVideo()
+        C1-->>B1: cancelacionConfirmada()
+        B1-->>AL: retornarAlInicio()
+    else Proceso continúa
+        C1->>C2: extraerSecuenciaYComparar(video, silueta)
+        C2->>E2: consultarPatronDelProfesor(tecnica)
+        E2-->>C2: secuenciaPatron
+        C2->>E4: calcularSimilitudYFrameCritico(secuenciaPatron)
+        E4-->>C2: similitud, frameCritico, articulaciones
+        C2-->>C1: diagnosticoPostural
+        C1->>E3: guardarResultadoCinematico(diagnosticoPostural)
+        E3-->>C1: evaluacionCompletada
+        C1-->>B1: mostrarAnalisisListo()
+        B1-->>AL: abrirVistaDeResultados()
     end
-
-    C1->>C1: anotarFrameYTraducirArticulaciones(idioma)
-    C1->>E1: guardarReporteDefinitivo(evaluacionId, feedback)
-    E1-->>C1: reporteGuardado
-    C1-->>B1: entregarReporteCompleto(similitud, feedback, frame, timestamp)
-    B1-->>AL: mostrarVideosComparadosYCorreccion()

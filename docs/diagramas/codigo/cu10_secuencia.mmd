@@ -1,35 +1,29 @@
 sequenceDiagram
     autonumber
-    actor AD as Administrador
-    participant B1 as «Boundary» PantallaDeSoporteYUsuarios
-    participant C1 as «Control» CoordinadorDeCuentas
-    participant E1 as «Entity» Usuario
-    participant E2 as «Entity» SesionDeSoporte
+    actor AD as Dueño
+    participant B1 as «Boundary» UI Gestión de Sucursales
+    participant C1 as «Control» Controlador de Sucursales
+    participant E1 as «Entity» Sucursal
+    participant E2 as «Entity» Usuario
 
-    alt Asumir identidad temporal para soporte
-        AD->>B1: seleccionarUsuarioYEntrarComo(usuarioId)
-        B1->>C1: iniciarImpersonacion(admin, usuarioId)
-        C1->>E1: consultarPerfilDestino(usuarioId)
-        E1-->>C1: datosUsuarioDestino
-        C1->>E2: emitirSesionDelegada(datosUsuarioDestino)
-        E2-->>C1: sesionDelegada
-        C1-->>B1: vistaUsuarioConBannerRojo(sesionDelegada)
-        B1-->>AD: mostrarEntornoDelUsuarioConAviso()
-        AD->>B1: volverAMiCuentaAdmin()
-        B1-->>AD: restaurarSesionOriginal()
-    else Eliminar cuenta de usuario
-        AD->>B1: solicitarEliminarUsuario(usuarioId)
-        B1->>C1: eliminarUsuario(adminId, usuarioId)
-        C1->>E1: ejecutarBajaConIntegridad(usuarioId, adminId)
-        alt Es profesor con contenido y sin reasignacion
-            E1-->>C1: conflictoContenidoAsociado
-            C1-->>B1: solicitarConfirmacionDeReasignacion()
-            B1-->>AD: confirmarReasignarRecursos()
-            AD->>B1: confirmarAutoReasignacion()
-            B1->>C1: eliminarConReasignacion(usuarioId, adminId)
-            C1->>E1: reasignarYEliminar(usuarioId, adminId)
+    alt Registrar o actualizar sede
+        AD->>B1: ubicarSedeEnMapaOEnlace(ubicacion)
+        B1->>C1: interpretarUbicacionGeografica(ubicacion)
+        C1-->>B1: propuestaPaisCiudadDireccion()
+        AD->>B1: confirmarDatosDeSucursal(nombre, direccion, coordenadas)
+        B1->>C1: guardarSucursal(datos)
+        C1->>E1: registrarOActualizarSede(datos)
+        E1-->>C1: sedeGuardada
+        C1-->>B1: actualizarMapaYDirectorio()
+    else Retirar sucursal inactiva
+        AD->>B1: solicitarEliminarSucursal(sucursal)
+        B1->>C1: verificarYEliminarSede(sucursal)
+        C1->>E2: comprobarCuentasVinculadas(sucursal)
+        alt Existen usuarios vinculados
+            E2-->>C1: cuentasExistentes
+            C1-->>B1: impedirBajaPorIntegridad()
+        else Sin cuentas vinculadas
+            C1->>E1: suprimirSucursal(sucursal)
+            C1-->>B1: confirmarBajaDeSede()
         end
-        E1-->>C1: usuarioEliminado
-        C1-->>B1: confirmarBaja()
-        B1-->>AD: actualizarListaDeUsuarios()
     end

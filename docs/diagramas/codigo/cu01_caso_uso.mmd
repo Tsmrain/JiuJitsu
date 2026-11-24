@@ -4,12 +4,14 @@ flowchart LR
 
     AL["👤 Alumno"]:::actor
     PR["👤 Profesor"]:::actor
-    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    AD["👤 Dueño"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Acceso"]
-        UC01(["UC-01: Iniciar Sesión en la Plataforma"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Acceso"]
+        UC01(["UC-01: Iniciar Sesión"]):::usecase
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
     end
 
     AL --> UC01
     PR --> UC01
     AD --> UC01
+    UC01 -.->|"«extend» al ingresar"| UC02

@@ -2,19 +2,14 @@ flowchart LR
     classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
     classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
 
-    AD["👤 Administrador (Dueño de la Marca)"]:::actor
     PR["👤 Profesor"]:::actor
-    AL["👤 Alumno"]:::actor
+    AD["👤 Dueño"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Sucursales"]
-        UC09(["UC-09: Gestionar Sucursales de la Academia"]):::usecase
-        UC09_Map(["Ubicar Sede en Mapa o Enlace"]):::usecase
-        UC09_Del(["Eliminar Sucursal sin Usuarios"]):::usecase
-        UC09_Ver(["Consultar Directorio y Mapa de Sedes"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Mensualidades"]
+        UC09(["UC-09: Activar Mensualidad (Pase de Tatami)"]):::usecase
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
     end
 
+    PR --> UC09
     AD --> UC09
-    PR --> UC09_Ver
-    AL --> UC09_Ver
-    UC09 -.->|"«include»"| UC09_Map
-    UC09_Del -.->|"«extend»"| UC09
+    UC09 -.->|"«include»"| UC02

@@ -4,59 +4,59 @@ flowchart LR
 
     AL["👤 Alumno"]:::actor
     PR["👤 Profesor"]:::actor
-    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    AD["👤 Dueño"]:::actor
 
-    subgraph S1["Subsistema de Identificacion y Acceso"]
-        UC01(["UC-01: Iniciar Sesion"]):::usecase
-        UC02(["UC-02: Crear Cuenta de Alumno"]):::usecase
+    subgraph S1["Acceso, Rol y Mensualidad"]
+        UC01(["UC-01: Iniciar Sesión"]):::usecase
+        UC02(["UC-02: Validar Rol"]):::usecase
+        UC03(["UC-03: Validar Mensualidad"]):::usecase
+        UC04(["UC-04: Crear Cuenta de Alumno"]):::usecase
     end
 
-    subgraph S2["Subsistema de Analisis y Feedback Biomecanico"]
-        UC03(["UC-03: Analizar Video de Tecnica"]):::usecase
-        UC03_Sil(["Confirmar Silueta en Escena"]):::usecase
-        UC03_Can(["Cancelar Analisis en Curso"]):::usecase
-        UC04(["UC-04: Consultar Feedback Biomecanico"]):::usecase
-        UC04_Rep(["Reproducir Segundo del Error y Frame Critico"]):::usecase
+    subgraph S2["Análisis y Retroalimentación"]
+        UC05(["UC-05: Analizar Técnica"]):::usecase
+        UC06(["UC-06: Generar Retroalimentación"]):::usecase
     end
 
-    subgraph S3["Subsistema de Catalogo y Conocimiento"]
-        UC05(["UC-05: Gestionar Tecnicas y Videos Patron"]):::usecase
-        UC06(["UC-06: Gestionar Manuales y Notas del Profesor"]):::usecase
-        UC06_Lib(["Buscar y Previsualizar Biblioteca"]):::usecase
+    subgraph S3["Catálogo y Conocimiento"]
+        UC07(["UC-07: Gestionar Técnicas"]):::usecase
+        UC08(["UC-08: Gestionar Conocimiento"]):::usecase
     end
 
-    subgraph S4["Subsistema Academico y Administrativo"]
-        UC07(["UC-07: Consultar Progreso y Evaluaciones"]):::usecase
-        UC08(["UC-08: Activar Pase de Tatami 30 Dias"]):::usecase
-        UC09(["UC-09: Gestionar Sucursales en Mapa"]):::usecase
-        UC10(["UC-10: Soporte Tecnico y Cuentas de Usuario"]):::usecase
+    subgraph S4["Gestión Académica y Sedes"]
+        UC09(["UC-09: Consultar Progreso"]):::usecase
+        UC10(["UC-10: Activar Mensualidad"]):::usecase
+        UC11(["UC-11: Gestionar Sucursales"]):::usecase
+        UC12(["UC-12: Administrar Cuentas y Soporte"]):::usecase
     end
 
     AL --> UC01
     PR --> UC01
     AD --> UC01
 
-    AL --> UC02
-
-    AL --> UC03
-    UC03 -.->|"«include»"| UC03_Sil
-    UC03_Can -.->|"«extend»"| UC03
-    UC04 -.->|"«extend»"| UC03
-    UC04_Rep -.->|"«extend»"| UC04
-
     AL --> UC04
-    AL --> UC06_Lib
-    AL --> UC07
+    AL --> UC05
+    AL --> UC06
+    AL --> UC08
+    AL --> UC09
+    UC06 -.->|"Extend"| UC05
 
-    PR --> UC05
-    PR --> UC06
-    PR --> UC06_Lib
     PR --> UC07
     PR --> UC08
+    PR --> UC09
+    PR --> UC10
 
-    AD --> UC05
-    AD --> UC06
-    AD --> UC06_Lib
+    AD --> UC07
     AD --> UC08
-    AD --> UC09
     AD --> UC10
+    AD --> UC11
+    AD --> UC12
+
+    UC05 -.->|"Include"| UC02
+    UC05 -.->|"Include"| UC03
+    UC07 -.->|"Include"| UC02
+    UC08 -.->|"Include"| UC02
+    UC09 -.->|"Include"| UC02
+    UC10 -.->|"Include"| UC02
+    UC11 -.->|"Include"| UC02
+    UC12 -.->|"Include"| UC02

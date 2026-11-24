@@ -1,0 +1,15 @@
+flowchart LR
+    classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
+    classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+
+    AD["👤 Dueño"]:::actor
+    US["👤 Usuario (Profesor / Alumno)"]:::actor
+
+    subgraph Sistema["Sistema Corpo e Mente — Gobierno"]
+        UC11(["UC-11: Soporte Técnico y Cuentas de Usuario"]):::usecase
+        UC02(["UC-02: Validar Rol y Mensualidad"]):::usecase
+    end
+
+    AD --> UC11
+    US --> UC11
+    UC11 -.->|"«include»"| UC02

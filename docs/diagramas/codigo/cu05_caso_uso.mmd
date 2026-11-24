@@ -2,18 +2,14 @@ flowchart LR
     classDef actor fill:#FFF5F5,stroke:#C53030,color:#742A2A,stroke-width:2px
     classDef usecase fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
 
-    PR["👤 Profesor"]:::actor
-    AD["👤 Administrador (Dueño de la Marca)"]:::actor
+    AL["👤 Alumno"]:::actor
 
-    subgraph Sistema["Sistema Corpo e Mente - Gestion de Tecnicas"]
-        UC05(["UC-05: Gestionar Tecnicas y Videos de Referencia"]):::usecase
-        UC05_Alta(["Registrar o Editar Tecnica"]):::usecase
-        UC05_Vid(["Subir Video Patron de Referencia"]):::usecase
-        UC05_Del(["Eliminar Tecnica del Catalogo"]):::usecase
+    subgraph Sistema["Sistema Corpo e Mente — Retroalimentación"]
+        UC05(["UC-05: Generar Feedback Biomecánico"]):::usecase
+        REP(["Reproducir Segundo Crítico"]):::usecase
+        BIB(["Consultar Fuentes en Biblioteca"]):::usecase
     end
 
-    PR --> UC05
-    AD --> UC05
-    UC05 -.->|"«include»"| UC05_Alta
-    UC05_Vid -.->|"«extend»"| UC05
-    UC05_Del -.->|"«extend»"| UC05
+    AL --> UC05
+    REP -.->|"«extend»"| UC05
+    BIB -.->|"«extend»"| UC05

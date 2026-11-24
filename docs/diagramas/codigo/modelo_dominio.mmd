@@ -1,87 +1,72 @@
 classDiagram
+    class Dueno["Dueño"] {
+        nombreCompleto
+        correo
+        idiomaPreferido
+    }
     class Sucursal {
-        nombre
+        nombreSede
         ciudad
         pais
         direccion
-        latitud
-        longitud
+        ubicacionGeografica
     }
-
     class Profesor {
-        nombre_completo
+        nombreCompleto
         correo
-        idioma_preferido
+        idiomaPreferido
     }
-
     class Alumno {
-        nombre_completo
+        nombreCompleto
         correo
-        idioma_preferido
+        idiomaPreferido
     }
-
-    class Dueno["Dueño"] {
-        nombre_completo
-        correo
-        idioma_preferido
+    class Mensualidad["Mensualidad (Pase de Tatami)"] {
+        estadoVigencia
+        fechaActivacion
+        fechaVencimiento
     }
-
-    class Tecnica {
-        nombre
-        nivel_cinturon
-        nota_profesor
+    class Tecnica["Técnica"] {
+        nombreVisible
+        claveCanonicaUnica
+        nivelCinturon
+        notaDelProfesor
     }
-
-    class VideoReferencia {
-        archivo_video
-        fecha_subida
+    class VideoDeReferencia["Video de Referencia"] {
+        grabacionModelo
+        fechaRegistro
     }
-
-    class BibliotecaTecnica {
-        fuente_nombre
-        fuente_tipo
+    class BibliotecaTecnica["Biblioteca Técnica"] {
+        fuenteDocumental
         alcance
-        contenido_texto
+        contenido
         pagina
     }
-
-    class Evaluacion {
+    class Evaluacion["Evaluación"] {
         fecha
-        porcentaje_similitud
-        retroalimentacion
+        porcentajeSimilitud
+        diagnostico
         estado
-        sucursal_congelada
+        sucursalHistorica
+    }
+    class EsqueletoBiomecanico["Esqueleto Biomecánico"] {
+        articulaciones
+        angulosCorporales
     }
 
-    class ActivacionCuenta["Activación de Cuenta"] {
-        fecha_inicio
-        fecha_expiracion
-        estado
-    }
-
-    class EsqueletoBiomecanico {
-        puntos_articulaciones
-        angulos_corporales
-    }
-
-    Dueno "1" *-- "1..*" Sucursal : es_dueno_y_dirige_sedes
-    Dueno "1" -- "0..*" Profesor : habilita_y_supervisa
-    Dueno "1" -- "0..*" Alumno : supervisa_y_da_soporte
-    Dueno "1" -- "0..*" BibliotecaTecnica : gobierna_biblioteca_global
-
+    Dueno "1" *-- "1..*" Sucursal : dirige
+    Dueno "1" -- "0..*" Profesor : habilita y supervisa
+    Dueno "1" -- "0..*" Alumno : supervisa y asiste
+    Dueno "1" -- "0..*" BibliotecaTecnica : gobierna acervo global
     Sucursal "1" *-- "0..*" Profesor : adscribe
     Sucursal "1" *-- "0..*" Alumno : adscribe
-
-    Profesor "1" -- "0..*" Tecnica : ensena
-    Profesor "1" -- "0..*" VideoReferencia : graba
+    Alumno "1" -- "1" Mensualidad : posee
+    Profesor "1" -- "0..*" Tecnica : registra y enseña
+    Profesor "1" -- "0..*" VideoDeReferencia : graba
     Profesor "1" -- "0..*" BibliotecaTecnica : aporta
-
     Alumno "1" -- "0..*" Evaluacion : realiza
-    Alumno "1" -- "1" ActivacionCuenta : posee
-
-    Tecnica "1" *-- "0..*" VideoReferencia : usa_patron
-    Tecnica "1" -- "0..*" BibliotecaTecnica : respaldada_por
-    Tecnica "1" -- "0..*" Evaluacion : es_evaluada_en
-    Sucursal "1" -- "0..*" Evaluacion : registra_historia
-
-    Evaluacion "1" *-- "0..1" EsqueletoBiomecanico : genera
+    Tecnica "1" *-- "0..*" VideoDeReferencia : contiene modelo
+    Tecnica "1" -- "0..*" BibliotecaTecnica : respaldada por
+    Tecnica "1" -- "0..*" Evaluacion : evaluada en
+    Sucursal "1" -- "0..*" Evaluacion : conserva historia
+    Evaluacion "1" *-- "0..1" EsqueletoBiomecanico : analiza

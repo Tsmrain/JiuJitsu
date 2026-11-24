@@ -1,22 +1,15 @@
-graph TD
-    subgraph Presentacion ["Capa de Presentación (Frontend)"]
-        P_Prof["ProfesorTecnicas.jsx (Pestaña Pases)"]
-        P_Upload["VideoUpload.jsx (Muro Pase de Tatami)"]
+flowchart TB
+    classDef pkg fill:#F7FAFC,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+
+    subgraph Frontera["Paquete Frontera — Seguimiento Académico"]
+        B["UI Progreso Académico"]:::pkg
+    end
+    subgraph Control["Paquete Control — Reglas de Negocio"]
+        C["Controlador de Progreso"]:::pkg
+    end
+    subgraph Dominio["Paquete Dominio — Entidades"]
+        E["Usuario, Sucursal y Evaluación"]:::pkg
     end
 
-    subgraph Aplicacion ["Capa de Aplicación (Rutas y Guardas)"]
-        A_Auth["auth_routes.py (activar_pase_tatami / require_active_subscription)"]
-    end
-
-    subgraph Dominio ["Capa de Dominio (Entidades)"]
-        D_User["Usuario (estado_suscripcion y fecha_expiracion)"]
-    end
-
-    subgraph Infraestructura ["Capa de Infraestructura (Persistencia)"]
-        I_PG["PostgrestClient / PostgreSQL"]
-    end
-
-    Presentacion --> Aplicacion
-    Aplicacion --> Dominio
-    Infraestructura --> Aplicacion
-    Infraestructura --> Dominio
+    Frontera -->|"solicita operación"| Control
+    Control -->|"consulta y actualiza"| Dominio

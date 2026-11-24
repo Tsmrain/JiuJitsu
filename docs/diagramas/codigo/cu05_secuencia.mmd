@@ -1,31 +1,38 @@
 sequenceDiagram
     autonumber
-    actor PR as Profesor
-    participant B1 as «Boundary» PantallaCatalogoTecnico
-    participant C1 as «Control» CoordinadorDeTecnicas
-    participant E1 as «Entity» Tecnica
-    participant E2 as «Entity» PatronDeReferencia
+    actor AL as Alumno
+    participant B1 as «Boundary» UI Resultados
+    participant B2 as «Boundary» UI Biblioteca Técnica
+    participant C1 as «Control» Controlador de Retroalimentación
+    participant C2 as «Control» Controlador de Conocimiento
+    participant E1 as «Entity» Evaluación
+    participant E2 as «Entity» Técnica
+    participant E3 as «Entity» Manual Técnico
+    participant E4 as «Entity» Nota del Profesor
 
-    alt Registrar o actualizar tecnica con video patron
-        PR->>B1: ingresarDatosTecnicaYVideo(nombre, cinturon, notaProfesor, video)
-        B1->>C1: procesarVideoInicial(video)
-        C1-->>B1: siluetasEnEscena
-        B1-->>PR: solicitarConfirmacionDeInstructor(siluetas)
-        PR->>B1: confirmarInstructorYGuardar(personaSeleccionada)
-        B1->>C1: registrarTecnicaYPatron(datos, video, personaSeleccionada)
-        C1->>E1: guardarDatosTecnica(nombre, cinturon, notaProfesor)
-        E1-->>C1: tecnicaId
-        C1->>C1: extraerSecuenciaPosturalYRespaldarVideo(video, personaSeleccionada)
-        C1->>E2: registrarPatronYVideoPersistente(tecnicaId, secuencia, videoRespaldo)
-        E2-->>C1: patronActivo
-        C1-->>B1: confirmacionDeRegistro(tecnicaId, patronActivo)
-        B1-->>PR: mostrarTecnicaListaParaEvaluar()
-    else Eliminar tecnica del catalogo
-        PR->>B1: solicitarEliminarTecnica(tecnicaId)
-        B1->>C1: eliminarTecnicaEnCascada(tecnicaId)
-        C1->>E2: limpiarPatronesYTeoriaAsociada(tecnicaId)
-        C1->>E1: eliminarRegistroDeCatalogo(tecnicaId)
-        E1-->>C1: eliminacionConfirmada
-        C1-->>B1: catalogoActualizado()
-        B1-->>PR: confirmarEliminacionDeTecnica()
+    AL->>B1: consultarResultadoEnIdioma(evaluacion, idioma)
+    B1->>C1: elaborarRetroalimentacion(evaluacion, idioma)
+    C1->>E1: obtenerSimilitudYFrameLimpio(evaluacion)
+    E1-->>C1: similitud, frameLimpio, articulaciones
+    alt Similitud >= 85%
+        C1-->>B1: emitirFelicitacionEnIdioma(idioma)
+    else Similitud < 85%
+        C1->>C2: buscarSustentoTecnico(tecnica, articulaciones)
+        C2->>E3: recuperarPasajesRelevantes(tecnica)
+        E3-->>C2: pasajesManual
+        C2->>E4: obtenerNotaPractica(tecnica)
+        E4-->>C2: notaProfesor
+        C2-->>C1: contextoDisponible
+        C1->>C1: sintetizarGuiaContextual(frameLimpio, contextoDisponible, idioma)
+        opt Existen fuentes de referencia
+            C1->>C1: auditarFidelidadSinInvenciones()
+        end
+        C1->>C1: higienizarTerminosRigidosYPaginas()
+        C1->>E1: guardarDiagnosticoFinal()
+        C1-->>B1: presentarComparativaYGuia()
+        B1-->>AL: mostrarVideosSegundoCriticoYConsejo()
+        opt Alumno consulta fuentes
+            AL->>B2: abrirBibliotecaDeTecnica()
+            B2-->>AL: mostrarCitasDiferenciadas()
+        end
     end

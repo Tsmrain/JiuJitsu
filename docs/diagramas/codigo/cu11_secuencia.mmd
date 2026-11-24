@@ -1,0 +1,34 @@
+sequenceDiagram
+    autonumber
+    actor AD as Dueño o Usuario
+    participant B1 as «Boundary» UI Administración y Soporte
+    participant C1 as «Control» Controlador de Cuentas
+    participant C2 as «Control» Controlador de Soporte
+    participant E1 as «Entity» Usuario
+    participant E2 as «Entity» Sucursal
+    participant E3 as «Entity» Sesión Delegada
+
+    alt Administrar profesores o cuentas de la academia
+        AD->>B1: consultarOEditarCuentas(datosCuenta, sede)
+        B1->>C1: gestionarCuenta(datosCuenta, sede)
+        C1->>E2: validarSucursalDestino(sede)
+        C1->>E1: crearActualizarOTrasladarSede(datosCuenta, sede)
+        E1-->>C1: cuentaActualizada
+        C1-->>B1: reflejarCambiosEnNomina()
+    else Dar de baja cuenta protegiendo recursos docentes
+        AD->>B1: solicitarBajaDeUsuario(usuario)
+        B1->>C1: validarBajaSegura(admin, usuario)
+        C1->>E1: comprobarAutoEliminacionOAutorias(usuario)
+        alt Es profesor con técnicas o manuales vinculados
+            E1-->>C1: requiereReasignacion
+            C1-->>B1: solicitarConfirmacionDeReasignacion()
+            AD->>B1: confirmarReasignacionDeAutoria()
+            B1->>C1: reasignarYEliminarCuenta(admin, usuario)
+        end
+        C1-->>B1: confirmarBaja()
+    else Asistir en soporte técnico mediante sesión delegada
+        AD->>B1: iniciarAsistenciaDeUsuario(usuarioObjetivo)
+        B1->>C2: abrirSesionDelegada(admin, usuarioObjetivo)
+        C2->>E3: registrarSesionTemporalConAvisoVisible()
+        C2-->>B1: mostrarEntornoDelUsuarioConRetorno()
+    end
